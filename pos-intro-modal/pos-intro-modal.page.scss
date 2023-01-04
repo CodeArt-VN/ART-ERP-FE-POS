@@ -1,0 +1,43 @@
+.sticky-btn {
+    position: sticky;
+    bottom: -20px;
+    z-index: 20;
+    // background-color: var(--ion-background-color);
+}
+
+ion-slides {
+    height: 100%;
+
+    ion-slide {
+        min-width: 100%;
+        background-color: aliceblue;
+
+        .slide-view {
+            display: flex;
+            flex-direction: column;
+
+            .splash {
+                height: 60%;
+            }
+
+            .content {
+                height: 40%;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                vertical-align: middle;
+
+                .header {
+                    color: var(--ion-color-primary);
+                    padding: 10px 30px;
+                }
+
+                .remark {
+                    font-size: 70%;
+                    padding: 10px 30px;
+                }
+            }
+        }
+    }
+}

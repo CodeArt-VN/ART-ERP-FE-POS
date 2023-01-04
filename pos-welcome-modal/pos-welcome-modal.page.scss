@@ -1,0 +1,15 @@
+.sticky-btn {
+    position: sticky;
+    bottom: -20px;
+    z-index: 20;
+    // background-color: var(--ion-background-color);
+}
+
+ion-slides {
+    height: 100%;
+
+    ion-slide {
+        min-width: 100%;
+        background-color: aliceblue;
+    }
+}

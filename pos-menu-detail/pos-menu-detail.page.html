@@ -1,0 +1,230 @@
+<ion-header>
+    <app-detail-toolbar [page]="this"></app-detail-toolbar>
+</ion-header>
+
+<ion-content appScrollbarTheme class="ion-padding">
+    <div class="main-view" *ngIf="item && pageConfig.showSpinner==false">
+        <ion-grid fixed>
+            <ion-row>
+                <ion-col class="img-holder" size="12" size-sm="300px">
+                    <div class="avatar">
+                        <img src="assets/undraw_street_food_hm5i.svg" (error)="img.src = 'assets/undraw_street_food_hm5i.svg'" #img>
+                        <div>
+                            <ion-button class="change-avatar" *ngIf="item.IsDisabled" color="danger" size="small">
+                                {{'erp.app.pages.pos.pos-menu-detail.disabled' | translate}}
+                            </ion-button>
+                            <ion-button class="change-avatar" *ngIf="!item.IsDisabled && item.Id" color="primary" size="small">
+                                {{'erp.app.pages.pos.pos-menu-detail.change-avatar' | translate}}
+                            </ion-button>
+                        </div>
+                    </div>
+                </ion-col>
+                <ion-col size="12" size-sm>
+                    <ion-grid>
+                        <ion-row>
+                            <ion-col size="12" size-md="12" size-lg="12" size-xl="5">
+                                <div class="c-control">
+                                    <label class="c-label">{{'erp.app.pages.pos.pos-menu-detail.name' | translate}}
+                                        <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                                    </label>
+                                    <input readonly class="c-input" [ngModel]="item.Name" type="text" placeholder="Tên gọi">
+                                </div>
+                                <div class="c-control">
+                                    <label class="c-label">Foreign name
+                                        <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                                    </label>
+                                    <input readonly class="c-input" [ngModel]="item.ForeignName" type="text" placeholder="Foreign name">
+                                </div>
+                            </ion-col>
+                            <ion-col size="12" size-md="12" size-lg="12" size-xl="5">
+                                
+                            </ion-col>
+                        </ion-row>
+                    </ion-grid>
+                </ion-col>
+            </ion-row>
+        </ion-grid>
+
+        <div class="row-full shadow full-screen">
+            <ion-toolbar color="primary">
+                <ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
+                    <ion-segment-button value="s1">
+                        <ion-label>{{'erp.app.pages.pos.pos-menu-detail.detail' | translate}}</ion-label>
+                    </ion-segment-button>
+                    <ion-segment-button value="s2">
+                        <ion-label>Sản phẩm</ion-label>
+                    </ion-segment-button>
+                </ion-segment>
+            </ion-toolbar>
+
+            <div>
+                <div *ngIf="segmentView == 's1'">
+                    <div class="ion-padding">
+                        <ion-grid fixed>
+                            <form [formGroup]="formGroup">
+                                <ion-row class="hr-group">
+                                    <ion-col size="12" size-sm="12" size-md="12" size-xl="3">
+                                        <ion-list-header class="ion-no-padding">
+                                            <ion-label color="primary">{{'erp.app.pages.pos.pos-menu-detail.general' | translate}}</ion-label>
+                                        </ion-list-header>
+                                    </ion-col>
+                                    <ion-col size="12" size-sm size-xl="4">
+                                        <div class="c-control" *ngIf="item.Id">
+                                            <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-menu-detail.id' | translate}}</label>
+                                            <input class="c-input" id="Id" formControlName="Id" type="number">
+                                        </div>
+                                        <div class="c-control">
+                                            <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-menu-detail.code' | translate}}
+                                                <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                                            </label>
+                                            <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
+                                        </div>
+                                        <div class="c-control">
+                                            <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-menu-detail.name' | translate}}
+                                                <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                                            </label>
+                                            <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
+                                        </div>
+                                        <div class="c-control">
+                                            <label class="c-label" for="Sort">{{'erp.app.pages.pos.pos-menu-detail.sort' | translate}}
+                                                <span *ngIf="!formGroup.controls.Sort.valid && !formGroup.controls.Sort.pending && (formGroup.controls.Sort.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                                            </label>
+                                            <input class="c-input" id="Sort" (change)="saveChange();" formControlName="Sort" type="number">
+                                        </div>
+                                        
+
+                                    </ion-col>
+                                    <!-- <ion-col size="12" size-sm size-xl="4">
+
+
+                                    </ion-col> -->
+                                </ion-row>
+                            </form>
+                        </ion-grid>
+                    </div>
+                </div>
+                <div *ngIf="segmentView == 's2'">
+                    <div id="pos-menu-detail" style="position: absolute;"></div>
+                    <form [formGroup]="formGroup">
+                        <ng-container formArrayName="Lines">
+                            <div class="table-contain">
+                                <section class="table" style="min-width: 1270px;">
+                                    <header class="bold" style="padding-right: 0;">
+                                        <div class="col-checkbox cell" *ngIf="pageConfig.canEdit"></div>
+                                        <div class="col-checkbox cell" *ngIf="pageConfig.canEdit"></div>
+                                        <div class="col-id cell">STT</div>
+                                        <div class="col-name cell">Tên sản phẩm</div>
+                                        <div class="col-uom cell">Đơn vị</div>
+                                        <!-- <div class="col-image cell">URL Hình ảnh</div> -->
+                                        <div class="col-kit cell">Bếp</div>
+                                        <!-- <div class="col-status cell">Ngưng bán</div> -->
+                                        <div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
+                                    </header>
+                                    <ion-reorder-group (ionItemReorder)="doReorder($event, formGroup.get('Lines')['controls'])" [disabled]="!pageConfig.canEdit">
+                                        <ng-container *ngFor="let g of formGroup.get('Lines')['controls']; let idx = index;">
+                        
+                                            <ng-container [formGroup]="g">
+                                            
+                                                    <div class="row">
+                                                        <ion-reorder slot="start"></ion-reorder>
+                                                        <div class="col-checkbox cell" *ngIf="pageConfig.canEdit">
+                                                            <input (click)="changeSelection(g, $event)" class="c-checkbox" type="checkbox">
+                                                        </div>
+                                                        <div class="col-id cell">{{idx+1}}</div>
+                                                        <div class="col-name cell">
+                                                            <ng-select formControlName="_Item" appendTo="#pos-menu-detail"
+                                                                class="c-input"
+                                                                [clearable]="false"
+                                                                (change)="changedIDItem(g, $event, true)" [labelForId]="'IDItem'+idx"
+                                                                [items]="g.controls._ItemDataSource.value | async"
+                                                                [typeahead]="g.controls._ItemSearchInput.value"
+                                                                [loading]="g.controls._ItemSearchLoading.value" [virtualScroll]="true"
+                                                                bindLabel="Name" placeholder="{{'erp.app.pages.product.bill-of-material.item-placeholder' | translate}}">
+                                                                <ng-template ng-label-tmp let-i="item">
+                                                                    <b *ngIf="i.Code" [title]="i.Id">
+                                                                        {{i.Code}}
+                                                                    </b>
+                                                                    {{i.Name}}
+                                                                </ng-template>
+                                                                <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                                                                    <div *ngIf="i">
+                                                                        <div><span>{{i.Name}}</span></div>
+                                                                        <small>#<b><span class="important" [ngOptionHighlight]="search">{{i.Id}} - {{i.Code}}</span></b></small>
+                                                                    </div>
+                                                                </ng-template>
+                                                            </ng-select>
+                                                        </div>
+                                                        <div class="col-uom cell">
+                                                            <!-- <select formControlName="IDUoM" [attr.disabled]="(!pageConfig.canEdit || submitAttempt)?'':null" class="c-input c-dropdown" (change)="changedIDUoM(g)">
+                                                                <option *ngFor="let t of g.controls._UoMs.value" [value]="t.Id">
+                                                                    {{t.Name}}
+                                                                </option>
+                                                            </select> -->
+
+                                                            <ng-select [clearable]="true" class="c-input" labelForId="IDUoM" formControlName="IDUoM" (change)="changedIDUoM(g, formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], true)" [items]="g.controls._UoMs.value" bindLabel="Name" bindValue="Id" placeholder="Chọn đơn vị">
+                                                                <ng-template ng-option-tmp let-i="item" let-search="searchTerm" >
+                                                                    <div *ngIf="i">
+                                                                        <div ><b [ngOptionHighlight]="search">{{i.Name}}</b></div>
+                                                                    </div>
+                                                                </ng-template>
+                                                            </ng-select>
+
+                                                            
+                                                        </div>
+
+                                                        <!-- <div class="col-image cell">
+                                                            <input class="c-input" id="Name" (change)="saveImageURL(g);" formControlName="Image" type="text">
+                                                        </div> -->
+
+                                                        <div class="col-kit cell">
+                                                            <ng-container *ngFor="let k of kitchenList">
+                                                                <ion-button [disabled]="!pageConfig.canEdit || submitAttempt" [fill]="k.Id == (formGroup['controls']['Lines']['controls'][idx]['value']['IDKitchen'])  ? 'solid' : 'outline'" expand="block" size="small" (click)="toogleKitchenSet(formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], k)">
+                                                                <!-- <ion-button [disabled]="!pageConfig.canEdit" [fill]="k.IsSelected ? 'solid' : 'outline'" expand="block" size="small" (click)="toogleKitchenSet(formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], k)"> -->
+                                                                    {{k.Name}}
+                                                                </ion-button>
+                                                            </ng-container>
+                                                        </div>
+
+                                                        <!-- Ngưng bán -->
+                                                        <!-- <div class="col-status cell">
+                                                            <div class="col-checkbox cell">
+                                                                <input (click)="changeSelection(g, $event)" class="c-checkbox" type="checkbox">
+                                                            </div>
+                                                        </div> -->
+
+                                                        
+                                                        <div class="col-del cell" *ngIf="pageConfig.canEdit" (click)="removeItemLine(idx, true)">
+                                                            <ion-icon color="danger" class="min-btn" name="trash-outline"></ion-icon>
+                                                        </div>
+                                                    </div>
+                                            
+                                            </ng-container>
+                                        </ng-container>
+                                    </ion-reorder-group>
+                                    <div class="row" *ngIf="pageConfig.canEdit">
+                                        <div class="col-id cell" *ngIf="pageConfig.canEdit" (click)="addItemLine({_Item:null, IDMenu: item.Id, Id: 0, UoMs: [], Sort: null })">
+                                            <ion-icon class="min-btn" title="{{'erp.app.pages.product.bill-of-material.add-order-line' | translate}}" name="add-circle-outline"></ion-icon>
+                                        </div>
+                                        <div class="col-id cell" *ngIf="!pageConfig.canEdit"></div>
+                                        <div class="col-remark cell">
+                                            <div class="col-remark cell">
+                                                <b *ngIf="pageConfig.canEdit" (click)="addItemLine({_Item:null, IDMenu: item.Id, Id: 0, UoMs: [], Sort: null })">Thêm sản phẩm</b>
+                                            </div>
+                                        </div>
+                                        <div class="col-uom cell">
+                                            <div style="height: 35px;"></div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                    
+                            
+                        </ng-container>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <app-page-message [itemsLength]="item? 1: 0" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+</ion-content>

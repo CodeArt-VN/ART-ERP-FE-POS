@@ -1,0 +1,276 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start" class="ion-hide-sm-down_">
+            <ion-button color="dark" class="ion-hide-sm-down_" *ngIf="contactSelected">
+                Discount cho [{{contactSelected.Name}}]
+            </ion-button>
+        </ion-buttons>
+
+        <ion-buttons slot="primary">
+            <!-- <ion-button title="{{'erp.app.pages.sale.sale-order.merge.help' | translate}}" (click)="help()">
+                <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+            </ion-button> -->
+
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="applyDiscount()">
+                <ion-icon slot="icon-only" name="close"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+
+
+</ion-header>
+<ion-content appScrollbarTheme class="ion-padding">
+    <div id="pos-discount-page" style="position: absolute;"></div>
+    <div class="main-view">
+        <ion-grid fixed style="max-width: 500px;" *ngIf="item">
+
+            <ion-row class="hr-group remove-padding">
+                <ion-col size="12">
+
+                    <div class="c-control" *ngIf="selectedOrder">
+                        <label class="c-label" for="IDContact">
+                            {{'erp.app.pages.sale.sale-order.merge.idcontact' | translate}}
+                        </label>
+                        <div style="display: flex; align-items: center;">
+                            <ng-select [(ngModel)]="selectedOrder.IDContact" appendTo="#pos-discount-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [disabled]="(selectedOrder.IDStatus == 113 || selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.merge.placeholder-idcontact' | translate}}">
+								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
+									{{i.Name}}
+									<small *ngIf="a">
+										<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
+										<span *ngIf="a.Ward">, {{a.Ward}}</span>
+										<span *ngIf="a.District">, {{a.District}}</span>
+										<span *ngIf="a.Province">, {{a.Province}}</span>
+									</small>
+								</ng-template>
+								<ng-template ng-option-tmp let-i="item" let-a="item.Address" let-search="searchTerm">
+									<div *ngIf="i">
+										<div>
+											<span [ngOptionHighlight]="search">{{i.Name}}</span>
+											<span *ngIf="i.WorkPhone"> | <small> <b [ngOptionHighlight]="search">{{i.WorkPhone}}</b> </small></span>
+										</div>
+										<small *ngIf="a">
+											<b *ngIf="i.Code"><span class="important" [ngOptionHighlight]="search">{{i.Code}}</span></b>
+											<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
+											<span *ngIf="a.Ward">, {{a.Ward}}</span>
+											<span *ngIf="a.District">, {{a.District}}</span>
+											<span *ngIf="a.Province">, {{a.Province}}</span>
+											<br *ngIf="a.AddressLine2 || a.Contact">
+											<span *ngIf="a.AddressLine2">{{a.AddressLine2}}</span>
+											<span *ngIf="a.Contact"> | {{'erp.app.pages.pos.pos-order.contact' | translate}}: {{a.Contact}}</span>
+											<span *ngIf="a.Phone1"> - {{a.Phone1}}</span>
+											<span *ngIf="a.Phone2"> - {{a.Phone2}}</span>
+										</small>
+									</div>
+								</ng-template>
+                            </ng-select>
+                            <ion-button style="margin-left: 16px" size="small" (click)="scanQRCode()">
+                                <ion-icon slot="icon-only" name="qr-code-outline"></ion-icon>
+                            </ion-button>
+                        </div>
+                    </div>
+
+                    <ion-row>
+                        <ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+                            <ion-list-header class="ion-no-padding">
+                                <ion-label color="primary">Discount</ion-label>
+                            </ion-list-header>
+                        </ion-col>
+                        <ion-col size="12" size-sm="12" size-xl="12">
+                            <div class="c-control">
+                                <label class="c-label" for="PercentDiscount">Số % Discount</label>
+                                <input mask="separator.2" (change)="changePercentDiscount(true)" thousandSeparator="," [allowNegativeNumbers]="false" maxlength="4" suffix=" %" class="c-input c-label" id="PercentDiscount" [(ngModel)]="item.PercentDiscount" type="tel" placeholder="% Discount">
+                            </div>
+                            <div class="c-control">
+                                <label class="c-label" for="DiscountAmount">Số tiền Discount</label>
+                                <input mask="separator.2" (change)="changeAmountDiscount(true)" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input c-label" id="DiscountAmount" [(ngModel)]="item.DiscountAmount" type="tel" placeholder="$ Discount">
+                            </div>
+                        </ion-col>
+                    </ion-row>
+
+                    <ion-row>
+                        <ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+                            <ion-list-header class="ion-no-padding">
+                                <ion-label color="primary">Membership</ion-label>
+                            </ion-list-header>
+                        </ion-col>
+                        <ion-col size="12" size-sm="12" size-xl="12">
+                            <div class="c-control">
+                                <label class="c-label" for="CardNo">Thẻ thành viên</label>
+                                <input class="c-input" readonly id="CardNo" [(ngModel)]="item.CardNo" type="text" placeholder="Nhập mã thẻ">
+                            </div>
+                            <div class="c-control">
+                                <label class="c-label" for="CardLevel">Hạng</label>
+                                <input class="c-input" readonly id="CardLevel" [(ngModel)]="item.CardLevel" type="text" placeholder="Hạng thẻ">
+                            </div>
+                            <div class="c-control">
+                                <label class="c-label" for="MembershipDiscount">Số tiền Discount</label>
+                                <input mask="separator.2" thousandSeparator="," (change)="changeMembershipDiscount(true);" [allowNegativeNumbers]="false" suffix=" ₫" class="c-input c-label" id="MembershipDiscount" [(ngModel)]="item.MembershipDiscount" type="tel" placeholder="$ Discount">
+                            </div>
+                        </ion-col>
+                    </ion-row>
+
+                    <ng-container *ngIf="InternalOptions">
+                        <ion-row>
+                            <ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+                                <ion-list-header class="ion-no-padding">
+                                    <ion-label color="primary">Discount nội bộ</ion-label>
+                                </ion-list-header>
+                            </ion-col>
+                            <ion-col size="12" size-sm="12" size-xl="12">
+                                <div class="c-control">
+                                    <label class="c-label" for="InternalPercentDiscount">Số % Discount</label>
+                                    <input mask="separator.2" (change)="changeInternalPercentDiscount(true)" thousandSeparator="," [allowNegativeNumbers]="false" maxlength="4" suffix=" %" class="c-input c-label" id="InternalPercentDiscount" [(ngModel)]="item.InternalPercentDiscount" type="tel" placeholder="% Discount">
+                                </div>
+                                <div class="c-control">
+                                    <label class="c-label" for="InternalDiscountAmount">Số tiền Discount</label>
+                                    <input mask="separator.2" (change)="changeInternalDiscountAmount(true)" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input c-label" id="InternalDiscountAmount" [(ngModel)]="item.InternalDiscountAmount" type="tel" placeholder="$ Discount">
+                                </div>
+                            </ion-col>
+                        </ion-row>
+                    </ng-container>
+                    
+
+                    <ion-row>
+                        <ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+                            <ion-list-header class="ion-no-padding">
+                                <ion-label color="primary">Voucher</ion-label>
+                            </ion-list-header>
+                        </ion-col>
+                        <ion-col size="12" size-sm="12" size-xl="12">
+                            <div class="c-control">
+                                <label class="c-label" for="PercentDiscount">Mã Voucher</label>
+
+                                <div style="display: flex; align-items: center;">
+                                    <ion-input class="c-input" style="padding-left: 1rem !important;" id="VoucherCode" (ionChange)="searchVoucherCode($event)" [(ngModel)]="item.VoucherCode" type="text" placeholder="Nhập mã để tìm..."></ion-input>
+                                    <ion-button size="small" style="margin-left: 16px" (click)="applyVoucher()">Áp dụng mã</ion-button>
+                                </div>
+                            </div>
+                        </ion-col>
+                        <ion-col size="12" size-sm="12" size-xl="12">
+                            <div class="c-control">
+                                <label class="c-label">Danh sách voucher <small *ngIf="selectedVoucher">Đã chọn 1 voucher</small></label>
+
+
+                                <!-- <div class="table-contain">
+                                    <section class="table">
+                                        <header class="bold">
+                                            <div class="col-id cell"></div>
+                                            <div class="col-id cell">STT</div>
+                                            <div class="col-name cell">Tên Voucher</div>
+                                            <div class="col-money cell">Số tiền</div>
+                                            <div class="col-remark cell">Ghi chú</div>
+                                        </header>
+                                        <div class="row" [ngClass]="{odd: j % 2 != 0 }" (click)="checkVoucher(v)" *ngFor="let v of voucherList, let idx = index;">
+                                            <div class="col-id cell">
+                                                <input class="c-checkbox" class="c-checkbox" [(ngModel)]="v.Selected" type="checkbox">
+                                            </div>
+                                            <div class="col-id cell">
+                                                {{idx+1}}
+                                            </div>
+                                            <div class="col-name cell">
+                                                {{v.Name}}
+                                            </div>
+                                            <div class="col-money cell">
+                                                {{v.Amount | currency: 'VND':'':'1.0-0':''}}
+                                            </div>
+                                            <div class="col-remark cell">
+                                                {{v.Remark}}
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div> -->
+                                <app-page-message [itemsLength]="voucherList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+                                <div class="voucher-box-list" *ngIf="voucherList.length != 0">
+                                    <div class="voucher-card" (click)="checkVoucher(v, true)" *ngFor="let v of voucherList">
+                                        <div class="outer voucher-group">
+                                            <div class="inner">
+                                                <i class="top right"></i>
+                                                <div class="content">
+                                                    <div class="voucher-icon">
+                                                        <ion-icon color="primary" [name]="v.Selected ? 'ticket' : 'ticket-outline'"></ion-icon>
+                                                        <ion-text><small><b>Voucher Group</b></small></ion-text>
+                                                    </div>
+                                                </div>
+                                                <i class="bottom right"></i>
+                                            </div>
+                                        </div>
+                                        <div class="outer voucher-info">
+                                            <div class="inner" style="border-left: 3px dashed var(--ion-background-color);">
+                                                <i class="top left"></i>
+                                                <div class="content">
+                                                    <div style="width: 90%; margin-left: 10px;">
+                                                        <div class="name"><b>{{v.Name}}</b></div>
+                                                        <div class="amount"><small>{{v.AmountText}}</small></div>
+                                                        <div class="date-expire"><small>HSD: {{v.ActiveTo}}</small></div>
+                                                    </div>
+                                                    <div>
+                                                        <input class="c-checkbox" class="c-checkbox" [(ngModel)]="v.Selected" type="checkbox">
+                                                    </div>
+                                                </div>
+                                                <i class="bottom left"></i>
+                                            </div>
+                                        </div>
+
+
+                                        <!-- <div class="voucher-group">
+                                            <div><small>{{v.VoucherGroup}}</small></div>
+                                        </div>
+                                        <div class="voucher-info">
+                                            <div style="width: 90%">
+                                                <div><small>{{v.Name}}</small></div>
+                                                <div><small>{{v.Amount | currency: 'VND':'':'1.0-0':''}}</small></div>
+                                                <div><small>{{v.ActiveTo}}</small></div>
+                                            </div>
+                                            <div>
+                                                <input class="c-checkbox" class="c-checkbox" [(ngModel)]="v.Selected" type="checkbox">
+                                            </div>
+                                        </div> -->
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </ion-col>
+                    </ion-row>
+
+                    <!-- <div class="c-control">
+                        <div class="list-header">
+                            <label class="c-label">Danh sách voucher <small *ngIf="selectedVoucher">Đã chọn 1 voucher</small></label>
+                        </div>
+                        <div class="voucher-box-list">
+                            <div class="voucher-card" [ngStyle]="{'font-weight': v.Selected ? 'bold' : 'normal'}" (click)="checkVoucher(v)" *ngFor="let v of mockupVoucherList">
+                                <div class="voucher-group">
+                                    <div><small>{{v.VoucherGroup}}</small></div>
+                                </div>
+                                <div class="voucher-info">
+                                    <div style="width: 90%">
+                                        <div><small>{{v.VoucherName}}</small></div>
+                                        <div><small>{{v.Amount | currency: 'VND':'':'1.0-0':''}}</small></div>
+                                        <div><small>{{v.ActiveTo}}</small></div>
+                                    </div>
+                                    <div>
+                                        <input class="c-checkbox" class="c-checkbox" [(ngModel)]="v.Selected" type="checkbox">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
+                    
+
+
+                </ion-col>
+            </ion-row>
+
+        </ion-grid>
+
+        <ion-row class="sticky-btn">
+            <ion-col [hidden]="(selectedOrder.IDStatus == 113 || selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)">
+                <div class="c-control ion-text-center">
+                    <ion-button expand="block" [disabled]="submitAttempt" (click)="applyDiscount(true)">Áp dụng khuyến mãi</ion-button>
+                </div>
+            </ion-col>
+        </ion-row>
+    </div>
+
+
+</ion-content>

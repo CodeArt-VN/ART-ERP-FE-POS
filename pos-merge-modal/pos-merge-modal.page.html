@@ -1,0 +1,70 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start" class="ion-hide-sm-down_">
+            <ion-button color="dark" class="ion-hide-sm-down_">
+                {{'erp.app.pages.sale.sale-order.merge.merge' | translate}} {{selectedOrders.length}} {{'erp.app.pages.sale.sale-order.merge.order' | translate}}
+            </ion-button>
+        </ion-buttons>
+
+        <ion-buttons slot="primary">
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.help' | translate}}" (click)="help()">
+                <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+            </ion-button>
+
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="closeModalView()">
+                <ion-icon slot="icon-only" name="close"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+
+
+</ion-header>
+<ion-content appScrollbarTheme class="ion-padding">
+    <div id="order-detail-page" style="position: absolute;"></div>
+    <div class="main-view">
+        <ion-grid fixed style="max-width: 500px;">
+
+            <ion-row class="hr-group">
+                <ion-col size="12">
+                    <div class="c-control">
+                        <label class="c-label" for="IDContact">
+                            {{'erp.app.pages.sale.sale-order.merge.idcontact' | translate}}
+                        </label>
+
+                        <ng-select [(ngModel)]="item.IDContact" appendTo="#order-detail-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.merge.placeholder-idcontact' | translate}}">
+                            <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                                <div *ngIf="i">
+                                    <div>
+                                        <span >{{i.Name}}</span>
+                                        <span *ngIf="i.WorkPhone"> | <small> <b >{{i.WorkPhone}}</b></small></span>
+                                    </div>
+                                    <small>#<b><span class="important" >{{i.Id}} - {{i.Code}}</span></b> <span *ngIf="i.AddressLine1"> | {{i.AddressLine1}}</span></small>
+                                </div>
+                            </ng-template>
+                        </ng-select>
+                    </div>
+
+                    <!-- <div class="c-control ">
+                        <ion-button size="small" [disabled]="!pageConfig.canEdit" (click)="item.IsSampleOrder = !item.IsSampleOrder;" [fill]=" item.IsSampleOrder? 'solid' : 'outline' ">
+                            {{'erp.app.pages.sale.sale-order.merge.is-sample-order' | translate}}
+                        </ion-button>
+                        <ion-button size="small" [disabled]="!pageConfig.canEdit" (click)="item.IsUrgentOrders = !item.IsUrgentOrders;" [fill]=" item.IsUrgentOrders? 'solid' : 'outline' ">
+                            {{'erp.app.pages.sale.sale-order.merge.is-urgent-orders' | translate}}
+                        </ion-button>
+                        <ion-button size="small" [disabled]="!pageConfig.canEdit" (click)="item.IsWholeSale = !item.IsWholeSale;" [fill]=" item.IsWholeSale? 'solid' : 'outline' ">
+                            {{'erp.app.pages.sale.sale-order.merge.is-wholesale' | translate}}
+                        </ion-button>
+                    </div> -->
+
+                    <div class="c-control ion-text-right">
+                        <ion-button [disabled]="submitAttempt" (click)="mergeSaleOrders()">{{'erp.app.pages.sale.sale-order.merge.merge-sale-orders' | translate}}</ion-button>
+                    </div>
+
+                </ion-col>
+            </ion-row>
+
+        </ion-grid>
+    </div>
+
+
+</ion-content>

@@ -1,0 +1,330 @@
+<ion-header>
+    <ion-toolbar>
+        <!-- <ion-buttons slot="start" class="ion-hide-sm-down_">
+            <ion-button color="dark" class="ion-hide-sm-down_">
+                Thanh toán
+            </ion-button>
+        </ion-buttons> -->
+
+        <ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
+            <ion-segment-button (click)="checkPayment(m)" [value]="m.Id" *ngFor="let m of Methods">
+                <ion-label>{{m.Name}}</ion-label>
+            </ion-segment-button>
+        </ion-segment>
+
+        <ion-buttons slot="primary">
+            <!-- <ion-button title="{{'erp.app.pages.sale.sale-order.merge.help' | translate}}" (click)="help()">
+                <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+            </ion-button> -->
+
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="orderPaying(false)">
+                <ion-icon slot="icon-only" name="close"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+
+
+</ion-header>
+<ion-content appScrollbarTheme class="ion-padding">
+    <div id="pos-payment-page" style="position: absolute;"></div>
+    <div class="main-view">
+        <ion-grid fixed style="max-width: 500px;">
+
+            <ion-row class="hr-group remove-padding">
+                <ion-col size="12">
+                    <!-- <div class="c-control">
+                        <label class="c-label" for="IDContact">Chọn hình thức thanh toán</label>
+                        <div class="payment-methods">
+                            <ion-button *ngFor="let m of Methods" (click)="checkPayment(m)" [fill]="m.Selected? 'solid': 'outline'" size="small">{{m.Name}}</ion-button>
+                        </div>
+                    </div> -->
+
+                    <ng-container *ngIf="InCashOptions">
+                        <div class="c-control">
+                            <label class="c-label" for="CashReceived">{{Methods[0].Name}}</label>
+                            <div style="display: flex; align-items: center;">
+                                <input mask="separator." (change)="orderCalc()" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="CashReceived" [(ngModel)]="item.CashReceived" type="text" placeholder="Nhập số tiền mặt...">
+                                <ion-button size="small" style="margin-left: 16px" (click)="receiveAmount()">Nhận tiền</ion-button>
+                            </div>
+                            <ion-button *ngFor="let i of recAmountBtn" size="small" (click)="setAmount(i)">{{i.Amount | currency: 'VND':'':'1.0-0':''}}</ion-button>
+                        </div>
+
+                        <div class="c-control">
+                            <label class="c-label" for="TotalDiscount">TotalDiscount</label>
+                            <input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="true" suffix=" ₫" class="c-input" id="TotalDiscount" [(ngModel)]="selectedOrder.TotalDiscount" type="text">
+                        </div>
+
+                        <div class="c-control">
+							<label class="c-label" for="Received">Received</label>
+							<input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="true" suffix=" ₫" class="c-input" id="Received" [(ngModel)]="item.TransactionTotal" type="text">
+						</div>
+
+                        <div class="c-control">
+                            <label class="c-label" for="TheChange">TheChange</label>
+                            <input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="true" suffix=" ₫" class="c-input" id="TheChange" [(ngModel)]="selectedOrder.TheChange" type="text">
+                        </div>
+                    </ng-container>
+
+                    <ng-container *ngIf="DepositOptions">
+                        <div class="c-control">
+                            
+
+                            <div class="topQR">
+                                <img class="qrc" [src]="item.QRC">
+                            </div>
+                        </div>
+
+                        <div class="c-control">
+                            <label class="c-label" for="IDBank">Ngân hàng</label>
+                            <!-- <ng-select class="c-input" #IDBank  labelForId="IDBank" [(ngModel)]="item.IDBank" [items]="bankList" [clearable]="true" bindLabel="Name" bindValue="Id" placeholder="Chọn ngân hàng chuyển đến...">
+                            </ng-select> -->
+
+                            <ng-container *ngFor="let b of bankList">
+                                <ion-button [fill]="b.IsSelected ? 'solid' : 'outline'" size="small" (click)="toogleBankSelect(b)">
+                                    {{b.Name | uppercase }}
+                                </ion-button>
+                            </ng-container>
+                        </div>
+
+                        <div class="c-control">
+                            <label class="c-label" for="DepositReceived">Số tiền</label>
+                            <div style="display: flex; align-items: center;">
+                                <input mask="separator." (change)="orderCalc()" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="DepositReceived" [(ngModel)]="item.DepositReceived" type="text" placeholder="Nhập số tiền chuyển khoản...">
+                                <ion-button size="small" style="margin-left: 16px" (click)="receiveAmount()">Nhận tiền</ion-button>
+                            </div>
+                            <ion-button *ngFor="let i of recAmountBtn" size="small" (click)="setAmount(i)">{{i.Amount | currency: 'VND':'':'1.0-0':''}}</ion-button>
+                        </div>
+                    </ng-container>
+
+                    <!-- <ng-container *ngIf="MomoWalletOptions">
+                        <div class="c-control">
+                            <label class="c-label" for="MomoWalletReceived">{{Methods[2].Name}}</label>
+
+                            <div class="topQR">
+                                <img class="qrc" [src]="item.QRC">
+                            </div>
+
+                            <div style="display: flex; align-items: center;">
+                                <input mask="separator." (change)="orderCalc()" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="MomoWalletReceived" [(ngModel)]="item.MomoWalletReceived" type="text" placeholder="Nhập số tiền chuyển Momo...">
+                                <ion-button size="small" style="margin-left: 16px" (click)="receiveAmount()">Nhận tiền</ion-button>
+                            </div>
+                            <ion-button *ngFor="let i of recAmountBtn" size="small" (click)="setAmount(i)">{{i.Amount | currency: 'VND':'':'1.0-0':''}}</ion-button>
+                        </div>
+                    </ng-container> -->
+
+                    <ng-container *ngIf="VisaMasterOptions">
+                        <!-- <ng-container *ngIf="contactSelected.IsStaff"> -->
+                            <div class="c-control">
+                                <label class="c-label" for="IDTitle">Chức vụ</label>
+                                <ng-container *ngFor="let d of titleList">
+                                    <ion-button [fill]="d.IsSelected ? 'solid' : 'outline'" size="small" (click)="toogleTitleSelect(d)">
+                                        {{d.Name | uppercase }}
+                                    </ion-button>
+                                </ng-container>
+                            </div>
+                        <!-- </ng-container> -->
+
+                        <div class="c-control">
+                            <label class="c-label" for="IDBank">Ngân hàng</label>
+                            <!-- <ng-select class="c-input" #IDBank  labelForId="IDBank" [(ngModel)]="item.IDBank" [items]="bankList" [clearable]="true" bindLabel="Name" bindValue="Id" placeholder="Chọn ngân hàng chuyển đến...">
+                            </ng-select> -->
+
+                            <ng-container *ngFor="let b of bankList">
+                                <ion-button [fill]="b.IsSelected ? 'solid' : 'outline'" size="small" (click)="toogleBankSelect(b)">
+                                    {{b.Name | uppercase }}
+                                </ion-button>
+                            </ng-container>
+                        </div>
+
+                        <div class="c-control">
+                            <label class="c-label" for="VisaMasterReceived">{{Methods[2].Name}}</label>
+                            <div style="display: flex; align-items: center;">
+                                <input mask="separator." (change)="orderCalc()" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="VisaMasterReceived" [(ngModel)]="item.VisaMasterReceived" type="text" placeholder="Nhập số tiền thanh toán visa/master...">
+                                <ion-button size="small" style="margin-left: 16px" (click)="receiveAmount()">Nhận tiền</ion-button>
+                            </div>
+                            <ion-button *ngFor="let i of recAmountBtn" size="small" (click)="setAmount(i)">{{i.Amount | currency: 'VND':'':'1.0-0':''}}</ion-button>
+                        </div>
+                    </ng-container>
+
+                    <!-- <ng-container *ngIf="ATMCardOptions">
+                        <div class="c-control">
+                            <label class="c-label" for="ATMCardReceived">{{Methods[3].Name}}</label>
+                            <div style="display: flex; align-items: center;">
+                                <input mask="separator." (change)="orderCalc()" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="ATMCardReceived" [(ngModel)]="item.ATMCardReceived" type="text" placeholder="Nhập số tiền thanh toán thẻ ATM...">
+                                <ion-button size="small" style="margin-left: 16px" (click)="receiveAmount()">Nhận tiền</ion-button>
+                            </div>
+                            <ion-button *ngFor="let i of recAmountBtn" size="small" (click)="setAmount(i)">{{i.Amount | currency: 'VND':'':'1.0-0':''}}</ion-button>
+                        </div>
+                    </ng-container> -->
+
+                    <ng-container *ngIf="(InCashOptions || DepositOptions || MomoWalletOptions || VisaMasterOptions || ATMCardOptions)">
+                        <div class="c-control">
+                            <label class="c-label" for="Remark">Ghi chú</label>
+                            <textarea rows="2" class="c-input remark" id="Remark" [(ngModel)]="item.Remark" type="textarea"></textarea>
+                        </div>
+                    </ng-container>
+
+                    <div class="c-control">
+                        <label class="c-label">Các lần thanh toán</label>
+
+                        <div class="table-contain">
+                            <section class="table">
+                                <header class="bold">
+                                    <div class="col-id cell">STT</div>
+                                    <div class="col-code cell">Hình thức</div>
+                                    <div class="col-money cell">Số tiền</div>
+                                    <div class="col-remark cell">Ghi chú</div>
+                                    <div class="col-del cell"></div>
+                                </header>
+                                <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of transactionsList, let idx = index;">
+                                    <div class="col-id cell">
+                                        {{idx+1}}
+                                    </div>
+                                    <div class="col-code cell">
+                                        {{i.Type}}
+                                    </div>
+                                    <div class="col-money cell">
+                                        {{i.AmountText}}
+                                    </div>
+                                    <div class="col-remark cell">
+                                        {{i.Remark}}
+                                    </div>
+                                    <div class="col-del cell" *ngIf="pageConfig.canEdit" (click)="removeLine(i, true)">
+                                        <ion-icon style="cursor: pointer;" color="danger" class="min-btn" name="trash-outline"></ion-icon>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <div class="header-box">
+                        <div class="header-name">
+                            <div class="total">
+                                <div class="c-control">
+                                    <label class="c-label" for="TotalBeforeDiscount">{{'erp.app.pages.pos.pos-order.total' | translate}}</label>
+                                    <input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalBeforeDiscount" [(ngModel)]="selectedOrder.TotalBeforeDiscount" type="text">
+                                </div>
+                                <div class="c-control">
+                                    <label class="c-label" for="TotalAfterDiscount">Discounted Amount</label>
+                                    <input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalAfterDiscount" [(ngModel)]="selectedOrder.TotalAfterDiscount" type="text">
+                                </div>
+                                <div class="c-control">
+                                    <label class="c-label" for="ServiceCharge">Service Charge</label>
+                                    <input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="ServiceCharge" [(ngModel)]="selectedOrder.ServiceCharge" type="text">
+                                </div>
+                                <div class="c-control">
+                                    <label class="c-label" for="TotalAfterServiceCharge">Base VAT</label>
+                                    <input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalAfterServiceCharge" [(ngModel)]="selectedOrder.TotalAfterServiceCharge" type="text">
+                                </div>
+                                <div class="c-control">
+                                    <label class="c-label" for="Tax">{{'erp.app.pages.pos.pos-order.tax' | translate}}</label>
+                                    <input mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="Tax" [(ngModel)]="selectedOrder.Tax" type="text">
+                                </div>
+                                <div class="c-control">
+                                    <label class="c-label" for="TotalAfterTax">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</label>
+                                    <input [ngStyle]="{'color': selectedOrder.TotalAfterTax >= 20000000 ? 'red' : 'var(--ion-color-primary)'}" mask="separator.0" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalAfterTax" [(ngModel)]="selectedOrder.TotalAfterTax" type="text">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ng-container>
+                        <div class="c-control" >
+                            <div class="payment-methods" (click)="InvoiceOptions =! InvoiceOptions;">
+                                <input class="c-checkbox" class="c-checkbox" [(ngModel)]="InvoiceOptions" type="checkbox">
+                                <ion-icon color="primary" name="receipt"></ion-icon>
+                                <ion-label [ngStyle]="{'font-weight': InvoiceOptions ? 'bold' : 'normal'}" [color]="InvoiceOptions ? 'primary' : 'medium'">Xuất hóa đơn?</ion-label>
+                            </div>
+                        </div>
+                    </ng-container>
+
+                    <ng-container *ngIf="InvoiceOptions">
+                        <div class="c-control">
+                            <label class="c-label" for="IDContact">
+                                <ion-button [hidden]="(selectedOrder.IDStatus == 113 || selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top:-13px" class="ion-float-right" size="small" (click)="addContact()">
+                                    <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                                    {{'erp.app.pages.sale.sale-order-mobile.add-customer' | translate}}
+                                </ion-button>
+                                Khách hàng
+                            </label>
+    
+                            <ng-select [(ngModel)]="selectedOrder.IDContact" appendTo="#pos-payment-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [disabled]="(selectedOrder.IDStatus == 113 || selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.merge.placeholder-idcontact' | translate}}">
+								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
+									{{i.Name}}
+									<small *ngIf="a">
+										<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
+										<span *ngIf="a.Ward">, {{a.Ward}}</span>
+										<span *ngIf="a.District">, {{a.District}}</span>
+										<span *ngIf="a.Province">, {{a.Province}}</span>
+									</small>
+								</ng-template>
+								<ng-template ng-option-tmp let-i="item" let-a="item.Address" let-search="searchTerm">
+									<div *ngIf="i">
+										<div>
+											<!-- <span [ngOptionHighlight]="search">{{i.Name}}</span> -->
+											<span>{{i.Name}}</span>
+											<span *ngIf="i.WorkPhone"> | <small> <b [ngOptionHighlight]="search">{{i.WorkPhone}}</b> </small></span>
+										</div>
+										<small *ngIf="a">
+											<b *ngIf="i.Code"><span class="important" [ngOptionHighlight]="search">{{i.Code}}</span></b>
+											<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
+											<span *ngIf="a.Ward">, {{a.Ward}}</span>
+											<span *ngIf="a.District">, {{a.District}}</span>
+											<span *ngIf="a.Province">, {{a.Province}}</span>
+											<br *ngIf="a.AddressLine2 || a.Contact">
+											<span *ngIf="a.AddressLine2">{{a.AddressLine2}}</span>
+											<span *ngIf="a.Contact"> | {{'erp.app.pages.pos.pos-order.contact' | translate}}: {{a.Contact}}</span>
+											<span *ngIf="a.Phone1"> - {{a.Phone1}}</span>
+											<span *ngIf="a.Phone2"> - {{a.Phone2}}</span>
+										</small>
+									</div>
+								</ng-template>
+                            </ng-select>
+                        </div>
+
+
+                        <ng-container *ngIf="selectedOrder.IDContact != 922">
+                            <div class="c-control">
+                                <label class="c-label" for="TaxCode">Mã số thuế</label>
+                                <ion-input class="c-input" style="padding-left: 1rem !important;" id="TaxCode" (ionChange)="searchTaxCode($event)" [(ngModel)]="orderInvoice.TaxCode" type="text"></ion-input>
+                            </div>
+
+                            <div class="c-control">
+                                <label class="c-label" for="CompanyName">Tên công ty</label>
+                                <input class="c-input" id="CompanyName" [(ngModel)]="orderInvoice.CompanyName" type="text">
+                            </div>
+    
+                            <div class="c-control">
+                                <label class="c-label" for="CompanyAddress">Địa chỉ công ty</label>
+                                <input class="c-input" id="CompanyAddress" [(ngModel)]="orderInvoice.CompanyAddress" type="text">
+                            </div>
+    
+                            <div class="c-control">
+                                <label class="c-label" for="EmailAddress">Địa chỉ email</label>
+                                <input class="c-input" id="EmailAddress" [(ngModel)]="orderInvoice.EmailAddress" type="text">
+                            </div>
+                        </ng-container>
+
+                    </ng-container>
+
+                    <ion-row class="sticky-btn">
+                        <!-- <ion-col [hidden]="(selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)">
+                            <div class="c-control ion-text-center">
+                                <ion-button expand="block" [disabled]="submitAttempt" (click)="processDiscounts()">Discount</ion-button>
+                            </div>
+                        </ion-col> -->
+                        <ion-col [hidden]="(selectedOrder.IDStatus == 113 || selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)">
+                            <div class="c-control ion-text-center">
+                                <ion-button expand="block" [disabled]="(submitAttempt) || (transactionsList.length == 0)" (click)="orderPaying(true)">Xác nhận thanh toán</ion-button>
+                            </div>
+                        </ion-col>
+                    </ion-row>
+
+                </ion-col>
+            </ion-row>
+
+        </ion-grid>
+    </div>
+
+
+</ion-content>

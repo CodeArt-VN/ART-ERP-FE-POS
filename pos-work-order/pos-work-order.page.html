@@ -1,0 +1,134 @@
+<ion-header>
+	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-work-order.page-title' | translate}}" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh()" (export)="export()" (import)="import($event)" (help)="help()" (unselect)="unselect()" (archiveItems)="archiveItems()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)"></app-list-toolbar>
+	<ion-toolbar class="no-padding" color="primary" [ngClass]="{withFeature: pageConfig.isShowFeature}">
+		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
+			<ion-segment-button value="all">
+				<ion-label>{{'erp.app.pages.pos.pos-work-order.all' | translate}}</ion-label>
+			</ion-segment-button>
+
+			<ion-segment-button *ngFor="let g of tableGroupList" [value]="g.Id">
+				<ion-label>{{g.Name}}</ion-label>
+			</ion-segment-button>
+
+		</ion-segment>
+	</ion-toolbar>
+
+	<!-- <section class="table">
+		<header class="bold">
+			<div class="col-checkbox cell"></div>
+			<div class="col-id cell" (click)="sortToggle('Id')">
+				Id
+				<ion-icon class="min-btn" *ngIf="sort.Id" [name]="sort.Id == 'Id'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Id" name="search" color="primary"></ion-icon>
+			</div>
+			<div class="col-code cell" (click)="sortToggle('Code')">
+				Mã
+				<ion-icon class="min-btn" *ngIf="sort.Code" [name]="sort.Code == 'Code'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Code" name="search" color="primary"></ion-icon>
+			</div>
+			<div class="col-name cell" (click)="sortToggle('Name')">
+				Tên gọi
+				<ion-icon class="min-btn" *ngIf="sort.Name" [name]="sort.Name == 'Name'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Name" name="search" color="primary"></ion-icon>
+			</div>
+			<div class="col-remark cell">Ghi chú</div>
+		</header>
+		<form (submit)="refresh()" action="#">
+			<header class="filter" *ngIf="pageConfig.isShowSearch">
+				<div class="col-checkbox cell"></div>
+				<div class="col-id cell">
+					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Id" class="c-input" [ngClass]="{active: query.Id}" type="text">
+					<ion-icon class="min-btn" (click)="query.Id=''; refresh()" *ngIf="query.Id" name="close-circle-outline"></ion-icon>
+				</div>
+				<div class="col-code cell">
+					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Code" class="c-input" [ngClass]="{active: query.Code}" type="text">
+					<ion-icon class="min-btn" (click)="query.Code=''; refresh()" *ngIf="query.Code" name="close-circle-outline"></ion-icon>
+				</div>
+				<div class="col-name cell">
+					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Name" class="c-input" [ngClass]="{active: query.Name}" type="text">
+					<ion-icon class="min-btn" (click)="query.Name=''; refresh()" *ngIf="query.Name" name="close-circle-outline"></ion-icon>
+				</div>
+				<div class="col-remark cell"></div>
+				<button mat-raised-button type="submit" style="display:none">Search</button>
+			</header>
+		</form>
+	</section> -->
+</ion-header>
+
+<ion-content appScrollbarTheme [ngClass]="{withFeature: pageConfig.isShowFeature}" style="z-index: 11;">
+	<ion-fab *ngIf="pageConfig.isShowFeature" style="top: -45px;" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
+		<ion-toolbar class="no-padding">
+			<ion-searchbar class="search-box" [(ngModel)]="query.Id" style="padding-bottom: 2px;height: 45px;" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-work-order.id-search-placeholder' | translate}}"></ion-searchbar>
+		</ion-toolbar>
+
+		<app-page-message [itemsLength]="items.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+		<div *ngIf="items.length && pageConfig.showSpinner==false">
+			<section class="table">
+				<ion-virtual-scroll [items]="items" approxItemHeight="72px">
+					<ng-container *virtualItem="let i; let itemBounds = bounds; let j = index;">
+						<div (click)="nav('pos-work-order/'+i.Id,'forward')" class="row clickable" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}">
+							<div class="col-checkbox cell">
+								<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
+							</div>
+							<div class="col-id cell">
+								{{i.Id}}
+							</div>
+							<div class="col-code cell">
+								<span *ngFor="let t of i._Tables">{{t.Name}}</span>
+							</div>
+							<div class="col-code cell">
+								<span>
+									<ion-text [color]="i.Status.Color" [title]="i.Status.Name">
+										{{i.Status.Name}}
+									</ion-text>
+								</span>
+							</div>
+							<div class="col-date cell">
+								{{i.OrderDate | date: 'hh:mm dd/MM'}}
+							</div>
+							<div class="col-number cell">
+								{{i.TotalAfterTax | currency: 'VND':'':'1.0-0':''}}
+							</div>
+						</div>
+					</ng-container>
+				</ion-virtual-scroll>
+			</section>
+		</div>
+		<ion-infinite-scroll color="primary" threshold="20%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
+			<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
+		</ion-infinite-scroll>
+	</ion-fab>
+
+
+
+	<div class="ion-padding" style="min-height: calc(100vh - 110px);">
+		<ion-grid fixed>
+			<ng-container *ngFor="let g of tableGroupList | filter:{Id:segmentView}">
+				<ion-row>
+					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+						<ion-list-header class="ion-no-padding">
+							<ion-label color="primary">{{g.Name}}</ion-label>
+						</ion-list-header>
+					</ion-col>
+				</ion-row>
+				<ion-row class="table-holder">
+					<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.Order }" *ngFor="let i of g.TableList">
+						<a [routerLink]="['/'+pageConfig.pageName+'/'+(i.Order || 0)+'/'+i.Id]">
+							<span class="table-dot">
+								<small>{{i.OrderDate | date: 'hh:mm'}}</small>
+							</span>
+							<span class="table-name">{{i.Name}}</span>
+							<span class="table-status" *ngIf="i.Status">
+								<ion-text [color]="i.Status.Color" [title]="i.Status.Name">
+									#{{i.Order}} - {{i.Status.Name}}
+								</ion-text>
+							</span>
+						</a>
+					</ion-col>
+				</ion-row>
+			</ng-container>
+
+		</ion-grid>
+	</div>
+
+</ion-content>

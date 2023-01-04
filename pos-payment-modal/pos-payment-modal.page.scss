@@ -1,0 +1,93 @@
+.payment-methods {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    cursor: pointer;
+
+    ion-icon {
+        transform: scale(1.2);
+        margin: 0px 8px;
+    }
+}
+
+.c-input {
+    &[type="textarea"]{
+        height: 8rem !important;
+    }
+}
+
+.remove-padding {
+    padding: 0px !important;
+}
+
+.remove-margin {
+    margin-bottom: 0px !important;
+}
+
+.topQR {
+    text-align: center;
+    margin: 10px;
+}
+
+.topQR img {
+    width: 90px;
+    height: 90px;
+    border: solid 1px #CCC;
+}
+
+.table-contain {
+    .row {
+        padding-right: 6px;
+        background: var(--ion-color-tertiary-tint);
+    }
+
+    .col-id {
+        max-width: 30px !important;
+        min-width: 30px !important;
+    }
+
+    .col-money {
+        max-width: 120px !important;
+        min-width: 120px !important;
+    }
+    
+    .col-remark {
+        white-space: break-spaces;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 150px;
+        max-width: 250px;
+    }
+}
+
+.header-box {
+    .header-name {
+        .total {
+            .c-control {
+                margin-bottom: 7px;
+            }
+
+            .c-input {
+                text-align: right;
+                color: var(--ion-color-primary);
+            }
+
+            .c-control .c-label {
+                position: absolute;
+                line-height: 3.8rem;
+                margin-left: 9px;
+                width: auto;
+            }
+        }
+    }
+}
+.sticky-btn {
+    position: sticky;
+    bottom: -20px;
+    z-index: 20;
+    background-color: var(--ion-background-color);
+}
+
+.col-del {
+    width: 35px;
+}

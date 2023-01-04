@@ -1,0 +1,65 @@
+<ion-header>
+    <ion-toolbar>
+        <!-- <ion-buttons slot="start" class="ion-hide-sm-down_">
+            <ion-button color="dark" class="ion-hide-sm-down_" *ngIf="item">
+                Ghi chú {{item.ItemName}}
+                
+            </ion-button>
+        </ion-buttons> -->
+
+        <ion-buttons slot="primary">
+            <!-- <ion-button title="{{'erp.app.pages.sale.sale-order.merge.help' | translate}}" (click)="help()">
+                <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+            </ion-button> -->
+
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="saveValue()">
+                <ion-icon slot="icon-only" name="close"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+
+
+</ion-header>
+<ion-content appScrollbarTheme>
+    <img class="item-image" src="assets/pos-icons/POS-Item-demo.png">
+    <div class="item-content">
+        <div class="ion-padding">
+            <label class="item-name">{{ selectedItem.Name }}</label>
+            <div class="item-price">
+                {{ PriceText }}
+                <div class="uom">
+                    <span><small>{{selectedItem.UoMs[0].Name}}</small></span>
+                </div>
+            </div>
+            <p class="item-desc">{{ selectedItem.Remark ? selectedItem.Remark : "" }}</p>
+        </div>
+        <div class="ion-padding remark">
+            <div class="c-control">
+                <label class="item-remark-label">Yêu cầu khác</label>
+                <textarea rows="2" class="c-input item-remark" id="Remark" [(ngModel)]="selectedItem.Memo" spellcheck="false"
+                    placeholder="Thêm yêu cầu cho món" type="textarea">
+                </textarea>
+            </div>
+        </div>
+
+        <div class="item-button sticky-btn">
+            <div style="display: flex; align-items: center;">
+                <ion-button fill="outline" class="ion-float-left qty-btn" size="small" (click)="changeQuantity(-1)">
+                    <ion-icon slot="icon-only" name="remove"></ion-icon>
+                </ion-button>
+                <span class="ion-float-left qty-num">{{ Quantity }}</span>
+                <ion-button fill="outline" class="ion-float-left qty-btn" size="small" (click)="changeQuantity(1)">
+                    <ion-icon slot="icon-only" name="add"></ion-icon>
+                </ion-button>
+            </div>
+            <div>
+                <ion-button (click)="saveValue(true)" color="warning" class="ion-float-right save-btn">
+                    <span>Chọn món {{ TotalText }}</span>
+                </ion-button>
+            </div>
+        </div>
+    </div>
+
+
+
+</ion-content>

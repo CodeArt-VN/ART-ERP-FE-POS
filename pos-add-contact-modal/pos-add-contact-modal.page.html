@@ -1,0 +1,129 @@
+<ion-header>
+	<ion-toolbar>
+		<ion-title>{{'erp.app.pages.sale.sale-order-mobile-add-contact.page-title' | translate}}</ion-title>
+		<ion-buttons slot="primary">
+			<ion-button title="{{'erp.app.pages.sale.sale-order-mobile-add-contact.close-modal' | translate}}" color="secondary" (click)="addNewContact()">
+				<ion-icon slot="icon-only" name="close"></ion-icon>
+			</ion-button>
+		</ion-buttons>
+	</ion-toolbar>
+</ion-header>
+<ion-content appScrollbarTheme>
+	<form [formGroup]="formGroup">
+		<ion-grid fixed>
+			<ion-row>
+				<ion-col>
+					<div class="c-control">
+						<label class="c-label" for="Name">Tên người xuất hóa đơn
+							<span *ngIf="!formGroup['controls'].Name.valid && !formGroup['controls'].Name.pending && (formGroup['controls'].Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+						</label>
+						<input class="c-input" id="Name" formControlName="Name" type="text">
+					</div>
+					<div class="c-control">
+						<label class="c-label" for="CompanyName">Tên công ty
+							<span *ngIf="!formGroup['controls'].CompanyName.valid && !formGroup['controls'].CompanyName.pending && (formGroup['controls'].CompanyName.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+						</label>
+						<input class="c-input" id="CompanyName" formControlName="CompanyName" type="text">
+					</div>
+					<div class="c-control">
+						<label class="c-label" for="TaxCode">Mã số thuế
+							<span *ngIf="!formGroup['controls'].TaxCode.valid && !formGroup['controls'].TaxCode.pending && (formGroup['controls'].TaxCode.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+						</label>
+						<input class="c-input" id="TaxCode" formControlName="TaxCode" type="text">
+					</div>
+					<div class="c-control">
+						<label class="c-label" for="BillingAddress">Địa chỉ hóa đơn
+							<span *ngIf="!formGroup['controls'].BillingAddress.valid && !formGroup['controls'].BillingAddress.pending && (formGroup['controls'].BillingAddress.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+						</label>
+						<input class="c-input" id="BillingAddress" formControlName="BillingAddress" type="text">
+					</div>
+
+					<div class="c-control">
+						<span class="no-warp">
+							<input id="IsPersonal1" type="radio" [value]="true" formControlName="IsPersonal" class="c-checkbox">
+							<label class="c-label radio" for="IsPersonal1">
+								<span>{{'erp.app.pages.crm.business-partner-detail.radio-personal' | translate}}</span>
+							</label>
+						</span>
+						<span class="no-warp">
+							<input id="IsPersonal2" type="radio" [value]="false" formControlName="IsPersonal" class="c-checkbox">
+							<label class="c-label radio" for="IsPersonal2">
+								<span>{{'erp.app.pages.crm.business-partner-detail.radio-cooperate' | translate}}</span>
+								<span *ngIf="!formGroup['controls'].IsPersonal.valid && !formGroup['controls'].IsPersonal.pending && (formGroup['controls'].IsPersonal.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+							</label>
+						</span>
+					</div>
+
+					<ng-container *ngFor="let add of [$any(formGroup['controls'].Address)]">
+						<ng-container [formGroup]="add">
+							<div class="c-control">
+								<label class="c-label" for="Contact">{{'erp.app.pages.sale.sale-order-mobile-add-contact.contact' | translate}}
+									<span *ngIf="!add['controls'].Contact.valid && !add['controls'].Contact.pending && (add['controls'].Contact.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+								</label>
+								<input class="c-input" id="Contact" formControlName="Contact" type="text">
+							</div>
+
+							<div class="c-control">
+								<label class="c-label" for="Phone1">{{'erp.app.pages.sale.sale-order-mobile-add-contact.phone1' | translate}}
+									<span *ngIf="!add['controls'].Phone1.valid && !add['controls'].Phone1.pending && (add['controls'].Phone1.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+								</label>
+								<input class="c-input" formControlName="Phone1" type="tel">
+							</div>
+
+							<div class="c-control">
+								<label class="c-label" [for]="'Province'">{{'erp.app.pages.sale.sale-order-mobile-add-contact.province' | translate}}
+									<span *ngIf="!add['controls'].Province.valid && !add['controls'].Province.pending && (add['controls'].Province.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+								</label>
+								<input class="c-input" [attr.id]="'Province'" formControlName="Province">
+							</div>
+							<div class="c-control">
+								<label class="c-label" [for]="'District'">{{'erp.app.pages.sale.sale-order-mobile-add-contact.district' | translate}}
+									<span *ngIf="!add['controls'].District.valid && !add['controls'].District.pending && (add['controls'].District.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+								</label>
+								<input class="c-input" [attr.id]="'District'" formControlName="District">
+							</div>
+							<div class="c-control">
+								<label class="c-label" [for]="'Ward'">{{'erp.app.pages.sale.sale-order-mobile-add-contact.ward' | translate}}
+									<span *ngIf="!add['controls'].Ward.valid && !add['controls'].Ward.pending && (add['controls'].Ward.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+								</label>
+								<input class="c-input" [attr.id]="'Ward'" formControlName="Ward">
+							</div>
+							<div class="c-control">
+								<label class="c-label" [for]="'AddressLine1'">{{'erp.app.pages.sale.sale-order-mobile-add-contact.addressline1' | translate}}
+									<span *ngIf="!add['controls'].AddressLine1.valid && !add['controls'].AddressLine1.pending && (add['controls'].AddressLine1.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+								</label>
+								<input class="c-input" [attr.id]="'AddressLine1'" formControlName="AddressLine1">
+							</div>
+
+							<div class="c-control">
+								<label class="c-label" [for]="'AddressLine2'">{{'erp.app.pages.sale.sale-order-mobile-add-contact.addressline2' | translate}}
+									<span *ngIf="!add['controls'].AddressLine2.valid && !add['controls'].AddressLine2.pending && (add['controls'].AddressLine2.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+								</label>
+								<input class="c-input" [attr.id]="'AddressLine2'" formControlName="AddressLine2">
+							</div>
+						</ng-container>
+					</ng-container>
+
+					<div class="c-control">
+						<label class="c-label" for="Code">{{'erp.app.pages.sale.sale-order-mobile-add-contact.code' | translate}}
+							<span *ngIf="!formGroup['controls'].Code.valid && !formGroup['controls'].Code.pending && (formGroup['controls'].Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+						</label>
+						<input class="c-input" id="Code" formControlName="Code" type="text">
+					</div>
+
+					<div class="c-control">
+						<label class="c-label" for="Remark">{{'erp.app.pages.sale.sale-order-mobile-add-contact.remark' | translate}}
+							<span *ngIf="!formGroup['controls'].Remark.valid && !formGroup['controls'].Remark.pending && (formGroup['controls'].Remark.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+						</label>
+						<textarea rows="3" class="c-input" id="Remark" formControlName="Remark" type="textarea"></textarea>
+					</div>
+
+					<div class="c-control ion-text-right">
+						<label class="c-label" for=""></label>
+						<ion-button (click)="saveChange()">{{'erp.app.pages.sale.sale-order-mobile-add-contact.add-new' | translate}}</ion-button>
+					</div>
+				</ion-col>
+			</ion-row>
+		</ion-grid>
+	</form>
+</ion-content>
