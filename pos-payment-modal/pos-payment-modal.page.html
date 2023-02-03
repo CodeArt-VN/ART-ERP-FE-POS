@@ -113,18 +113,7 @@
                     </ng-container> -->
 
                     <ng-container *ngIf="VisaMasterOptions">
-                        <!-- <ng-container *ngIf="contactSelected.IsStaff"> -->
-                            <div class="c-control">
-                                <label class="c-label" for="IDTitle">Chức vụ</label>
-                                <ng-container *ngFor="let d of titleList">
-                                    <ion-button [fill]="d.IsSelected ? 'solid' : 'outline'" size="small" (click)="toogleTitleSelect(d)">
-                                        {{d.Name | uppercase }}
-                                    </ion-button>
-                                </ng-container>
-                            </div>
-                        <!-- </ng-container> -->
-
-                        <div class="c-control">
+                        <div class="c-control"> 
                             <label class="c-label" for="IDBank">Ngân hàng</label>
                             <!-- <ng-select class="c-input" #IDBank  labelForId="IDBank" [(ngModel)]="item.IDBank" [items]="bankList" [clearable]="true" bindLabel="Name" bindValue="Id" placeholder="Chọn ngân hàng chuyển đến...">
                             </ng-select> -->

@@ -434,10 +434,6 @@
 													<ng-container *ngIf="item?.IDAddress == 903">- Mang đi</ng-container>
 												</td>
 											</tr>
-											<tr *ngIf="kitchenQuery=='all' && isDebtOrder">
-												<td class="title">{{'erp.app.pages.pos.pos-order.title' | translate}}</td>
-												<td>{{TitleSelectedName}}</td>
-											</tr>
 											<tr *ngIf="kitchenQuery!='all'">
 												<td class="title">{{'erp.app.pages.pos.pos-order.send-to' | translate}}</td>
 												<td><span *ngFor="let k of kitchenList | filter:{Id: kitchenQuery}">{{k.Name}}</span></td>
@@ -548,7 +544,7 @@
 												<td class="text-right"><span>{{item.TotalAfterServiceCharge  | currency: 'VND':'':'1.0-0':''}}</span></td>
 											</tr>
 											<tr>
-												<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} (8%)</td>
+												<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} ({{item.TaxRate}}%)</td>
 												<td class="text-right"><span>{{item.Tax  | currency: 'VND':'':'1.0-0':''}}</span></td>
 											</tr>
 										</table>

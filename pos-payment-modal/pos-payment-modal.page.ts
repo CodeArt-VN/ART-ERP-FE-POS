@@ -53,7 +53,7 @@ export class POSPaymentModalPage extends PageBase {
         {
             Id: 4,
             IDType: 1402,
-            Name: 'Credit Card',
+            Name: 'Cà thẻ',
             Icon: 'Card',
             Selected: false,
         },
@@ -76,7 +76,7 @@ export class POSPaymentModalPage extends PageBase {
         },
         {
             IDType: 1402,
-            Type: 'Credit Card',
+            Type: 'Cà thẻ',
         },
     ]
 
@@ -98,35 +98,6 @@ export class POSPaymentModalPage extends PageBase {
         },
     ];
     selectedBank;
-
-    titleList = [
-        {
-            Id: 1,
-            Name: 'BOD',
-            IsSelected: false
-        },
-        {
-            Id: 2,
-            Name: 'BOM',
-            IsSelected: false
-        },
-        {
-            Id: 3,
-            Name: 'SALE',
-            IsSelected: false
-        },
-        {
-            Id: 4,
-            Name: 'MARKETING',
-            IsSelected: false
-        },
-        {
-            Id: 5,
-            Name: 'OTHERS',
-            IsSelected: false
-        },
-    ];
-    selectedTitle;
 
     paymentDetailList = []
     transactionsList: any = [];
@@ -612,7 +583,7 @@ export class POSPaymentModalPage extends PageBase {
             transaction.Amount = this.item.MomoWalletReceived;
         }
         else if (this.VisaMasterOptions) {
-            transaction.Type = 'Credit Card';
+            transaction.Type = 'Cà thẻ';
             transaction.IDType = 1402;
             transaction.Amount = this.item.VisaMasterReceived;
 
@@ -627,7 +598,7 @@ export class POSPaymentModalPage extends PageBase {
         }
         if (this.selectedBank?.Name) {
             this.item.Remark = (this.item.Remark || '');
-            transaction.Remark = this.item.Remark + ( this.selectedBank? ' | ' + this.selectedBank.Name : '') + (this.selectedTitle? ' | ' + this.selectedTitle.Name : '');
+            transaction.Remark = this.item.Remark + ' | ' + this.selectedBank?.Name;
         }
         else {
             transaction.Remark = this.item.Remark;
@@ -771,7 +742,7 @@ export class POSPaymentModalPage extends PageBase {
                                 text: 'Đồng ý',
                                 cssClass: 'danger-btn',
                                 handler: () => {
-                                    this.modalController.dismiss([this.selectedOrder, this.orderInvoice, this.contactSelected, this.transactionsList, this.InvoiceOptions, andPrint, this.isDebtOrder, this.selectedTitle?.Name]);
+                                    this.modalController.dismiss([this.selectedOrder, this.orderInvoice, this.contactSelected, this.transactionsList, this.InvoiceOptions, andPrint]);
                                 }
                             }
                         ]
@@ -793,7 +764,7 @@ export class POSPaymentModalPage extends PageBase {
                                 text: 'Đồng ý',
                                 cssClass: 'danger-btn',
                                 handler: () => {
-                                    this.modalController.dismiss([this.selectedOrder, this.orderInvoice, this.contactSelected, this.transactionsList, this.InvoiceOptions, andPrint, this.isDebtOrder, this.selectedTitle?.Name]);
+                                    this.modalController.dismiss([this.selectedOrder, this.orderInvoice, this.contactSelected, this.transactionsList, this.InvoiceOptions, andPrint]);
                                 }
                             }
                         ]
@@ -804,7 +775,7 @@ export class POSPaymentModalPage extends PageBase {
             }
         }
         else {
-            this.modalController.dismiss([this.selectedOrder, this.orderInvoice, this.contactSelected, this.transactionsList, this.InvoiceOptions, andPrint, this.isDebtOrder, this.selectedTitle?.Name]);
+            this.modalController.dismiss([this.selectedOrder, this.orderInvoice, this.contactSelected, this.transactionsList, this.InvoiceOptions, andPrint]);
         }
     }
 
@@ -903,43 +874,16 @@ export class POSPaymentModalPage extends PageBase {
     }
 
     toogleBankSelect(b) {
-        b.IsSelected = !b.IsSelected;
-
+        // b.IsSelected = !b.IsSelected;
         this.bankList.forEach(ds => {
-            if (ds.Id != b.Id) {
+            if (ds.Id == b.Id) {
+                ds.IsSelected = true;
+                this.selectedBank = ds;
+            }
+            else {
                 ds.IsSelected = false;
             }
         });
-
-        if (b.IsSelected == true) {
-            this.selectedBank = b;
-        }
-        else {
-            this.selectedBank = null;
-        }
-    }
-
-    toogleTitleSelect(d) {
-        d.IsSelected = !d.IsSelected;
-
-        this.titleList.forEach(dp => {
-            if (dp.Id != d.Id) {
-                dp.IsSelected = false;
-            }
-        });
-
-        if (d.IsSelected == true) {
-            this.selectedTitle = d;
-            this.isDebtOrder = true;
-            this.env.showTranslateMessage('Khách hàng là ' + this.selectedTitle?.Name + '. Đơn khi thanh toán sẽ lưu Còn nợ.', 'warning');
-        }
-        else {
-            this.selectedTitle = null;
-            this.isDebtOrder = false;
-            this.env.showTranslateMessage('Đơn thanh toán bình thường.');
-        }
-
-        console.log(this.selectedTitle?.Name + this.isDebtOrder);
-    }
+    } 
 
 }

@@ -128,14 +128,14 @@ export class POSOrderPage extends PageBase {
 
                 //Update Blinking for Orders Update
                 o.NeedPrint = false;
-                if (o?.OrderLines.length != 0) {
-                    o.OrderLines.forEach(e => {
-                        e.Additional = e.Quantity - e.ShippedQuantity;
-                        if (e.Additional > 0) {
-                            o.NeedPrint = true;
-                        }
-                    });
-                }
+                // if (o?.OrderLines.length != 0) {
+                //     o.OrderLines.forEach(e => {
+                //         e.Additional = e.Quantity - e.ShippedQuantity;
+                //         if (e.Additional > 0) {
+                //             o.NeedPrint = true;
+                //         }
+                //     });
+                // }
 
                 o._Tables = [];
                 if(!o.Tables) o.Tables = [];

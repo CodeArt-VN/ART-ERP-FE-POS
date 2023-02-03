@@ -50,7 +50,7 @@ export class POSOrderDetailPage extends PageBase {
     arInvoiceStatusList = [];
     OrderAdditionTypeList = [];
     OrderDeductionTypeList = [];
-    paymentMethod = ['Tiền mặt', 'Chuyển khoản', 'Ví Momo', 'Credit Card', 'Thẻ ATM'];
+    paymentMethod = ['Tiền mặt', 'Chuyển khoản', 'Ví Momo', 'Cà thẻ', 'Thẻ ATM'];
     Methods = [
         {
             Id: 1,
@@ -76,7 +76,7 @@ export class POSOrderDetailPage extends PageBase {
         {
             Id: 4,
             IDType: 1402,
-            Name: 'Credit Card',
+            Name: 'Cà thẻ',
             Icon: 'Card',
             Selected: false,
         },
@@ -100,7 +100,7 @@ export class POSOrderDetailPage extends PageBase {
         },
         {
             IDType: 1402,
-            Type: 'Credit Card',
+            Type: 'Cà thẻ',
         },
     ]
 
@@ -158,8 +158,6 @@ export class POSOrderDetailPage extends PageBase {
     // OriginalTotalDiscount: 0
 
     IDContactChanged = false;
-    isDebtOrder = false;
-    TitleSelectedName = '';
 
     AllSegmentImage;
 
@@ -1215,7 +1213,7 @@ export class POSOrderDetailPage extends PageBase {
         this.item.TotalAfterTax = this.item.OrderLines.map(x => x.TotalAfterTax).reduce((a, b) => (+a) + (+b), 0);
         this.item.Received = this.transactionsList.map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
         this.item.TheChange = this.item.Received - this.item.TotalAfterTax;
-        // this.item.TaxRate = ((this.item.Tax / this.item.TotalAfterDiscount) * 100).toFixed();
+        this.item.TaxRate = ((this.item.Tax / this.item.TotalAfterServiceCharge) * 100).toFixed();
         this.item.OrderDateText = lib.dateFormat(this.item.OrderDate, 'hh:MM dd/mm/yyyy');
 
         this.item.OriginalDiscount1 = 0;
@@ -1533,7 +1531,6 @@ export class POSOrderDetailPage extends PageBase {
 
         this.idx4;
         let actualPrinters = [];
-        
         
         let ConnectOption = 
             {   
@@ -2034,8 +2031,6 @@ export class POSOrderDetailPage extends PageBase {
         this.transactionsList = data[3];
         let andCreateInvoice = data[4];
         let andPrint = data[5];
-        this.isDebtOrder = data[6];
-        this.TitleSelectedName = data[7];
 
         if ( this.item.IDStatus != 113 && this.item.IDStatus != 114 && this.item.IDStatus != 115 ) {
             if (newContact) {
@@ -2093,12 +2088,10 @@ export class POSOrderDetailPage extends PageBase {
                             i.OriginalTax = i.Tax;
                             i.OriginalTotalAfterTax = i.TotalAfterTax;
                         });
-                        if (this.isDebtOrder) {
-                            this.item.Remark = this.TitleSelectedName;
-                            this.saveChange(true, 113); //Đơn còn nợ, dành cho khách là nhân viên thuộc các nhóm BOD/BOM/SALE/MARKETING/OTHERS
+                        if (this.contactSelected.IsStaff) { 
+                            this.saveChange(true, 113); //Đơn còn nợ, dành cho khách là nhân viên
                         }
                         else {
-                            this.item.Remark = '';
                         this.saveChange(true, 114); //Only when all Done
                         }
                     });
@@ -2148,7 +2141,7 @@ export class POSOrderDetailPage extends PageBase {
                     this.MomoWalletTotal = 0;
                 }
             }
-            else if (e.Name == "Credit Card") {
+            else if (e.Name == "Cà thẻ") {
                 if (selected == true) {
                     this.VisaMasterOptions = true;
                     this.VisaMasterTotal = this.transactionsList.filter(y => y.IDType == e.IDType).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);

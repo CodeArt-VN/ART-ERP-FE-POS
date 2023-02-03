@@ -44,7 +44,7 @@ export class POSCustomerOrderPage extends PageBase {
         { Id: 114, Code: 'done', Name: 'Đã xong' },
         { Id: 115, Code: 'cancelled', Name: 'Đã hủy' }
     ];
-    paymentMethod = ['Tiền mặt', 'Chuyển khoản', 'Ví Momo', 'Credit Card', 'Thẻ ATM'];
+    paymentMethod = ['Tiền mặt', 'Chuyển khoản', 'Ví Momo', 'Cà thẻ', 'Thẻ ATM'];
     Methods = [
         {
             Id: 1,
@@ -70,7 +70,7 @@ export class POSCustomerOrderPage extends PageBase {
         {
             Id: 4,
             IDType: 1402,
-            Name: 'Credit Card',
+            Name: 'Cà thẻ',
             Icon: 'Card',
             Selected: false,
         },
@@ -94,7 +94,7 @@ export class POSCustomerOrderPage extends PageBase {
         },
         {
             IDType: 1402,
-            Type: 'Credit Card',
+            Type: 'Cà thẻ',
         },
     ]
 
@@ -1055,7 +1055,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.item.TotalAfterTax = this.item.OrderLines.map(x => x.TotalAfterTax).reduce((a, b) => (+a) + (+b), 0);
         this.item.Received = this.transactionsList.map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
         this.item.TheChange = this.item.Received - this.item.TotalAfterTax;
-        // this.item.TaxRate = ((this.item.Tax / this.item.TotalAfterDiscount) * 100).toFixed();
+        this.item.TaxRate = ((this.item.Tax / this.item.TotalAfterServiceCharge) * 100).toFixed();
         this.item.OrderDateText = lib.dateFormat(this.item.OrderDate, 'hh:MM dd/mm/yyyy');
 
         this.item.OriginalDiscount1 = 0;
@@ -1394,7 +1394,7 @@ export class POSCustomerOrderPage extends PageBase {
                     this.MomoWalletTotal = 0;
                 }
             }
-            else if (e.Name == "Credit Card") {
+            else if (e.Name == "Cà thẻ") {
                 if (selected == true) {
                     this.VisaMasterOptions = true;
                     this.VisaMasterTotal = this.transactionsList.filter(y => y.IDType == e.IDType).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
