@@ -5,7 +5,6 @@ import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
 import { POS_TableProvider, BRA_BranchProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
 import { Location } from '@angular/common';
-import { any } from '@amcharts/amcharts5/.internal/core/util/Array';
 
 @Component({
     selector: 'app-pos-welcome',
