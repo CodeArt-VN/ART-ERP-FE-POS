@@ -15,13 +15,14 @@ ion-content {
 .table-item {
     min-height: 100px;
     min-width: 100px;
-    background: var(--ion-color-tertiary-tint);
-    overflow: hidden;
-    border-radius: 6px;
+    
     margin: 8px;
     padding: 0;
 
     a{
+        background: var(--ion-color-tertiary-tint);
+        overflow: hidden;
+        border-radius: 6px;
         display: block;
         width: 100%;
         height: 100%;
@@ -183,11 +184,7 @@ ion-content {
             order: 5;
             position: absolute;
             right: 8px;
-            bottom: 5px;
-
-            ion-button{
-                font-size: 10px
-            }
+            top: 50px;
         }
     }
 

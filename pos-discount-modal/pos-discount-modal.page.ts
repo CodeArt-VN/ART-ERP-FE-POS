@@ -3,7 +3,7 @@ import { NavController, ModalController, NavParams, LoadingController, AlertCont
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { BANK_PaymentTermProvider, CRM_ContactProvider, CRM_VoucherProvider, POS_CashProvider, POS_TableProvider, SALE_OrderDeductionProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
+import { BANK_PaymentTermProvider, CRM_ContactProvider, CRM_VoucherProvider, POS_TableProvider, SALE_OrderDeductionProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl, FormArray } from '@angular/forms';
 import { NgSelectConfig } from '@ng-select/ng-select';
 import { concat, of, Subject } from 'rxjs';
@@ -22,66 +22,12 @@ import { CRM_BusinessPartnerProvider } from 'src/app/services/custom.service';
     styleUrls: ['./pos-discount-modal.page.scss'],
 })
 export class POSDiscountModalPage extends PageBase {
-    @Input() selectedOrder;
-
-    OrderAdditionTypeList = [];
     OrderDeductionTypeList = [];
     DiscountList = [];
-    
-    memberRewards = [
-        {
-            CGRP_Code: 1,
-            CGRP_Name: 'REWARD-1',
-            Food_DiscPer: 0,
-            Wine_DiscPer: 10,
-            Birthday_DiscPer: 10,
-            Over20Person: 5,
-            Other_DiscPer: 0,
-            CardLevel: 1,
-            GemLounge_DiscPer: 5,
-        },
-        {
-            CGRP_Code: 2,
-            CGRP_Name: 'REWARD-2',
-            Food_DiscPer: 5,
-            Wine_DiscPer: 15,
-            Birthday_DiscPer: 10,
-            Over20Person: 5,
-            Other_DiscPer: 5,
-            CardLevel: 2,
-            GemLounge_DiscPer: 10,
-        },
-        {
-            CGRP_Code: 3,
-            CGRP_Name: 'PRIVILEGE',
-            Food_DiscPer: 10,
-            Wine_DiscPer: 20,
-            Birthday_DiscPer: 15,
-            Over20Person: 5,
-            Other_DiscPer: 5,
-            CardLevel: 3,
-            GemLounge_DiscPer: 15,
-        },
-        {
-            CGRP_Code: 4,
-            CGRP_Name: 'PLATINUM',
-            Food_DiscPer: 15,
-            Wine_DiscPer: 25,
-            Birthday_DiscPer: 20,
-            Over20Person: 5,
-            Other_DiscPer: 5,
-            CardLevel: 4,
-            GemLounge_DiscPer: 20,
-        },
-    ]
     voucherList: any = [];
-
     selectedVoucher: any;
-
     InternalOptions = false;
-
     discountInfo:any = {};
-
     constructor(
         public pageProvider: SALE_OrderProvider,
         public contactProvider: CRM_ContactProvider,
@@ -119,7 +65,7 @@ export class POSDiscountModalPage extends PageBase {
     preLoadData(event) {
         Promise.all([
             this.env.getType('OrderDeduction'),
-            this.saleOrderDeduction.read({IDOrder: this.selectedOrder.Id})
+            this.saleOrderDeduction.read({IDOrder: this.item.Id})
         ]).then((results:any) => {
             this.OrderDeductionTypeList = results[0];
             this.DiscountList = results[1].data;
@@ -130,51 +76,77 @@ export class POSDiscountModalPage extends PageBase {
     loadData(event) {
 
         this.item = {
-            Id: this.selectedOrder.Id, 
-            IDContact: this.selectedOrder.IDContact, 
-            IDAddress: this.selectedOrder.IDAddress, 
-            IDTable: this.selectedOrder.Tables[0], 
-            IDOrder: this.selectedOrder.Id, 
-            PercentDiscount: (this.selectedOrder.PercentDiscount || 0),
-            DiscountAmount: (this.selectedOrder.DiscountAmount || 0),
-            InternalPercentDiscount: (this.selectedOrder.InternalPercentDiscount || 0),
-            InternalDiscountAmount: (this.selectedOrder.InternalDiscountAmount || 0),
+            Id: this.item.Id, 
+            IDContact: this.item.IDContact, 
+            IDAddress: this.item.IDAddress, 
+            IDTable: this.item.Tables[0], 
+            IDOrder: this.item.Id, 
+            PercentDiscount: (this.item.PercentDiscount || 0),
+            DiscountAmount: (this.item.DiscountAmount || 0),
+            InternalPercentDiscount: (this.item.InternalPercentDiscount || 0),
+            InternalDiscountAmount: (this.item.InternalDiscountAmount || 0),
 
-            TotalDiscount: (this.selectedOrder.TotalDiscount || 0),
+            TotalDiscount: (this.item.TotalDiscount || 0),
             QRC: null
         };
 
+        this.getVoucher()
+        this.getDiscount()
+
+        if (this.DiscountList.length != 0) {
+            this.DiscountList.forEach(d => {
+                if (d.Type == 'TradeDiscount') {
+                    console.log('TradeDiscount: ' + d.Amount);
+                }
+                else if (d.Type == 'SalesOff') {
+                    this.item.DiscountAmount = d.Amount;
+                    this.changeAmountDiscount();
+                }
+                else if (d.Type == 'Voucher') {
+                    this.item.VoucherCode = d.Code;
+                    this.applyVoucher();
+                }
+                else if (d.Type == 'Membership') {
+                    this.item.MembershipDiscount = d.Amount;
+                    this.changeMembershipDiscount();
+                }
+                else if (d.Type == 'InternalDiscount') {
+                    this.item.InternalDiscountAmount = d.Amount;
+                    this.changeInternalDiscountAmount();
+                }
+            });
+        }       
+        super.loadData(event);
+    }
+
+    getVoucher(){
         this.voucherProvider.read().then((results: any) => {
             this.voucherList = results.data;
             this.voucherList.forEach(e => {
                 e.AmountText = lib.currencyFormat(e.Amount);
-            });
-
-            if (this.DiscountList.length != 0) {
-                this.DiscountList.forEach(d => {
-                    if (d.Type == 'TradeDiscount') {
-                        console.log('TradeDiscount: ' + d.Amount);
-                    }
-                    else if (d.Type == 'SalesOff') {
-                        this.item.DiscountAmount = d.Amount;
-                        this.changeAmountDiscount();
-                    }
-                    else if (d.Type == 'Voucher') {
-                        this.item.VoucherCode = d.Code;
-                        this.applyVoucher();
-                    }
-                    else if (d.Type == 'Membership') {
-                        this.item.MembershipDiscount = d.Amount;
-                        this.changeMembershipDiscount();
-                    }
-                    else if (d.Type == 'InternalDiscount') {
-                        this.item.InternalDiscountAmount = d.Amount;
-                        this.changeInternalDiscountAmount();
-                    }
-                });
-            }
-            super.loadData(event);
+            });         
+            
         });
+    }
+    memberCart 
+    internalPromotion
+    getDiscount(){
+       
+        // this.posContactProvider.GetDiscount({ Take: 20, Skip: 0, Term: this.item.IDContact }).subscribe((data:any)=>{
+           
+        //     if(data.MemberCard?.length || data.InternalPromotion?.length){
+        //         this.memberCart = data.MemberCard
+        //         this.internalPromotion = data.InternalPromotion
+        //         this.item.CardNo = this.memberCart[0]?.Name
+        //         this.item.CardLevel = this.memberCart[0]?.CardLevel
+        //         this.item.MembershipDiscount = this.memberCart[0]?.Amount
+        //         this.item.InternalDiscountAmount = this.internalPromotion[0]?.Amount
+        //         // console.log('get',this.item.MembershipDiscount)
+        //         this.changeMembershipDiscount(true);
+        //         this.changeInternalDiscountAmount(true);
+        //     }
+            
+        // })
     }
 
     loadedData(event) {
@@ -215,7 +187,7 @@ export class POSDiscountModalPage extends PageBase {
             this.contactListInput$.pipe(
                 distinctUntilChanged(),
                 tap(() => this.contactListLoading = true),
-                switchMap(term => this.posContactProvider.SearchContact({ Take: 20, Skip: 0, Term: term ? term : this.item.IDContact }).pipe(
+                switchMap(term => this.posContactProvider.SearchContact({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
                     catchError(() => of([])), // empty list on error
                     tap(() => this.contactListLoading = false)
                 ))
@@ -228,7 +200,7 @@ export class POSDiscountModalPage extends PageBase {
     changedIDContact(i) {
         if (i) {
             this.contactSelected = i;
-            this.selectedOrder.IDContact = i.Id;
+            this.item.IDContact = i.Id;
 
             if (this.contactListSelected.findIndex(d => d.Id == i.Id) == -1) {
                 this.contactListSelected.push(i);
@@ -333,7 +305,7 @@ export class POSDiscountModalPage extends PageBase {
 
     changePercentDiscount(update = false) { //SalesOff
         this.item.PercentDiscount = (parseFloat(this.item.PercentDiscount) || null);
-        this.item.DiscountAmount = this.item.PercentDiscount * this.selectedOrder.TotalBeforeDiscount / 100;
+        this.item.DiscountAmount = this.item.PercentDiscount * this.item.TotalBeforeDiscount / 100;
         this.discountInfo.Type = 'SalesOff';
         this.discountInfo.Amount = this.item.DiscountAmount;
         
@@ -341,8 +313,8 @@ export class POSDiscountModalPage extends PageBase {
     }
 
     changeAmountDiscount(update = false) { //SalesOff
-        this.item.DiscountAmount = (parseFloat(this.item.DiscountAmount) || null);
-        this.item.PercentDiscount = this.item.DiscountAmount / this.selectedOrder.TotalBeforeDiscount * 100;
+        this.item.DiscountAmount = (parseFloat(this.item.DiscountAmount.toFixed(0)) || null);
+        this.item.PercentDiscount = this.item.DiscountAmount / this.item.TotalBeforeDiscount * 100;
         this.discountInfo.Type = 'SalesOff';
         this.discountInfo.Amount = this.item.DiscountAmount;
         
@@ -351,7 +323,7 @@ export class POSDiscountModalPage extends PageBase {
 
     changeInternalPercentDiscount(update = false) { //InternalDiscount
         this.item.InternalPercentDiscount = (parseFloat(this.item.InternalPercentDiscount) || null);
-        this.item.InternalDiscountAmount = this.item.InternalPercentDiscount * this.selectedOrder.TotalBeforeDiscount / 100;
+        this.item.InternalDiscountAmount = this.item.InternalPercentDiscount * this.item.TotalBeforeDiscount / 100;
         this.discountInfo.Type = 'InternalDiscount';
         this.discountInfo.Amount = this.item.InternalDiscountAmount;
         
@@ -360,7 +332,7 @@ export class POSDiscountModalPage extends PageBase {
 
     changeInternalDiscountAmount(update = false) { //InternalDiscount
         this.item.InternalDiscountAmount = (parseFloat(this.item.InternalDiscountAmount) || null);
-        this.item.InternalPercentDiscount = this.item.InternalDiscountAmount / this.selectedOrder.TotalBeforeDiscount * 100;
+        this.item.InternalPercentDiscount = this.item.InternalDiscountAmount / this.item.TotalBeforeDiscount * 100;
         this.discountInfo.Type = 'InternalDiscount';
         this.discountInfo.Amount = this.item.InternalDiscountAmount;
         

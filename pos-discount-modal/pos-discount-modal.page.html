@@ -27,12 +27,12 @@
             <ion-row class="hr-group remove-padding">
                 <ion-col size="12">
 
-                    <div class="c-control" *ngIf="selectedOrder">
+                    <div class="c-control" *ngIf="item">
                         <label class="c-label" for="IDContact">
                             {{'erp.app.pages.sale.sale-order.merge.idcontact' | translate}}
                         </label>
                         <div style="display: flex; align-items: center;">
-                            <ng-select [(ngModel)]="selectedOrder.IDContact" appendTo="#pos-discount-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [disabled]="(selectedOrder.IDStatus == 113 || selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.merge.placeholder-idcontact' | translate}}">
+                            <ng-select [(ngModel)]="item.IDContact" appendTo="#pos-discount-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [disabled]="(item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.merge.placeholder-idcontact' | translate}}">
 								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
 									{{i.Name}}
 									<small *ngIf="a">
@@ -264,7 +264,7 @@
         </ion-grid>
 
         <ion-row class="sticky-btn">
-            <ion-col [hidden]="(selectedOrder.IDStatus == 113 || selectedOrder.IDStatus == 114 || selectedOrder.IDStatus == 115)">
+            <ion-col [hidden]="(item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)">
                 <div class="c-control ion-text-center">
                     <ion-button expand="block" [disabled]="submitAttempt" (click)="applyDiscount(true)">Áp dụng khuyến mãi</ion-button>
                 </div>

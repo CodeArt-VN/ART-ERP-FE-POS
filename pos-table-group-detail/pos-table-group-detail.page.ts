@@ -1,12 +1,11 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
-import { NavController, LoadingController, AlertController } from '@ionic/angular';
+import { NavController, LoadingController, AlertController, ModalController, NavParams } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
 import { POS_TableGroupProvider, POS_TableProvider,  } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
-import QRCode from 'qrcode';
 
 @Component({
     selector: 'app-pos-table-group-detail',
@@ -25,7 +24,9 @@ export class POSTableGroupDetailPage extends PageBase {
         public formBuilder: FormBuilder,
         public cdr: ChangeDetectorRef,
         public loadingController: LoadingController,
-        public commonService: CommonService,
+        public commonService: CommonService,        
+        public modalController: ModalController,
+        public navParams: NavParams,
     ) {
         super();
         this.pageConfig.isDetailPage = true;
@@ -37,33 +38,18 @@ export class POSTableGroupDetailPage extends PageBase {
             Name: ['', Validators.required],
         });
 
-        this.id = this.route.snapshot?.paramMap?.get('id');
-        this.id = typeof (this.id) == 'string' ? parseInt(this.id) : this.id;
     }
+    
 
     preLoadData(event) {
-        this.posTableProvider.read({IDTableGroup: this.id}).then((results:any) =>{
-            this.TableList = results.data;
-
-            if (this.TableList) {
-
-                this.TableList.forEach(t => {
-                    QRCode.toDataURL('http://app.inholdings.vn/#/pos-welcome/' + t.Id, { errorCorrectionLevel: 'M', version: 3, width: 500, scale: 20, type: 'image/webp' }, function (err, url) {
-                        t.QRC = url;
-                    });
-                });
-            }
-
-            super.preLoadData(event);
-        });
-    }
-
-    segmentView = 's1';
-    segmentChanged(ev: any) {
-        this.segmentView = ev.detail.value;
+        if (this.navParams) {
+            this.id = this.navParams.data.id;                
+        }
+         super.preLoadData()
     }
 
     async saveChange() {
+        this.formGroup.controls.IDBranch.setValue(this.env.selectedBranch);
         super.saveChange2();
     }
 }

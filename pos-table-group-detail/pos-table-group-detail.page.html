@@ -1,136 +1,40 @@
 <ion-header>
-    <app-detail-toolbar [page]="this"></app-detail-toolbar>
-</ion-header>
+    <ion-toolbar>
+        <ion-title>{{item.Name??"Thêm Nhóm Bàn"}}</ion-title>
 
-<ion-content appScrollbarTheme class="ion-padding">
-    <div class="main-view" *ngIf="item && pageConfig.showSpinner==false">
+        <ion-buttons slot="primary">
+            <ion-button title="{{'erp.app.pages.admin.form.close-modal' | translate}}" color="secondary" (click)="closeModal()">
+                <ion-icon slot="icon-only" name="close"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+
+    </ion-toolbar>
+</ion-header> -->
+<ion-content appScrollbarTheme class="ion-padding" fullscreen>
+    <form [formGroup]="formGroup">
         <ion-grid fixed>
-            <ion-row>
-                <ion-col class="img-holder" size="12" size-sm="300px">
-                    <div class="avatar">
-                        <img src="assets/undraw_street_food_hm5i.svg" (error)="img.src = 'assets/undraw_street_food_hm5i.svg'" #img>
-                        <div>
-                            <ion-button class="change-avatar" *ngIf="item.IsDisabled" color="danger" size="small">
-                                {{'erp.app.pages.pos.pos-table-detail.disabled' | translate}}
-                            </ion-button>
-                            <ion-button class="change-avatar" *ngIf="!item.IsDisabled && item.Id" color="primary" size="small">
-                                {{'erp.app.pages.pos.pos-table-detail.change-avatar' | translate}}
-                            </ion-button>
-                        </div>
+            <ion-row class="hr-group">                
+                <ion-col size="12" size-sm size-xl="12">
+                    <div class="c-control" *ngIf="item.Id">
+                        <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-table-detail.id' | translate}}</label>
+                        <input class="c-input" id="Id" formControlName="Id" type="number">
                     </div>
+                    <div class="c-control">
+                        <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-table-detail.code' | translate}}
+                            <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                        </label>
+                        <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
+                    </div>
+                    <div class="c-control">
+                        <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-table-detail.name' | translate}}
+                            <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                        </label>
+                        <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
+                    </div>                   
+
                 </ion-col>
-                <ion-col size="12" size-sm>
-                    <ion-grid>
-                        <ion-row>
-                            <ion-col size="12" size-md="12" size-lg="12" size-xl="5">
-                                <div class="c-control">
-                                    <label class="c-label">{{'erp.app.pages.pos.pos-table-detail.name' | translate}}
-                                        <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                                    </label>
-                                    <input readonly class="c-input" [ngModel]="item.Name" type="text">
-                                </div>
-                            </ion-col>
-                            <ion-col size="12" size-md="12" size-lg="12" size-xl="5">
-                                
-                            </ion-col>
-                        </ion-row>
-                    </ion-grid>
-                </ion-col>
-            </ion-row>
+            </ion-row>            
         </ion-grid>
+    </form>
 
-        <div class="row-full shadow full-screen">
-            <ion-toolbar color="primary">
-                <ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
-                    <ion-segment-button value="s1">
-                        <ion-label>{{'erp.app.pages.pos.pos-table-detail.general' | translate}}</ion-label>
-                    </ion-segment-button>
-                    <ion-segment-button value="s2">
-                        <ion-label>{{'erp.app.pages.pos.pos-table-detail.detail' | translate}}</ion-label>
-                    </ion-segment-button>
-                </ion-segment>
-            </ion-toolbar>
-
-            <div>
-                <div *ngIf="segmentView == 's1'">
-                    <div class="ion-padding">
-                        <ion-grid fixed>
-                            <form [formGroup]="formGroup">
-                                <ion-row class="hr-group">
-                                    <ion-col size="12" size-sm="12" size-md="12" size-xl="3">
-                                        <ion-list-header class="ion-no-padding">
-                                            <ion-label color="primary">{{'erp.app.pages.pos.pos-table-detail.general' | translate}}</ion-label>
-                                        </ion-list-header>
-                                    </ion-col>
-                                    <ion-col size="12" size-sm size-xl="4">
-                                        <div class="c-control" *ngIf="item.Id">
-                                            <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-table-detail.id' | translate}}</label>
-                                            <input class="c-input" id="Id" formControlName="Id" type="number">
-                                        </div>
-                                        <div class="c-control">
-                                            <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-table-detail.code' | translate}}
-                                                <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                                            </label>
-                                            <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
-                                        </div>
-                                        <div class="c-control">
-                                            <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-table-detail.name' | translate}}
-                                                <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                                            </label>
-                                            <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
-                                        </div>
-
-                                        
-
-                                    </ion-col>
-                                    <ion-col size="12" size-sm size-xl="4">
-
-
-                                    </ion-col>
-                                </ion-row>
-                            </form>
-                        </ion-grid>
-                    </div>
-                </div>
-                <div *ngIf="segmentView == 's2'">
-
-                    <div class="ion-padding">
-                        <ion-grid fixed>
-                            <ion-row class="hr-group" *ngFor="let t of TableList">
-                                <ion-col size="12" size-sm="12" size-md="12" size-xl="3">
-                                    <ion-list-header class="ion-no-padding">
-                                        <ion-label color="primary">Thông tin bàn</ion-label>
-                                    </ion-list-header>
-                                </ion-col>
-                                <ion-col size="12" size-sm size-xl="4">
-                                    <div class="c-control" *ngIf="t.Id">
-                                        <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-table-detail.id' | translate}}</label>
-                                        <input class="c-input" readonly id="Id" [(ngModel)]="t.Id" type="number">
-                                    </div>
-                                    <div class="c-control">
-                                        <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-table-detail.code' | translate}}</label>
-                                        <input class="c-input" readonly id="Code" [(ngModel)]="t.Code" type="text">
-                                    </div>
-                                    <div class="c-control">
-                                        <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-table-detail.name' | translate}}</label>
-                                        <input class="c-input" readonly id="Name" [(ngModel)]="t.Name" type="text">
-                                    </div>
-                                </ion-col>
-                                <ion-col size="12" size-sm size-xl="4">
-                                    <div class="c-control">
-                                        <label class="c-label" for="QRC">Mã QR</label>
-                                        <div class="QRCODE">
-                                            <img class="qrc" [src]="t.QRC">
-                                        </div>
-                                        <div style="text-align: center;"><small>http://app.inholdings.vn/#/pos-welcome/{{t?.Id}}</small></div>
-                                    </div>
-                                </ion-col>
-                            </ion-row>
-                        </ion-grid>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <app-page-message [itemsLength]="item? 1: 0" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 </ion-content>

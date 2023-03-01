@@ -1,127 +1,113 @@
 <ion-header>
-	<ion-toolbar>
-		<ion-buttons slot="start">
-			<ion-back-button defaultHref="pos-order"></ion-back-button>
-			<ion-button color="dark" class="ion-hide-sm-down">
-				{{'erp.app.pages.pos.pos-order.bill' | translate}} <span *ngIf="id">&nbsp;{{id}}</span>
-			</ion-button>
-		</ion-buttons>
-		<ion-buttons slot="end">
-			<!-- <app-detail-toolbar [item]="item" [pageConfig]="pageConfig" (refresh)="refresh()" (delete)="delete()" (help)="help()"> -->
-				<ion-button title="{{'erp.app.pages.pos.pos-order.searchitem-placeholder' | translate}}" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch">
-					<ion-icon slot="icon-only" name="search-outline"></ion-icon>
-				</ion-button>
-				<ion-button class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'test-btn': (printingItemsList.length > 0) && (item.IDStatus != 113 && item.IDStatus != 114 && item.IDStatus != 115)}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature; getScreenSize()">
-					<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-					<span *ngIf="item?.TotalQuantity">{{item.TotalQuantity}}</span>
-				</ion-button>
-			<!-- </app-detail-toolbar> -->
-		</ion-buttons>
-	</ion-toolbar>
-
-	<ion-toolbar class="no-padding table-list" *ngIf="pageConfig.isShowSearch" color="primary" [ngClass]="{withFeature: pageConfig.isShowFeature}">
-		<!-- <ion-segment *ngIf="!pageConfig.isShowSearch" scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
-			<ion-segment-button value="all">
-				<ion-label>{{'erp.app.pages.pos.pos-order.all' | translate}}</ion-label>
-			</ion-segment-button>
-			<ion-segment-button *ngFor="let g of menuList" [value]="g.Id">
-				<ion-label>{{g.Name}}</ion-label>
-			</ion-segment-button>
-		</ion-segment> -->
-		<ion-searchbar class="search-box" (ionFocus)="setSegmentAll($event)" *ngIf="pageConfig.isShowSearch" [(ngModel)]="query.CustomerName" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
-	</ion-toolbar>
-
+	<app-detail-toolbar [page]="this">
+		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
+		<ion-button class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
+		</ion-button>
+	</app-detail-toolbar>
 </ion-header>
 
 <ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
 	<!-- list Item -->
-	<ion-fab *ngIf="pageConfig.isShowFeature && item" [ngStyle]="{'margin-bottom': (item.IDStatus != 113 && item.IDStatus != 114 && item.IDStatus != 115) ? '230px' : '145px'}" class="table-list feature no-print items-list" vertical="top" horizontal="end" slot="fixed">
-		<div id="pos-order-detail-page" style="position: absolute;"></div>
-		<div class="ion-padding c-content" *ngIf="item">
-
+	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
+		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
+		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
 			<!-- Dishes -->
-			<div class="box" *ngIf="item.OrderLines.length != 0">
-				<div style="padding: 16px 16px 0px !important;">
-					<div class="box-content">
-						<div class="od" *ngFor="let o of item.OrderLines, let idx = index">
-							<div style="display: flex;">
-								<div class="od-image">
-									<img [src]="o.imgPath" (click)="jumpToItem(o)" (error)="img.src = 'assets/pos-icons/POS-Item-demo.png'" #img>
-								</div>
-								<div class="od-info">
-									<div class="od-name"><small>{{o.ItemName}}</small></div>
-									<div class="od-code">
-										<small>#{{o.ItemCode}}</small> - <span class="od-price">{{o.UoMPrice | currency: 'VND':'':'1.0-0':''}} <small *ngIf="o.TaxRate">+{{o.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
+			<div class="box" *ngIf="item?.OrderLines?.length">
+				<div style="padding: 0px 16px !important;">
+					<div class="box-content" formArrayName="OrderLines">
+						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
+
+
+							<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
+								<div style="display: flex;">
+									<!-- <small style="position: relative;">
+									<span class="tag">
+										<ion-text class="tag-content" color="medium">
+											{{idx + 1}}
+										</ion-text>
+									</span>
+								</small> -->
+
+									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
+									<div class="od-info" *ngIf="line._item">
+										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
+										<div class="od-price">
+											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
+										</div>
 									</div>
 								</div>
-							</div>
-							<div class="od-quantity">
-								<ion-button fill="outline" [disabled]="submitAttempt || ( item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)" class="ion-float-right qty-btn" size="small" (click)="addToCart(o.IDItem, +1, idx)">
-									<ion-icon slot="icon-only" name="add"></ion-icon>
-								</ion-button>
-								<ion-button fill="outline" [disabled]="submitAttempt || ( item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)" class="ion-float-right qty-btn" size="small" (click)="addToCart(o.IDItem, -1, idx)">
-									<ion-icon slot="icon-only" name="remove"></ion-icon>
-								</ion-button>
-								<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right" size="small" (click)="o._isShowNote = !o._isShowNote">
-									<ion-icon slot="icon-only" [name]="((o.Remark?.length != 0) && (o.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
-								</ion-button>
-								<span class="quantity">
-									<ion-text color="gem">
-										{{o.Quantity}}
-									</ion-text>
-									<span class="uom" *ngIf="o.UoMName">({{o.UoMName}})</span>
-								</span>
-							</div>
-							<div class="od-remark">
-								<textarea cols="30" rows="10" (click)="openQuickMemo(o)" [(ngModel)]="o.Remark" *ngIf="o._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món">
+
+								<div class="od-quantity">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1)">
+										<ion-icon slot="icon-only" name="add"></ion-icon>
+									</ion-button>
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1)">
+										<ion-icon slot="icon-only" name="remove"></ion-icon>
+									</ion-button>
+									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
+										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
+									</ion-button>
+									<span class="quantity">
+										<small>x</small>
+										<ion-text color="dark">
+											{{line.Quantity}}
+										</ion-text>
+										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
+									</span>
+								</div>
+								<div class="od-remark clickable" (click)="openQuickMemo(line)">
+									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món">
 								</textarea>
-								
-								
-								<!-- <div class="c-control" *ngIf="o._isShowNote" >
-									<ng-select class="c-input" appendTo="#pos-order-detail-page" (change)="changedItemMemo($event, o)" [disabled]="(item.IDStatus == 114 || item.IDStatus == 115)" [addTag]="createNewMemo.bind(this)" [(ngModel)]="o.Remark" [items]="memoList" [multiple]="true" [hideSelected]="true" [closeOnSelect]="false" [clearable]="true" bindLabel="Name" bindValue="Name" placeholder="Nhập ghi chú...">
-										<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-											<div *ngIf="i">
-												<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span>{{i.Name}}</span></div>
-											</div>
-										</ng-template>
-										<ng-template ng-tag-tmp let-search="searchTerm">
-											<ion-text color="primary">
-												<b>Thêm</b>: {{search}}
-											</ion-text>
-										</ng-template>
-									</ng-select>
-								</div> -->
-
+								</div>
 							</div>
-						</div>
 
-						<!-- Open Item -->
-						<!-- <div class="open-item-function" [ngClass]="{'od': item?.OrderLines?.length > 0}">
-							<ion-button>
-								<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-								Thêm Open Item
-							</ion-button>
-						</div> -->
 
+
+						</ng-container>
 					</div>
 				</div>
-				<div class="header-box" style="padding: 0px 16px 16px !important;">
-					<div class="header-name" *ngIf="item?.OrderLines?.length > 0">
-						<div class="total">
-							<div class="c-control">
-								<label class="c-label" for="TotalBeforeDiscount">{{'erp.app.pages.pos.pos-order.total' | translate}}</label>
-								<input mask="separator.2" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalBeforeDiscount" [(ngModel)]="item.TotalBeforeDiscount" type="text">
-							</div>
-							<div class="c-control">
-								<label class="c-label" for="Discount">Discount</label>
-								<input mask="separator." readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="Discount" [(ngModel)]="item.TotalDiscount" type="text">
-							</div>
-							<div class="c-control">
-								<label class="c-label" for="TotalAfterTax">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</label>
-								<input [ngStyle]="{'color': item.TotalAfterTax >= 20000000 ? 'red' : 'var(--ion-color-primary)'}" mask="separator." readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalAfterTax" [(ngModel)]="item.TotalAfterTax" type="text">
-							</div>
-						</div>
+			</div>
+
+			<div class="box ion-padding">
+
+				<div class="box-content">
+
+					<div class="check-out">
+						<label class="c-label">Tiền hàng
+							<span class="c-value">
+								{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}
+							</span>
+						</label>
+						<label class="c-label clickable" *ngIf="pageConfig.canEdit" (click)="processDiscounts()">Chiết khấu <ion-icon name="open-outline"></ion-icon>
+							<span class="c-value">
+								{{item.OriginalTotalDiscount | number: '1.0-0'}}
+							</span>
+
+						</label>
+						<label class="c-label" *ngIf="!pageConfig.canEdit">Chiết khấu
+							<span class="c-value">
+								{{item.OriginalTotalDiscount | number: '1.0-0'}}
+							</span>
+						</label>
+
+						<label class="c-label">VAT
+							<span class="c-value">{{item.OriginalTax | number: '1.0-0'}}</span>
+						</label>
+
+						<label class="c-label" *ngIf="item.CalcOriginalTotalAdditions">Service charge <i class="info-tooltip" title="Phí dịch vụ theo từng item có thể khác nhau."></i>
+							<span class="c-value">{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span>
+						</label>
+
+						<label class="c-label total">Tổng tiền
+							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
+								{{item.CalcTotalOriginal | number: '1.0-0'}}
+							</ion-text>
+						</label>
 					</div>
+
+
 				</div>
 			</div>
 
@@ -129,13 +115,13 @@
 			<div class="box header-box ion-padding">
 				<div class="header-name">
 					<div class="bill-for">
-						<span *ngIf="item?.OrderDateText">{{item.OrderDateText}}</span>
-						<span *ngIf="!item?.OrderDateText && (item?.Tables == null || item?.Tables.length == 0)">Vui lòng chọn bàn trước</span>
-						<span *ngIf="!item?.OrderDateText && (item?.Tables != null && item?.Tables.length != 0)">Vui lòng chọn món</span>
+						<span *ngIf="item?.OrderDate">{{item.OrderDate | date: 'HH:mm dd/MM'}} </span>
+						<span *ngIf="!item?.Tables?.length">Vui lòng chọn bàn trước</span>
+						<span *ngIf="item?.Tables?.length && !item?.OrderLines?.length">Vui lòng chọn món</span>
 					</div>
 					<div class="total">
-						<div class="c-control" style="z-index: 1;">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" [disabled]="(item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)"  [(ngModel)]="item.IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'erp.app.pages.pos.pos-order.idaddress-placeholder' | translate}}">
+						<div class="c-control">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'erp.app.pages.pos.pos-order.idaddress-placeholder' | translate}}">
 								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
 									{{i.Name}}
 									<small *ngIf="a">
@@ -166,87 +152,49 @@
 									</div>
 								</ng-template>
 							</ng-select>
-							<ion-button *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top: 5px; margin-bottom: 9px;" class="ion-float-right" size="small" (click)="addContact()">
-								<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-								{{'erp.app.pages.pos.pos-order.add-contact' | translate}}
+							<div class="text-right">
+								<ion-button [disabled]="submitAttempt" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top: 5px; margin-bottom: 9px;"  size="small" (click)="addContact()">
+									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+									{{'erp.app.pages.pos.pos-order.add-contact' | translate}}
+								</ion-button>
+							</div>
+						</div>
+
+						<div class="c-control">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Tables" (change)="changeTable();" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.table-placeholder' | translate}}">
+								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+									<div *ngIf="i">
+										<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
+									</div>
+								</ng-template>
+							</ng-select>
+						</div>
+
+						<div class="c-control">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Status" labelForId="Status" [multiple]="false" [clearable]="false" [items]="statusList" bindLabel="Name" bindValue="Code" placeholder="Trạng thái...">
+								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+									<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
+								</ng-template>
+							</ng-select>
+						</div>
+
+						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
+							<label for=""></label>
+							<ion-button size="small" color="danger" expand="block" fill="outline" (click)="cancelPOSOrder();" [disabled]="submitAttempt">
+								{{'erp.app.pages.pos.pos-order.cancel' | translate}}
 							</ion-button>
 						</div>
 
-						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" [(ngModel)]="item.Tables" labelForId="IDBranch" (change)="changeTable();" [disabled]="( item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.table-placeholder' | translate}}">
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div *ngIf="i">
-										<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
-									</div>
-								</ng-template>
-							</ng-select>
-						</div>
-
-						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" [(ngModel)]="item.IDStatus" labelForId="IDStatus" [disabled]="true" [multiple]="false" [clearable]="false" [items]="statusList" bindLabel="Name" bindValue="Id" placeholder="Trạng thái...">
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div *ngIf="i">
-										<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
-									</div>
-								</ng-template>
-							</ng-select>
-						</div>
-
-						<!-- Total -->
-						<!-- <div class="c-control" style="margin-top: 30px;">
-							<label class="c-label" for="TotalBeforeDiscount">{{'erp.app.pages.pos.pos-order.total' | translate}}</label>
-							<input mask="separator.2" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalBeforeDiscount" [(ngModel)]="item.TotalBeforeDiscount" type="text">
-						</div>
-						<div class="c-control">
-							<label class="c-label" for="Discount">Discount</label>
-							<input mask="separator.2" style="cursor: pointer;" (click)="processDiscounts()" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="Discount" [(ngModel)]="item.TotalDiscount" type="text">
-						</div>
-						<div class="c-control">
-							<label class="c-label" for="TotalAfterDiscount">Discounted Amount</label>
-							<input mask="separator.2" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalAfterDiscount" [(ngModel)]="item.TotalAfterDiscount" type="text">
-						</div>
-						<div class="c-control">
-							<label class="c-label" for="ServiceCharge">Service Charge</label>
-							<input mask="separator.2" readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="ServiceCharge" [(ngModel)]="item.ServiceCharge" type="text">
-						</div>
-						<div class="c-control">
-							<label class="c-label" for="TotalAfterServiceCharge">Base VAT</label>
-							<input mask="separator." readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalAfterServiceCharge" [(ngModel)]="item.TotalAfterServiceCharge" type="text">
-						</div>
-						<div class="c-control">
-							<label class="c-label" for="Tax">{{'erp.app.pages.pos.pos-order.tax' | translate}}</label>
-							<input mask="separator." readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="Tax" [(ngModel)]="item.Tax" type="text">
-						</div>
-						<div class="c-control">
-							<label class="c-label" for="TotalAfterTax">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</label>
-							<input mask="separator." readonly thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" class="c-input" id="TotalAfterTax" [(ngModel)]="item.TotalAfterTax" type="text">
-						</div>
-						<div class="c-control">
-							<label class="c-label" for="TheChange">TheChange</label>
-							<input mask="separator." readonly thousandSeparator="," [allowNegativeNumbers]="true" suffix=" ₫" class="c-input" id="TheChange" [(ngModel)]="item.TheChange" type="text">
-						</div> -->
-
-
-						<!-- {{item. | currency: 'VND':'':'1.0-0':''}} -->
 					</div>
 				</div>
 			</div>
-		</div>
-	</ion-fab>
+		</form>
 
-	<!-- function -->
-	<ion-fab *ngIf="pageConfig.isShowFeature && item" [ngStyle]="{'height': (item.IDStatus != 113 && item.IDStatus != 114 && item.IDStatus != 115) ? '250px' : '160px'}" class="table-list feature no-print functions-list" vertical="bottom" horizontal="end" slot="fixed">
-		<div *ngIf="item?.OrderLines?.length > 0" class="ion-padding-horizontal">
+		<div *ngIf="item?.OrderLines?.length > 0" class="functions-list">
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<!-- <ion-col  *ngFor="let k of kitchenList">
-						<ion-button size="small" expand="block" (click)="sendKitchen(k)" [disabled]="submitAttempt">
-							{{'erp.app.pages.pos.pos-order.change' | translate}} {{k.Name}}
-						</ion-button>
-					</ion-col> -->
-
-					<ion-col [hidden]="(item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)">
-						<ion-button [color]="printingItemsList.length == 0 ? 'medium' : 'danger' " [ngClass]="{'test-btn': printingItemsList.length != 0}"  fill="outline" expand="block" (click)="sendKitchenNew()" [disabled]="submitAttempt || printingItemsList.length == 0">
+					<ion-col *ngIf="pageConfig.canEdit">
+						<ion-button [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
 							Chuyển BAR/KIT
 						</ion-button>
 					</ion-col>
@@ -256,8 +204,8 @@
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col [hidden]="(item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)">
+				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
+					<ion-col>
 						<ion-button color="medium" fill="outline" expand="block" (click)="processDiscounts()" [disabled]="submitAttempt">
 							Discount
 						</ion-button>
@@ -265,119 +213,76 @@
 				</ion-row>
 
 				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<!-- <ion-col [hidden]="(item.IDStatus == 114 || item.IDStatus == 115)">
-						<ion-button expand="block" (click)="processDiscounts()" [disabled]="submitAttempt">Discount</ion-button>
-					</ion-col> -->
 					<ion-col>
 						<ion-button expand="block" (click)="processPayments()" [disabled]="submitAttempt">
-							<ion-text [hidden]="(item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)">Thanh toán</ion-text>
-							<ion-text [hidden]="(item.IDStatus != 113 && item.IDStatus != 114 && item.IDStatus != 115)">Xem chi tiết</ion-text>
+							<ion-text *ngIf="pageConfig.canEdit">Thanh toán</ion-text>
+							<ion-text *ngIf="!pageConfig.canEdit">Xem chi tiết</ion-text>
 						</ion-button>
 					</ion-col>
 				</ion-row>
 
-				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col [hidden]="(item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)">
-						<ion-button size="small" color="danger" expand="block" fill="outline" (click)="cancelPOSOrder();" [disabled]="submitAttempt">
-							{{'erp.app.pages.pos.pos-order.cancel' | translate}}
-						</ion-button>
-					</ion-col>
-				</ion-row>
+
 			</ion-grid>
 		</div>
 	</ion-fab>
 
 	<!-- Menu Group -->
-	<!-- <div class="menu-view ion-padding no-print">
+	<div class="no-print menu-holder">
 		<div class="menu-group-list">
 			<div class="menu-group" (click)="segmentChanged('all')">
-				<ion-label>All</ion-label>
-			</div>
-			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
-				<ion-label>{{g.Name}}</ion-label>
-			</div>
-		</div>
-	</div> -->
-	<div class="ion-padding no-print" style="padding-bottom: 0px !important;">
-		<div class="menu-group-list">
-			<div class="menu-group" (click)="segmentChanged('all')">
-				<img src="{{AllSegmentImage}}" (error)="img.src = 'assets/pos-icons/POS-Item-demo.png'" #img
-					[ngClass]="{selected: segmentView=='all'}">
+				<ion-img #img [src]="AllSegmentImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView=='all'}"></ion-img>
 				<ion-label>tất cả</ion-label>
 			</div>
 			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
-				<img [src]="g.menuImage" (error)="img.src = 'assets/pos-icons/POS-Item-demo.png'" #img
-					[ngClass]="{selected: segmentView==g.Id}">
+				<ion-img #img [src]="g.menuImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
 				<ion-label>{{g.Name}}</ion-label>
 			</div>
 		</div>
 	</div>
 
 	<!-- View MenuList -->
-	<div class=".so-rows menu-view ion-padding no-print" style="min-height: calc(100vh - 110px); padding-top: 0px !important;">
-		<ion-grid fixed *ngIf="menuList.length">
+	<div class="no-print">
+		<ion-grid fixed *ngIf="menuList?.length">
 			<ng-container *ngFor="let g of menuList | filter:{Id:segmentView}">
-				<ng-container *ngIf="g.Items.length">
-					<ion-row>
-						<ion-col size="12" size-sm="12" size-md="12" size-xl="12" class="menu-group-name">
+				<ng-container *ngIf="g.Items?.length">
+
+					<ion-row class="table-holder" *ngIf="(g.Items | search:{Name:query.Keyword}).length">
+
+						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
 							<ion-list-header class="ion-no-padding">
 								<ion-label color="primary">{{g.Name}}</ion-label>
 							</ion-list-header>
 						</ion-col>
-					</ion-row>
-					<ion-row class="table-holder">
-						<ion-col size="auto" size-sm="auto" size-md="auto" class="card-holder" size-xl="auto" *ngFor="let i of g.Items | search:{Name:query.Keyword}">
-							<ion-card *ngIf="i" [class]="i.Id" class="shadow table-item item-card-resize clickable" [ngClass]="{'in-serve': i.Quantity }" (click)="addToCart(i.Id, 1, null, false)">
-								<ion-card-header [ngClass]="{'in-serve': i.Quantity }">
-									<div class="toggle-flex">
-										<div>
-											<img [src]="i.imgPath" (error)="img.src = 'assets/pos-icons/POS-Item-demo.png'" #img>
-										</div>
-										<div class="toggle-small">
-											<div>
-												<div class="table-name" title="{{i.Name}}"><ion-text>{{i.Name}}</ion-text></div>
-												<div class="table-remark">{{i.Remark ? i.Remark : ''}}</div>
-											</div>
-											<div class="table-status">
-												<!-- <div class="amount" *ngFor="let u of i.UoMs"> -->
-												<div class="amount">
-	
-													<span *ngFor="let p of i.UoMs[0].PriceList">
-														<ion-text style="font-size: 14px;" color="primary">{{p.Price | currency: 'VND':'':'1.0-0':''}} ₫</ion-text>
-													</span>
-													<div class="uom">
-														<span><small>{{i.UoMs[0].Name}}</small></span>
-													</div>
-													
-		
-													<!-- <ion-text color="medium"><small> / {{u.Name}}</small></ion-text> -->
-		
-												</div>
-												<div class="od-dot-group">
-													<div class="od-dot-qty" *ngIf="i.Quantity">
-														<span>{{i.Quantity}}</span>
-														<!-- <span class="table-dot"></span> -->
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</ion-card-header>
-								<!-- <ion-card-content>
-									<div class="item-uom c-control">
-										<label class="c-label" for="Unit">Đơn vị</label>
-										<div class="item-uom-option">
-											<div class="uom" *ngFor="let u of i.UoMs">
-												<ion-text color="medium"><small>{{u.Name}}</small></ion-text>
-												<ion-button expand="block">{{u.Name}}</ion-button>
-											</div>
-										</div>
-									</div>
-								</ion-card-content> -->
-							</ion-card>
-						</ion-col>
-					</ion-row>
 
+						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | search:{Name:query.Keyword}">
+							<span class="tag right" *ngIf="i.BookedQuantity">
+								<ion-text class="tag-content" color="danger">
+									{{i.BookedQuantity}}
+								</ion-text>
+							</span>
+							<div class="card" [id]="'item'+i.Id">
+
+								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
+								<span class="table-name clickable" (click)="addToCart(i, i.UoMs[0].Id)">{{i.Name}}</span>
+								<ng-container *ngFor="let u of i.UoMs">
+									<!-- <ion-button *ngIf="u.PriceList.length" color="danger" size="small" fill="clear" (click)="addToCart(i, u.Id)">
+										<span *ngFor="let p of u.PriceList">
+											{{p.Price | number: '1.0-0'}} <small>{{u.Name}}</small>
+										</span>
+									</ion-button> -->
+
+									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">
+										<span class="price-list" *ngFor="let p of u.PriceList">
+											{{p.Price | number: '1.0-0'}}
+										</span>
+										<span class="uom">{{u.Name}}</span>
+									</a>
+								</ng-container>
+
+							</div>
+						</ion-col>
+
+					</ion-row>
 				</ng-container>
 			</ng-container>
 		</ion-grid>
@@ -385,7 +290,7 @@
 	</div>
 
 	<!-- Bill Printing -->
-	<div id="bill" class="bill" style="overflow: auto; width: 72mm;" *ngIf="item">
+	<div id="bill" class="bill" style="overflow: auto; width: 72mm;" *ngIf="item?.OrderLines?.length">
 		<div class="receipt giao-nhan" style="overflow: auto;">
 			<section class="sheet rpt p1">
 				<table>
@@ -402,36 +307,35 @@
 
 								<div>
 									<div class="header">
-										<span class="logo"><img [src]="currentBranch.LogoURL || 'assets/logo/logo-in-holdings.png'" (error)="$event.src='assets/logos/logo-the-log.png'"></span>
-										<span class="brand">{{currentBranch.ShortName || 'ShortName'}}</span>
-										<span class="address">{{currentBranch.Address || 'Address'}}</span>
-										<span class="phone">{{currentBranch.Phone || 'Phone'}}</span>
+										<span class="logo"><img [src]="printData.currentBranch.LogoURL || 'assets/logo/logo-in-holdings.png'" (error)="$event.src='assets/logos/logo-the-log.png'"></span>
+										<span class="brand">{{printData.currentBranch.ShortName || 'ShortName'}}</span>
+										<span class="address">{{printData.currentBranch.Address || 'Address'}}</span>
+										<span class="phone">{{printData.currentBranch.Phone || 'Phone'}}</span>
 
-										<ng-container *ngIf="(item.IDStatus != 113 && item.IDStatus != 114)">
+										<ng-container *ngIf="pageConfig.canEdit">
 											<span class="brand">[ ORDER ]</span>
 											<span>({{'erp.app.pages.pos.pos-order.bill-no' | translate}}: {{id}})</span>
 										</ng-container>
-										<ng-container *ngIf="(item.IDStatus == 113 || item.IDStatus == 114)">
+										<ng-container *ngIf="!pageConfig.canEdit">
 											<span class="brand">[ RECEIPT ]</span>
 											<span>(Receipt No.: {{id}})</span>
 										</ng-container>
-										
+
 									</div>
 									<div class="table-info">
 										<table>
 											<tr>
 												<td class="title">{{'erp.app.pages.pos.pos-order.table' | translate}}</td>
-												<td><span *ngFor="let t of selectedTables">{{t.Name}}; </span></td>
+												<td><span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span></td>
 											</tr>
 											<tr>
 												<td class="title">{{'erp.app.pages.pos.pos-order.date' | translate}}</td>
-												<td>{{item.OrderDateText}}</td>
+												<td>{{item.OrderDate | date: 'HH:mm dd/MM'}}</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
 												<td class="title">{{'erp.app.pages.pos.pos-order.customer' | translate}}</td>
-												<td>{{contactSelected?.Name}}
-													<ng-container *ngIf="item?.IDAddress == 902">- Ngồi lại</ng-container>
-													<ng-container *ngIf="item?.IDAddress == 903">- Mang đi</ng-container>
+												<td>{{item._Customer?.Name}}
+
 												</td>
 											</tr>
 											<tr *ngIf="kitchenQuery!='all'">
@@ -444,23 +348,23 @@
 										<table>
 											<tr class="bold">
 												<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
-												<td>Discount</td>
-												<td class="total">{{'erp.app.pages.pos.pos-order.amount' | translate}}</td>
+												<td class="text-right">Discount</td>
+												<td class="text-right">{{'erp.app.pages.pos.pos-order.amount' | translate}}</td>
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen': kitchenQuery}">
 												<tr>
 													<td colspan="3" class="name">
-														<div>{{o.ItemName}}</div>
+														<div>{{o._item?.Name}}</div>
 													</td>
 												</tr>
 												<tr>
 													<td>
 														<div>
-															<span class="od-price">{{o.UoMPrice | currency: 'VND':'':'1.0-0':''}} </span> x <span class="quantity"> {{o.Quantity}}</span>
+															<span class="od-price">{{o.UoMPrice | number: '1.0-0'}} </span> x <span class="quantity"> {{o.Quantity}}</span>
 														</div>
 													</td>
-													<td class="total"><span>{{o.Discount  | currency: 'VND':'':'1.0-0':''}}</span></td>
-													<td class="total"><span>{{o.TotalBeforeDiscount  | currency: 'VND':'':'1.0-0':''}}</span></td>
+													<td class="total"><span>{{o.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
+													<td class="total"><span>{{o.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 											</ng-container>
 										</table>
@@ -472,12 +376,12 @@
 												<td class="total">{{'erp.app.pages.pos.pos-order.quantity' | translate}}</td>
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen': kitchenQuery}; let idx = index">
-												<ng-container *ngIf="o.Additional > 0">
+												<ng-container *ngIf="o._undeliveredQuantity > 0">
 													<tr>
 														<td>
-															{{idx + 1}}. <span>{{o.ItemName}}</span>
+															{{idx + 1}}. <span>{{o._item?.Name}}</span>
 														</td>
-														<td class="total"><span class="bold quantity">{{o.Additional}}</span> </td>
+														<td class="total"><span class="bold quantity">{{o._undeliveredQuantity}}</span> </td>
 													</tr>
 													<tr *ngIf="o.Remark">
 														<td colspan="2">
@@ -492,106 +396,44 @@
 										<table>
 											<tr>
 												<td class="title">{{'erp.app.pages.pos.pos-order.print-date' | translate}}</td>
-												<td class="text-right"><span>{{printDate}}</span></td>
+												<td class="text-right"><span>{{printData.printDate}}</span></td>
 											</tr>
 										</table>
 									</div>
 
-									<div class="table-info-top" *ngIf="kitchenQuery=='all' && InternalOptions">
-										<table>
-											<!-- <tr>
-												<td class="title">{{'erp.app.pages.pos.pos-order.total-before-discount' | translate}}</td>
-												<td class="text-right"><span>{{item.TotalBeforeDiscount  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr> -->
-											<tr>
-												<td class="title">Department:</td>
-												<td class="text-right"><span>{{item.RefDepartment}}</span></td>
-											</tr>
-										</table>
-									</div>
-									<div class="table-info-top" *ngIf="kitchenQuery=='all'">
-										<table>
-											<tr>
-												<td class="title">{{'erp.app.pages.pos.pos-order.total-before-discount' | translate}}</td>
-												<td class="text-right"><span>{{item.TotalBeforeDiscount  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr *ngIf="VoucherOptions">
-												<td class="title">Voucher:</td>
-												<td class="text-right"><span>{{item.VoucherDiscount  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr>
-												<td class="title">Discount ({{TotalPercentDiscount | currency: 'VND':'':'1.0-0':''}}%)</td>
-												<td class="text-right"><span>{{item.TotalDiscount  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-										</table>
-									</div>
-									<div class="table-info-top" *ngIf="kitchenQuery=='all'">
-										<table>
-											<tr>
-												<td class="title">Discounted Amount</td>
-												<td class="text-right"><span>{{item.TotalAfterDiscount  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr>
-												<td class="title">Service Charge ({{serviceCharge}}%)</td>
-												<td class="text-right"><span>{{item.ServiceCharge  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-										</table>
-									</div>
-									<div class="table-info-top" *ngIf="kitchenQuery=='all'">
-										<table>
-											<tr>
-												<td class="title">Base VAT</td>
-												<td class="text-right"><span>{{item.TotalAfterServiceCharge  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr>
-												<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} ({{item.TaxRate}}%)</td>
-												<td class="text-right"><span>{{item.Tax  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-										</table>
-									</div>
-									<div class="table-info" *ngIf="kitchenQuery=='all'">
-										<table>
-											<tr>
-												<td class="title bold">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</td>
-												<td class="text-right bold"><span>{{item.TotalAfterTax  | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-										</table>
-									</div>
-									<div class="table-info-bottom" *ngIf="kitchenQuery=='all' && (item.IDStatus == 114 || item.IDStatus == 113)">
-										<table>
-											<tr *ngIf="InCashOptions">
-												<td class="title">Cash:</td>
-												<td class="text-right"><span>{{InCashTotal | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr *ngIf="DepositOptions">
-												<td class="title">Deposit:</td>
-												<td class="text-right"><span>{{DepositTotal | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr *ngIf="MomoWalletOptions">
-												<td class="title">Ví Momo:</td>
-												<td class="text-right"><span>{{MomoWalletTotal | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr *ngIf="VisaMasterOptions">
-												<td class="title">Credit Card:</td>
-												<td class="text-right"><span>{{VisaMasterTotal | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr *ngIf="ATMCardOptions">
-												<td class="title">Thẻ ATM:</td>
-												<td class="text-right"><span>{{ATMCardTotal | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-											<tr *ngIf="item.TheChange">
-												<td class="title">The Change:</td>
-												<td class="text-right"><span>{{item.TheChange | currency: 'VND':'':'1.0-0':''}}</span></td>
-											</tr>
-										</table>
-									</div>
-									<div class="message" *ngIf="kitchenQuery=='all'" >
-										<div><small>{{'erp.app.pages.pos.pos-order.bill-info' | translate}}</small></div>
-										<div><small>This bill is valid within day</small></div>
-										<div class="ion-text-uppercase">
-											{{'erp.app.pages.pos.pos-order.see-you' | translate}}
+									<ng-container *ngIf="kitchenQuery=='all'">
+										<div class="table-info-top">
+											<table>
+												<tr>
+													<td class="title">{{'erp.app.pages.pos.pos-order.total-before-discount' | translate}}</td>
+													<td class="text-right"><span>{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
+												</tr>
+												<tr>
+													<td class="title">Discount</td>
+													<td class="text-right"><span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
+												</tr>
+												<tr>
+													<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}}</td>
+													<td class="text-right"><span>{{item.OriginalTax | number: '1.0-0'}}</span></td>
+												</tr>
+												<tr>
+													<td class="title">Service Charge</td>
+													<td class="text-right"><span>{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span></td>
+												</tr>
+												<tr>
+													<td class="title bold">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</td>
+													<td class="text-right bold"><span>{{item.CalcTotalOriginal | number: '1.0-0'}}</span></td>
+												</tr>
+											</table>
 										</div>
-									</div>
+										<div class="message">
+											<div><small>{{'erp.app.pages.pos.pos-order.bill-info' | translate}}</small></div>
+											<div><small>This bill is valid within day</small></div>
+											<div class="ion-text-uppercase">
+												{{'erp.app.pages.pos.pos-order.see-you' | translate}}
+											</div>
+										</div>
+									</ng-container>
 								</div>
 							</td>
 						</tr>

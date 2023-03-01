@@ -1,5 +1,5 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
-import { NavController, LoadingController, AlertController } from '@ionic/angular';
+import { NavController, LoadingController, AlertController, ModalController, NavParams } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
@@ -26,6 +26,8 @@ export class POSTableDetailPage extends PageBase {
         public cdr: ChangeDetectorRef,
         public loadingController: LoadingController,
         public commonService: CommonService,
+        public modalController: ModalController,
+        public navParams: NavParams,
     ) {
         super();
         this.pageConfig.isDetailPage = true;
@@ -38,11 +40,38 @@ export class POSTableDetailPage extends PageBase {
             Name: ['', Validators.required],
         });
 
-        this.id = this.route.snapshot?.paramMap?.get('id');
-        this.id = typeof (this.id) == 'string' ? parseInt(this.id) : this.id;
+        // this.id = this.route.snapshot?.paramMap?.get('id');
+        // this.id = typeof (this.id) == 'string' ? parseInt(this.id) : this.id;
     }
 
-    loadedData(event) {
+
+
+    preLoadData() {
+        if(this.pageConfig.canEditFunction){
+            this.pageConfig.canEdit = true;
+        }
+        
+        if (this.navParams) {
+            this.items = JSON.parse(JSON.stringify(this.navParams.data.items));
+            this.items.forEach(i => {
+                let prefix = '';
+                for (let j = 1; j < i.level; j++) {
+                    prefix += '- '
+                }
+                i.Name = prefix + i.Name;
+            })
+
+            this.item = JSON.parse(JSON.stringify(this.navParams.data.item));
+            this.id = this.navParams.data.id;
+
+            this.loadedData();
+        }
+    }
+
+    
+
+    loadedData(event?: any) {
+
         super.loadedData(event);
         let that = this;
         QRCode.toDataURL('http://app.inholdings.vn/#/pos-welcome/' + this.item?.Id, { errorCorrectionLevel: 'M', version: 3, width: 500, scale: 20, type: 'image/webp' }, function (err, url) {
@@ -53,13 +82,10 @@ export class POSTableDetailPage extends PageBase {
             this.tableGroupList = results.data;
         });
     }
-
-    segmentView = 's1';
-    segmentChanged(ev: any) {
-        this.segmentView = ev.detail.value;
-    }
-
+   
     async saveChange() {
-        super.saveChange2();
+        this.formGroup.controls.IDBranch.setValue(this.env.selectedBranch);
+        super.saveChange();
     }
+    
 }

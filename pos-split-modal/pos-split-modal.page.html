@@ -210,7 +210,7 @@
                                                 <!-- Quantity -->
                                                 <td class="label">{{'erp.app.pages.sale.sale-order.split.quantity' | translate}}</td>
                                                 <td *ngFor="let o of i.splitDetail; let jdx = index;">
-                                                    <input type="tel" (focus)="$event.target.select()" (blur)="changedCalc(i, o, 'Quantity')" class="c-input" [min]="i._UoM?i._UoM.MinQuantity:1" [max]="i._UoM?i._UoM.MaxQuantity:999" mask="separator.0" thousandSeparator="," [(ngModel)]="o.Quantity" onkeydown="return event.keyCode !== 190">
+                                                    <input type="tel" (focus)="$event.target.select()" (blur)="changedCalc(i, o, 'Quantity')" class="c-input" [min]="i._UoM?i._UoM.MinQuantity:0.000000001" [max]="i._UoM?i._UoM.MaxQuantity:999999999999999999" mask="separator.0" thousandSeparator="," [(ngModel)]="o.Quantity" step="1" onkeydown="return event.keyCode !== 190">
                                                 </td>
                                             </tr>
                                             <!-- <tr *ngIf="i.Quantity && pageConfig.canEditPrice && !i.IsPromotionItem">
