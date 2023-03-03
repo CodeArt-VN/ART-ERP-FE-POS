@@ -43,7 +43,7 @@ export class POSOrderDetailPage extends PageBase {
     printData = {
         undeliveredItems: [], //To track undelivered items to the kitchen
         printDate: null,
-        currentBranch: {},
+        currentBranch: null,
         selectedTables: [],
     }
 

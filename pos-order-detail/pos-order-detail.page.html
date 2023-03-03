@@ -206,7 +206,7 @@
 				</ion-row>
 				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
 					<ion-col>
-						<ion-button color="medium" fill="outline" expand="block" (click)="processDiscounts()" [disabled]="submitAttempt">
+						<ion-button color="medium" fill="outline" expand="block" size="small" (click)="processDiscounts()" [disabled]="submitAttempt">
 							Discount
 						</ion-button>
 					</ion-col>
@@ -307,10 +307,10 @@
 
 								<div>
 									<div class="header">
-										<span class="logo"><img [src]="printData.currentBranch.LogoURL || 'assets/logo/logo-in-holdings.png'" (error)="$event.src='assets/logos/logo-the-log.png'"></span>
-										<span class="brand">{{printData.currentBranch.ShortName || 'ShortName'}}</span>
-										<span class="address">{{printData.currentBranch.Address || 'Address'}}</span>
-										<span class="phone">{{printData.currentBranch.Phone || 'Phone'}}</span>
+										<span class="logo"><img [src]="printData.currentBranch?.LogoURL || 'assets/logo/logo-in-holdings.png'" (error)="$event.src='assets/logos/logo-the-log.png'"></span>
+										<span class="brand">{{printData.currentBranch?.ShortName || 'ShortName'}}</span>
+										<span class="address">{{printData.currentBranch?.Address || 'Address'}}</span>
+										<span class="phone">{{printData.currentBranch?.Phone || 'Phone'}}</span>
 
 										<ng-container *ngIf="pageConfig.canEdit">
 											<span class="brand">[ ORDER ]</span>
