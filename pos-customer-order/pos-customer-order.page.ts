@@ -11,15 +11,12 @@ import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { SaleOrderMobileAddContactModalPage } from '../../SALE/sale-order-mobile-add-contact-modal/sale-order-mobile-add-contact-modal.page';
 import { TranslateService } from '@ngx-translate/core';
-import { PopoverPage } from '../../SYS/popover/popover.page';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSCustomerOrderModalPage } from '../pos-customer-order-modal/pos-customer-order-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 import { HostListener } from "@angular/core";
-import { POSIntroModalPage } from '../pos-intro-modal/pos-intro-modal.page';
 import QRCode from 'qrcode';
-import { CRM_BusinessPartnerProvider } from 'src/app/services/custom.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -234,7 +231,6 @@ export class POSCustomerOrderPage extends PageBase {
         public tableGroupProvider: POS_TableGroupProvider,
         public tableProvider: POS_TableProvider,
         public contactProvider: CRM_ContactProvider,
-        public posContactProvider: CRM_BusinessPartnerProvider,
         public incomingPaymentProvider: BANK_IncomingPaymentProvider,
         public incomingPaymentDetailProvider: BANK_IncomingPaymentDetailProvider,
         public branchProvider: BRA_BranchProvider,
@@ -559,7 +555,7 @@ export class POSCustomerOrderPage extends PageBase {
             });
         }
         if (this.item.IDAddress) {
-            this.posContactProvider.SearchContact({ Take: 20, Skip: 0, Term: this.item.IDContact }).subscribe((data: any) => {
+            this.contactProvider.search({ Take: 20, Skip: 0, Term: this.item.IDContact }).subscribe((data: any) => {
                 let contact = data.find(d => d.IDAddress == this.item.IDAddress);
                 this.contactSelected = contact;
                 data.filter(d => d.Id == this.item.IDContact).forEach(i => {
@@ -640,7 +636,7 @@ export class POSCustomerOrderPage extends PageBase {
             this.contactListInput$.pipe(
                 distinctUntilChanged(),
                 tap(() => this.contactListLoading = true),
-                switchMap(term => this.posContactProvider.SearchContact({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
+                switchMap(term => this.contactProvider.search({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
                     catchError(() => of([])), // empty list on error
                     tap(() => this.contactListLoading = false)
                 ))

@@ -10,12 +10,10 @@ import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { lib } from 'src/app/services/static/global-functions';
 import { ApiSetting } from 'src/app/services/static/api-setting';
-import { SaleOrderMobileAddContactModalPage } from '../../SALE/sale-order-mobile-add-contact-modal/sale-order-mobile-add-contact-modal.page';
 import { CommonService } from 'src/app/services/core/common.service';
 import QRCode from 'qrcode'
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 import { POSAddContactModalPage } from '../pos-add-contact-modal/pos-add-contact-modal.page';
-import { CRM_BusinessPartnerProvider } from 'src/app/services/custom.service';
 
 
 @Component({
@@ -117,7 +115,6 @@ export class POSPaymentModalPage extends PageBase {
     constructor(
         public pageProvider: SALE_OrderProvider,
         public contactProvider: CRM_ContactProvider,
-        public posContactProvider: CRM_BusinessPartnerProvider,
         public tableProvider: POS_TableProvider,
         public incomingPaymentProvider: BANK_IncomingPaymentProvider,
         public incomingPaymentDetailProvider: BANK_IncomingPaymentDetailProvider,
@@ -195,7 +192,7 @@ export class POSPaymentModalPage extends PageBase {
         });
         this.item.QRC = momoCode;
 
-        this.posContactProvider.SearchContact({ Take: 20, Skip: 0, Term: this.item.IDContact }).subscribe((data: any) => {
+        this.contactProvider.search({ Take: 20, Skip: 0, Term: this.item.IDContact }).subscribe((data: any) => {
             let contact = data.find(d => d.IDAddress == this.item.IDAddress);
 
             this.contactSelected = contact;
@@ -236,7 +233,7 @@ export class POSPaymentModalPage extends PageBase {
             this.contactListInput$.pipe(
                 distinctUntilChanged(),
                 tap(() => this.contactListLoading = true),
-                switchMap(term => this.posContactProvider.SearchContact({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
+                switchMap(term => this.contactProvider.search({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
                     catchError(() => of([])), // empty list on error
                     tap(() => this.contactListLoading = false)
                 ))

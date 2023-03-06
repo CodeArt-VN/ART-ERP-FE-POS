@@ -8,9 +8,7 @@ import { FormBuilder, Validators, FormControl, FormArray } from '@angular/forms'
 import { NgSelectConfig } from '@ng-select/ng-select';
 import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
-import { lib } from 'src/app/services/static/global-functions';
 import { ApiSetting } from 'src/app/services/static/api-setting';
-import { CRM_BusinessPartnerProvider } from 'src/app/services/custom.service';
 
 
 
@@ -42,7 +40,6 @@ export class POSChangeTableModalPage extends PageBase {
     constructor(
         public pageProvider: SALE_OrderProvider,
         public contactProvider: CRM_ContactProvider,
-        public posContactProvider: CRM_BusinessPartnerProvider,
         public tableProvider: POS_TableProvider,
 
         public env: EnvService,
@@ -140,7 +137,7 @@ export class POSChangeTableModalPage extends PageBase {
             this.contactListInput$.pipe(
                 distinctUntilChanged(),
                 tap(() => this.contactListLoading = true),
-                switchMap(term => this.posContactProvider.SearchContact({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
+                switchMap(term => this.contactProvider.search({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
                     catchError(() => of([])), // empty list on error
                     tap(() => this.contactListLoading = false)
                 ))

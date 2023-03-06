@@ -8,10 +8,6 @@ import { FormBuilder, Validators, FormControl, FormArray } from '@angular/forms'
 import { NgSelectConfig } from '@ng-select/ng-select';
 import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
-import { lib } from 'src/app/services/static/global-functions';
-import { ApiSetting } from 'src/app/services/static/api-setting';
-import { TranslateService } from '@ngx-translate/core';
-import { CRM_BusinessPartnerProvider } from 'src/app/services/custom.service';
 
 
 
@@ -33,7 +29,6 @@ export class POSSplitModalPage extends PageBase {
         public pageProvider: SALE_OrderProvider,
         public orderDetailProvider: SALE_OrderDetailProvider,
         public contactProvider: CRM_ContactProvider,
-        public posContactProvider: CRM_BusinessPartnerProvider,
         public itemProvider: WMS_ItemProvider,
 
         public tableGroupProvider: POS_TableGroupProvider,
@@ -188,7 +183,7 @@ export class POSSplitModalPage extends PageBase {
             this.contactListInput$.pipe(
                 distinctUntilChanged(),
                 tap(() => this.contactListLoading = true),
-                switchMap(term => this.posContactProvider.SearchContact({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
+                switchMap(term => this.contactProvider.search({ Take: 20, Skip: 0, SkipMCP: true, Term: term ? term : 'BP:'+  this.item.IDContact }).pipe(
                     catchError(() => of([])), // empty list on error
                     tap(() => this.contactListLoading = false)
                 ))
@@ -239,11 +234,6 @@ export class POSSplitModalPage extends PageBase {
 
 
     splitOrder() {
-        let apiPath = {
-            method: "POST",
-            url: function () { return ApiSetting.apiDomain("SALE/Order/MergeOrders/") }
-        };
-
         return new Promise((resolve, reject) => {
             if (!this.item.Ids.length || !this.item.IDContact) {
                 this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.check-merge-invoice-select-customer', 'warning');
@@ -254,7 +244,7 @@ export class POSSplitModalPage extends PageBase {
                     this.item.IDBranch = this.env.selectedBranch;
                 }
 
-                this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), this.item).toPromise()
+                this.pageProvider.commonService.connect('POST', 'SALE/Order/MergeOrders/', this.item).toPromise()
                     .then((savedItem: any) => {
                         this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete', 'warning');
                         resolve(savedItem.Id);
@@ -488,11 +478,7 @@ export class POSSplitModalPage extends PageBase {
 
     splitSaleOrder() {
         let publishEventCode = this.pageConfig.pageName;
-        let apiPath = {
-            method: "POST",
-            url: function () { return ApiSetting.apiDomain("SALE/Order/SplitOrder/") }
-        };
-
+    
         return new Promise((resolve, reject) => {
             if (!this.isCanSplit) {
                 this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.check-customer-atleast-one', 'warning');
@@ -504,7 +490,7 @@ export class POSSplitModalPage extends PageBase {
                     this.item.IDBranch = this.env.selectedBranch;
                 }
 
-                this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), this.item).toPromise().then((savedItem: any) => {
+                this.pageProvider.commonService.connect('POST', 'SALE/Order/SplitOrder/', this.item).toPromise().then((savedItem: any) => {
                     if (publishEventCode) {
                         this.env.publishEvent({ Code: publishEventCode });
                     }
