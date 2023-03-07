@@ -1,0 +1,101 @@
+<ion-header>
+	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-menu.page-title' | translate}}" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh()" (export)="export()" (import)="import($event)" (help)="help()" (unselect)="unselect()" (archiveItems)="archiveItems()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)"></app-list-toolbar>
+	<section class="table">
+		<header class="bold">
+			<div class="col-checkbox cell"></div>
+			<div class="col-id cell" (click)="sortToggle('Id')">
+				Id
+				<ion-icon class="min-btn" *ngIf="sort.Id" [name]="sort.Id == 'Id'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Id" name="search" color="primary"></ion-icon>
+			</div>
+			<div class="col-status cell" (click)="sortToggle('Status')">
+				Trạng thái
+				<ion-icon class="min-btn" *ngIf="sort.Status" [name]="sort.Status == 'Status'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Status" name="search" color="primary"></ion-icon>
+			</div>
+			<div class="col-time cell" (click)="sortToggle('CreatedDate')">
+				Thời gian
+				<ion-icon class="min-btn" *ngIf="sort.CreatedDate" [name]="sort.CreatedDate == 'CreatedDate'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.CreatedDate" name="search" color="primary"></ion-icon>
+			</div>
+      <div class="col-person cell" (click)="sortToggle('CreatedBy')">
+				Người Tạo
+				<ion-icon class="min-btn" *ngIf="sort.CreatedBy" [name]="sort.CreatedBy == 'CreatedBy'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.CreatedBy" name="search" color="primary"></ion-icon>
+			</div>      
+			<div class="col-remark cell">Ghi chú</div>
+      <div class="col-id cell ion-hide-sm-down" (click)="sortToggle('IsRefundTransaction')">
+        Hoàn tiền
+        <ion-icon class="min-btn" *ngIf="sort.IsRefundTransaction" [name]="sort.IsRefundTransaction == 'IsRefundTransaction'?'arrow-down': 'arrow-up'"></ion-icon>
+        <ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.IsRefundTransaction" name="search" color="primary"></ion-icon>
+      </div>
+      <div class="col-amount cell money" (click)="sortToggle('Amount')">
+				Số tiền
+				<ion-icon class="min-btn" *ngIf="sort.Amount" [name]="sort.Amount == 'Amount'?'arrow-down': 'arrow-up'"></ion-icon>
+				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Amount" name="search" color="primary"></ion-icon>
+			</div>
+		</header>
+		<form (submit)="refresh()" action="#">
+			<header class="filter" *ngIf="pageConfig.isShowSearch">
+				<div class="col-checkbox cell"></div>
+				<div class="col-id cell">
+					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Id" class="c-input" [ngClass]="{active: query.Id}" type="text">
+					<ion-icon class="min-btn" (click)="query.Id=''; refresh()" *ngIf="query.Id" name="close-circle-outline"></ion-icon>
+				</div>
+				<div class="col-code cell">
+					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Code" class="c-input" [ngClass]="{active: query.Code}" type="text">
+					<ion-icon class="min-btn" (click)="query.Code=''; refresh()" *ngIf="query.Code" name="close-circle-outline"></ion-icon>
+				</div>
+				<div class="col-name cell">
+					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Name" class="c-input" [ngClass]="{active: query.Name}" type="text">
+					<ion-icon class="min-btn" (click)="query.Name=''; refresh()" *ngIf="query.Name" name="close-circle-outline"></ion-icon>
+				</div>
+				<div class="col-remark cell"></div>
+				<button mat-raised-button type="submit" style="display:none">Search</button>
+			</header>
+		</form>
+	</section>
+</ion-header>
+
+<ion-content appScrollbarTheme class="header-table">
+	<app-page-message [itemsLength]="items.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+	<div *ngIf="items.length && pageConfig.showSpinner==false">
+		<section class="table">
+			<ion-virtual-scroll [items]="items" approxItemHeight="27px">
+				<ng-container *virtualItem="let i; let itemBounds = bounds; let j = index;">
+					<div class="row" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}">
+						<div class="col-checkbox cell">
+							<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
+						</div>
+						<div (click)="nav('pos-payment/'+i.Id,'forward')" class="col-id cell">
+							{{i.Id}}
+						</div>
+						<div (click)="nav('pos-payment/'+i.Id,'forward')" class="col-status cell">
+							<span class="bar-holder">
+								<ion-text class="bar-title" [color]="i.StatusColor">{{i.StatusText}}</ion-text>
+								<span class="bar" [ngClass]="{active: s.Code==i.Status}" [ngStyle]="{'background-color': 'var(--ion-color-'+s.Color+')'}" *ngFor="let s of statusList" [title]="s.Name"></span>
+							</span>
+						</div>
+						<div (click)="nav('pos-payment/'+i.Id,'forward')" class="col-time cell">
+							{{i.CreatedDateText}}
+              <small *ngIf="i.CreatedTimeText">{{i.CreatedTimeText}}</small>
+						</div>
+            <div (click)="nav('pos-payment/'+i.Id,'forward')" class="col-person cell">
+							{{i.CreatedBy}}
+						</div>
+						<div class="col-remark cell">{{i.Remark}}</div>
+            <div class="col-id cell ion-hide-sm-down">
+							<ion-icon class="min-btn" *ngIf="i.IsRefundTransaction" name="checkmark"></ion-icon>
+						</div>
+            <div (click)="nav('pos-payment/'+i.Id,'forward')" class="col-amount cell money">
+							{{i.Amount}}
+						</div>
+					</div>
+				</ng-container>
+			</ion-virtual-scroll>
+		</section>
+	</div>
+	<ion-infinite-scroll color="primary" threshold="20%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
+		<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
+	</ion-infinite-scroll>
+</ion-content>

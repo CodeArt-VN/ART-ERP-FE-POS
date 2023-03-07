@@ -807,7 +807,7 @@ export class POSOrderDetailPage extends PageBase {
         }
         this.calcOrder();
         if (this.item.OrderLines.length) {
-            this.debounce(() => { this.saveChange() }, 5000);
+            //this.debounce(() => { this.saveChange() }, 5000);
             //this.saveChange();
         }
 
