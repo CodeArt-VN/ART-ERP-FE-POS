@@ -18,8 +18,6 @@
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
 						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
-
-
 							<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
 								<div style="display: flex;">
 									<!-- <small style="position: relative;">
@@ -62,9 +60,6 @@
 								</textarea>
 								</div>
 							</div>
-
-
-
 						</ng-container>
 					</div>
 				</div>
@@ -290,7 +285,7 @@
 	</div>
 
 	<!-- Bill Printing -->
-	<div id="bill" class="bill" style="overflow: auto; width: 72mm;" *ngIf="item?.OrderLines?.length">
+	<div id="bill" class="bill" style="overflow: auto; width: 72mm; display: none;" *ngIf="item?.OrderLines?.length">
 		<div class="receipt giao-nhan" style="overflow: auto;">
 			<section class="sheet rpt p1">
 				<table>

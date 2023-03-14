@@ -1,3 +1,26 @@
+ion-card{
+    margin-inline: 0px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+.item-row{
+    margin-bottom: 5px;
+    background-color: var(--ion-color-light);
+}
+ion-card-content{
+    padding: 10px;
+}
+.header-title-payment{
+    background-color: var(--ion-color-light) ;
+    color: var(--ion-color-primary-contrast);
+    padding: 10px;
+}
+.btn-payment{
+    background-color: var(--ion-color-primary) ;
+    color: var(--ion-color-primary-contrast);
+    padding: 10px;
+}
+
 .payment-methods {
     display: flex;
     align-items: center;
@@ -40,24 +63,30 @@
         padding-right: 6px;
         background: var(--ion-color-tertiary-tint);
     }
-
     .col-id {
-        max-width: 30px !important;
-        min-width: 30px !important;
+        max-width: 25px !important;
+        min-width: 25px !important;
     }
-
+    .col-code {
+        max-width: 160px !important;
+        min-width: 160px !important;
+    }
+    .col-type {
+        max-width: 90px !important;
+        min-width: 90px !important;
+    }
     .col-money {
-        max-width: 120px !important;
-        min-width: 120px !important;
+        max-width: 115px !important;
+        min-width: 115px !important;
+        color: var(--ion-color-primary);
     }
-    
-    .col-remark {
+    .col-status {
         white-space: break-spaces;
         overflow: hidden;
         text-overflow: ellipsis;
-        min-width: 150px;
-        max-width: 250px;
-    }
+        min-width: 80px;
+        max-width: 80px;
+    }  
 }
 
 .header-box {

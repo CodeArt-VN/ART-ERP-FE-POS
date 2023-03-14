@@ -39,12 +39,12 @@ export class POSKitchenDetailPage extends PageBase {
         });
     }
 
-    preLoadData(event?: any): void {
-        // this.printerProvider.read().then(resp=>{
-        //     this.IDPrinterList = resp['data'];
-        //     super.preLoadData(event);
-        // });
-    }
+    // preLoadData(event?: any): void {
+    //     // this.printerProvider.read().then(resp=>{
+    //     //     this.IDPrinterList = resp['data'];
+    //     //     super.preLoadData(event);
+    //     // });
+    // }
 
     segmentView = 's1';
     segmentChanged(ev: any) {

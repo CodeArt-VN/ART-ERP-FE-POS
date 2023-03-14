@@ -331,7 +331,7 @@ export class POSOrderDetailPage extends PageBase {
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
-                item: this.item,
+                selectedOrder: this.item,
                 contactSelected: this.item._Customer,
             }
         });
@@ -1249,7 +1249,6 @@ export class POSOrderDetailPage extends PageBase {
 
 
 
-
     private getMenu(forceReload) {
         return new Promise((resolve, reject) => {
             this.env.getStorage('menuList' + this.env.selectedBranch).then(data => {
@@ -1257,6 +1256,7 @@ export class POSOrderDetailPage extends PageBase {
                     resolve(data);
                 }
                 else {
+                    debugger;
                     this.menuProvider.read({ IDBranch: this.env.selectedBranch }).then(resp => {
                         let menuList = resp['data'];
                         menuList.forEach((m: any) => {
