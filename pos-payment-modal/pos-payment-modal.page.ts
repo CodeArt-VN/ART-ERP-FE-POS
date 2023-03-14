@@ -140,7 +140,7 @@ export class POSPaymentModalPage extends PageBase {
         };
         let str = window.btoa(JSON.stringify(payment));
         let code =  this.ConvertUrl(str);
-        let url = "https://5d9e-14-241-227-233.ap.ngrok.io" + "/Payment?Code=" + code;
+        let url = "https://5d9e-14-241-227-233.ap.ngrok.io" + "/Payment?Code="+code;
         window.open(url, "_blank");
     }
 }
