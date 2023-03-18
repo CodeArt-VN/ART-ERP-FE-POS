@@ -16,6 +16,10 @@
         <ion-col>
           <ng-container *ngIf="Customer.Id != 922">
             <div class="c-control">
+              <label class="c-label" for="TaxCode">Mã số thuế</label>
+              <ion-input class="c-input" style="padding-left: 1rem !important;" id="TaxCode" (ionChange)="searchTaxCode($event)" [(ngModel)]="Customer.Code" type="text"></ion-input>
+            </div>
+            <div class="c-control">
                 <label class="c-label" for="CompanyName">Tên công ty</label>
                 <input class="c-input" id="CompanyName" [(ngModel)]="Customer.Name" type="text">
             </div>      

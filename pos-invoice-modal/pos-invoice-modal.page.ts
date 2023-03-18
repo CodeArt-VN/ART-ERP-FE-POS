@@ -29,26 +29,16 @@ export class POSInvoiceModalPage extends PageBase {
     super.loadData(event);
     console.log(this.Customer);
   }
-  contactList$
-  contactListLoading = false;
-  contactListInput$ = new Subject<string>();
-  contactListSelected = [];
-  contactSelected = null;
-  contactSearch() {
-    this.contactListLoading = false;
-    this.contactList$ = concat(
-        of(this.contactListSelected),
-        this.contactListInput$.pipe(
-            distinctUntilChanged(),
-            tap(() => this.contactListLoading = true),
-            switchMap(term => this.posContactProvider.SearchContact({ Take: 20, Skip: 0, Term: term ? term : this.item.IDContact }).pipe(
-                catchError(() => of([])), // empty list on error
-                tap(() => this.contactListLoading = false)
-            ))
-
-        )
-    );   
-  }  
+  searchTaxCode(event){
+    console.log(event.target.value);
+    let query: any = {
+      TaxCode : event.target.value
+    }  
+    this.pageProvider.search(query).toPromise().then(data=>{
+      
+      this.Customer.Code = data[0]?.TaxCode;
+    });
+  }
   applyInvoice(apply = false){
     if (apply) {     
       //this.voucherCalc();    
