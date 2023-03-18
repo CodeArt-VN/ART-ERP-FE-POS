@@ -20,6 +20,7 @@ import html2canvas from 'html2canvas';
 import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
+import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -28,7 +29,7 @@ import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page
 })
 export class POSOrderDetailPage extends PageBase {
     isOpenMemoModal = false;
-
+    InvoiceOptions = false;
     AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
     segmentView = 'all';
     idTable: any; //Default table
@@ -174,6 +175,7 @@ export class POSOrderDetailPage extends PageBase {
 
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
         super.loadedData(event, ignoredFromGroup);
+        console.log(this.item);
         if (!this.item?.Id) {
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
@@ -342,7 +344,22 @@ export class POSOrderDetailPage extends PageBase {
             //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
         }
     }
-
+    async processInvoices(){
+        const modal = await this.modalController.create({
+            component: POSInvoiceModalPage,
+            swipeToClose: true,
+            backdropDismiss: true,
+            cssClass: 'modal-change-table',
+            componentProps: {
+                Customer: this.item._Customer,
+            }
+        });
+        await modal.present();
+        const { data } = await modal.onWillDismiss();
+        if (data) {
+            //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
+        }
+    }
     async processPayments() {
         const modal = await this.modalController.create({
             component: POSPaymentModalPage,

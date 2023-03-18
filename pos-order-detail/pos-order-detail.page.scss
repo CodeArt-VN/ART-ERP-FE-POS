@@ -8,7 +8,9 @@
 //         margin-top: 0px !important;
 //     }
 // }
-
+.InvoiceOptions{
+	margin-top: 10px;
+}
 .cart span {
 	position: absolute;
 	padding: 0 5px;
@@ -759,4 +761,17 @@
 
 .toggle {
 	display: none;
+}
+.InvoiceOptions {
+	display: flex;
+    align-items: center;
+    align-content: center;
+    cursor: pointer;
+    ion-icon {
+        transform: scale(1.2);
+        margin: 0px 8px;
+    }
+	ion-label {
+        margin-left: 8px;
+    }
 }

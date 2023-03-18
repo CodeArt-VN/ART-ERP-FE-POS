@@ -116,8 +116,19 @@
 								{{item.CalcTotalOriginal | number: '1.0-0'}}
 							</ion-text>
 						</label>
+						<span class="c-label" style="margin-top: 15px;">
+							<label class="InvoiceOptions">
+								<input class="c-checkbox" [(ngModel)]="InvoiceOptions" [ngModelOptions]="{standalone: true}" type="checkbox">
+								<ion-label  [ngStyle]="{'font-weight': InvoiceOptions ? 'bold' : 'normal'}" [color]="InvoiceOptions ? 'primary' : 'medium'">
+									Xuất hóa đơn?
+								</ion-label>
+								<label class="clickable" (click)="processInvoices()" >
+									<ion-icon   color="primary" name="receipt"></ion-icon>
+								</label>	
+							</label>
+																	
+						</span>				
 					</div>
-
 				</div>
 			</div>
 
