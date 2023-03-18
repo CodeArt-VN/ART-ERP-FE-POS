@@ -19,6 +19,7 @@ import * as qz from 'qz-tray';
 import html2canvas from 'html2canvas';
 import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
+import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -320,6 +321,24 @@ export class POSOrderDetailPage extends PageBase {
         await modal.present();
         const { data } = await modal.onWillDismiss();
         if (data) {
+            this.item = data;
+            //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
+        }
+    }
+    async processVouchers() {
+        const modal = await this.modalController.create({
+            component: POSVoucherModalPage,
+            swipeToClose: true,
+            backdropDismiss: true,
+            cssClass: 'modal-change-table',
+            componentProps: {
+                item: this.item,
+            }
+        });
+        await modal.present();
+        const { data } = await modal.onWillDismiss();
+        if (data) {
+            this.item = data;
             //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
         }
     }
@@ -383,11 +402,11 @@ export class POSOrderDetailPage extends PageBase {
         });
 
         const newKitchenList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item['_IDKitchen'], item._item.Kitchen])).values()];
-
-        // debugger
+        debugger
         for (let index = 0; index < newKitchenList.length; index++) {
             this.item.IDStatus = 101;
-            this.item.PaymentMethod = this.item.PaymentMethod.toString();
+            
+            //this.item.PaymentMethod = this.item.PaymentMethod.toString();
             this.item.OrderLines.forEach(e => {
                 if (e.Remark) {
                     e.Remark = e.Remark.toString();
@@ -493,7 +512,7 @@ export class POSOrderDetailPage extends PageBase {
                 if (idStatus) {
                     this.item.IDStatus = idStatus;
                 }
-                this.item.PaymentMethod = this.item.PaymentMethod.toString();
+                //this.item.PaymentMethod = this.item.PaymentMethod.toString();
                 this.item.OrderLines.forEach(e => {
                     if (e.Remark) {
                         e.Remark = e.Remark.toString();
@@ -1197,12 +1216,13 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     async QZCheckData(skipTime, receipt = false) {
-        if (!receipt) {
+        if (receipt) {
             this.item.OrderLines.forEach(e => {
                 e.ShippedQuantity = e.Quantity;
             });
-
+            debugger;
             this.pageProvider.save(this.item).then(data => {
+                
                 if (typeof this.item.PaymentMethod === 'string') {
                     let payments = this.item.PaymentMethod.split(',');
                     this.item.PaymentMethod = [];

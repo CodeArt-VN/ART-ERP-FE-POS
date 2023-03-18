@@ -94,15 +94,13 @@ export class POSPaymentModalPage extends PageBase {
         this.calcPayment();
        
     }
-    ConvertUrl(str) {return  str.replace("=","").replace("=","").replace("+", "-").replace("_", "/")}
-    confirmPayment(i){
-        this.items[i].IncomingPayment.Status="SUCCESS";
-        this.calcPayment();
-    }
-    calcPayment(){
+    private convertUrl(str) {
+        return  str.replace("=","").replace("=","").replace("+", "-").replace("_", "/")
+    } 
+    private calcPayment(){
         let PaidAmounted = 0;
         this.items.forEach(e => {
-            e.IncomingPayment.PaymentCode = e.IncomingPayment.Id+"_"+lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd');
+            e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd')+"_"+e.IncomingPayment.Id;
             e.IncomingPayment.CreatedDateText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'dd/mm/yyyy');
             e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM:ss');
             e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
@@ -113,9 +111,9 @@ export class POSPaymentModalPage extends PageBase {
             }
         });    
         this.PaidAmounted = PaidAmounted;
-        this.DebtAmount = this.selectedOrder.OriginalTotalAfterTax - this.PaidAmounted;
+        this.DebtAmount = this.selectedOrder.CalcTotalOriginal - this.PaidAmounted;
     }
-    checkPayment(i,id){
+    getStatus(i,id){
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
             this.items[i].IncomingPayment.Status= data['Status'];
             if(data['Status']=="SUCCESS"){
@@ -137,10 +135,19 @@ export class POSPaymentModalPage extends PageBase {
             IDCustomer: this.selectedOrder.IDContact,
             IDSaleOrder: this.selectedOrder.Id,
             DebtAmount: this.DebtAmount,
+            Timestamp:Date.now()
         };
         let str = window.btoa(JSON.stringify(payment));
-        let code =  this.ConvertUrl(str);
-        let url = "https://5d9e-14-241-227-233.ap.ngrok.io" + "/Payment?Code="+code;
+        let code =  this.convertUrl(str);
+        let url = "https://28f6-14-241-227-233.ap.ngrok.io" + "/Payment?Code="+code;
         window.open(url, "_blank");
     }
+    toDetail(code){
+        let url = "https://28f6-14-241-227-233.ap.ngrok.io" + "/Payment?Code="+code;
+        window.open(url, "_blank");
+    }
+    // confirmPayment(i){
+    //     this.items[i].IncomingPayment.Status="SUCCESS";
+    //     this.calcPayment();
+    // }
 }

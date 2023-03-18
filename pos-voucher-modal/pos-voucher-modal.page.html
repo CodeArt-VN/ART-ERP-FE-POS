@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar>
+        <ion-title>Voucher</ion-title>
+        <ion-buttons slot="primary">  
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="applyVoucher()">
+                <ion-icon slot="icon-only" name="close"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+</ion-header>
+<ion-content appScrollbarTheme class="ion-padding">
+  <div id="pos-discount-page" style="position: absolute;"></div>
+  <div class="main-view">
+      <ion-grid fixed style="max-width: 500px;" *ngIf="item">
+        <ion-row>
+          <ion-col>
+            <div class="c-control">
+                <input (change)="changeVoucher()" class="c-input c-label"  [(ngModel)]="VoucherCode" type="text" placeholder="Nhập mã voucher">    
+            </div>                
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <div class="c-control">
+              <center> <ion-text color="primary">{{VoucherDiscountAmount | number: '1.0-0'}} đ</ion-text></center>
+            </div>                
+          </ion-col>
+        </ion-row>
+        <ion-row class="sticky-btn">
+          <ion-col >
+              <div class="c-control ion-text-center">
+                  <ion-button expand="block" [disabled]="submitAttempt" (click)="applyVoucher(true)">Áp dụng</ion-button>
+              </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+  </div>
+</ion-content>

@@ -18,7 +18,7 @@
             <ion-row>
                 <ion-col size="12">
                     <ion-text><center>Tổng Tiền Đơn Hàng</center></ion-text>
-                    <ion-text color="primary"><center><b><h5>{{selectedOrder.OriginalTotalAfterTax | number: '1.0-0'}} đ</h5></b></center></ion-text>
+                    <ion-text color="primary"><center><b><h5>{{selectedOrder.CalcTotalOriginal | number: '1.0-0'}} đ</h5></b></center></ion-text>
                 </ion-col>
 
                 <ion-col size="12" *ngIf="items.length>0">
@@ -36,12 +36,12 @@
                                 </header>
                                 <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">
                                     <div class="col-id cell">
-                                        <span title="kiễm tra" *ngIf="i.IncomingPayment.Status=='PROCESSING' && i.IncomingPayment.Type !='CASH'" (click)="checkPayment(idx,i.IncomingPayment.Id)">
+                                        <span title="kiểm tra" *ngIf="i.IncomingPayment.Status=='PROCESSING' && i.IncomingPayment.Type !='CASH'" (click)="getStatus(idx,i.IncomingPayment.Id)">
                                             <ion-icon style="pointer-events:none ;font-size: 15pt;" color="primary" name="refresh-circle-outline" ></ion-icon>
                                         </span>                               
                                     </div> 
                                     <div class="col-code cell">
-                                        {{i.IncomingPayment.PaymentCode}}
+                                        <ion-text color="primary" (click)="toDetail(i.IncomingPayment.Code)">{{i.IncomingPayment.PaymentCode}}</ion-text>
                                         <!-- <small *ngIf="i.IncomingPayment.CreatedTimeText">{{i.IncomingPayment.CreatedTimeText}}</small> -->
                                     </div>                                   
                                     <div class="col-type cell">
