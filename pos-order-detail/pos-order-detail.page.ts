@@ -28,7 +28,6 @@ import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page
 })
 export class POSOrderDetailPage extends PageBase {
     isOpenMemoModal = false;
-    IsExportInvoice = false;
     AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
     segmentView = 'all';
     idTable: any; //Default table
@@ -358,7 +357,7 @@ export class POSOrderDetailPage extends PageBase {
             
         }
     }
-    ExportInvoice(){
+    InvoiceRequired(){
         if(!this.item._Customer){
             this.env.showTranslateMessage('Vui lòng chọn khách hàng', 'warning');
             return false; 
@@ -367,7 +366,7 @@ export class POSOrderDetailPage extends PageBase {
             this.env.showTranslateMessage('Không thể xuất hóa đơn cho khách lẻ', 'warning');
             return false;
         }
-        this.IsExportInvoice = true;
+        this.item.IsInvoiceRequired = true;
     }
     cancelPOSOrder() {
         this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {

@@ -117,9 +117,9 @@
 						</label>
 						<span class="c-label" style="margin-top: 15px;">
 							<label class="InvoiceOptions">
-								<input class="c-checkbox" (click)="ExportInvoice()" [(ngModel)]="IsExportInvoice" [ngModelOptions]="{standalone: true}" type="checkbox">
+								<input class="c-checkbox" (click)="InvoiceRequired()" [(ngModel)]="this.item.IsInvoiceRequired" [ngModelOptions]="{standalone: true}" type="checkbox">
 								<ion-icon  color="primary" name="receipt"></ion-icon>
-								<ion-label  [ngStyle]="{'font-weight': IsExportInvoice ? 'bold' : 'normal'}" [color]="IsExportInvoice ? 'primary' : 'medium'">
+								<ion-label  [ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}" [color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'">
 									Xuất hóa đơn?
 								</ion-label>
 									
