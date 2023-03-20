@@ -1,6 +1,6 @@
 <ion-header>
     <ion-toolbar> 
-        <ion-title>Đơn hàng #{{selectedOrder.Id}}</ion-title>
+        <ion-title>Đơn hàng #{{item.Id}}</ion-title>
         <ion-buttons slot="primary">
             <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="primary" (click)="refresh()">
                 <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
@@ -18,7 +18,7 @@
             <ion-row>
                 <ion-col size="12">
                     <ion-text><center>Tổng Tiền Đơn Hàng</center></ion-text>
-                    <ion-text color="primary"><center><b><h5>{{selectedOrder.CalcTotalOriginal | number: '1.0-0'}} đ</h5></b></center></ion-text>
+                    <ion-text color="primary"><center><b><h5>{{item.CalcTotalOriginal | number: '1.0-0'}} đ</h5></b></center></ion-text>
                 </ion-col>
 
                 <ion-col size="12" *ngIf="items.length>0">

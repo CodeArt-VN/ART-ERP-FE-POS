@@ -20,7 +20,6 @@ import html2canvas from 'html2canvas';
 import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
-import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -29,7 +28,7 @@ import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page
 })
 export class POSOrderDetailPage extends PageBase {
     isOpenMemoModal = false;
-    InvoiceOptions = false;
+    IsExportInvoice = false;
     AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
     segmentView = 'all';
     idTable: any; //Default table
@@ -185,6 +184,7 @@ export class POSOrderDetailPage extends PageBase {
         }
         this.loadOrder();
         this.contactSearch();
+        console.log(this.item);
     }
 
     refresh(event?: any): void {
@@ -321,10 +321,9 @@ export class POSOrderDetailPage extends PageBase {
             }
         });
         await modal.present();
-        const { data } = await modal.onWillDismiss();
-        if (data) {
+        const { data,role } = await modal.onWillDismiss();
+        if (role == 'confirm') {
             this.item = data;
-            //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
         }
     }
     async processVouchers() {
@@ -338,26 +337,9 @@ export class POSOrderDetailPage extends PageBase {
             }
         });
         await modal.present();
-        const { data } = await modal.onWillDismiss();
-        if (data) {
+        const { data,role } = await modal.onWillDismiss();
+        if (role == 'confirm') {
             this.item = data;
-            //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
-        }
-    }
-    async processInvoices(){
-        const modal = await this.modalController.create({
-            component: POSInvoiceModalPage,
-            swipeToClose: true,
-            backdropDismiss: true,
-            cssClass: 'modal-change-table',
-            componentProps: {
-                Customer: this.item._Customer,
-            }
-        });
-        await modal.present();
-        const { data } = await modal.onWillDismiss();
-        if (data) {
-            //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
         }
     }
     async processPayments() {
@@ -367,17 +349,26 @@ export class POSOrderDetailPage extends PageBase {
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
-                selectedOrder: this.item,
-                contactSelected: this.item._Customer,
+                item: this.item,
             }
         });
         await modal.present();
         const { data } = await modal.onWillDismiss();
         if (data) {
-            //this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
+            
         }
     }
-
+    ExportInvoice(){
+        if(!this.item._Customer){
+            this.env.showTranslateMessage('Vui lòng chọn khách hàng', 'warning');
+            return false; 
+        }
+        if(this.item._Customer.Id == 922){
+            this.env.showTranslateMessage('Không thể xuất hóa đơn cho khách lẻ', 'warning');
+            return false;
+        }
+        this.IsExportInvoice = true;
+    }
     cancelPOSOrder() {
         this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {
             let publishEventCode = this.pageConfig.pageName;
@@ -1293,7 +1284,6 @@ export class POSOrderDetailPage extends PageBase {
                     resolve(data);
                 }
                 else {
-                    debugger;
                     this.menuProvider.read({ IDBranch: this.env.selectedBranch }).then(resp => {
                         let menuList = resp['data'];
                         menuList.forEach((m: any) => {

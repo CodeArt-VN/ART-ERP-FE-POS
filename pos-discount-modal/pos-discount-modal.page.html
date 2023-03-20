@@ -2,7 +2,7 @@
     <ion-toolbar>
         <ion-title>Chiết khấu</ion-title>
         <ion-buttons slot="primary">
-            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="applyDiscount()">
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="closeModal()">
                 <ion-icon slot="icon-only" name="close"></ion-icon>
             </ion-button>
         </ion-buttons>
@@ -32,7 +32,7 @@
         <ion-row class="sticky-btn">
             <ion-col >
                 <div class="c-control ion-text-center">
-                    <ion-button expand="block" [disabled]="submitAttempt" (click)="applyDiscount(true)">Áp dụng</ion-button>
+                    <ion-button expand="block"  (click)="applyDiscount(true)">Áp dụng</ion-button>
                 </div>
             </ion-col>
         </ion-row>

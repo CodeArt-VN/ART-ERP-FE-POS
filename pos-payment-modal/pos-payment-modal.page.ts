@@ -23,7 +23,6 @@ import { environment } from 'src/environments/environment';
     styleUrls: ['./pos-payment-modal.page.scss'],
 })
 export class POSPaymentModalPage extends PageBase {
-    @Input() selectedOrder;
     DebtAmount = 0;
     PaidAmounted = 0;
     Amount = 0;
@@ -50,49 +49,20 @@ export class POSPaymentModalPage extends PageBase {
         this.env.getEvents().subscribe((data) => {
 			switch (data.Code) {
 				case 'app:POSOrderPaymentUpdate':
-					this.PushPayment(data)
+					this.pushPayment(data)
 					break;
             }
         })
         
     }
-    PushPayment(data){
-        
-        
-            let query: any = {
-                IDIncomingPayment: data.Id,
-                IDSaleOrder:this.selectedOrder.Id
-            }  
-            this.pageProvider.read(query).then((result: any)=>{                                              
-                if(result['count']>0 && result['data'][0].IDSaleOrder == this.selectedOrder.Id){
-                    let index = this.items.findIndex((i => i.IncomingPayment.Id == data.Id)); 
-                    console.log(index);
-                    if(index == -1){
-                        result['data'].forEach(e=>{
-                            this.items.unshift(e);
-                        })                
-                    }
-                    else{
-                        this.items[index].IncomingPayment.Status = result['data'][0].IncomingPayment.Status;
-                    }
-                    this.calcPayment();  
-                }                           
-            })
-        
-    }
-    preLoadData(event) {
-        this.env.getStatus('PAYMENT').then(data => {this.statusList = data});
-        this.env.getType('PaymentType').then(data=>{this.typeList = data;});
-        super.preLoadData(event);
-    }
     loadData(event){
-        Object.assign(this.query, {SortBy: '[Id_desc]',IDSaleOrder: this.selectedOrder.Id, IsDeleted: false});
+        Object.assign(this.query, {SortBy: '[Id_desc]',IDSaleOrder: this.item.Id, IsDeleted: false});
         super.loadData(event);
+        this.env.getStatus('PAYMENT').then(data => {this.statusList = data});
+        this.env.getType('PaymentType').then(data=>{this.typeList = data;});  
     }
     loadedData(event) {
-        super.loadedData(event);      
         this.calcPayment();
-       
     }
     private convertUrl(str) {
         return  str.replace("=","").replace("=","").replace("+", "-").replace("_", "/")
@@ -111,43 +81,62 @@ export class POSPaymentModalPage extends PageBase {
             }
         });    
         this.PaidAmounted = PaidAmounted;
-        this.DebtAmount = this.selectedOrder.CalcTotalOriginal - this.PaidAmounted;
+        this.DebtAmount = this.item.CalcTotalOriginal - this.PaidAmounted;
     }
     getStatus(i,id){
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
             this.items[i].IncomingPayment.Status= data['Status'];
-            if(data['Status']=="SUCCESS"){
-                this.env.showTranslateMessage('Thanh toán thành công', 'success');
-            } 
-            if(data['Status']=="FAIL"){
-                this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
-            }  
-            if(data['Status']=="PROCESSING"){
-                this.env.showTranslateMessage('Đang chờ khách hàng thanh toán', 'warning');
-            }   
+            switch (data['Status']) {
+				case 'SUCCESS':
+					this.env.showTranslateMessage('Thanh toán thành công', 'success');
+					break;
+                case 'FAIL':
+					this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
+					break;
+                default:
+					this.env.showTranslateMessage('Đang chờ khách hàng thanh toán', 'warning');
+					break;
+            }
             this.calcPayment();
         });
     }
     toPayment(){
         let payment = {
-            IDBranch: this.selectedOrder.IDBranch,
+            IDBranch: this.item.IDBranch,
             IDStaff: this.env.user.StaffID,
-            IDCustomer: this.selectedOrder.IDContact,
-            IDSaleOrder: this.selectedOrder.Id,
+            IDCustomer: this.item.IDContact,
+            IDSaleOrder: this.item.Id,
             DebtAmount: this.DebtAmount,
             Timestamp:Date.now()
         };
         let str = window.btoa(JSON.stringify(payment));
         let code =  this.convertUrl(str);
-        let url = "https://28f6-14-241-227-233.ap.ngrok.io" + "/Payment?Code="+code;
+        let url = environment.appDomain + "Payment?Code="+code;
         window.open(url, "_blank");
     }
     toDetail(code){
-        let url = "https://28f6-14-241-227-233.ap.ngrok.io" + "/Payment?Code="+code;
+        let url = environment.appDomain + "Payment?Code="+code;
         window.open(url, "_blank");
     }
-    // confirmPayment(i){
-    //     this.items[i].IncomingPayment.Status="SUCCESS";
-    //     this.calcPayment();
-    // }
+    pushPayment(data){
+        let query: any = {
+            IDIncomingPayment: data.Id,
+            IDSaleOrder:this.item.Id
+        }  
+        this.pageProvider.read(query).then((result: any)=>{                                              
+            if(result['count']>0 && result['data'][0].IDSaleOrder == this.item.Id){
+                let index = this.items.findIndex((i => i.IncomingPayment.Id == data.Id)); 
+                console.log(index);
+                if(index == -1){
+                    result['data'].forEach(e=>{
+                        this.items.unshift(e);
+                    })                
+                }
+                else{
+                    this.items[index].IncomingPayment.Status = result['data'][0].IncomingPayment.Status;
+                }
+                this.calcPayment();  
+            }                           
+        })
+    }
 }

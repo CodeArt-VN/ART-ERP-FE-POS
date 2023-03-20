@@ -102,7 +102,6 @@
 								{{item.OriginalTotalDiscount | number: '1.0-0'}}
 							</span>
 						</label>
-
 						<label class="c-label">VAT
 							<span class="c-value">{{item.OriginalTax | number: '1.0-0'}}</span>
 						</label>
@@ -118,13 +117,12 @@
 						</label>
 						<span class="c-label" style="margin-top: 15px;">
 							<label class="InvoiceOptions">
-								<input class="c-checkbox" [(ngModel)]="InvoiceOptions" [ngModelOptions]="{standalone: true}" type="checkbox">
-								<ion-label  [ngStyle]="{'font-weight': InvoiceOptions ? 'bold' : 'normal'}" [color]="InvoiceOptions ? 'primary' : 'medium'">
+								<input class="c-checkbox" (click)="ExportInvoice()" [(ngModel)]="IsExportInvoice" [ngModelOptions]="{standalone: true}" type="checkbox">
+								<ion-icon  color="primary" name="receipt"></ion-icon>
+								<ion-label  [ngStyle]="{'font-weight': IsExportInvoice ? 'bold' : 'normal'}" [color]="IsExportInvoice ? 'primary' : 'medium'">
 									Xuất hóa đơn?
 								</ion-label>
-								<label class="clickable" (click)="processInvoices()" >
-									<ion-icon   color="primary" name="receipt"></ion-icon>
-								</label>	
+									
 							</label>
 																	
 						</span>				

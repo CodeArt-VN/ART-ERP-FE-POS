@@ -9,7 +9,6 @@ import { EnvService } from 'src/app/services/core/env.service';
     styleUrls: ['./pos-discount-modal.page.scss'],
 })
 export class POSDiscountModalPage extends PageBase {
-    @Input() item;
     Discount = {
         Percent:0,
         Amount:0
@@ -24,8 +23,7 @@ export class POSDiscountModalPage extends PageBase {
     }
     loadData(event) {
         this.Discount.Amount = this.item.OriginalTotalDiscount;
-        this.Discount.Percent =this.Discount.Amount *100 / this.item.OriginalTotalBeforeDiscount; 
-        super.loadData(event);
+        this.Discount.Percent = this.Discount.Amount *100 / this.item.OriginalTotalBeforeDiscount; 
     }
     changePercentDiscount() { //SalesOff
         this.Discount.Amount = this.Discount.Percent * this.item.OriginalTotalBeforeDiscount / 100 
@@ -33,17 +31,8 @@ export class POSDiscountModalPage extends PageBase {
     changeAmountDiscount() { //SalesOff
         this.Discount.Percent = this.Discount.Amount *100 / this.item.OriginalTotalBeforeDiscount ;
     }
-    discountCalc() {
-        this.item.OriginalTotalDiscount = this.item.OriginalTotalDiscount + this.Discount.Amount;
-        this.item.CalcTotalOriginal = this.item.OriginalTotalBeforeDiscount - this.item.OriginalTotalDiscount - this.item.OriginalTax;
-    }
     applyDiscount(apply = false) {
-        if (apply) {     
-            this.discountCalc();    
-            this.modalController.dismiss(this.item);         
-        }
-        else {
-            this.modalController.dismiss();
-        }
+        this.item.OriginalTotalDiscount = this.Discount.Amount;
+        return this.modalController.dismiss(this.item, (apply ? 'confirm' : 'cancel'));
     }
 }

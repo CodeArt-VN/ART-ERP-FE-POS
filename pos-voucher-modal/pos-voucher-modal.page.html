@@ -2,7 +2,7 @@
   <ion-toolbar>
         <ion-title>Voucher</ion-title>
         <ion-buttons slot="primary">  
-            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="applyVoucher()">
+            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="closeModal()">
                 <ion-icon slot="icon-only" name="close"></ion-icon>
             </ion-button>
         </ion-buttons>
@@ -19,7 +19,7 @@
             </div>                
           </ion-col>
         </ion-row>
-        <ion-row>
+        <ion-row *ngIf="VoucherDiscountAmount > 0">
           <ion-col>
             <div class="c-control">
               <center> <ion-text color="primary">{{VoucherDiscountAmount | number: '1.0-0'}} đ</ion-text></center>
@@ -29,7 +29,7 @@
         <ion-row class="sticky-btn">
           <ion-col >
               <div class="c-control ion-text-center">
-                  <ion-button expand="block" [disabled]="submitAttempt" (click)="applyVoucher(true)">Áp dụng</ion-button>
+                  <ion-button expand="block"  (click)="applyVoucher(true)">Áp dụng</ion-button>
               </div>
           </ion-col>
         </ion-row>
