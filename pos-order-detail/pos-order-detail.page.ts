@@ -173,7 +173,6 @@ export class POSOrderDetailPage extends PageBase {
 
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
         super.loadedData(event, ignoredFromGroup);
-        console.log(this.item);
         if (!this.item?.Id) {
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
@@ -183,7 +182,6 @@ export class POSOrderDetailPage extends PageBase {
         }
         this.loadOrder();
         this.contactSearch();
-        console.log(this.item);
     }
 
     refresh(event?: any): void {
@@ -353,11 +351,22 @@ export class POSOrderDetailPage extends PageBase {
         });
         await modal.present();
         const { data } = await modal.onWillDismiss();
-        if (data) {
-            
+        if (data == 'Done') {
+
+            this.formGroup.controls.IDStatus.patchValue(114);
+            this.formGroup.controls.Status.patchValue("Done");
+            this.formGroup.controls.IsInvoiceRequired.patchValue(this.item.IsInvoiceRequired);
+            this.formGroup.controls.IDStatus.markAsDirty();
+            this.formGroup.controls.Status.markAsDirty();
+            this.formGroup.controls.IsInvoiceRequired.markAsDirty();
+            this.saveSO();
         }
     }
     InvoiceRequired(){
+        if(this.pageConfig.canEdit == false){
+            this.env.showTranslateMessage('Đơn hàng đã hoàn tất không thể chỉnh sửa', 'warning');
+            return false;
+        }
         if(!this.item._Customer){
             this.env.showTranslateMessage('Vui lòng chọn khách hàng', 'warning');
             return false; 
@@ -834,7 +843,7 @@ export class POSOrderDetailPage extends PageBase {
         this.calcOrder();
         if (this.item.OrderLines.length) {
             //this.debounce(() => { this.saveChange() }, 5000);
-            //this.saveChange();
+            this.saveChange();
         }
 
     }
@@ -1271,6 +1280,7 @@ export class POSOrderDetailPage extends PageBase {
 
     private saveSO() {
         Object.assign(this.item, this.formGroup.value);
+        console.log(this.item);
         this.saveChange();
     }
 

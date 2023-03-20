@@ -75,7 +75,10 @@
                     </ion-item>
                     <div *ngIf="DebtAmount > 0" class="c-control ion-text-center">                          
                         <ion-button (click)="toPayment()" expand="block">Tiến hành thanh toán</ion-button>                                                         
-                    </div>                  
+                    </div>    
+                    <div *ngIf="DebtAmount <= 0 && item.Status != 'Done'" class="c-control ion-text-center">                          
+                        <ion-button (click)="doneOrder()" expand="block">Hoàn tất</ion-button>                                                         
+                    </div>               
                 </ion-col>
             </ion-row>
             <ion-row class="hr-group remove-padding">

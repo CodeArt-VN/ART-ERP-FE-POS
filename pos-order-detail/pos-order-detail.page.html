@@ -64,7 +64,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="box ion-padding">				
+			<div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">				
 				<div class="box-content">
 					<div class="check-out">
 						<label class="c-label"><b><center>Voucher giảm giá</center></b></label>
@@ -115,7 +115,7 @@
 								{{item.CalcTotalOriginal | number: '1.0-0'}}
 							</ion-text>
 						</label>
-						<span class="c-label" style="margin-top: 15px;">
+						<span class="c-label" style="margin-top: 15px;" *ngIf="item?.OrderLines?.length > 0">
 							<label class="InvoiceOptions">
 								<input class="c-checkbox" (click)="InvoiceRequired()" [(ngModel)]="this.item.IsInvoiceRequired" [ngModelOptions]="{standalone: true}" type="checkbox">
 								<ion-icon  color="primary" name="receipt"></ion-icon>

@@ -139,4 +139,7 @@ export class POSPaymentModalPage extends PageBase {
             }                           
         })
     }
+    doneOrder(){
+        return this.modalController.dismiss('Done');
+    }
 }
