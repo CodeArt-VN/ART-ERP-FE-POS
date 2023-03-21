@@ -10,7 +10,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
 import { NgxMaskModule } from 'ngx-mask';
 import { PipesModule } from 'src/app/pipes/pipes.module';
-
+import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 const routes: Routes = [
   {
     path: '',
@@ -32,6 +32,6 @@ const routes: Routes = [
     NgxMaskModule.forRoot(),
     RouterModule.forChild(routes)
   ],
-  declarations: [POSOrderDetailPage]
+  declarations: [POSOrderDetailPage,POSVoucherModalPage]
 })
 export class POSOrderDetailPageModule { }
