@@ -16,14 +16,14 @@
     <div >
         <ion-grid fixed style="max-width: 500px;">
             <ion-row>
-                <ion-col size="12">
-                    <ion-text><center>Tổng Tiền Đơn Hàng</center></ion-text>
-                    <ion-text color="primary"><center><b><h5>{{item.CalcTotalOriginal | number: '1.0-0'}} đ</h5></b></center></ion-text>
+                <ion-col size="12" class="ion-text-center">
+                    <ion-text >Tổng Tiền Đơn Hàng</ion-text>
+                    <ion-text color="primary"><b><h5>{{item.CalcTotalOriginal | number: '1.0-0'}} đ</h5></b></ion-text>
                 </ion-col>
 
                 <ion-col size="12" *ngIf="items.length>0">
                     <div class="c-control">
-                        <div class="c-label header-title-payment"><center><ion-text color="primary">Các lần thanh toán</ion-text></center></div>
+                        <div class="c-label header-title-payment ion-text-center"><ion-text color="primary">Các lần thanh toán</ion-text></div>
                         <div class="table-contain">
                             <section class="table">
                                 <header class="bold">   

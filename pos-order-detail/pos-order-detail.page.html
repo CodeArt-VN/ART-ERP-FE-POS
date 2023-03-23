@@ -67,7 +67,7 @@
 			<div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">				
 				<div class="box-content">
 					<div class="check-out">
-						<label class="c-label"><b><center>Voucher giảm giá</center></b></label>
+						<label class="c-label ion-text-center"><b>Voucher giảm giá</b></label>
 						<ion-card *ngIf="item.OriginalDiscount1 > 0">
 							<ion-item lines="none">
 								<img slot="start" height="20px" width="20px" src="/assets/icons/icon-72x72.png"/>
@@ -75,9 +75,9 @@
 								<ion-label>Giảm {{item.OriginalDiscount1 | number: '1.0-0'}} đ</ion-label>								
 							</ion-item>
 						</ion-card>
-						<center><label class="c-label clickable" *ngIf="pageConfig.canEdit" (click)="processVouchers()">							
+						<label class="c-label clickable ion-text-center" *ngIf="pageConfig.canEdit" (click)="processVouchers()">							
 							<ion-text color="primary" >Chọn hoặc nhập mã Voucher</ion-text> 						
-						</label></center>					
+						</label>					
 					</div>
 				</div>
 			</div>
