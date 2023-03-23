@@ -59,10 +59,13 @@ ion-card-content{
 }
 
 .table-contain {
+    .bold{
+        min-width: 480px;
+    }
     .row {
         padding-right: 6px;
         background: var(--ion-color-tertiary-tint);
-        min-width: 470px;
+        min-width: 480px;
     }
     .col-id {
         max-width: 25px !important;
