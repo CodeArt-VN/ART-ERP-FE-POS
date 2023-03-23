@@ -62,6 +62,7 @@ export class POSPaymentModalPage extends PageBase {
         this.env.getType('PaymentType').then(data=>{this.typeList = data;});  
     }
     loadedData(event) {
+        super.loadedData(event);
         this.calcPayment();
     }
     private convertUrl(str) {
