@@ -35,12 +35,12 @@
                                     <div class="col-money cell">Số tiền</div>                                                                       
                                 </header>
                                 <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">
-                                    <div class="col-id cell">
+                                    <div class="col-id">
                                         <span title="kiểm tra" *ngIf="i.IncomingPayment.Status=='PROCESSING' && i.IncomingPayment.Type !='CASH'" (click)="getStatus(idx,i.IncomingPayment.Id)">
                                             <ion-icon style="pointer-events:none ;font-size: 15pt;" color="primary" name="refresh-circle-outline" ></ion-icon>
                                         </span>                               
                                     </div> 
-                                    <div class="col-code cell">
+                                    <div class="col-code cell clickable">
                                         <ion-text color="primary" (click)="toDetail(i.IncomingPayment.Code)">{{i.IncomingPayment.PaymentCode}}</ion-text>
                                         <!-- <small *ngIf="i.IncomingPayment.CreatedTimeText">{{i.IncomingPayment.CreatedTimeText}}</small> -->
                                     </div>                                   
