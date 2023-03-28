@@ -1,19 +1,12 @@
-import { Component, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { NavController, ModalController, NavParams, LoadingController, AlertController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { BANK_IncomingPaymentDetailProvider, BANK_IncomingPaymentProvider, CRM_ContactProvider, POS_TableProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
-import { FormBuilder, Validators, FormControl, FormArray } from '@angular/forms';
-import { NgSelectConfig } from '@ng-select/ng-select';
-import { concat, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { BANK_IncomingPaymentDetailProvider, BANK_IncomingPaymentProvider } from 'src/app/services/static/services.service';
+import { FormBuilder } from '@angular/forms';
 import { lib } from 'src/app/services/static/global-functions';
-import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
-import QRCode from 'qrcode'
-import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
-import { POSAddContactModalPage } from '../pos-add-contact-modal/pos-add-contact-modal.page';
 import { environment } from 'src/environments/environment';
 
 
@@ -77,7 +70,7 @@ export class POSPaymentModalPage extends PageBase {
             e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusText = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusColor = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Color', 'dark', 'Code');
-            if(e.IncomingPayment.Status=="SUCCESS"){
+            if(e.IncomingPayment.Status=="Success"){
                 PaidAmounted = PaidAmounted + e.IncomingPayment.Amount 
             }
         });    
@@ -88,10 +81,10 @@ export class POSPaymentModalPage extends PageBase {
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
             this.items[i].IncomingPayment.Status= data['Status'];
             switch (data['Status']) {
-				case 'SUCCESS':
+				case 'Success':
 					this.env.showTranslateMessage('Thanh toán thành công', 'success');
 					break;
-                case 'FAIL':
+                case 'Fail':
 					this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
 					break;
                 default:
