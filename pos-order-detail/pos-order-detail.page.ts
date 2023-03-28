@@ -20,6 +20,7 @@ import html2canvas from 'html2canvas';
 import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
+import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -321,6 +322,7 @@ export class POSOrderDetailPage extends PageBase {
         const { data,role } = await modal.onWillDismiss();
         if (role == 'confirm') {
             this.item = data;
+            
         }
     }
     async processVouchers() {
@@ -878,19 +880,26 @@ export class POSOrderDetailPage extends PageBase {
 
     async addContact() {
         const modal = await this.modalController.create({
-            component: SaleOrderMobileAddContactModalPage,
+            component: POSContactModalPage,
             swipeToClose: true,
             cssClass: 'my-custom-class',
             componentProps: {
-                'firstName': 'Douglas',
-                'lastName': 'Adams',
-                'middleInitial': 'N'
+                item: null
             }
         });
-        return await modal.present();
+        await modal.present();
+        const { data } = await modal.onWillDismiss();
+        if(data){             
+            this.changedIDAddress(data); 
+            this.contactListSelected.push(data);
+            this.contactListSelected = [...this.contactListSelected];
+            this.contactSearch();                                 
+        }
+        
     }
 
-    changedIDAddress(address) {
+    changedIDAddress(address) { 
+              
         if (address) {
 
             this.setOrderValue({
