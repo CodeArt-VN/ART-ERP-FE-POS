@@ -66,13 +66,11 @@ export class POSChangeTableModalPage extends PageBase {
     loadData(event) {
 
         this.orders.forEach(o => {
-            if ((o.Status.IDStatus == 101 || o.Status.IDStatus == 106 || o.Status.IDStatus == 109)) {
-                if (this.orderedTables.findIndex(d => d.Id == o.Tables[0]) == -1) {
-                    this.orderedTables.push({
-                        Id: o.Tables[0],
-                        Name: o.TableName,
-                    });
-                }
+            if (this.orderedTables.findIndex(d => d.Id == o.Tables[0]) == -1) {
+                this.orderedTables.push({
+                    Id: o.Tables[0],
+                    Name: o._Tables[0].Name,
+                });
             }
         });
 

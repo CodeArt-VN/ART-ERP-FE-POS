@@ -12,6 +12,7 @@ import { NgxMaskModule } from 'ngx-mask';
 import { PipesModule } from 'src/app/pipes/pipes.module';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
+import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 const routes: Routes = [
   {
     path: '',
@@ -33,6 +34,6 @@ const routes: Routes = [
     NgxMaskModule.forRoot(),
     RouterModule.forChild(routes)
   ],
-  declarations: [POSOrderDetailPage,POSVoucherModalPage,POSContactModalPage]
+  declarations: [POSOrderDetailPage,POSVoucherModalPage,POSContactModalPage,POSInvoiceModalPage]
 })
 export class POSOrderDetailPageModule { }

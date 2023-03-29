@@ -21,6 +21,7 @@ import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
+import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -357,27 +358,52 @@ export class POSOrderDetailPage extends PageBase {
 
             this.formGroup.controls.IDStatus.patchValue(114);
             this.formGroup.controls.Status.patchValue("Done");
-            this.formGroup.controls.IsInvoiceRequired.patchValue(this.item.IsInvoiceRequired);
+            //this.formGroup.controls.IsInvoiceRequired.patchValue(this.item.IsInvoiceRequired);
             this.formGroup.controls.IDStatus.markAsDirty();
             this.formGroup.controls.Status.markAsDirty();
-            this.formGroup.controls.IsInvoiceRequired.markAsDirty();
+            //this.formGroup.controls.IsInvoiceRequired.markAsDirty();
             this.saveSO();
         }
     }
     InvoiceRequired(){
         if(this.pageConfig.canEdit == false){
             this.env.showTranslateMessage('Đơn hàng đã hoàn tất không thể chỉnh sửa', 'warning');
-            return false;
+            return  false;
         }
         if(!this.item._Customer){
             this.env.showTranslateMessage('Vui lòng chọn khách hàng', 'warning');
-            return false; 
+            return  false; 
         }
         if(this.item._Customer.Id == 922){
             this.env.showTranslateMessage('Không thể xuất hóa đơn cho khách lẻ', 'warning');
-            return false;
+            return  false;
         }
-        this.item.IsInvoiceRequired = true;
+        if(this.item.IsInvoiceRequired == false){
+            this.processInvoice();
+        }
+        else{
+            this.formGroup.controls.IsInvoiceRequired.patchValue(false);
+            this.formGroup.controls.IsInvoiceRequired.markAsDirty();
+            this.saveChange();
+        } 
+    }
+    async processInvoice(){
+        const modal = await this.modalController.create({
+            component: POSInvoiceModalPage,
+            swipeToClose: true,
+            cssClass: 'my-custom-class',
+            componentProps: {
+                id: this.item.IDContact
+            }
+        });
+        await modal.present();
+        const { data } = await modal.onWillDismiss();
+        if(data == true){
+            this.item.IsInvoiceRequired = true;
+            this.formGroup.controls.IsInvoiceRequired.patchValue(true);
+            this.formGroup.controls.IsInvoiceRequired.markAsDirty();
+            this.saveChange();
+        }    
     }
     cancelPOSOrder() {
         this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {

@@ -2,6 +2,9 @@
 	<ion-toolbar>
 		<ion-title>{{'erp.app.pages.sale.sale-order-mobile-add-contact.page-title' | translate}}</ion-title>
 		<ion-buttons slot="primary">
+			<ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="primary" (click)="reset()">
+                <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+            </ion-button>
 			<ion-button title="{{'erp.app.pages.sale.sale-order-mobile-add-contact.close-modal' | translate}}" color="secondary" (click)="Apply()">
 				<ion-icon slot="icon-only" name="close"></ion-icon>
 			</ion-button>

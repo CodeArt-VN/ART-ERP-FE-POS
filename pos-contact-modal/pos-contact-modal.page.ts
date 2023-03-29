@@ -74,7 +74,9 @@ export class POSContactModalPage extends PageBase {
 		
 		this.pageProvider.read({WorkPhone_eq: WorkPhone}).then((results:any)=>{
 			if(results['data'].length>0){				
-				this.env.showTranslateMessage("Khách hàng đã tồn tại", "warning");				
+				this.env.showTranslateMessage("Khách hàng đã tồn tại", "warning");	
+				this.IsBtnApply = true;
+				this.IsBtnNew = false;				
 				this.formGroup.controls.Name.patchValue(results['data'][0].Name);
 				
 				this.item ={
@@ -85,8 +87,7 @@ export class POSContactModalPage extends PageBase {
 					Name: results['data'][0].Name,
 					WorkPhone: results['data'][0].WorkPhone,
 				}	
-				this.IsBtnApply = true;
-				this.IsBtnNew = false;				
+							
 				return false;
 			}	
 			else{
@@ -103,5 +104,9 @@ export class POSContactModalPage extends PageBase {
             this.modalController.dismiss();
         }
 	}
-
+	reset(){
+		this.IsBtnApply = false;
+		this.IsBtnNew = true;	
+		this.formGroup.reset();
+	}
 }
