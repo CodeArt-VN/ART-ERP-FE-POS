@@ -63,7 +63,7 @@ export class POSSplitModalPage extends PageBase {
 
         if (!this.selectedOrder) {
             this.selectedOrder = this.orders[0];
-
+            debugger;
             this.orders.forEach(o => {
                 if ((o.Status.IDStatus == 101 || o.Status.IDStatus == 106 || o.Status.IDStatus == 109)) {
                     if (this.initOrderedContacts.findIndex(f => f.Id == o.IDContact) == -1) {
@@ -97,9 +97,9 @@ export class POSSplitModalPage extends PageBase {
                 isFirst: true,
                 IDContact: this.selectedOrder.IDContact,
                 ContactName: this.selectedOrder.CustomerName,
-                IDTable: this.currentTable.Id,
+                IDTable: this.selectedOrder.Tables[0],
                 IDType: 293,
-                TableName: this.selectedOrder.TableName,
+                TableName: this.selectedOrder._Tables[0].Name,
             });
             this.item.SplitedOrders.push({
                 isFirst: false,
@@ -112,22 +112,22 @@ export class POSSplitModalPage extends PageBase {
 
             this.initOrderedContacts.push({
                 Id: this.selectedOrder.IDContact,
-                Name: this.selectedOrder.CustomerName,
-                WorkPhone: this.selectedOrder.IDContact,
-                AddressLine1: this.selectedOrder.AddressLine1
+                Name: this.selectedOrder._Customer.Name,
+                WorkPhone: this.selectedOrder._Customer.WorkPhone,
+                AddressLine1: this.selectedOrder._Customer.Address.AddressLine1
             });
-
+          
             this.contactListSelected.push({
                 Id: this.selectedOrder.IDContact,
-                Name: this.selectedOrder.CustomerName,
-                WorkPhone: this.selectedOrder.IDContact,
-                AddressLine1: this.selectedOrder.AddressLine1
+                Name: this.selectedOrder._Customer.Name,
+                WorkPhone: this.selectedOrder._Customer.WorkPhone,
+                AddressLine1: this.selectedOrder._Customer.Address.AddressLine1
             });
 
             if (this.initOrderedTables.findIndex(f => f.Id == this.currentTable.Id) == -1) {
                 this.initOrderedTables.push({
-                    Id: this.currentTable.Id,
-                    Name: this.currentTable.Name,
+                    Id: this.selectedOrder.Tables[0],
+                    Name: this.selectedOrder._Tables[0].Name,
                 });
             }
 
@@ -169,6 +169,8 @@ export class POSSplitModalPage extends PageBase {
         this.contactSearch();
         this.tableSearch();
         super.loadedData(event);
+        console.log(this.selectedOrder);
+        console.log(this.items);
     }
 
     contactList$

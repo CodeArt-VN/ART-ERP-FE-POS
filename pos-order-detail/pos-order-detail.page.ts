@@ -353,21 +353,33 @@ export class POSOrderDetailPage extends PageBase {
             }
         });
         await modal.present();
-        const { data } = await modal.onWillDismiss();
-        if (data == 'Done') {
+        const { data , role } = await modal.onWillDismiss();
+        if (role == 'Done') {
 
             this.formGroup.controls.IDStatus.patchValue(114);
             this.formGroup.controls.Status.patchValue("Done");
+            
             //this.formGroup.controls.IsInvoiceRequired.patchValue(this.item.IsInvoiceRequired);
             this.formGroup.controls.IDStatus.markAsDirty();
             this.formGroup.controls.Status.markAsDirty();
             //this.formGroup.controls.IsInvoiceRequired.markAsDirty();
             this.saveSO();
         }
+        if(role == 'Debt'){
+            this.formGroup.controls.IDStatus.patchValue(113);
+            this.formGroup.controls.Status.patchValue("Debt");
+            this.formGroup.controls.IsDebt.patchValue(true);
+            this.formGroup.controls.Debt.patchValue(data);
+            this.formGroup.controls.IDStatus.markAsDirty();
+            this.formGroup.controls.Status.markAsDirty();
+            this.formGroup.controls.IsDebt.markAsDirty();
+            this.formGroup.controls.Debt.markAsDirty();
+            this.saveSO();
+        }
     }
     InvoiceRequired(){
         if(this.pageConfig.canEdit == false){
-            this.env.showTranslateMessage('Đơn hàng đã hoàn tất không thể chỉnh sửa', 'warning');
+            this.env.showTranslateMessage('Đơn hàng đã khóa không thể chỉnh sửa', 'warning');
             return  false;
         }
         if(!this.item._Customer){
@@ -403,7 +415,10 @@ export class POSOrderDetailPage extends PageBase {
             this.formGroup.controls.IsInvoiceRequired.patchValue(true);
             this.formGroup.controls.IsInvoiceRequired.markAsDirty();
             this.saveChange();
-        }    
+        }  
+        else{
+            this.item.IsInvoiceRequired = false;
+        }  
     }
     cancelPOSOrder() {
         this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {
@@ -446,7 +461,7 @@ export class POSOrderDetailPage extends PageBase {
         });
 
         const newKitchenList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item['_IDKitchen'], item._item.Kitchen])).values()];
-        debugger
+        debugger;
         for (let index = 0; index < newKitchenList.length; index++) {
             this.item.IDStatus = 101;
             

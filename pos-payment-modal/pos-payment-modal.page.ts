@@ -18,6 +18,7 @@ import { environment } from 'src/environments/environment';
 export class POSPaymentModalPage extends PageBase {
     DebtAmount = 0;
     PaidAmounted = 0;
+    TheChangeAmount = 0;
     Amount = 0;
     statusList;
     typeList;
@@ -76,6 +77,10 @@ export class POSPaymentModalPage extends PageBase {
         });    
         this.PaidAmounted = PaidAmounted;
         this.DebtAmount = this.item.CalcTotalOriginal - this.PaidAmounted;
+        if(this.PaidAmounted - this.item.CalcTotalOriginal > 0){
+            this.TheChangeAmount = this.PaidAmounted - this.item.CalcTotalOriginal;
+        }
+        
     }
     getStatus(i,id){
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
@@ -134,6 +139,10 @@ export class POSPaymentModalPage extends PageBase {
         })
     }
     doneOrder(){
-        return this.modalController.dismiss('Done');
+        return this.modalController.dismiss(this.DebtAmount,'Done');
+        
+    }
+    DebtOrder(){
+        return this.modalController.dismiss(this.DebtAmount, 'Debt');
     }
 }
