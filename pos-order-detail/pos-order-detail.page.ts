@@ -181,9 +181,9 @@ export class POSOrderDetailPage extends PageBase {
         }
         else {
             this.patchOrderValue();
-        }
+        }       
         this.loadOrder();
-        this.contactSearch();
+        this.contactSearch(); 
     }
 
     refresh(event?: any): void {
@@ -694,7 +694,7 @@ export class POSOrderDetailPage extends PageBase {
             line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
             line.OriginalDiscountByGroup = 0;
             line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
-            line.OriginalDiscountByOrder = 0;
+            line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
             line.OriginalTotalDiscount = line.OriginalDiscountByLine + line.OriginalDiscountByOrder;
             this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;
 

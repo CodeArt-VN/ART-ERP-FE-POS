@@ -100,6 +100,8 @@ export class POSSplitModalPage extends PageBase {
                 IDTable: this.selectedOrder.Tables[0],
                 IDType: 293,
                 TableName: this.selectedOrder._Tables[0].Name,
+                Type: "POSOrder",
+                Status: "New",
             });
             this.item.SplitedOrders.push({
                 isFirst: false,
@@ -108,6 +110,8 @@ export class POSSplitModalPage extends PageBase {
                 IDTable: null,
                 IDType: 293,
                 TableName: null,
+                Type: "POSOrder",
+                Status: "New",
             });
 
             this.initOrderedContacts.push({
@@ -305,6 +309,8 @@ export class POSSplitModalPage extends PageBase {
             IDTable: null,
             IDType: 293,
             TableName: null,
+            Type: "POSOrder",
+            Status: "New",        
             OrderLines: JSON.parse(JSON.stringify(this.items))
         });
         this.calcOrders();

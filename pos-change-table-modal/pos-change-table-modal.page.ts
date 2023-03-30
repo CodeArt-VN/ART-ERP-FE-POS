@@ -121,6 +121,7 @@ export class POSChangeTableModalPage extends PageBase {
         }
 
         super.loadedData(event);
+        console.log(this.items);
     }
 
     contactList$
@@ -205,7 +206,8 @@ export class POSChangeTableModalPage extends PageBase {
                                 this.item.Ids.push(this.selectedOrder.Id);
                                 this.items.forEach(e => {
                                     let temp = [];                                    
-                                    if(this.checkBillStatus.indexOf(e.Status.IDStatus) == -1) { 
+                                    if(this.checkBillStatus.indexOf(e._Status.IDStatus) == -1) { 
+
                                         temp.push(e);
                                     }
 
@@ -273,7 +275,6 @@ export class POSChangeTableModalPage extends PageBase {
             url: function () { return ApiSetting.apiDomain("SALE/Order/MergeOrders/") }
         };
 
-
         return new Promise((resolve, reject) => {
             if (!this.item.Ids.length || !this.item.IDContact) {
                 this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.check-merge-invoice-select-customer','warning');
@@ -285,6 +286,8 @@ export class POSChangeTableModalPage extends PageBase {
                 if (!this.item.IDBranch) {
                     this.item.IDBranch = this.env.selectedBranch;
                 }
+                this.item.Type = "POSOrder";
+                this.item.Status =  "New";  
                 this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), this.item).toPromise()
                     .then((savedItem: any) => {
                         this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');
