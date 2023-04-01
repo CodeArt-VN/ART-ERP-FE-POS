@@ -137,7 +137,7 @@ export class POSPaymentModalPage extends PageBase {
         if(this.DebtAmount > 0) {
             this.alertCtrl.create({
                 header: 'Thông báo',             
-                message: 'Đơn hàng chưa thanh toán xong, nếu đồng ý sẽ chuyển sang đơn nợ',
+                message: 'Bạn có chắc chắn kết thúc đơn? Đơn sẽ được ghi nhận là thanh toán sau.',
                 buttons: [
                     {
                         text: 'Không',
