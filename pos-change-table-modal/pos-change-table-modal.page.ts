@@ -59,6 +59,9 @@ export class POSChangeTableModalPage extends PageBase {
         this.pageConfig.pageName = 'Change table';
         this.config.notFoundText = 'Không tìm thấy dữ liệu phù hợp...';
         this.config.clearAllText = 'Xóa hết';
+        this.query.Type = "POSOrder";
+        this.query.Status = "New";
+        this.query.Take = 500;
     }
 
 
@@ -272,7 +275,7 @@ export class POSChangeTableModalPage extends PageBase {
     mergeSaleOrders() {
         let apiPath = {
             method: "POST",
-            url: function () { return ApiSetting.apiDomain("SALE/Order/MergeOrders/") }
+            url: function () { return ApiSetting.apiDomain("SALE/Order/MergePosOrders/") }
         };
 
         return new Promise((resolve, reject) => {

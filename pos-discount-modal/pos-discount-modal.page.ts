@@ -2,7 +2,8 @@ import { Component, Input } from '@angular/core';
 import { ModalController, LoadingController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { EnvService } from 'src/app/services/core/env.service';
-import { SALE_OrderDetailProvider } from 'src/app/services/static/services.service';
+import { ApiSetting } from 'src/app/services/static/api-setting';
+import { SALE_OrderDetailProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
 
 @Component({
     selector: 'app-pos-discount-modal',
@@ -15,7 +16,7 @@ export class POSDiscountModalPage extends PageBase {
         Amount:0
     };
     constructor(
-        public pageProvider: SALE_OrderDetailProvider,  
+        public pageProvider: SALE_OrderProvider,  
         public env: EnvService,
         public modalController: ModalController,
         public loadingController: LoadingController,
@@ -26,7 +27,8 @@ export class POSDiscountModalPage extends PageBase {
     loadData(event) {
         this.Discount.Amount = this.item.OriginalTotalDiscount;
         this.Discount.Percent = this.Discount.Amount *100 / this.item.OriginalTotalBeforeDiscount;    
-        console.log(this.item.OrderLines); 
+        console.log(this.item); 
+
     }
     changePercentDiscount() { //SalesOff
         this.Discount.Amount = this.Discount.Percent * this.item.OriginalTotalBeforeDiscount / 100 
@@ -35,12 +37,21 @@ export class POSDiscountModalPage extends PageBase {
         this.Discount.Percent = this.Discount.Amount *100 / this.item.OriginalTotalBeforeDiscount ;
     }
     applyDiscount(apply = false) {
-        //this.item.OriginalTotalDiscount = this.Discount.Amount;
-        this.item.OrderLines.forEach(e => {
-            e.OriginalDiscountByOrder = e.OriginalTotalBeforeDiscount*this.Discount.Percent/100 ;
-            e.OriginalTotalDiscount = e.OriginalDiscountByLine + e.OriginalDiscountByOrder;
-            this.pageProvider.save(e).then();
-        });
-        //return this.modalController.dismiss(this.item, (apply ? 'confirm' : 'cancel'));
+        let apiPath = {
+            method: "POST",
+            url: function () { return ApiSetting.apiDomain("SALE/Order/UpdatePosOrderDiscount/") }
+        };
+        new Promise((resolve, reject) => {
+            this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {Id:this.item.Id,Percent:this.Discount.Percent}).toPromise()
+            .then((savedItem: any) => {
+                this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');   
+                resolve(true);  
+                return this.modalController.dismiss(null,apply ? 'confirm' : 'cancel');  
+            })
+            .catch(err => {
+                this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save','danger');
+                reject(err);
+            });
+        });       
     }
 }

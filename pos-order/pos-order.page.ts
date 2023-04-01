@@ -20,7 +20,7 @@ import { environment } from 'src/environments/environment';
 export class POSOrderPage extends PageBase {
     tableGroupList = [];
     soStatusList = [];
-    noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
+    noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered',];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
     segmentView = 'all';
     orderCounter = 0;
 

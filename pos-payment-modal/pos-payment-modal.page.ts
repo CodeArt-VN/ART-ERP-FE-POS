@@ -134,10 +134,32 @@ export class POSPaymentModalPage extends PageBase {
         })
     }
     doneOrder(){
-        return this.modalController.dismiss(this.DebtAmount,'Done');
+        if(this.DebtAmount > 0) {
+            this.alertCtrl.create({
+                header: 'Thông báo',             
+                message: 'Đơn hàng chưa thanh toán xong, nếu đồng ý sẽ chuyển sang đơn nợ',
+                buttons: [
+                    {
+                        text: 'Không',
+                        role: 'cancel',
+                        handler: () => {                      
+                        }
+                    },
+                    {
+                        text: 'Đồng ý',
+                        cssClass: 'success-btn',
+                        handler: () => {
+                            return this.modalController.dismiss(this.DebtAmount,'Done');
+                        }
+                    }
+                ]
+            }).then(alert => {
+                alert.present();
+            })
+        }
+        else{
+            return this.modalController.dismiss(this.DebtAmount,'Done');
+        }
         
-    }
-    DebtOrder(){
-        return this.modalController.dismiss(this.DebtAmount, 'Debt');
     }
 }

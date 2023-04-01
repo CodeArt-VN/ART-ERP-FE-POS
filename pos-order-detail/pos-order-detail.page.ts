@@ -322,8 +322,7 @@ export class POSOrderDetailPage extends PageBase {
         await modal.present();
         const { data,role } = await modal.onWillDismiss();
         if (role == 'confirm') {
-            this.item = data;
-            
+            this.refresh();     
         }
     }
     async processVouchers() {
@@ -356,26 +355,22 @@ export class POSOrderDetailPage extends PageBase {
         const { data , role } = await modal.onWillDismiss();
         if (role == 'Done') {
 
+            
             this.formGroup.controls.IDStatus.patchValue(114);
             this.formGroup.controls.Status.patchValue("Done");
             
             //this.formGroup.controls.IsInvoiceRequired.patchValue(this.item.IsInvoiceRequired);
             this.formGroup.controls.IDStatus.markAsDirty();
             this.formGroup.controls.Status.markAsDirty();
+            if(data>0){
+                this.formGroup.controls.IsDebt.patchValue(true);
+                this.formGroup.controls.Debt.patchValue(data);            
+                this.formGroup.controls.IsDebt.markAsDirty();
+                this.formGroup.controls.Debt.markAsDirty();
+            }
+            this.saveSO();
             //this.formGroup.controls.IsInvoiceRequired.markAsDirty();
-            this.saveSO();
-        }
-        if(role == 'Debt'){
-            this.formGroup.controls.IDStatus.patchValue(113);
-            this.formGroup.controls.Status.patchValue("Debt");
-            this.formGroup.controls.IsDebt.patchValue(true);
-            this.formGroup.controls.Debt.patchValue(data);
-            this.formGroup.controls.IDStatus.markAsDirty();
-            this.formGroup.controls.Status.markAsDirty();
-            this.formGroup.controls.IsDebt.markAsDirty();
-            this.formGroup.controls.Debt.markAsDirty();
-            this.saveSO();
-        }
+        } 
     }
     InvoiceRequired(){
         if(this.pageConfig.canEdit == false){
@@ -461,7 +456,6 @@ export class POSOrderDetailPage extends PageBase {
         });
 
         const newKitchenList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item['_IDKitchen'], item._item.Kitchen])).values()];
-        debugger;
         for (let index = 0; index < newKitchenList.length; index++) {
             this.item.IDStatus = 101;
             
@@ -517,7 +511,7 @@ export class POSOrderDetailPage extends PageBase {
                     this.QZsetCertificate().then(() => {
                         this.QZsignMessage().then(() => {
                             console.log(printerCodeList);
-                            this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime).catch(err => {
+                            this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, false).catch(err => {
                                 console.log(err);
                                 this.submitAttempt = false;
                                 skipTime++;
@@ -530,7 +524,7 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-    async sendPrint(idStatus?) {
+    async sendPrint(idStatus?, receipt = true) {
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
 
         if (this.submitAttempt) return;
@@ -578,12 +572,6 @@ export class POSOrderDetailPage extends PageBase {
                     }
                 });
 
-                if (this.printData.undeliveredItems.length == 0) {
-                    this.env.showTranslateMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
-                    this.submitAttempt = false;
-                    return;
-                }
-
                 let object: any = document.getElementById('bill');
                 let list = object.classList;
                 list.add("show-bill");
@@ -593,47 +581,47 @@ export class POSOrderDetailPage extends PageBase {
                     scale: 7,
                 };
 
-                await this.setKitchenID('all'); //Xem toàn bộ bill
-
-                Promise.all([
-                    newKitchenList[idx2],
-                    html2canvas(object, opt),
-                    idx2++
-                ]).then((values: any) => {
-                    let printerInfo = values[0];
-                    let canvasResult = values[1];
-
-                    let printerCode = printerInfo.Printer.Code;
-                    let printerHost = printerInfo.Printer.Host;
-                    let temp = canvasResult.toDataURL();
-                    let base64data = temp.split(',')[1];
-
-                    let data =
-                        [{
-                            type: 'Pixel',
-                            format: 'image',
-                            flavor: 'base64',
-                            data: base64data
-                        }];
-
-                    console.log(printerCode);
-                    printerCodeList.push(printerCode);
-                    base64dataList.push(data);
-
-                    if (idx == base64dataList.length) {
-                        this.QZsetCertificate().then(() => {
-                            this.QZsignMessage().then(() => {
-                                console.log(printerCodeList);
-                                this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, list).catch(err => {
-                                    console.log(err);
-                                    this.submitAttempt = false;
-                                    skipTime++;
+                await this.setKitchenID('all').then(_=> {
+                    Promise.all([
+                        newKitchenList[idx2],
+                        html2canvas(object, opt),
+                        idx2++
+                    ]).then((values: any) => {
+                        let printerInfo = values[0];
+                        let canvasResult = values[1];
+    
+                        let printerCode = printerInfo.Printer.Code;
+                        let printerHost = printerInfo.Printer.Host;
+                        let temp = canvasResult.toDataURL();
+                        let base64data = temp.split(',')[1];
+    
+                        let data =
+                            [{
+                                type: 'Pixel',
+                                format: 'image',
+                                flavor: 'base64',
+                                data: base64data
+                            }];
+    
+                        console.log(printerCode);
+                        printerCodeList.push(printerCode);
+                        base64dataList.push(data);
+    
+                        if (idx == base64dataList.length) {
+                            this.QZsetCertificate().then(() => {
+                                this.QZsignMessage().then(() => {
+                                    console.log(printerCodeList);
+                                    this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, receipt).catch(err => {
+                                        console.log(err);
+                                        this.submitAttempt = false;
+                                        skipTime++;
+                                    });
                                 });
                             });
-                        });
-                    }
-                });
-                idx++;
+                        }
+                    });
+                    idx++;
+                }); //Xem toàn bộ bill
             }
         });
     }
@@ -684,34 +672,18 @@ export class POSOrderDetailPage extends PageBase {
             //Parse data + Tính total
             line.UoMPrice = line.IsPromotionItem ? 0 : parseFloat(line.UoMPrice) || 0;
             line.TaxRate = parseFloat(line.TaxRate) || 0;
-            line.Quantity = parseFloat(line.Quantity) || 0;
-            line.OriginalTotalBeforeDiscount = line.UoMPrice * line.Quantity;
+            line.Quantity = parseFloat(line.Quantity) || 0;         
             this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount;
 
             //line.OriginalPromotion
-            line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount1) || 0;
-            line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount2) || 0;
-            line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
-            line.OriginalDiscountByGroup = 0;
-            line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
-            line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
-            line.OriginalTotalDiscount = line.OriginalDiscountByLine + line.OriginalDiscountByOrder;
+           
             this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;
 
-            line.OriginalTotalAfterDiscount = line.OriginalTotalBeforeDiscount - line.OriginalTotalDiscount;
-            line.OriginalTax = line.OriginalTotalAfterDiscount * (line.TaxRate / 100.0);
-            this.item.OriginalTax += line.OriginalTax;
-            line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
+            
+            this.item.OriginalTax += line.OriginalTax;           
             this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
-
-            line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
-            this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
-
-
-            line.CalcTotalOriginal = line.OriginalTotalAfterTax + line.CalcOriginalTotalAdditions;
-            this.item.CalcTotalOriginal += line.CalcTotalOriginal;
-
-            line.OriginalDiscountFromSalesman = parseFloat(line.OriginalDiscountFromSalesman) || 0;
+            this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions; 
+            this.item.CalcTotalOriginal += line.CalcTotalOriginal ;    
             line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
 
 
@@ -988,9 +960,6 @@ export class POSOrderDetailPage extends PageBase {
         let submitItem = this.getDirtyValues(this.formGroup);
         console.log(submitItem);
         this.saveChange2();
-
-
-
     }
 
 
@@ -1015,6 +984,10 @@ export class POSOrderDetailPage extends PageBase {
 
         this.submitAttempt = false;
         this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete', 'success');
+
+        if (savedItem.IDStatus == 113 || savedItem.IDStatus == 114 || savedItem.IDStatus == 1208 || savedItem.IDStatus == 1209) {
+            this.sendPrint(savedItem.IDStatus, true);
+        }
     }
 
     // async saveChange(andPrint = false, idStatus = null) {
@@ -1095,7 +1068,7 @@ export class POSOrderDetailPage extends PageBase {
         });
     }
 
-    async sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, receipt = false) {
+    async sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, receipt) {
 
         //Flow: 
         // Open Connection >> 
@@ -1149,7 +1122,7 @@ export class POSOrderDetailPage extends PageBase {
                 }
 
                 await this.QZActualPrinting(actualPrinters, base64dataList).then(async () => {
-                    await this.QZCheckData(skipTime, true).then(_ => {
+                    await this.QZCheckData(skipTime, receipt).then(_ => {
                         if (this.item.IDStatus == 113 || this.item.IDStatus == 114 || this.item.IDStatus == 115) {
                             this.nav('/pos-order', 'back');
                         }
@@ -1281,12 +1254,12 @@ export class POSOrderDetailPage extends PageBase {
         return qz.print(actualPrinters, base64dataList, true);
     }
 
-    async QZCheckData(skipTime, receipt = false) {
-        if (receipt) {
+    async QZCheckData(skipTime, receipt = true) {
+        if (!receipt) {
             this.item.OrderLines.forEach(e => {
                 e.ShippedQuantity = e.Quantity;
-            });
-            debugger;
+                e.ReturnedQuantity =  e.Quantity - e.ShippedQuantity;
+            });            
             this.pageProvider.save(this.item).then(data => {
                 
                 if (typeof this.item.PaymentMethod === 'string') {

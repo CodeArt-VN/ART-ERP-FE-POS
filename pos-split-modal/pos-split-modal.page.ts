@@ -62,8 +62,7 @@ export class POSSplitModalPage extends PageBase {
         })
 
         if (!this.selectedOrder) {
-            this.selectedOrder = this.orders[0];
-            debugger;
+            this.selectedOrder = this.orders[0];            
             this.orders.forEach(o => {
                 if ((o.Status.IDStatus == 101 || o.Status.IDStatus == 106 || o.Status.IDStatus == 109)) {
                     if (this.initOrderedContacts.findIndex(f => f.Id == o.IDContact) == -1) {
@@ -498,7 +497,7 @@ export class POSSplitModalPage extends PageBase {
                     this.item.IDBranch = this.env.selectedBranch;
                 }
 
-                this.pageProvider.commonService.connect('POST', 'SALE/Order/SplitOrder/', this.item).toPromise().then((savedItem: any) => {
+                this.pageProvider.commonService.connect('POST', 'SALE/Order/SplitPosOrder/', this.item).toPromise().then((savedItem: any) => {
                     if (publishEventCode) {
                         this.env.publishEvent({ Code: publishEventCode });
                     }

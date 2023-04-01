@@ -73,14 +73,11 @@
                         <ion-text slot="start">Còn nợ</ion-text>                                                                                                                                 
                         <ion-label slot="end" color="primary">{{DebtAmount | number: '1.0-0'}} đ</ion-label>
                     </ion-item>                 
-                    <div *ngIf="DebtAmount > 0 && item.Status != 'Cancelled' && item.Status != 'Debt'" class="c-control ion-text-center">                          
+                    <div *ngIf="DebtAmount > 0 && item.Status != 'Cancelled' && item.Status != 'Done'" class="c-control ion-text-center">                          
                         <ion-button (click)="toPayment()" expand="block">Tiến hành thanh toán</ion-button>                                                         
-                    </div>  
-                    <div *ngIf="DebtAmount > 0 && item.Status != 'Cancelled' && item.Status != 'Debt'" class="c-control ion-text-center">                          
-                        <ion-button (click)="DebtOrder()" color="warning" expand="block">Đơn nợ</ion-button>                                                         
-                    </div>    
-                    <div *ngIf="DebtAmount <= 0 && item.Status != 'Done' && item.Status != 'Cancelled' && item.Status != 'Debt'" class="c-control ion-text-center">                          
-                        <ion-button (click)="doneOrder()" expand="block">Hoàn tất</ion-button>                                                         
+                    </div>                    
+                    <div *ngIf="item.Status != 'Done' && item.Status != 'Cancelled'" class="c-control ion-text-center">                          
+                        <ion-button (click)="doneOrder()" color="success" expand="block">Hoàn tất</ion-button>                                                         
                     </div>               
                 </ion-col>
             </ion-row>
