@@ -113,7 +113,7 @@ export class POSMenuDetailPage extends PageBase {
         this.itemSearch();
         super.loadedData(event);
         if(this.item.Image!= null){
-            this.Image = environment.appDomain + this.item.Image;
+            this.Image = environment.posImagesServer + this.item.Image;
         }
     }
     onFileSelected = (event) =>{
@@ -128,7 +128,7 @@ export class POSMenuDetailPage extends PageBase {
         this.commonService.upload(apiPath,event.target.files[0]).then((result:any)=>{
             if(result!=null){
                 this.env.showTranslateMessage('upload thành công','success');
-                this.Image = environment.appDomain + result;
+                this.Image = environment.posImagesServer + result;
             }else{
                 this.env.showTranslateMessage('upload thất bại','success');
             }

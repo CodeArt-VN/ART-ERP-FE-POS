@@ -12,7 +12,7 @@ import { environment } from 'src/environments/environment';
     styleUrls: ['pos-menu.page.scss']
 })
 export class POSMenuPage extends PageBase {
-    ImagesServer = environment.appDomain;
+    ImagesServer = environment.posImagesServer;
     constructor(
         public pageProvider: POS_MenuProvider,
         public branchProvider: POS_MenuDetailProvider,
