@@ -9,6 +9,8 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { ApiSetting } from 'src/app/services/static/api-setting';
+import { FileUploader } from 'ng2-file-upload';
+import { environment } from 'src/environments/environment';
 
 @Component({
     selector: 'app-pos-menu-detail',
@@ -23,7 +25,7 @@ export class POSMenuDetailPage extends PageBase {
 
     //removedItem
     removedItems = [];
-
+    Image = "assets/pos-icons/POS-Item-demo.png";
     constructor(
         public pageProvider: POS_MenuProvider,
         public menuDetailProvider: POS_MenuDetailProvider,
@@ -44,9 +46,8 @@ export class POSMenuDetailPage extends PageBase {
         this.pageConfig.canEdit = true;
         this.id = this.route.snapshot?.paramMap?.get('id');
         this.id = typeof (this.id) == 'string' ? parseInt(this.id) : this.id;
-
         this.formGroup = formBuilder.group({
-            IDBranch: [''],
+            IDBranch: [this.env.selectedBranch],
             Id: new FormControl({ value: 0, disabled: true }),
             Code: [''],
             Name: ['', Validators.required],
@@ -65,9 +66,8 @@ export class POSMenuDetailPage extends PageBase {
 
             IsDisabled: [false],
             Lines: this.formBuilder.array([]),
-        });
+        });      
     }
-
     segmentView = 's1';
     segmentChanged(ev: any) {
         this.segmentView = ev.detail.value;
@@ -112,8 +112,28 @@ export class POSMenuDetailPage extends PageBase {
         this.setLines();
         this.itemSearch();
         super.loadedData(event);
+        if(this.item.Image!= null){
+            this.Image = environment.appDomain + this.item.Image;
+        }
     }
-
+    onFileSelected = (event) =>{
+        if (event.target.files.length == 0){
+            return;  
+        }
+        let id = this.item.Id;    
+        let apiPath = {
+            method: "UPLOAD",
+            url: function(){return ApiSetting.apiDomain("POS/Menu/UploadPOSMenuIcons/") + id} 
+        };            
+        this.commonService.upload(apiPath,event.target.files[0]).then((result:any)=>{
+            if(result!=null){
+                this.env.showTranslateMessage('upload thành công','success');
+                this.Image = environment.appDomain + result;
+            }else{
+                this.env.showTranslateMessage('upload thất bại','success');
+            }
+        });
+    }
     setLines() {
         this.formGroup.controls.Lines = new FormArray([]);
         

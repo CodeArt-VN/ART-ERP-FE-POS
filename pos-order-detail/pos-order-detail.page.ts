@@ -354,6 +354,8 @@ export class POSOrderDetailPage extends PageBase {
         await modal.present();
         const { data , role } = await modal.onWillDismiss();
         if (role == 'Done') {
+            this.formGroup.controls.IDStatus.patchValue(114);
+            this.formGroup.controls.IDStatus.markAsDirty();
             this.formGroup.controls.Status.patchValue("Done");
             this.formGroup.controls.Status.markAsDirty();
             this.saveSO();

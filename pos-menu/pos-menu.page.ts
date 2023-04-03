@@ -4,6 +4,7 @@ import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
 import { POS_MenuDetailProvider, POS_MenuProvider } from 'src/app/services/static/services.service';
 import { Location } from '@angular/common';
+import { environment } from 'src/environments/environment';
 
 @Component({
     selector: 'app-pos-menu',
@@ -11,6 +12,7 @@ import { Location } from '@angular/common';
     styleUrls: ['pos-menu.page.scss']
 })
 export class POSMenuPage extends PageBase {
+    ImagesServer = environment.appDomain;
     constructor(
         public pageProvider: POS_MenuProvider,
         public branchProvider: POS_MenuDetailProvider,

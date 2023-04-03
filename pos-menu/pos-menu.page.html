@@ -9,7 +9,7 @@
 				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Id" name="search" color="primary"></ion-icon>
 			</div>
 			<div class="col-code cell" (click)="sortToggle('Code')">
-				{{'erp.app.pages.pos.pos-menu.code' | translate}}
+				Hình ảnh
 				<ion-icon class="min-btn" *ngIf="sort.Code" [name]="sort.Code == 'Code'?'arrow-down': 'arrow-up'"></ion-icon>
 				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Code" name="search" color="primary"></ion-icon>
 			</div>
@@ -18,7 +18,6 @@
 				<ion-icon class="min-btn" *ngIf="sort.Name" [name]="sort.Name == 'Name'?'arrow-down': 'arrow-up'"></ion-icon>
 				<ion-icon class="min-btn" (click)="pageConfig.isShowSearch = !pageConfig.isShowSearch" *ngIf="query.Name" name="search" color="primary"></ion-icon>
 			</div>
-			<div class="col-remark cell">{{'erp.app.pages.pos.pos-menu.remark' | translate}}</div>
 		</header>
 		<form (submit)="refresh()" action="#">
 			<header class="filter" *ngIf="pageConfig.isShowSearch">
@@ -28,8 +27,8 @@
 					<ion-icon class="min-btn" (click)="query.Id=''; refresh()" *ngIf="query.Id" name="close-circle-outline"></ion-icon>
 				</div>
 				<div class="col-code cell">
-					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Code" class="c-input" [ngClass]="{active: query.Code}" type="text">
-					<ion-icon class="min-btn" (click)="query.Code=''; refresh()" *ngIf="query.Code" name="close-circle-outline"></ion-icon>
+					<!-- <input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Code" class="c-input" [ngClass]="{active: query.Code}" type="text">
+					<ion-icon class="min-btn" (click)="query.Code=''; refresh()" *ngIf="query.Code" name="close-circle-outline"></ion-icon> -->
 				</div>
 				<div class="col-name cell">
 					<input [ngModelOptions]="{standalone: true}" [(ngModel)]="query.Name" class="c-input" [ngClass]="{active: query.Name}" type="text">
@@ -56,12 +55,13 @@
 							{{i.Id}}
 						</div>
 						<div (click)="nav('pos-menu/'+i.Id,'forward')" class="col-code cell">
-							{{i.Code}}
+							<img class="img-menu" [src]="i.Image? ImagesServer + i.Image : 'assets/pos-icons/POS-Item-demo.png'"/>
+							
 						</div>
 						<div (click)="nav('pos-menu/'+i.Id,'forward')" class="col-name cell">
 							{{i.Name}}
 						</div>
-						<div class="col-remark cell">{{i.Remark}}</div>
+						
 					</div>
 				</ng-container>
 			</ion-virtual-scroll>

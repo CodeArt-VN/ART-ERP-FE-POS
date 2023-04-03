@@ -4,21 +4,9 @@
 
 <ion-content appScrollbarTheme class="ion-padding">
     <div class="main-view" *ngIf="item && pageConfig.showSpinner==false">
-        <ion-grid fixed>
+        <!-- <ion-grid fixed>
             <ion-row>
-                <ion-col class="img-holder" size="12" size-sm="300px">
-                    <div class="avatar">
-                        <img src="assets/undraw_street_food_hm5i.svg" (error)="img.src = 'assets/undraw_street_food_hm5i.svg'" #img>
-                        <div>
-                            <ion-button class="change-avatar" *ngIf="item.IsDisabled" color="danger" size="small">
-                                {{'erp.app.pages.pos.pos-menu-detail.disabled' | translate}}
-                            </ion-button>
-                            <ion-button class="change-avatar" *ngIf="!item.IsDisabled && item.Id" color="primary" size="small">
-                                {{'erp.app.pages.pos.pos-menu-detail.change-avatar' | translate}}
-                            </ion-button>
-                        </div>
-                    </div>
-                </ion-col>
+                
                 <ion-col size="12" size-sm>
                     <ion-grid>
                         <ion-row>
@@ -43,7 +31,7 @@
                     </ion-grid>
                 </ion-col>
             </ion-row>
-        </ion-grid>
+        </ion-grid> -->
 
         <div class="row-full shadow full-screen">
             <ion-toolbar color="primary">
@@ -63,16 +51,17 @@
                         <ion-grid fixed>
                             <form [formGroup]="formGroup">
                                 <ion-row class="hr-group">
-                                    <ion-col size="12" size-sm="12" size-md="12" size-xl="3">
-                                        <ion-list-header class="ion-no-padding">
-                                            <ion-label color="primary">{{'erp.app.pages.pos.pos-menu-detail.general' | translate}}</ion-label>
-                                        </ion-list-header>
+                                    <ion-col class="img-holder"  size="12" size-xl="4">
+                                        <div class="avatar" >
+                                            <img [src]="Image"> 
+                                            <input type="file" class="select-profile-picture" (change)="onFileSelected($event)" accept="image/*" >
+                                        </div>                                                                                  
                                     </ion-col>
-                                    <ion-col size="12" size-sm size-xl="4">
-                                        <div class="c-control" *ngIf="item.Id">
+                                    <ion-col size="12" size-xl="8">
+                                        <!-- <div class="c-control" *ngIf="item.Id">
                                             <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-menu-detail.id' | translate}}</label>
                                             <input class="c-input" id="Id" formControlName="Id" type="number">
-                                        </div>
+                                        </div> -->
                                         <div class="c-control">
                                             <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-menu-detail.code' | translate}}
                                                 <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
