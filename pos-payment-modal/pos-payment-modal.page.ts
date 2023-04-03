@@ -51,7 +51,7 @@ export class POSPaymentModalPage extends PageBase {
     loadData(event){
         Object.assign(this.query, {SortBy: '[Id_desc]',IDSaleOrder: this.item.Id, IsDeleted: false});
         super.loadData(event);
-        this.env.getStatus('PAYMENT').then(data => {this.statusList = data});
+        this.env.getStatus('PaymentStatus').then(data => {this.statusList = data});
         this.env.getType('PaymentType').then(data=>{this.typeList = data;});  
     }
     loadedData(event) {

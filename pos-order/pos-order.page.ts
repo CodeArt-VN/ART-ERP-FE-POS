@@ -77,7 +77,7 @@ export class POSOrderPage extends PageBase {
 
         this.items.forEach(o => {
             o._Locked = this.noLockStatusList.indexOf(o.Status) == -1;
-            //o._Status = this.soStatusList.find(d => d.Code == o.Status);
+            o._Status = this.soStatusList.find(d => d.Code == o.Status);
             o._Tables = [];
 
             if (!o._Locked) this.orderCounter++;

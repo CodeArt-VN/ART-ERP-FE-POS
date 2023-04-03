@@ -32,8 +32,8 @@ export class POSChangeTableModalPage extends PageBase {
     initTablesIds = [];
     orderedTables = [];
     tables = [];
-    checkBillStatus = [111,112,114,115];
-    checkSplitMergeStatus = [111,112];
+    checkBillStatus = ["Splitted","Merged","Done","Cancelled"];
+    checkSplitMergeStatus = ["Splitted","Merged"];
     isMerging = false;
     buttonText = 'Chuyển bàn';
 
@@ -207,9 +207,10 @@ export class POSChangeTableModalPage extends PageBase {
                                 let bindOrder;
                                 this.item.Ids = [];
                                 this.item.Ids.push(this.selectedOrder.Id);
+                                debugger
                                 this.items.forEach(e => {
                                     let temp = [];                                    
-                                    if(this.checkBillStatus.indexOf(e._Status.IDStatus) == -1) { 
+                                    if(this.checkBillStatus.indexOf(e._Status.Status) == -1) { 
 
                                         temp.push(e);
                                     }
@@ -291,6 +292,7 @@ export class POSChangeTableModalPage extends PageBase {
                 }
                 this.item.Type = "POSOrder";
                 this.item.Status =  "New";  
+                this.item.IDTable = this.newTable.Id;
                 this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), this.item).toPromise()
                     .then((savedItem: any) => {
                         this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');

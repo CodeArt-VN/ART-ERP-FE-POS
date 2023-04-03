@@ -13,6 +13,7 @@ import { Location } from '@angular/common';
 export class POSWorkOrderPage extends PageBase {
     tableGroupList = [];
     tableList = [];
+    statusList = [];
 
     segmentView = 'all';
 
@@ -38,9 +39,11 @@ export class POSWorkOrderPage extends PageBase {
         Promise.all([
             this.tableGroupProvider.read(),
             this.tableProvider.read({Take: 5000}),
+            this.env.getStatus("POSOrder")
         ]).then(values => {
             this.tableGroupList = values[0]['data'];
             this.tableList = values[1]['data'];
+            this.statusList =  values[2]['data'];
             this.tableGroupList.forEach(g => {
                 g.TableList = this.tableList.filter(d => d.IDTableGroup == g.Id);
             });
@@ -55,14 +58,6 @@ export class POSWorkOrderPage extends PageBase {
     }
 
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
-        let statusList = [
-            {Id: 101, Code:'new', Name: 'Mới'},
-            {Id: 106, Code:'picking', Name: 'Đang lên món'},
-            {Id: 109, Code:'delivered', Name: 'Đã giao'},
-            {Id: 114, Code:'done', Name: 'Đã xong'},
-            {Id: 115, Code:'cancelled', Name: 'Đã hủy'}
-        ];
-
         this.items.forEach(o => {
             o._Tables = [];
             o.Tables.forEach(t => {
@@ -77,12 +72,12 @@ export class POSWorkOrderPage extends PageBase {
                     if (i) return true;
                 });
                 if(i){
-                    let checkStatus = [101,106,109];
-                    if(checkStatus.indexOf(o.Status.IDStatus) >-1){
+                    let checkStatus = ["New","Picking","Delivered"];
+                    if(checkStatus.indexOf(o.Status.Status) >-1){
                         i.Order = o.Id;
                         i.OrderDate = o.OrderDate;
                         i.Status = o.Status;
-                        i.Status.Name = this.getAttrib(i.Status.IDStatus, statusList);
+                        i.Status.Name = this.getAttrib(i.Status.Status, this.statusList);
                     }
                     else{
                         i.Order = null;

@@ -205,10 +205,10 @@
 								<small>#{{o.ItemCode}}</small> - <span class="od-price">{{o.UoMPrice | currency: 'VND':'':'1.0-0':''}} <small *ngIf="o.TaxRate">+{{o.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
 							</div>
 							<div class="od-quantity">
-								<ion-button fill="outline" [disabled]="submitAttempt || (item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)" class="ion-float-right qty-btn" size="small" (click)="addToCart(o.IDItem, +1, null, idx)">
+								<ion-button fill="outline" [disabled]="submitAttempt || (item.Status == 'Cancelled' || item.Status == 'Done')" class="ion-float-right qty-btn" size="small" (click)="addToCart(o.IDItem, +1, null, idx)">
 									<ion-icon slot="icon-only" name="add"></ion-icon>
 								</ion-button>
-								<ion-button fill="outline" [disabled]="submitAttempt || (item.IDStatus == 113 || item.IDStatus == 114 || item.IDStatus == 115)" class="ion-float-right qty-btn" size="small" (click)="addToCart(o.IDItem, -1, null, idx)">
+								<ion-button fill="outline" [disabled]="submitAttempt || (item.Status == 'Cancelled' || item.Status == 'Done')" class="ion-float-right qty-btn" size="small" (click)="addToCart(o.IDItem, -1, null, idx)">
 									<ion-icon slot="icon-only" name="remove"></ion-icon>
 								</ion-button>
 								<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right" size="small" (click)="o._isShowNote = !o._isShowNote">

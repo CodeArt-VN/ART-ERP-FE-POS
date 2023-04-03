@@ -200,10 +200,11 @@
                                                 <!-- Unit -->
                                                 <td class="label">{{'erp.app.pages.sale.sale-order.split.id-uom' | translate}}</td>
                                                 <td class="UoM col-total c-control" *ngFor="let o of i.splitDetail; let jdx = index;">
-                                                    <select [disabled]="true" class="c-input c-dropdown" [(ngModel)]="o.IDUoM">
+                                                    <input readonly class="c-input"  type="text" [(ngModel)]="o.UoMName"/>
+                                                    <!-- <select [disabled]="true" class="c-input c-dropdown" [(ngModel)]="o.IDUoM">
                                                         <option disabled value=""> {{'erp.app.pages.sale.sale-order.split.unit-option' | translate}}</option>
                                                         <option [disabled]="t.Flag" *ngFor="let t of i._itemData?.UoMs" [value]="t.Id">{{t.Name}}</option>
-                                                    </select>
+                                                    </select> -->
                                                 </td>
                                             </tr>
                                             <tr>

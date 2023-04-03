@@ -251,7 +251,7 @@ export class POSWelcomePage extends PageBase {
 
     getOrderList() {
         return new Promise((resolve, reject) => {
-            this.saleOrderProvider.read({ Keyword: '', Take: 5000, Skip: 0, IDStatus: 101, IDType: 293}).then(data => {
+            this.saleOrderProvider.read({ Keyword: '', Take: 5000, Skip: 0, Status: "New", Type: "POSOrder"}).then(data => {
                 resolve(data);
             });
         });

@@ -347,7 +347,7 @@ export class POSCustomerOrderPage extends PageBase {
 
     getOrderList() {
         return new Promise((resolve, reject) => {
-            this.pageProvider.read({ Keyword: '', Take: 5000, Skip: 0, IDStatus: 101, IDType: 293}).then(data => {
+            this.pageProvider.read({ Keyword: '', Take: 5000, Skip: 0, Status: "New", IDType: 293}).then(data => {
                 resolve(data);
             });
         });

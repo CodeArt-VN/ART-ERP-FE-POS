@@ -90,9 +90,9 @@ export class POSOrderDetailPage extends PageBase {
             IDContact: [922],
             IDAddress: [902],
             IDType: [293],
+            IDStatus: [101],
             Type: ['POSOrder'],
             SubType: ['TableService'],
-            IDStatus: [1201],
             Status: new FormControl({ value: 'New', disabled: true }),
             IDOwner: [this.env.user.StaffID],
 
@@ -354,22 +354,9 @@ export class POSOrderDetailPage extends PageBase {
         await modal.present();
         const { data , role } = await modal.onWillDismiss();
         if (role == 'Done') {
-
-            
-            this.formGroup.controls.IDStatus.patchValue(114);
             this.formGroup.controls.Status.patchValue("Done");
-            
-            //this.formGroup.controls.IsInvoiceRequired.patchValue(this.item.IsInvoiceRequired);
-            this.formGroup.controls.IDStatus.markAsDirty();
             this.formGroup.controls.Status.markAsDirty();
-            if(data>0){
-                this.formGroup.controls.IsDebt.patchValue(true);
-                this.formGroup.controls.Debt.patchValue(data);            
-                this.formGroup.controls.IsDebt.markAsDirty();
-                this.formGroup.controls.Debt.markAsDirty();
-            }
             this.saveSO();
-            //this.formGroup.controls.IsInvoiceRequired.markAsDirty();
         } 
     }
     InvoiceRequired(){
@@ -457,7 +444,7 @@ export class POSOrderDetailPage extends PageBase {
 
         const newKitchenList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item['_IDKitchen'], item._item.Kitchen])).values()];
         for (let index = 0; index < newKitchenList.length; index++) {
-            this.item.IDStatus = 101;
+            this.item.Status = "New";
             
             //this.item.PaymentMethod = this.item.PaymentMethod.toString();
             this.item.OrderLines.forEach(e => {
@@ -524,7 +511,7 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-    async sendPrint(idStatus?, receipt = true) {
+    async sendPrint(Status?, receipt = true) {
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
 
         if (this.submitAttempt) return;
@@ -562,8 +549,8 @@ export class POSOrderDetailPage extends PageBase {
             }
 
             for (let index = 0; index < newKitchenList.length; index++) {
-                if (idStatus) {
-                    this.item.IDStatus = idStatus;
+                if (Status) {
+                    this.item.Status = Status;
                 }
                 //this.item.PaymentMethod = this.item.PaymentMethod.toString();
                 this.item.OrderLines.forEach(e => {
@@ -985,78 +972,10 @@ export class POSOrderDetailPage extends PageBase {
         this.submitAttempt = false;
         this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete', 'success');
 
-        if (savedItem.IDStatus == 113 || savedItem.IDStatus == 114 || savedItem.IDStatus == 1208 || savedItem.IDStatus == 1209) {
-            this.sendPrint(savedItem.IDStatus, true);
+        if (savedItem.Status == "Done") {
+            this.sendPrint(savedItem.Status, true);
         }
     }
-
-    // async saveChange(andPrint = false, idStatus = null) {
-    //     if (this.submitAttempt) return;
-    //     if (andPrint) this.kitchenQuery = 'all'; //Xem toàn bộ bill
-    //     if (idStatus) this.item.IDStatus = idStatus;
-    //     this.item.PaymentMethod = this.item.PaymentMethod.toString();
-    //     this.item.OrderLines.forEach(e => {
-    //         if (e.Remark) {
-    //             e.Remark = e.Remark.toString();
-    //         }
-    //     });
-
-    //     this.submitAttempt = true;
-    //     this.pageProvider.save(this.item).then(async (savedItem: any) => {
-    //         if (this.id == 0) {
-    //             this.id = savedItem.Id;
-    //             this.item.Id = this.id;
-    //             this.item.OrderLines = savedItem.OrderLines;
-    //             this.loadedData();
-    //             let newURL = '#pos-order/' + savedItem.Id + '/' + this.idTable;
-    //             history.pushState({}, null, newURL);
-    //         }
-    //         else {
-    //             this.item.OrderLines = savedItem.OrderLines;
-    //             this.item.OrderLines.forEach(it => {
-    //                 let i = null;
-    //                 for (let m of this.menuList) {
-    //                     for (let mi of m.Items) {
-    //                         if (mi.Id == it.IDItem) {
-    //                             i = mi;
-    //                             it._item = i;
-    //                             it.Image = i?.Image;
-    //                         }
-    //                     }
-    //                 }
-    //             });
-    //         }
-    //         this.env.publishEvent({ Code: this.pageConfig.pageName });
-    //         this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete', 'success');
-    //         this.submitAttempt = false;
-    //         if (andPrint) {
-    //             this.sendPrint(idStatus);
-    //         }
-
-    //         if (typeof this.item.PaymentMethod === 'string') {
-    //             let payments = this.item.PaymentMethod.split(',');
-    //             this.item.PaymentMethod = [];
-    //             this.item.PaymentMethod = payments;
-    //         }
-    //         this.item.OrderLines.forEach(e => {
-    //             if (e.Remark) {
-    //                 if (typeof e.Remark === 'string') {
-    //                     let Remark = e.Remark.split(',');
-    //                     e.Remark = [];
-    //                     e.Remark = Remark;
-    //                 }
-    //             }
-    //             if (e.Image) {
-    //                 e.imgPath = environment.posImagesServer + e.Image;
-    //             }
-    //         });
-
-    //     }).catch(err => {
-    //         console.log(err);
-    //         this.submitAttempt = false;
-    //     });
-    // }
-
 
 
     async setKitchenID(value, ms = 1) {
@@ -1123,7 +1042,7 @@ export class POSOrderDetailPage extends PageBase {
 
                 await this.QZActualPrinting(actualPrinters, base64dataList).then(async () => {
                     await this.QZCheckData(skipTime, receipt).then(_ => {
-                        if (this.item.IDStatus == 113 || this.item.IDStatus == 114 || this.item.IDStatus == 115) {
+                        if (this.item.Status == "Done" || this.item.Status == "Cancelled") {
                             this.nav('/pos-order', 'back');
                         }
                     });

@@ -64,7 +64,7 @@ export class POSSplitModalPage extends PageBase {
         if (!this.selectedOrder) {
             this.selectedOrder = this.orders[0];            
             this.orders.forEach(o => {
-                if ((o.Status.IDStatus == 101 || o.Status.IDStatus == 106 || o.Status.IDStatus == 109)) {
+                if ((o.Status.Status == "New" || o.Status.Status == "Picking" || o.Status.Status == "Delivered")) {
                     if (this.initOrderedContacts.findIndex(f => f.Id == o.IDContact) == -1) {
                         this.initOrderedContacts.push({
                             Id: o.IDContact,
