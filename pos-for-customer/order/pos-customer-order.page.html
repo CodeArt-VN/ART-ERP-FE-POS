@@ -1,11 +1,18 @@
 <ion-header>
-	<app-detail-toolbar [page]="this">
-		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
-		<ion-button class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}"  (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+	<ion-toolbar class="toobar-cart">
+		<img slot="start" class="logo" [src]="Logo" />
+		
+		<ion-button color="none" slot="end" class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}"  (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+			<ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
 			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
 		</ion-button>
-	</app-detail-toolbar>
+		<ion-button color="none" slot="end"   (click)="refresh()">
+			<ion-icon color="primary" name="reload-outline"></ion-icon>	
+		</ion-button>
+	</ion-toolbar>
+	<ion-toolbar class="toobar-search">
+		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
+	</ion-toolbar>
 </ion-header>
 
 <ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
@@ -30,10 +37,10 @@
 								</div>
 
 								<div class="od-quantity">
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true)">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1,true)">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
 									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
@@ -47,36 +54,22 @@
 										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
 									</span>
 								</div>
-								<!-- <div class="od-remark clickable" (click)="openQuickMemo(line)">
+								<div class="od-remark clickable" >
 									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món">
 								</textarea>
-								</div> -->
+								</div>
 							</div>
 						</ng-container>
 					</div>
 				</div>
-			</div>
-			<div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">				
-				<div class="box-content">
-					<div class="check-out">
-						<label class="c-label ion-text-center"><b>Voucher giảm giá</b></label>
-						<ion-card *ngIf="item.OriginalDiscount1 > 0">
-							<ion-item lines="none">
-								<img slot="start" height="20px" width="20px" src="/assets/icons/icon-72x72.png"/>
-								
-								<ion-label>Giảm {{item.OriginalDiscount1 | number: '1.0-0'}} đ</ion-label>								
-							</ion-item>
-						</ion-card>
-						<!-- <label class="c-label clickable ion-text-center" *ngIf="pageConfig.canEdit" (click)="processVouchers()">							
-							<ion-text color="primary" >Chọn hoặc nhập mã Voucher</ion-text> 						
-						</label>					 -->
-					</div>
-				</div>
-			</div>
+			</div>		
+			<ion-button  expand="block" fill="outline" color="none">
+				<ion-text>Bàn {{Table.Name}}</ion-text>
+			</ion-button>	
 			<div class="box ion-padding">
-
+				
 				<div class="box-content">
-
+					
 					<div class="check-out">
 						<label class="c-label">Tiền hàng
 							<span class="c-value">
@@ -106,79 +99,19 @@
 							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
 								{{item.CalcTotalOriginal | number: '1.0-0'}}
 							</ion-text>
-						</label>
-						<!-- <span class="c-label" style="margin-top: 15px;" *ngIf="item?.OrderLines?.length > 0">
-							<label class="InvoiceOptions">
-								<input class="c-checkbox" (click)="InvoiceRequired()" [(ngModel)]="this.item.IsInvoiceRequired" [ngModelOptions]="{standalone: true}" type="checkbox">
-								<ion-icon  color="primary" name="receipt"></ion-icon>
-								<ion-label  [ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}" [color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'">
-									Xuất hóa đơn?
-								</ion-label>
-									
-							</label>
-																	
-						</span>				 -->
+						</label>						
 					</div>
 				</div>
-			</div>
-
-			
-			<div class="box header-box ion-padding">
-				<div class="header-name">
-					<div class="bill-for">
-						<span *ngIf="item?.OrderDate">{{item.OrderDate | date: 'HH:mm dd/MM'}} </span>
-						<span *ngIf="!item?.Tables?.length">Vui lòng chọn bàn trước</span>
-						<span *ngIf="item?.Tables?.length && !item?.OrderLines?.length">Vui lòng chọn món</span>
-					</div>
-					<div class="total">
-						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Status" labelForId="Status" [multiple]="false" [clearable]="false" [items]="statusList" bindLabel="Name" bindValue="Code" placeholder="Trạng thái...">
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
-								</ng-template>
-							</ng-select>
-						</div>
-
-						<!-- <div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
-							<label for=""></label>
-							<ion-button size="small" color="danger" expand="block" fill="outline" (click)="cancelPOSOrder();" [disabled]="submitAttempt">
-								{{'erp.app.pages.pos.pos-order.cancel' | translate}}
-							</ion-button>
-						</div> -->
-
-					</div>
-				</div>
-			</div>
-		</form>
-
-		<!-- <div *ngIf="item?.OrderLines?.length > 0" class="functions-list">
-			<ion-grid fixed>
-				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col *ngIf="pageConfig.canEdit">
-						<ion-button [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
-							Chuyển BAR/KIT
-						</ion-button>
-					</ion-col>
-					<ion-col>
-						<ion-button color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt">
-							In đơn
-						</ion-button>
-					</ion-col>
-				</ion-row>
 				
+			</div>
 
-				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col>
-						<ion-button expand="block" (click)="processPayments()" [disabled]="submitAttempt">
-							<ion-text *ngIf="pageConfig.canEdit">Thanh toán</ion-text>
-							<ion-text *ngIf="!pageConfig.canEdit">Xem chi tiết</ion-text>
-						</ion-button>
-					</ion-col>
-				</ion-row>
-
-
-			</ion-grid>
-		</div> -->
+			<ion-button *ngIf="pageConfig.canEdit" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
+				<ion-text >{{txtSendOrder}}</ion-text>
+			</ion-button>
+			<!-- <ion-button *ngIf="item.Status == 'Done'" expand="block" (click)="processPayments()" >				
+				<ion-text>Xem chi tiết</ion-text>
+			</ion-button> -->
+		</form>
 	</ion-fab>
 
 	<!-- Menu Group -->
@@ -189,7 +122,7 @@
 				<ion-label>tất cả</ion-label>
 			</div>
 			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
-				<ion-img  [src]="g.menuImage ? ImagesServer + g.menuImage: 'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
+				<ion-img  [src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
 				<ion-label>{{g.Name}}</ion-label>
 			</div>
 		</div>
@@ -217,7 +150,7 @@
 							</span>
 							<div class="card" [id]="'item'+i.Id">
 
-								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" [src]="i.imgPath ? ImagesServer + i.imgPath: 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
+								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" [src]="i.Image ? ImagesServer + i.Image: 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
 								<span class="table-name clickable" (click)="addToCart(i, i.UoMs[0].Id)">{{i.Name}}</span>
 								<ng-container *ngFor="let u of i.UoMs">
 									

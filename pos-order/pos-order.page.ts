@@ -45,7 +45,9 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.canChangeTable = true;
         this.pageConfig.canImport = false;
         this.pageConfig.canExport = false;
-
+        this.env.getEvents().subscribe((data) => {
+			console.log(data);
+        })
     }
 
     preLoadData(event?: any): void {

@@ -228,7 +228,6 @@ export class POSWelcomePage extends PageBase {
             url: function(id){return ApiSetting.apiDomain("POS/ForCustomer/Welcome/") + id} 
         };            
         this.commonService.getAnItemOnServer(parseInt(this.idTable),"",apiPath).then((result:any)=>{
-            console.log(result);
             this.currentBranch = result.Branch;
             this.env.branchList.push(this.currentBranch);
             this.env.selectedBranch = this.currentBranch.Id;

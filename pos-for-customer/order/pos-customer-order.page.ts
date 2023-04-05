@@ -25,12 +25,18 @@ import { environment } from 'src/environments/environment';
     styleUrls: ['./pos-customer-order.page.scss'],
 })
 export class POSCustomerOrderPage extends PageBase {
+    Logo = "";
     ImagesServer = environment.posImagesServer;
     AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
     segmentView = 'all';
+    txtSendOrder = "Gừi món";
+    AllowSendOrder = false;
     idTable: any; //Default table
-    tableList = [];
+    Table:any;
+    Branch:any;
+    Contact:any;
     menuList = [];
+    IDBranch = null;
     statusList; //Show on bill
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     printData = {
@@ -61,7 +67,8 @@ export class POSCustomerOrderPage extends PageBase {
     ) {
         super();
         this.pageConfig.isDetailPage = true;
-        this.pageConfig.isShowFeature = true;
+        this.pageConfig.isShowFeature = false;
+        this.pageConfig.canEdit = true;
         this.idTable = this.route.snapshot?.paramMap?.get('table');
         this.idTable = typeof (this.idTable) == 'string' ? parseInt(this.idTable) : this.idTable;
         this.formGroup = formBuilder.group({
@@ -74,11 +81,11 @@ export class POSCustomerOrderPage extends PageBase {
             Additions: this.formBuilder.array([]),
             Deductions: this.formBuilder.array([]),
             Tables: [[this.idTable]],
-            IDBranch: [174],
+            IDBranch: [''],
             OrderDate: [new Date()],
-            IDOwner: 4,
-            IDContact: [922],
-            IDAddress: [902],
+            IDOwner: [4],
+            IDContact: [''],
+            IDAddress: [''],
             IDType: [293],
             IDStatus: [101],           
             Type: ['POSOrder'],
@@ -98,21 +105,24 @@ export class POSCustomerOrderPage extends PageBase {
             Received: new FormControl({ value: null, disabled: true }),
             ReceivedDiscountFromSalesman: new FormControl({ value: null, disabled: true }),
         })
-        Object.assign(this.query, {IDBranch:174});
     }
     segmentChanged(ev: any) {
         this.segmentView = ev;
     }
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
-        
+        this.AllowSendOrder = false;
+        this.txtSendOrder = "Gửi món";
         Promise.all([         
             this.env.getStatus('POSOrder'),           
             this.getMenu(forceReload),  
 
         ]).then((values: any) => { 
             this.statusList = values[0];
-            this.menuList = values[1].data;        
+            this.Branch = values[1].branch;
+            this.Table = values[1].table;
+            this.menuList = values[1].menu;  
+            this.Contact = values[1].contact; 
             super.preLoadData(event);
         }).catch(err => {           
             this.loadedData(event);
@@ -130,19 +140,30 @@ export class POSCustomerOrderPage extends PageBase {
     }
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
         super.loadedData(event, ignoredFromGroup);
+        this.Logo = this.ImagesServer + this.Branch.LogoURL;
         if (!this.item?.Id) {
+            
+            this.patchOrderValueDefault();
             Object.assign(this.item, this.formGroup.getRawValue());
-            this.setOrderValue(this.item);
+            this.setOrderValue(this.item);   
+            this.AllowSendOrder = false;       
         }
         else {
             this.patchOrderValue();
         }       
         this.loadOrder();
+        this.loadInfoOrder();
        
     }
+    patchOrderValueDefault(){
+        
+
+        this.formGroup.controls.IDBranch.patchValue(this.Branch.Id); 
+        this.formGroup.controls.IDContact.patchValue(this.Contact.Id); 
+        this.formGroup.controls.IDAddress.patchValue(this.Contact.IDAddress); 
+    }
     private loadOrder() {
-        this.printData.undeliveredItems = [];
-        this.printData.selectedTables = this.tableList.filter(d => this.item.Tables.indexOf(d.Id) > -1);
+        this.printData.undeliveredItems = [];       
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
 
         this.item._Locked = !this.pageConfig.canEdit ? false : this.noLockStatusList.indexOf(this.item.Status) == -1;
@@ -176,12 +197,11 @@ export class POSCustomerOrderPage extends PageBase {
     private getMenu(forceReload) {
         let apiPath = {
             method: "GET",
-            url: function(){return ApiSetting.apiDomain("POS/ForCustomer/Menu")}  
+            url: function(id){return ApiSetting.apiDomain("POS/ForCustomer/Table/") + id}  
         };  
         return new Promise((resolve, reject) => {
-            this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
-					.then((data: any) => {
-						var result = { count: data.length, data: data };
+            this.commonService.connect(apiPath.method, apiPath.url(this.idTable), this.query).toPromise()
+					.then((result: any) => {					
 						resolve(result);
 					})
 					.catch(err => {						
@@ -189,7 +209,10 @@ export class POSCustomerOrderPage extends PageBase {
 					});
         });
     }
-    async addToCart(item, idUoM, quantity = 1) {
+    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {
+        if(IsUpdate){
+            this.txtSendOrder = "Cập nhật";
+        }
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -209,6 +232,10 @@ export class POSCustomerOrderPage extends PageBase {
         //     this.env.showTranslateMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
         //     return;
         // }
+        if (!this.pageConfig.canEdit) {
+            this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+            return;
+        }
 
         if (!item.UoMs.length) {
             this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
@@ -218,8 +245,9 @@ export class POSCustomerOrderPage extends PageBase {
         let uom = item.UoMs.find(d => d.Id == idUoM);
         let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
 
-        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
         if (!line) {
+            
             line = {
 
                 IDOrder: this.item.Id,
@@ -246,16 +274,12 @@ export class POSCustomerOrderPage extends PageBase {
                 IDPromotion: null
             };
             this.item.OrderLines.push(line);
-            debugger;
             this.addOrderLine(line);
             this.setOrderValue({ OrderLines: [line] });
         }
         else {
-            if ((line.Quantity + quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
-                this.env.showPrompt('Sản phẩm này đã được chuyển bếp, bạn chắc vẫn muốn thay đổi số lượng?', item.Name, 'Thay đổi số lượng').then(_ => {
-                    line.Quantity += quantity;
-                    this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                }).catch(_ => { });
+            if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
+                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ",item.Name+" đã chuyển bếp "+line.ShippedQuantity+" "+ line.UoMName,"Thông báo");
             }
             else if ((line.Quantity + quantity) > 0) {
                 line.Quantity += quantity;
@@ -268,6 +292,7 @@ export class POSCustomerOrderPage extends PageBase {
                 }).catch(_ => { });
             }
         }
+        
     }
     private addOrderLine(line) {
         let groups = <FormArray>this.formGroup.controls.OrderLines;
@@ -302,6 +327,7 @@ export class POSCustomerOrderPage extends PageBase {
         groups.push(group);
     }
     setOrderValue(data) {
+        this.AllowSendOrder = true;
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
@@ -321,10 +347,12 @@ export class POSCustomerOrderPage extends PageBase {
                             this.formGroup.get('DeletedLines').markAsDirty();
                         }
                         this.item.OrderLines.splice(idx, 1);
+                        
                         fa.removeAt(idx);
                     }
                     //Update 
                     else {
+                        
                         let cfg = <FormGroup>fa.controls[idx];
 
                         for (const lc in line) {
@@ -340,6 +368,7 @@ export class POSCustomerOrderPage extends PageBase {
                 }
             }
             else {
+                
                 let fc = <FormControl>this.formGroup.controls[c];
                 if (fc) {
                     fc.setValue(data[c]);
@@ -348,13 +377,26 @@ export class POSCustomerOrderPage extends PageBase {
             }
 
         }
-        //this.calcOrder();
-        if (this.item.OrderLines.length) {
-            //this.debounce(() => { this.saveChange() }, 5000);
-            debugger;
-            this.saveChange();
-        }
+        this.loadInfoOrder();
+        // if (this.item.OrderLines.length) {
+            
+        //     //this.debounce(() => { this.saveChange() }, 5000);     
+        //     this.saveChange();
+        // }
 
+    }
+    sendOrder(){
+        this.saveChange();    
+        this.AllowSendOrder = false; 
+        this.txtSendOrder = "Gửi món";
+
+        // if(this.item.OrderLines.length){
+        //     this.saveChange();    
+        //     this.AllowSendOrder = false;        
+        // }
+        // else{
+        //     this.env.showMessage("Vui lòng chọn món","warning")
+        // }
     }
     async saveChange() {
         let submitItem = this.getDirtyValues(this.formGroup);
@@ -378,7 +420,8 @@ export class POSCustomerOrderPage extends PageBase {
 
         this.submitAttempt = false;
         this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete', 'success');
-
+        this.env.publishEvent({ Code: 'POSCustomerSendOrder' });
+        //this.env.publishEvent({ Code: 'POSCustomerSendOrder' ,data:{IDBranch: this.Branch.Id, IDTable: this.idTable,IDSaleOrder:this.item.Id}});
         // if (savedItem.Status == "Done") {
         //     this.sendPrint(savedItem.Status, true);
         // }
@@ -423,16 +466,42 @@ export class POSCustomerOrderPage extends PageBase {
 
 
             //Lấy hình & hiển thị thông tin số lượng đặt hàng lên menu
-            for (let m of this.menuList)
-                for (let mi of m.Items) {
-                    if (mi.Id == line.IDItem) {
-                        mi.BookedQuantity = this.item.OrderLines.filter(x => x.IDItem == line.IDItem).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
-                        line._item = mi;
-                    }
-                }
-
-            line._background = { 'background-image': 'url("' + environment.posImagesServer + ((line._item && line._item.Image) ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")' };
+            
 
         }
+    }
+    loadInfoOrder(){
+        this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+        for (let line of this.item.OrderLines) {
+            for (let m of this.menuList)
+                    for (let mi of m.Items) {
+                        if (mi.Id == line.IDItem) {
+                            mi.BookedQuantity = this.item.OrderLines.filter(x => x.IDItem == line.IDItem).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+                            line._item = mi;
+                        }
+                    }
+
+                line._background = { 'background-image': 'url("' + environment.posImagesServer + ((line._item && line._item.Image) ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")' };
+            }
+    }
+    async processPayments() {
+        const modal = await this.modalController.create({
+            component: POSPaymentModalPage,
+            swipeToClose: true,
+            backdropDismiss: true,
+            cssClass: 'modal-change-table',
+            componentProps: {
+                item: this.item,
+            }
+        });
+        await modal.present();
+        const { data , role } = await modal.onWillDismiss();
+        if (role == 'Done') {
+            this.formGroup.controls.IDStatus.patchValue(114);
+            this.formGroup.controls.IDStatus.markAsDirty();
+            this.formGroup.controls.Status.patchValue("Done");
+            this.formGroup.controls.Status.markAsDirty();
+            //this.saveSO();
+        } 
     }
 }

@@ -225,7 +225,7 @@ export class POSOrderDetailPage extends PageBase {
         let uom = item.UoMs.find(d => d.Id == idUoM);
         let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
 
-        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
         if (!line) {
             line = {
 
@@ -257,7 +257,7 @@ export class POSOrderDetailPage extends PageBase {
             this.setOrderValue({ OrderLines: [line] });
         }
         else {
-            if ((line.Quantity + quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
+            if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
                 this.env.showPrompt('Sản phẩm này đã được chuyển bếp, bạn chắc vẫn muốn thay đổi số lượng?', item.Name, 'Thay đổi số lượng').then(_ => {
                     line.Quantity += quantity;
                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });

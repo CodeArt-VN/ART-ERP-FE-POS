@@ -8,6 +8,15 @@
 //         margin-top: 0px !important;
 //     }
 // }
+.toobar-cart {
+	--padding-start: 20px;
+}
+.toobar-search {
+	--padding-start: 5px;
+}
+.logo{
+	height: 30px;
+}
 .InvoiceOptions{
 	margin-top: 10px;
 }
@@ -28,11 +37,7 @@
 }
 
 .search-box {
-	min-width: 30vw;
-	height: 35px;
 	margin-top: 5px;
-	padding-bottom: 1px;
-	text-align: start;
 }
 
 .menu-holder {

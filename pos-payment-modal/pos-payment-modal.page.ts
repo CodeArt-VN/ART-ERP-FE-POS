@@ -40,6 +40,7 @@ export class POSPaymentModalPage extends PageBase {
     {
         super();
         this.env.getEvents().subscribe((data) => {
+            console.log(data);
 			switch (data.Code) {
 				case 'app:POSOrderPaymentUpdate':
 					this.pushPayment(data)
