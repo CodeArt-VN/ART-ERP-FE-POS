@@ -5,6 +5,9 @@
 			<ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
 			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
 		</ion-button>
+		<ion-button color="none" slot="end"   (click)="refresh()">
+			<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
+		</ion-button>
 	</ion-toolbar>
 </ion-header>
 

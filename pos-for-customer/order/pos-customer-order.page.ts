@@ -3,21 +3,14 @@ import { NavController, LoadingController, AlertController, ModalController, Pop
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { BRA_BranchProvider, BANK_IncomingPaymentDetailProvider, BANK_IncomingPaymentProvider, CRM_ContactProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, SALE_OrderDetailProvider, SALE_OrderProvider, POS_ForCustomerProvider, } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { concat, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
-import { SaleOrderMobileAddContactModalPage } from '../../../SALE/sale-order-mobile-add-contact-modal/sale-order-mobile-add-contact-modal.page';
 import { TranslateService } from '@ngx-translate/core';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSPaymentModalPage } from '../../pos-payment-modal/pos-payment-modal.page';
-import { POSCustomerOrderModalPage } from '../../pos-customer-order-modal/pos-customer-order-modal.page';
-import { POSDiscountModalPage } from '../../pos-discount-modal/pos-discount-modal.page';
-import { HostListener } from "@angular/core";
-import QRCode from 'qrcode';
 import { environment } from 'src/environments/environment';
+import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
 
 @Component({
     selector: 'app-pos-customer-order',
@@ -43,12 +36,6 @@ export class POSCustomerOrderPage extends PageBase {
     }
     constructor(
         public pageProvider: POS_ForCustomerProvider,
-        //public saleOrderDetailProvider: SALE_OrderDetailProvider,
-        //public menuProvider: POS_MenuProvider,
-       
-    
-        //public contactProvider: CRM_ContactProvider,    
-       
         public env: EnvService,
         public navCtrl: NavController,
         public route: ActivatedRoute,
