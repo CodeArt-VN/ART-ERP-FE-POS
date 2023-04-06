@@ -25,16 +25,12 @@ import { environment } from 'src/environments/environment';
     styleUrls: ['./pos-customer-order.page.scss'],
 })
 export class POSCustomerOrderPage extends PageBase {
-    Logo = "";
     ImagesServer = environment.posImagesServer;
     AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
     segmentView = 'all';
-    txtSendOrder = "Gừi món";
     AllowSendOrder = false;
     idTable: any; //Default table
     Table:any;
-    Branch:any;
-    Contact:any;
     menuList = [];
     IDBranch = null;
     statusList; //Show on bill
@@ -83,16 +79,16 @@ export class POSCustomerOrderPage extends PageBase {
             Tables: [[this.idTable]],
             IDBranch: [''],
             OrderDate: [new Date()],
-            IDOwner: [4],
-            IDContact: [''],
-            IDAddress: [''],
+            IDOwner: [-1],
+            IDContact: [-1],
+            IDAddress: [-1],
             IDType: [293],
             IDStatus: [101],           
             Type: ['POSOrder'],
             SubType: ['TableService'],
             Status: new FormControl({ value: 'New', disabled: true }),
             //IDOwner: [this.env.user.StaffID],
-
+            IDTable: [this.idTable],
             IsCOD: [],
             IsInvoiceRequired: [],
 
@@ -105,24 +101,41 @@ export class POSCustomerOrderPage extends PageBase {
             Received: new FormControl({ value: null, disabled: true }),
             ReceivedDiscountFromSalesman: new FormControl({ value: null, disabled: true }),
         })
+        Object.assign(this.query, {IDTable: this.idTable});
+    }
+    ngOnInit() {
+        this.pageConfig.subscribePOSOrderCustomer = this.env.getEvents().subscribe((data) => {         
+			switch (data.Code) {
+				case 'app:POSOrderFromStaff':
+					this.notify(data.Data);
+					break;
+            }
+        });
+        super.ngOnInit();
+    }
+    private notify(data){
+        if(this.item.Id == data.value){
+            this.refresh();
+        }
+    }
+    ngOnDestroy() {
+        this.pageConfig?.subscribePOSOrderCustomer?.unsubscribe(); 
+        super.ngOnDestroy();
     }
     segmentChanged(ev: any) {
         this.segmentView = ev;
     }
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
-        this.AllowSendOrder = false;
-        this.txtSendOrder = "Gửi món";
+        this.AllowSendOrder = false;      
         Promise.all([         
             this.env.getStatus('POSOrder'),           
-            this.getMenu(forceReload),  
-
+            this.getMenu(),  
+            this.getTable(),
         ]).then((values: any) => { 
-            this.statusList = values[0];
-            this.Branch = values[1].branch;
-            this.Table = values[1].table;
-            this.menuList = values[1].menu;  
-            this.Contact = values[1].contact; 
+            this.statusList = values[0];    
+            this.menuList = values[1]; 
+            this.Table = values[2];            
             super.preLoadData(event);
         }).catch(err => {           
             this.loadedData(event);
@@ -140,10 +153,9 @@ export class POSCustomerOrderPage extends PageBase {
     }
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
         super.loadedData(event, ignoredFromGroup);
-        this.Logo = this.ImagesServer + this.Branch.LogoURL;
+        
         if (!this.item?.Id) {
-            
-            this.patchOrderValueDefault();
+            this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch); 
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);   
             this.AllowSendOrder = false;       
@@ -154,13 +166,6 @@ export class POSCustomerOrderPage extends PageBase {
         this.loadOrder();
         this.loadInfoOrder();
        
-    }
-    patchOrderValueDefault(){
-        
-
-        this.formGroup.controls.IDBranch.patchValue(this.Branch.Id); 
-        this.formGroup.controls.IDContact.patchValue(this.Contact.Id); 
-        this.formGroup.controls.IDAddress.patchValue(this.Contact.IDAddress); 
     }
     private loadOrder() {
         this.printData.undeliveredItems = [];       
@@ -194,7 +199,22 @@ export class POSCustomerOrderPage extends PageBase {
     refresh(event?: any): void {
         this.preLoadData('force');
     }
-    private getMenu(forceReload) {
+    private getMenu() {
+        let apiPath = {
+            method: "GET",
+            url: function(){return ApiSetting.apiDomain("POS/ForCustomer/Menu")}  
+        };  
+        return new Promise((resolve, reject) => {
+            this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
+					.then((result: any) => {					
+						resolve(result);
+					})
+					.catch(err => {						
+						reject(err);
+					});
+        });
+    }
+    private getTable() {
         let apiPath = {
             method: "GET",
             url: function(id){return ApiSetting.apiDomain("POS/ForCustomer/Table/") + id}  
@@ -209,10 +229,8 @@ export class POSCustomerOrderPage extends PageBase {
 					});
         });
     }
-    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {
-        if(IsUpdate){
-            this.txtSendOrder = "Cập nhật";
-        }
+
+    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {     
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -388,8 +406,6 @@ export class POSCustomerOrderPage extends PageBase {
     sendOrder(){
         this.saveChange();    
         this.AllowSendOrder = false; 
-        this.txtSendOrder = "Gửi món";
-
         // if(this.item.OrderLines.length){
         //     this.saveChange();    
         //     this.AllowSendOrder = false;        
@@ -420,11 +436,7 @@ export class POSCustomerOrderPage extends PageBase {
 
         this.submitAttempt = false;
         this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete', 'success');
-        this.env.publishEvent({ Code: 'POSCustomerSendOrder' });
-        //this.env.publishEvent({ Code: 'POSCustomerSendOrder' ,data:{IDBranch: this.Branch.Id, IDTable: this.idTable,IDSaleOrder:this.item.Id}});
-        // if (savedItem.Status == "Done") {
-        //     this.sendPrint(savedItem.Status, true);
-        // }
+            
     }
     private calcOrder() {
         this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);

@@ -44,12 +44,32 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.canSplit = true;
         this.pageConfig.canChangeTable = true;
         this.pageConfig.canImport = false;
-        this.pageConfig.canExport = false;
-        this.env.getEvents().subscribe((data) => {
-			console.log(data);
-        })
+        this.pageConfig.canExport = false;     
+        
     }
-
+    ngOnInit() {
+        debugger
+        this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
+			switch (data.Code) {
+				case 'app:POSOrderFromCustomer':
+					this.notify(data.Data)
+					break;
+            }
+        });
+        super.ngOnInit();
+    }
+    private notify(data){  
+        if(this.env.selectedBranch == data.id){
+            this.env.showPrompt('Bạn có muốn xem không?', "", "Khách Gọi món").then(_ => {     
+                this.pageConfig?.subscribePOSOrder?.unsubscribe();     
+                this.nav("/pos-order/"+data.value+"/"+data.name,"back");               
+            }).catch(_ => { });
+        }                
+    }
+    ngOnDestroy() {
+        this.pageConfig?.subscribePOSOrder?.unsubscribe(); 
+        super.ngOnDestroy();
+    }
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
         this.query.Type = 'POSOrder';

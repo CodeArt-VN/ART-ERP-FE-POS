@@ -146,10 +146,28 @@ export class POSOrderDetailPage extends PageBase {
 
 
         });
-
+        
     }
-
-
+    ngOnInit() {
+        this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {         
+			switch (data.Code) {
+				case 'app:POSOrderFromCustomer':
+					this.notify(data.Data)
+					break;
+            }
+        });
+        super.ngOnInit();
+    }
+    private notify(data){
+        if(this.id == data.value){
+            this.env.showMessage("Khách gọi món","warning");
+            this.refresh();
+        }
+    }
+    ngOnDestroy() {
+        this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
+        super.ngOnDestroy();
+    }
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
         Promise.all([
@@ -437,6 +455,7 @@ export class POSOrderDetailPage extends PageBase {
         let printerCodeList = [];
         let base64dataList = [];
 
+        this.item.IDOwner = this.env.user.StaffID;
         this.item.OrderLines.forEach(e => {
             e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
             if (e._undeliveredQuantity > 0) {

@@ -1,17 +1,10 @@
 <ion-header>
-	<ion-toolbar class="toobar-cart">
-		<img slot="start" class="logo" [src]="Logo" />
-		
-		<ion-button color="none" slot="end" class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}"  (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+	<ion-toolbar class="toolbar-no">
+		<ion-searchbar slot="start" class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
+		<ion-button color="none" slot="end" class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
 			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
 		</ion-button>
-		<ion-button color="none" slot="end"   (click)="refresh()">
-			<ion-icon color="primary" name="reload-outline"></ion-icon>	
-		</ion-button>
-	</ion-toolbar>
-	<ion-toolbar class="toobar-search">
-		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
 	</ion-toolbar>
 </ion-header>
 
@@ -63,14 +56,16 @@
 					</div>
 				</div>
 			</div>		
-			<ion-button  expand="block" fill="outline" color="none">
-				<ion-text>Bàn {{Table.Name}}</ion-text>
-			</ion-button>	
 			<div class="box ion-padding">
 				
 				<div class="box-content">
 					
 					<div class="check-out">
+						<label class="c-label">Bàn
+							<span class="c-value">
+								{{Table.Name}}
+							</span>
+						</label>
 						<label class="c-label">Tiền hàng
 							<span class="c-value">
 								{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}
@@ -103,14 +98,10 @@
 					</div>
 				</div>
 				
-			</div>
-
+			</div>	
 			<ion-button *ngIf="pageConfig.canEdit" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
-				<ion-text >{{txtSendOrder}}</ion-text>
+				<ion-text >Đặt hàng</ion-text>
 			</ion-button>
-			<!-- <ion-button *ngIf="item.Status == 'Done'" expand="block" (click)="processPayments()" >				
-				<ion-text>Xem chi tiết</ion-text>
-			</ion-button> -->
 		</form>
 	</ion-fab>
 

@@ -39,8 +39,7 @@ export class POSPaymentModalPage extends PageBase {
     ) 
     {
         super();
-        this.env.getEvents().subscribe((data) => {
-            console.log(data);
+        this.env.getEvents().subscribe((data) => {            
 			switch (data.Code) {
 				case 'app:POSOrderPaymentUpdate':
 					this.pushPayment(data)
@@ -49,6 +48,22 @@ export class POSPaymentModalPage extends PageBase {
         })
         
     }
+    ngOnInit() {
+        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
+			switch (data.Code) {
+				case 'app:POSOrderPaymentUpdate':
+					this.pushPayment(data)
+					break;
+            }
+        })
+        super.ngOnInit();
+    }
+    ngOnDestroy() {
+        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
+        super.ngOnDestroy();
+    }
+
+
     loadData(event){
         Object.assign(this.query, {SortBy: '[Id_desc]',IDSaleOrder: this.item.Id, IsDeleted: false});
         super.loadData(event);

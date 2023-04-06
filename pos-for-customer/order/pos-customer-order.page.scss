@@ -8,14 +8,8 @@
 //         margin-top: 0px !important;
 //     }
 // }
-.toobar-cart {
-	--padding-start: 20px;
-}
-.toobar-search {
+.toolbar-no{
 	--padding-start: 5px;
-}
-.logo{
-	height: 30px;
 }
 .InvoiceOptions{
 	margin-top: 10px;
@@ -37,9 +31,12 @@
 }
 
 .search-box {
+	
+	height: 35px;
 	margin-top: 5px;
+	padding-bottom: 1px;
+	text-align: start;
 }
-
 .menu-holder {
 	padding-bottom: 0px !important;
 	overflow: hidden;
@@ -377,13 +374,10 @@
 	}
 
 	.functions-list {
-		top: auto;
-		border-top: solid 1px var(--menu-right-border-color);
+		top: auto;		
 		box-shadow: 0px -2px 5px 0 rgb(0 0 0 / 10%);
-
 		position: sticky;
-		bottom: 0;
-		background: linear-gradient(180deg, var(--main-background-top), var(--main-background-bottom));
+		bottom: 0;		
 	}
 }
 
