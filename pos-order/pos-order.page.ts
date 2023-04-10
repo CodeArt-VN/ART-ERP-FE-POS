@@ -23,7 +23,7 @@ export class POSOrderPage extends PageBase {
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered',];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
     segmentView = 'all';
     orderCounter = 0;
-
+    isShowNotify = false;
     constructor(
         public pageProvider: SALE_OrderProvider,
         public tableGroupProvider: POS_TableGroupProvider,
@@ -48,11 +48,13 @@ export class POSOrderPage extends PageBase {
         
     }
     ngOnInit() {
-        debugger
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
 			switch (data.Code) {
 				case 'app:POSOrderFromCustomer':
-					this.notify(data.Data)
+                    if(this.isShowNotify ==false){
+                        this.isShowNotify = true; 
+                        this.notify(data.Data);
+                    }					
 					break;
             }
         });
@@ -60,10 +62,15 @@ export class POSOrderPage extends PageBase {
     }
     private notify(data){  
         if(this.env.selectedBranch == data.id){
-            this.env.showPrompt('Bạn có muốn xem không?', "", "Khách Gọi món").then(_ => {     
+            this.env.showPrompt('Bạn có muốn xem không?', "", "Khách Gọi món").then(_ => {   
+                this.isShowNotify = false;  
                 this.pageConfig?.subscribePOSOrder?.unsubscribe();     
-                this.nav("/pos-order/"+data.value+"/"+data.name,"back");               
-            }).catch(_ => { });
+                this.nav("/pos-order/"+data.value+"/"+data.name,"back");  
+
+            }).catch(_ => {
+                this.isShowNotify = false; 
+                this.refresh();
+             });
         }                
     }
     ngOnDestroy() {

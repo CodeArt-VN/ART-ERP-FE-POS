@@ -11,6 +11,7 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSPaymentModalPage } from '../../pos-payment-modal/pos-payment-modal.page';
 import { environment } from 'src/environments/environment';
 import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
+import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
 
 @Component({
     selector: 'app-pos-customer-order',
@@ -26,6 +27,7 @@ export class POSCustomerOrderPage extends PageBase {
     Table:any;
     menuList = [];
     IDBranch = null;
+    dealList = [];
     statusList; //Show on bill
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     printData = {
@@ -119,10 +121,12 @@ export class POSCustomerOrderPage extends PageBase {
             this.env.getStatus('POSOrder'),           
             this.getMenu(),  
             this.getTable(),
+            this.getDeal(),
         ]).then((values: any) => { 
             this.statusList = values[0];    
             this.menuList = values[1]; 
-            this.Table = values[2];            
+            this.Table = values[2];    
+            this.dealList = values[3];        
             super.preLoadData(event);
         }).catch(err => {           
             this.loadedData(event);
@@ -139,6 +143,7 @@ export class POSCustomerOrderPage extends PageBase {
         }
     }
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
+        
         super.loadedData(event, ignoredFromGroup);
         
         if (!this.item?.Id) {
@@ -150,10 +155,34 @@ export class POSCustomerOrderPage extends PageBase {
         else {
             this.patchOrderValue();
         }       
+        
         this.loadOrder();
+        
         this.loadInfoOrder();
+        
        
     }
+    private UpdatePrice(){
+        
+        this.dealList.forEach(d=>{                     
+            this.menuList.forEach(m=>{                             
+                let index = m.Items.findIndex(i=>i.SalesUoM == d.IDItemUoM);
+                if(index != -1){ 
+                    let idexUom =  m.Items[index].UoMs.findIndex(u=>u.Id == d.IDItemUoM);                    
+                    let newPrice = d.Price;
+                    if(d.IsByPercent == true){
+                        newPrice = d.OriginalPrice - (d.OriginalPrice * d.DiscountByPercent/100);
+                    }      
+                    m.Items[index].UoMs[idexUom].PriceList.find(p=>p.Type=="SalePriceList").NewPrice = newPrice;  
+                   
+                    if(d.MaxPerOrder != null){
+                        m.Items[index].UoMs[idexUom].MaxPerOrder = d.MaxPerOrder;
+                    }               
+                }
+            });
+        })           
+    }
+    
     private loadOrder() {
         this.printData.undeliveredItems = [];       
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
@@ -166,8 +195,9 @@ export class POSCustomerOrderPage extends PageBase {
             this.formGroup?.disable();
         }
         
-
-        this.calcOrder();
+        this.UpdatePrice();
+        this.calcOrder();       
+        
 
     }
     private patchOrderValue() {
@@ -216,6 +246,21 @@ export class POSCustomerOrderPage extends PageBase {
 					});
         });
     }
+    private getDeal(){
+        let apiPath = {
+            method: "GET",
+            url: function(){return ApiSetting.apiDomain("POS/ForCustomer/Deal")}  
+        };  
+        return new Promise((resolve, reject) => {          
+            this.commonService.connect(apiPath.method, apiPath.url(),this.query).toPromise()
+					.then((result: any) => {					
+						resolve(result);
+					})
+					.catch(err => {						
+						reject(err);
+					});
+        });
+    }
 
     async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {     
         if (this.submitAttempt) {
@@ -249,10 +294,21 @@ export class POSCustomerOrderPage extends PageBase {
 
         let uom = item.UoMs.find(d => d.Id == idUoM);
         let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
-
+        let UoMPrice = price.Price;   
+        if(price.NewPrice){                
+            UoMPrice = price.NewPrice;
+        }  
         let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        
+        if(uom.MaxPerOrder){
+            line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Quantity +quantity <= uom.MaxPerOrder);           
+        }
+        if(this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Quantity + quantity > uom.MaxPerOrder)){
+            UoMPrice = price.Price;
+        }  
         if (!line) {
-            
+                
+                              
             line = {
 
                 IDOrder: this.item.Id,
@@ -264,22 +320,23 @@ export class POSCustomerOrderPage extends PageBase {
                 IDTax: item.IDSalesTaxDefinition,
                 TaxRate: item.SaleVAT,
                 IDUoM: idUoM,
-                UoMPrice: price.Price,
+                UoMPrice: UoMPrice,  
 
-                Quantity: 1,
+                Quantity: 1,              
                 IDBaseUoM: idUoM,
                 UoMSwap: 1,
                 UoMSwapAlter: 1,
-                BaseQuantity: 0,
-
+                BaseQuantity: 0,               
                 ShippedQuantity: 0,
 
                 Remark: null,
                 IsPromotionItem: false,
                 IDPromotion: null
             };
-            this.item.OrderLines.push(line);
-            this.addOrderLine(line);
+            
+            this.calcOrderLine(line);
+            this.item.OrderLines.push(line);            
+            this.addOrderLine(line);         
             this.setOrderValue({ OrderLines: [line] });
         }
         else {
@@ -287,17 +344,53 @@ export class POSCustomerOrderPage extends PageBase {
                 this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ",item.Name+" đã chuyển bếp "+line.ShippedQuantity+" "+ line.UoMName,"Thông báo");
             }
             else if ((line.Quantity + quantity) > 0) {
+                
                 line.Quantity += quantity;
+                this.calcOrderLine(line);
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                
             }
             else {
                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
                     line.Quantity += quantity;
+                    this.calcOrderLine(line);
                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
                 }).catch(_ => { });
             }
+             
         }
         
+               
+    }
+    calcOrderLine(line){
+        line._serviceCharge = 0;
+        if (this.item.IDBranch == 174 //W-Cafe
+            || this.item.IDBranch == 17 //The Log
+            || (this.item.IDBranch == 416) //Gem Cafe && set menu  && line._item.IDMenu == 218
+        ) {
+            line._serviceCharge = 5;
+        }                      
+        line.OriginalTotalBeforeDiscount = line.Quantity * line.UoMPrice;
+        line.OriginalPromotion = parseFloat(line.OriginalPromotion) || 0;
+        line.OriginalDiscount1 = parseFloat(line.OriginalDiscount1) || 0;
+        line.OriginalDiscount2 = parseFloat(line.OriginalDiscount2) || 0;
+        line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
+        line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
+        line.OriginalDiscountByGroup = line.OriginalPromotion/100 * line.OriginalTotalBeforeDiscount;
+        line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
+        line.OriginalTotalDiscount = line.OriginalDiscountByOrder + line.OriginalDiscountByLine;
+        
+
+        line.OriginalTotalAfterDiscount = line.OriginalTotalBeforeDiscount -  line.OriginalTotalDiscount;
+        line.OriginalTax = line.OriginalTotalAfterDiscount*line.TaxRate/100;
+        line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount +  line.OriginalTax;
+
+        line.OriginalDiscountFromSalesman = parseFloat(line.OriginalDiscountFromSalesman) || 0;
+        
+        line.CalcOriginalTotalAdditions =  line.OriginalTotalAfterDiscount * (line._serviceCharge / 100) * (1 + line.TaxRate / 100);
+        line.CalcTotalOriginal  = line.OriginalTotalAfterTax + line.CalcOriginalTotalAdditions;                   
+        line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;   
+        this.calcOrder();     
     }
     private addOrderLine(line) {
         let groups = <FormArray>this.formGroup.controls.OrderLines;
@@ -351,6 +444,7 @@ export class POSCustomerOrderPage extends PageBase {
                             this.formGroup.get('DeletedLines').setValue(deletedLines);
                             this.formGroup.get('DeletedLines').markAsDirty();
                         }
+                        
                         this.item.OrderLines.splice(idx, 1);
                         
                         fa.removeAt(idx);
@@ -382,7 +476,9 @@ export class POSCustomerOrderPage extends PageBase {
             }
 
         }
+        console.log(this.item.OrderLines);
         this.loadInfoOrder();
+        this.calcOrder();
         // if (this.item.OrderLines.length) {
             
         //     //this.debounce(() => { this.saveChange() }, 5000);     
@@ -393,6 +489,7 @@ export class POSCustomerOrderPage extends PageBase {
     sendOrder(){
         this.saveChange();    
         this.AllowSendOrder = false; 
+        
         // if(this.item.OrderLines.length){
         //     this.saveChange();    
         //     this.AllowSendOrder = false;        
@@ -418,49 +515,31 @@ export class POSCustomerOrderPage extends PageBase {
             }
 
             this.item = savedItem;
-        }
+        }      
         this.loadedData();
 
         this.submitAttempt = false;
-        this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete', 'success');
+        this.env.showTranslateMessage('Đặt món thành công', 'success');
             
     }
     private calcOrder() {
-        this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+        
+        //this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
         this.item.OriginalTotalBeforeDiscount = 0;
         this.item.OriginalTotalDiscount = 0;
         this.item.OriginalTax = 0;
         this.item.OriginalTotalAfterTax = 0;
         this.item.CalcOriginalTotalAdditions = 0;
         this.item.CalcTotalOriginal = 0;
-        for (let m of this.menuList) for (let mi of m.Items) mi.BookedQuantity = 0;
-
-        for (let line of this.item.OrderLines) {
-
-            line._serviceCharge = 0;
-            if (this.item.IDBranch == 174 //W-Cafe
-                || this.item.IDBranch == 17 //The Log
-                || (this.item.IDBranch == 416) //Gem Cafe && set menu  && line._item.IDMenu == 218
-            ) {
-                line._serviceCharge = 5;
-            }
-
-            //Parse data + Tính total
-            line.UoMPrice = line.IsPromotionItem ? 0 : parseFloat(line.UoMPrice) || 0;
-            line.TaxRate = parseFloat(line.TaxRate) || 0;
-            line.Quantity = parseFloat(line.Quantity) || 0;         
-            this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount;
-
-            //line.OriginalPromotion
-           
-            this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;
-
-            
+             
+        for (let line of this.item.OrderLines) {            
+            this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount; 
+            this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;           
             this.item.OriginalTax += line.OriginalTax;           
             this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
             this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions; 
             this.item.CalcTotalOriginal += line.CalcTotalOriginal ;    
-            line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
+            //line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
 
 
 
@@ -482,6 +561,7 @@ export class POSCustomerOrderPage extends PageBase {
 
                 line._background = { 'background-image': 'url("' + environment.posImagesServer + ((line._item && line._item.Image) ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")' };
             }
+        
     }
     async processPayments() {
         const modal = await this.modalController.create({
@@ -502,5 +582,37 @@ export class POSCustomerOrderPage extends PageBase {
             this.formGroup.controls.Status.markAsDirty();
             //this.saveSO();
         } 
+    }
+    async openQuickMemo(line) {
+        if (this.submitAttempt) return;
+
+        const modal = await this.modalController.create({
+            component: POSCustomerMemoModalPage,
+            id: 'POSMemoModalPage',
+            swipeToClose: true,
+            backdropDismiss: true,
+            cssClass: 'modal-quick-memo',
+            componentProps: {
+                item: JSON.parse(JSON.stringify(line))
+            }
+        });
+        await modal.present();
+        const { data, role } = await modal.onWillDismiss();
+
+        if (role == 'confirm') {
+            line.Remark = data ? data.toString() : null;
+            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
+        }
+    }
+
+    search(ev) {
+        var val = ev.target.value.toLowerCase();
+        if (val == undefined) {
+            val = '';
+        }
+        if (val.length > 2 || val == '') {
+            this.query.Keyword = val;                  
+        }
+
     }
 }

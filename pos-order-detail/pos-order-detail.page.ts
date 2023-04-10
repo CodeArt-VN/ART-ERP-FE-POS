@@ -22,6 +22,7 @@ import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
+import { ApiSetting } from 'src/app/services/static/api-setting';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -35,6 +36,7 @@ export class POSOrderDetailPage extends PageBase {
     idTable: any; //Default table
     tableList = [];
     menuList = [];
+    dealList = [];
     statusList; //Show on bill
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
@@ -174,16 +176,17 @@ export class POSOrderDetailPage extends PageBase {
             this.env.getStatus('POSOrder'),
             this.getTableGroupFlat(forceReload),
             this.getMenu(forceReload),
+            this.getDeal(),
             this.sysConfigProvider.read({ Code: 'SODefaultBusinessPartner' })
-        ]).then((values: any) => {
+        ]).then((values: any) => {        
             this.statusList = values[0];
             this.tableList = values[1];
             this.menuList = values[2];
-            if (values[3]['data'].length) {
-                let dbp = JSON.parse(values[3]['data'][0].Value);
+            this.dealList = values[3];
+            if (values[4]['data'].length) {
+                let dbp = JSON.parse(values[4]['data'][0].Value);
                 this.contactListSelected.push(dbp);
                 console.log(dbp);
-
             }
             super.preLoadData(event);
         }).catch(err => {
@@ -194,10 +197,15 @@ export class POSOrderDetailPage extends PageBase {
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
         super.loadedData(event, ignoredFromGroup);
         if (!this.item?.Id) {
+            
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
         }
         else {
+            let time = new Date(this.item.OrderDate).toUTCString();
+            console.log(time);
+            this.item.OrderDate = this.item.OrderDate.toLocaleString();
+            debugger
             this.patchOrderValue();
         }       
         this.loadOrder();
@@ -245,6 +253,10 @@ export class POSOrderDetailPage extends PageBase {
 
         let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
         if (!line) {
+            let UoMPrice = price.Price;
+            if(price.NewPrice){
+                UoMPrice = price.NewPrice;
+            }
             line = {
 
                 IDOrder: this.item.Id,
@@ -256,7 +268,7 @@ export class POSOrderDetailPage extends PageBase {
                 IDTax: item.IDSalesTaxDefinition,
                 TaxRate: item.SaleVAT,
                 IDUoM: idUoM,
-                UoMPrice: price.Price,
+                UoMPrice: UoMPrice,
 
                 Quantity: 1,
                 IDBaseUoM: idUoM,
@@ -635,7 +647,23 @@ export class POSOrderDetailPage extends PageBase {
     }
 
 
-
+    private UpdatePrice(){
+        
+        this.dealList.forEach(d=>{                     
+            this.menuList.forEach(m=>{                             
+                let index = m.Items.findIndex(i=>i.SalesUoM == d.IDItemUoM);
+                if(index != -1){ 
+                    let idexUom =  m.Items[index].UoMs.findIndex(u=>u.Id == d.IDItemUoM);                    
+                    let newPrice = d.Price;
+                    if(d.IsByPercent == true){
+                        newPrice = d.OriginalPrice - (d.OriginalPrice * d.DiscountByPercent/100);
+                    }      
+                    m.Items[index].UoMs[idexUom].PriceList.find(p=>p.Type=="SalePriceList").NewPrice = newPrice;    
+                    //m.Items[index].UoMs[idexUom].PriceList[0].NewPrice = m.Items[index].UoMs[idexUom].PriceList[0].Price;                 
+                }
+            });
+        })           
+    }
 
     private loadOrder() {
         this.printData.undeliveredItems = [];
@@ -652,7 +680,7 @@ export class POSOrderDetailPage extends PageBase {
         if (this.item._Customer) {
             this.contactListSelected.push(this.item._Customer);
         }
-
+        this.UpdatePrice();
         this.calcOrder();
 
     }
@@ -1277,6 +1305,22 @@ export class POSOrderDetailPage extends PageBase {
         });
     }
 
+    private getDeal(){
+        let apiPath = {
+            method: "GET",
+            url: function(){return ApiSetting.apiDomain("PR/Deal/ForPOS")}  
+        };  
+        return new Promise((resolve, reject) => {                 
+            this.commonService.connect(apiPath.method, apiPath.url(),this.query).toPromise()
+					.then((result: any) => {					
+						resolve(result);
+					})
+					.catch(err => {						
+						reject(err);
+					});
+        });
+    }
+
     private getTableGroupFlat(forceReload) {
         return new Promise((resolve, reject) => {
             this.getTableGroupTree(forceReload).then((data: any) => {
@@ -1326,6 +1370,16 @@ export class POSOrderDetailPage extends PageBase {
                 reject(err);
             });;
         })
+    }
+    search(ev) {
+        var val = ev.target.value.toLowerCase();
+        if (val == undefined) {
+            val = '';
+        }
+        if (val.length > 2 || val == '') {
+            this.query.Keyword = val;                  
+        }
+
     }
 }
 

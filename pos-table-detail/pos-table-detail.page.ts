@@ -74,7 +74,7 @@ export class POSTableDetailPage extends PageBase {
 
         super.loadedData(event);
         let that = this;
-        QRCode.toDataURL('http://app.inholdings.vn/#/pos-welcome/' + this.item?.Id, { errorCorrectionLevel: 'M', version: 3, width: 500, scale: 20, type: 'image/webp' }, function (err, url) {
+        QRCode.toDataURL('http://beta.inholdings.vn/#/pos-welcome/' + this.item?.Id, { errorCorrectionLevel: 'M', version: 4, width: 500, scale: 20, type: 'image/webp' }, function (err, url) {
             that.item.QRC = url;
         });
 

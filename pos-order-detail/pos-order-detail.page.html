@@ -140,6 +140,12 @@
 					</div>
 					<div class="total">
 						<div class="c-control">
+							<div class="text-right">
+								<ion-button [disabled]="submitAttempt" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top: 5px; margin-bottom: 9px;"  size="small" (click)="addContact()">
+									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+									{{'erp.app.pages.pos.pos-order.add-contact' | translate}}
+								</ion-button>
+							</div>
 							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'erp.app.pages.pos.pos-order.idaddress-placeholder' | translate}}">
 								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
 									{{i.Name}}
@@ -171,12 +177,7 @@
 									</div>
 								</ng-template>
 							</ng-select>
-							<div class="text-right">
-								<ion-button [disabled]="submitAttempt" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top: 5px; margin-bottom: 9px;"  size="small" (click)="addContact()">
-									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-									{{'erp.app.pages.pos.pos-order.add-contact' | translate}}
-								</ion-button>
-							</div>
+							
 						</div>
 
 						<div class="c-control">
@@ -265,7 +266,7 @@
 			<ng-container *ngFor="let g of menuList | filter:{Id:segmentView}">
 				<ng-container *ngIf="g.Items?.length">
 
-					<ion-row class="table-holder" *ngIf="(g.Items | search:{Name:query.Keyword}).length">
+					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
 
 						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
 							<ion-list-header class="ion-no-padding">
@@ -273,7 +274,7 @@
 							</ion-list-header>
 						</ion-col>
 
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | search:{Name:query.Keyword}">
+						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
 							<span class="tag right" *ngIf="i.BookedQuantity">
 								<ion-text class="tag-content" color="danger">
 									{{i.BookedQuantity}}
@@ -292,9 +293,14 @@
 
 									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">
 										<span class="price-list" *ngFor="let p of u.PriceList">
-											{{p.Price | number: '1.0-0'}}
-										</span>
-										<span class="uom">{{u.Name}}</span>
+											<span *ngIf="!p.NewPrice">											
+												{{p.Price | number: '1.0-0'}} / {{u.Name}}
+											</span>
+											<span *ngIf="p.NewPrice">																																			
+												<div><small class="old-price">{{p.Price | number: '1.0-0'}}</small></div>
+												<div>{{p.NewPrice | number: '1.0-0'}} / {{u.Name}}</div>	
+											</span>																																	
+										</span>	
 									</a>
 								</ng-container>
 

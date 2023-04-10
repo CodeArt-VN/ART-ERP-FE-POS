@@ -466,6 +466,10 @@
 
 			.price-list {
 				font-weight: bold;
+				.old-price{
+					text-decoration: line-through;
+					color: var(--ion-color-dark);
+				}
 			}
 
 			.uom {
