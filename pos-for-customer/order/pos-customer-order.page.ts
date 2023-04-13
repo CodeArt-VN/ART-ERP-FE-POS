@@ -580,7 +580,7 @@ export class POSCustomerOrderPage extends PageBase {
         if (role == 'confirm') {
             line.Remark = data ? data.toString() : null;
             this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
-            this.saveChange();
+            this.sendOrder();
         }
     }
 
