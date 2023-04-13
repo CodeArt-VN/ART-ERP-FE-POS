@@ -97,7 +97,7 @@ export class POSOrderDetailPage extends PageBase {
             SubType: ['TableService'],
             Status: new FormControl({ value: 'New', disabled: true }),
             IDOwner: [this.env.user.StaffID],
-
+            NumberOfGuests : [1 ,Validators.required],
             IsCOD: [],
             IsInvoiceRequired: [],
 
@@ -161,8 +161,8 @@ export class POSOrderDetailPage extends PageBase {
         super.ngOnInit();
     }
     private notify(data){
-        if(this.id == data.value){
-            this.env.showMessage("Khách gọi món","warning");
+        if(this.id == data.id){
+            this.env.showMessage("Khách gọi","warning");
             this.refresh();
         }
     }
@@ -202,10 +202,6 @@ export class POSOrderDetailPage extends PageBase {
             this.setOrderValue(this.item);
         }
         else {
-            let time = new Date(this.item.OrderDate).toUTCString();
-            console.log(time);
-            this.item.OrderDate = this.item.OrderDate.toLocaleString();
-            debugger
             this.patchOrderValue();
         }       
         this.loadOrder();
@@ -280,8 +276,10 @@ export class POSOrderDetailPage extends PageBase {
 
                 Remark: null,
                 IsPromotionItem: false,
-                IDPromotion: null
-            };
+                IDPromotion: null,
+                          
+                OriginalDiscountFromSalesman : 0,
+            };           
             this.item.OrderLines.push(line);
             this.addOrderLine(line);
             this.setOrderValue({ OrderLines: [line] });
@@ -688,6 +686,7 @@ export class POSOrderDetailPage extends PageBase {
     private calcOrder() {
         this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
         this.item.OriginalTotalBeforeDiscount = 0;
+        this.item.OriginalDiscountFromSalesman = 0;
         this.item.OriginalTotalDiscount = 0;
         this.item.OriginalTax = 0;
         this.item.OriginalTotalAfterTax = 0;
@@ -720,6 +719,7 @@ export class POSOrderDetailPage extends PageBase {
             this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
             this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions; 
             this.item.CalcTotalOriginal += line.CalcTotalOriginal ;    
+            this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman;
             line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
 
 
@@ -796,6 +796,10 @@ export class POSOrderDetailPage extends PageBase {
 
             IsPromotionItem: [line.IsPromotionItem],
             IDPromotion: [line.IDPromotion],
+                     
+            OriginalDiscountFromSalesman: [line.OriginalDiscountFromSalesman],
+
+
 
             // OriginalTotalBeforeDiscount
             // OriginalPromotion
@@ -1271,7 +1275,6 @@ export class POSOrderDetailPage extends PageBase {
 
     private saveSO() {
         Object.assign(this.item, this.formGroup.value);
-        console.log(this.item);
         this.saveChange();
     }
 
@@ -1380,6 +1383,18 @@ export class POSOrderDetailPage extends PageBase {
             this.query.Keyword = val;                  
         }
 
+    }
+    discountFromSalesman(line,form){
+        let OriginalDiscountFromSalesman = form.controls.OriginalDiscountFromSalesman.value;     
+        if(OriginalDiscountFromSalesman == ""){
+            OriginalDiscountFromSalesman = 0;
+        }
+        
+        if(OriginalDiscountFromSalesman > line.CalcTotalOriginal){
+            this.env.showMessage("Số tiền tặng không lớn hơn số lượng thực tế!","danger");
+            return false;
+        }     
+        this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark, OriginalDiscountFromSalesman: OriginalDiscountFromSalesman }] });
     }
 }
 

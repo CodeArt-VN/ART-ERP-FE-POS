@@ -41,17 +41,13 @@
                                         </span>                               
                                     </div> 
                                     <div class="col-code cell clickable">
-                                        <ion-text color="primary" (click)="toDetail(i.IncomingPayment.Code)">{{i.IncomingPayment.PaymentCode}}</ion-text>
-                                        <!-- <small *ngIf="i.IncomingPayment.CreatedTimeText">{{i.IncomingPayment.CreatedTimeText}}</small> -->
+                                        <ion-text color="primary" (click)="toDetail(i.IncomingPayment.Code)">{{i.IncomingPayment.PaymentCode}}</ion-text>                              
                                     </div>                                   
                                     <div class="col-type cell">
                                         {{i.IncomingPayment.TypeText}}
                                     </div>                                
                                     <div class="col-status cell">
-                                        <span class="bar-holder">
-                                            <ion-text class="bar-title" [color]="i.IncomingPayment.StatusColor">{{i.IncomingPayment.StatusText}}</ion-text>
-                                            <span class="bar" [ngClass]="{active: s.Code==i.IncomingPayment.Status}" [ngStyle]="{'background-color': 'var(--ion-color-'+s.Color+')'}" *ngFor="let s of statusList" [title]="s.Name"></span>        
-                                        </span>  
+                                        <ion-text class="bar-title" [color]="i.IncomingPayment.StatusColor">{{i.IncomingPayment.StatusText}}</ion-text> 
                                     </div>
                                     
                                     <div class="col-money cell">
@@ -74,17 +70,9 @@
                         <ion-label slot="end" color="primary">{{DebtAmount | number: '1.0-0'}} đ</ion-label>
                     </ion-item>                 
                     <div *ngIf="DebtAmount > 0 && item.Status != 'Cancelled' && item.Status != 'Done'" class="c-control ion-text-center">                          
-                        <ion-button (click)="toPayment()" expand="block">Tiến hành thanh toán</ion-button>                                                         
-                    </div>                    
-                    <div *ngIf="item.Status != 'Done' && item.Status != 'Cancelled'" class="c-control ion-text-center">                          
-                        <ion-button (click)="doneOrder()" color="success" expand="block">Hoàn tất</ion-button>                                                         
-                    </div>               
+                        <ion-button  (click)="toPayment()" expand="block">Tiến hành thanh toán</ion-button>                                                         
+                    </div>                                  
                 </ion-col>
-            </ion-row>
-            <ion-row class="hr-group remove-padding">
-                
-            </ion-row>
-            <ion-row class="sticky-btn">                                     
             </ion-row>
         </ion-grid>
     </div>

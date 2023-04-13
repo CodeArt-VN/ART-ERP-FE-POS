@@ -8,21 +8,21 @@ import { FormBuilder } from '@angular/forms';
 import { lib } from 'src/app/services/static/global-functions';
 import { CommonService } from 'src/app/services/core/common.service';
 import { environment } from 'src/environments/environment';
+import { ApiSetting } from 'src/app/services/static/api-setting';
 
 
 @Component({
-    selector: 'app-pos-payment-modal',
+    selector: 'app-posforcustomer-payment-modal',
     templateUrl: './pos-payment-modal.page.html',
     styleUrls: ['./pos-payment-modal.page.scss'],
 })
-export class POSPaymentModalPage extends PageBase {
+export class POSForCustomerPaymentModalPage extends PageBase {
     DebtAmount = 0;
     PaidAmounted = 0;
     Amount = 0;
     statusList;
     typeList;
-    constructor(
-        public pageProvider: BANK_IncomingPaymentDetailProvider,      
+    constructor(          
         public IncomingPaymentProvider: BANK_IncomingPaymentProvider,
         public commonService: CommonService,
 
@@ -38,13 +38,13 @@ export class POSPaymentModalPage extends PageBase {
         public loadingController: LoadingController
     ) 
     {
-        super();        
+        super();      
     }
     ngOnInit() {
         this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
 			switch (data.Code) {
 				case 'app:POSOrderPaymentUpdate':
-					this.pushPayment(data)
+					this.refresh();
 					break;
             }
         })
@@ -54,16 +54,37 @@ export class POSPaymentModalPage extends PageBase {
         this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
         super.ngOnDestroy();
     }
-
-
-    loadData(event){
-        Object.assign(this.query, {SortBy: '[Id_desc]',IDSaleOrder: this.item.Id, IsDeleted: false});
-        super.loadData(event);
-        this.env.getStatus('PaymentStatus').then(data => {this.statusList = data});
-        this.env.getType('PaymentType').then(data=>{this.typeList = data;});  
+    refresh(event?: any): void {
+        this.preLoadData();
     }
-    loadedData(event) {
-        super.loadedData(event);
+    preLoadData(event?: any): void {
+        
+        Promise.all([                                        
+            this.getPayment(),            
+        ]).then((values: any) => {                   
+            this.items = values[0];   
+            this.calcPayment();                
+        }).catch(err => {           
+            this.loadedData(event);
+        })
+    }
+    private getPayment() {
+        let apiPath = {
+            method: "GET",
+            url: function(){return ApiSetting.apiDomain("POS/ForCustomer/Payment")}  
+        };  
+        return new Promise((resolve, reject) => {
+            Object.assign(this.query, {SortBy: '[Id_desc]',IDBranch:this.item.IDBranch,IDSaleOrder: this.item.Id, IsDeleted: false});
+            this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
+					.then((result: any) => {					
+						resolve(result);
+					})
+					.catch(err => {						
+						reject(err);
+					});
+        });
+    }    
+    loadedData(event) {       
         this.calcPayment();
     }
     private convertUrl(str) {
@@ -74,16 +95,15 @@ export class POSPaymentModalPage extends PageBase {
         this.items.forEach(e => {
             e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd')+"_"+e.IncomingPayment.Id;
             e.IncomingPayment.CreatedDateText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'dd/mm/yyyy');
-            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM:ss');
-            e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
-            e.IncomingPayment.StatusText = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Name', '--', 'Code');
-            e.IncomingPayment.StatusColor = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Color', 'dark', 'Code');
+            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM:ss');    
+            e.IncomingPayment.TypeText = this.getTypeText(e.IncomingPayment.Type);  
+            e.IncomingPayment.StatusText = this.getStatusText(e.IncomingPayment.Status); 
             if(e.IncomingPayment.Status=="Success"){
                 PaidAmounted = PaidAmounted + e.IncomingPayment.Amount 
             }
         });    
         this.PaidAmounted = PaidAmounted;
-        this.DebtAmount = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.PaidAmounted;    
+        this.DebtAmount = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman)  - this.PaidAmounted;         
     }
     getStatus(i,id){
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
@@ -105,7 +125,7 @@ export class POSPaymentModalPage extends PageBase {
     toPayment(){
         let payment = {
             IDBranch: this.item.IDBranch,
-            IDStaff: this.env.user.StaffID,
+            IDStaff: 0,
             IDCustomer: this.item.IDContact,
             IDSaleOrder: this.item.Id,
             DebtAmount: this.DebtAmount,
@@ -169,5 +189,36 @@ export class POSPaymentModalPage extends PageBase {
             return this.modalController.dismiss(this.DebtAmount,'Done');
         }
         
+    }
+    getTypeText(code):  string{
+        switch (code) {
+            case 'ZalopayApp':
+                code = "Ví zalo pay"
+                break;
+            case 'ATM':
+                code = "Thẻ ATM"
+                break;
+            case 'CC':
+                code = "Thẻ Visa,Master"
+                break;
+            default:
+                code = "Tiền mặt"
+                break;
+        }
+        return code;
+    }
+    getStatusText(code):  string{
+        switch (code) {
+            case 'Success':
+                code = "Thành công"
+                break;
+            case 'Processing':
+                code = "Đang xử lý"
+                break;
+            default:
+                code = "Thất bại"
+                break;
+        }
+        return code;
     }
 }

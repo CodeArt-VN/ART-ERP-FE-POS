@@ -8,10 +8,10 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { TranslateService } from '@ngx-translate/core';
 import { ApiSetting } from 'src/app/services/static/api-setting';
-import { POSPaymentModalPage } from '../../pos-payment-modal/pos-payment-modal.page';
 import { environment } from 'src/environments/environment';
 import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
 import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
+import { POSForCustomerPaymentModalPage } from '../payment/pos-payment-modal.page';
 
 @Component({
     selector: 'app-pos-customer-order',
@@ -80,7 +80,7 @@ export class POSCustomerOrderPage extends PageBase {
             IDTable: [this.idTable],
             IsCOD: [],
             IsInvoiceRequired: [],
-
+            NumberOfGuests : [1],
             InvoicDate: new FormControl({ value: null, disabled: true }),
             InvoiceNumber: new FormControl({ value: null, disabled: true }),
 
@@ -103,7 +103,7 @@ export class POSCustomerOrderPage extends PageBase {
         super.ngOnInit();
     }
     private notify(data){
-        if(this.item.Id == data.value){
+        if(this.item.Id == data.id){
             this.refresh();
         }
     }
@@ -293,24 +293,11 @@ export class POSCustomerOrderPage extends PageBase {
         }
 
         let uom = item.UoMs.find(d => d.Id == idUoM);
-        let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
-        let UoMPrice = price.Price;   
-        if(price.NewPrice){                
-            UoMPrice = price.NewPrice;
-        }  
-        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        let price = uom.PriceList.find(d => d.Type == 'SalePriceList');            
+        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)                
         
-        if(uom.MaxPerOrder){
-            line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Quantity +quantity <= uom.MaxPerOrder);           
-        }
-        if(this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Quantity + quantity > uom.MaxPerOrder)){
-            UoMPrice = price.Price;
-        }  
-        if (!line) {
-                
-                              
+        if (!line) {                                     
             line = {
-
                 IDOrder: this.item.Id,
                 Id: 0,
                 Type: 'TableService',
@@ -320,7 +307,7 @@ export class POSCustomerOrderPage extends PageBase {
                 IDTax: item.IDSalesTaxDefinition,
                 TaxRate: item.SaleVAT,
                 IDUoM: idUoM,
-                UoMPrice: UoMPrice,  
+                UoMPrice: price.Price,  
 
                 Quantity: 1,              
                 IDBaseUoM: idUoM,
@@ -333,7 +320,9 @@ export class POSCustomerOrderPage extends PageBase {
                 IsPromotionItem: false,
                 IDPromotion: null
             };
-            
+            if(price.NewPrice){                
+                line.UoMPrice = price.NewPrice;
+            }  
             this.calcOrderLine(line);
             this.item.OrderLines.push(line);            
             this.addOrderLine(line);         
@@ -476,7 +465,6 @@ export class POSCustomerOrderPage extends PageBase {
             }
 
         }
-        console.log(this.item.OrderLines);
         this.loadInfoOrder();
         this.calcOrder();
         // if (this.item.OrderLines.length) {
@@ -519,19 +507,22 @@ export class POSCustomerOrderPage extends PageBase {
         this.loadedData();
 
         this.submitAttempt = false;
-        this.env.showTranslateMessage('Đặt món thành công', 'success');
+        this.env.showTranslateMessage('Đặt hàng thành công', 'success');
             
     }
     private calcOrder() {
+        this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+        this.item._TotalShipedQuantity = this.item.OrderLines?.map(x => x.ShippedQuantity).reduce((a, b) => (+a) + (+b), 0);
         
-        //this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
         this.item.OriginalTotalBeforeDiscount = 0;
         this.item.OriginalTotalDiscount = 0;
         this.item.OriginalTax = 0;
         this.item.OriginalTotalAfterTax = 0;
         this.item.CalcOriginalTotalAdditions = 0;
         this.item.CalcTotalOriginal = 0;
-             
+        this.item.OriginalDiscountFromSalesman = 0;     
+        this.item._OriginalTotalAfterDiscountFromSalesman = 0;
+     
         for (let line of this.item.OrderLines) {            
             this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount; 
             this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;           
@@ -539,17 +530,11 @@ export class POSCustomerOrderPage extends PageBase {
             this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
             this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions; 
             this.item.CalcTotalOriginal += line.CalcTotalOriginal ;    
-            //line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
-
-
-
-            //Lấy hình & hiển thị thông tin số lượng đặt hàng lên menu
-            
-
-        }
+            this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman; 
+            this.item._OriginalTotalAfterDiscountFromSalesman += line._OriginalTotalAfterDiscountFromSalesman;
+        }     
     }
     loadInfoOrder(){
-        this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
         for (let line of this.item.OrderLines) {
             for (let m of this.menuList)
                     for (let mi of m.Items) {
@@ -565,7 +550,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
     async processPayments() {
         const modal = await this.modalController.create({
-            component: POSPaymentModalPage,
+            component: POSForCustomerPaymentModalPage,
             swipeToClose: true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
@@ -574,14 +559,7 @@ export class POSCustomerOrderPage extends PageBase {
             }
         });
         await modal.present();
-        const { data , role } = await modal.onWillDismiss();
-        if (role == 'Done') {
-            this.formGroup.controls.IDStatus.patchValue(114);
-            this.formGroup.controls.IDStatus.markAsDirty();
-            this.formGroup.controls.Status.patchValue("Done");
-            this.formGroup.controls.Status.markAsDirty();
-            //this.saveSO();
-        } 
+        const { data , role } = await modal.onWillDismiss();     
     }
     async openQuickMemo(line) {
         if (this.submitAttempt) return;
@@ -602,6 +580,7 @@ export class POSCustomerOrderPage extends PageBase {
         if (role == 'confirm') {
             line.Remark = data ? data.toString() : null;
             this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
+            this.saveChange();
         }
     }
 
@@ -615,4 +594,6 @@ export class POSCustomerOrderPage extends PageBase {
         }
 
     }
+
+    
 }

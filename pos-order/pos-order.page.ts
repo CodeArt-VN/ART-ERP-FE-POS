@@ -23,6 +23,7 @@ export class POSOrderPage extends PageBase {
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered',];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
     segmentView = 'all';
     orderCounter = 0;
+    numberOfGuestCounter = 0;
     isShowNotify = false;
     constructor(
         public pageProvider: SALE_OrderProvider,
@@ -61,11 +62,12 @@ export class POSOrderPage extends PageBase {
         super.ngOnInit();
     }
     private notify(data){  
-        if(this.env.selectedBranch == data.id){
-            this.env.showPrompt('Bạn có muốn xem không?', "", "Khách Gọi món").then(_ => {   
+        const value = JSON.parse(data.value);    
+        if(this.env.selectedBranch == value.IDBranch){
+            this.env.showPrompt('Bạn có muốn xem không?', "Đơn hàng #"+data.id, "Khách bàn "+value.TableName+" Gọi món").then(_ => {   
                 this.isShowNotify = false;  
                 this.pageConfig?.subscribePOSOrder?.unsubscribe();     
-                this.nav("/pos-order/"+data.value+"/"+data.name,"back");  
+                this.nav("/pos-order/"+data.id+"/"+value.IDTable,"back");  
 
             }).catch(_ => {
                 this.isShowNotify = false; 
@@ -102,6 +104,7 @@ export class POSOrderPage extends PageBase {
 
     loadedData(event?: any): void {
         this.orderCounter = 0;
+        this.numberOfGuestCounter = 0;      
         this.checkTable(null, 0); //reset table status
 
         this.items.forEach(o => {
@@ -109,7 +112,10 @@ export class POSOrderPage extends PageBase {
             o._Status = this.soStatusList.find(d => d.Code == o.Status);
             o._Tables = [];
 
-            if (!o._Locked) this.orderCounter++;
+            if (!o._Locked) {
+                this.orderCounter++ ;
+                this.numberOfGuestCounter = this.numberOfGuestCounter + o.NumberOfGuests;
+            }
 
 
             if (!o.Tables) o.Tables = [];
@@ -121,7 +127,7 @@ export class POSOrderPage extends PageBase {
         super.loadedData(event);
     }
 
-    checkTable(o, tid) {
+    checkTable(o, tid) {       
         for (let g of this.tableGroupList) {
             for (let t of g.TableList) {
                 if (!o && !tid)
@@ -134,7 +140,8 @@ export class POSOrderPage extends PageBase {
                         t._Order = {
                             _Status: o._Status,
                             Id: o.Id,
-                            OrderDate: o.OrderDate
+                            OrderDate: o.OrderDate,
+                            NumberOfGuests: o.NumberOfGuests,
                         }
 
                 }

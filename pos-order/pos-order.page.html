@@ -1,6 +1,7 @@
 <ion-header>
 	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
 		<span class="hide-small" title>{{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}</span>
+		<span class="hide-small ion-margin-start"  title>Số khách: {{numberOfGuestCounter}}</span>
 		<ion-buttons slot="end">
 			<ion-button color="warning" title="{{'erp.app.pages.pos.pos-order.change.change-button' | translate}}" (click)="changeTable($event)">
 				<ion-icon slot="icon-only" name="git-compare">
@@ -60,6 +61,11 @@
 					</ion-row>
 					<ion-row class="table-holder">
 						<ion-col class="shadow table-item" [ngClass]="{'in-serve': t._Order}" *ngFor="let t of g.TableList">
+							<span class="tag left" *ngIf="t._Order">
+								<ion-text class="tag-content">
+									<ion-icon size="medium" color="primary" name="person"></ion-icon> <sup class="number-guest">{{t._Order.NumberOfGuests}}</sup>
+								</ion-text>
+							</span>
 							<span class="tag right" *ngIf="t._Order">
 								<ion-text class="tag-content" [color]="t._Order._Status.Color">
 									{{t._Order.OrderDate | date: 'HH:mm'}}
@@ -99,6 +105,9 @@
 								</div>
 								<div class="col-id cell">
 									{{i.Id}}
+								</div>
+								<div class="col-guest cell">					
+									 <ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup> 
 								</div>
 								<div class="col-code cell">
 									<span *ngFor="let t of i._Tables">{{t.Name}}</span>

@@ -19,15 +19,7 @@
 					<div class="box-content" formArrayName="OrderLines">
 						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
 							<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
-								<div style="display: flex;">
-									<!-- <small style="position: relative;">
-									<span class="tag">
-										<ion-text class="tag-content" color="medium">
-											{{idx + 1}}
-										</ion-text>
-									</span>
-								</small> -->
-
+								<div style="display: flex;">									
 									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 									<div class="od-info" *ngIf="line._item">
 										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
@@ -38,14 +30,19 @@
 								</div>
 
 								<div class="od-quantity">
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1)">
+									
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
-									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
+									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="line._isShowNote =! line._isShowNote; line._isShowFoC = false">
 										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
+									</ion-button>
+									<!-- <ion-icon name="pricetags-outline"></ion-icon> -->
+									<ion-button title='Giảm giá từ chăm sóc khách hàng' fill="clear"  color="primary" class="gift ion-no-padding" size="small" (click)="line._isShowFoC =! line._isShowFoC; line._isShowNote = false">														
+										<ion-icon [name]="(line.OriginalDiscountFromSalesman > 0)? 'person':'person-outline'"></ion-icon> <sup><ion-icon name="pricetags"></ion-icon></sup>
 									</ion-button>
 									<span class="quantity">
 										<small>x</small>
@@ -55,9 +52,17 @@
 										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
 									</span>
 								</div>
+								
 								<div class="od-remark clickable" (click)="openQuickMemo(line)">
-									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món">
-								</textarea>
+									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>							
+								</div>
+								<div class="c-control ion-margin-top" *ngIf="line._isShowFoC">
+									<span disabled class="c-input ion-margin-bottom"><span class="ion-float-left">Tổng tiền SP</span> <span class="ion-float-right">{{line.CalcTotalOriginal | number: '1.0-0'}} đ</span> </span>
+									<span class="c-input ion-margin-bottom">
+										<span class="ion-float-left">Số tiền giảm</span>
+										<input style="text-align: right; border: none; outline: none; width: 130px;" class="ion-float-right" mask="separator.2"  thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" [disabled]="submitAttempt || line._Locked " (change)="discountFromSalesman(line,g)" formControlName="OriginalDiscountFromSalesman"  placeholder="Số tiền tặng"/>
+									</span>
+																															
 								</div>
 							</div>
 						</ng-container>
@@ -109,12 +114,15 @@
 						<label class="c-label" *ngIf="item.CalcOriginalTotalAdditions">Service charge <i class="info-tooltip" title="Phí dịch vụ theo từng item có thể khác nhau."></i>
 							<span class="c-value">{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span>
 						</label>
-
-						<label class="c-label total">Tổng tiền
-							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
-								{{item.CalcTotalOriginal | number: '1.0-0'}}
-							</ion-text>
+						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">Giảm giá từ CSKH <i class="info-tooltip" title="Số tiền CSKH giảm cho khách"></i>
+							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 						</label>
+						<label class="c-label total" >Tổng tiền
+							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
+								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
+							</ion-text> 
+						</label>
+
 						<span class="c-label" style="margin-top: 15px;" *ngIf="item?.OrderLines?.length > 0">
 							<label class="InvoiceOptions">
 								<input class="c-checkbox" (click)="InvoiceRequired()" [(ngModel)]="this.item.IsInvoiceRequired" [ngModelOptions]="{standalone: true}" type="checkbox">
@@ -141,12 +149,12 @@
 					<div class="total">
 						<div class="c-control">
 							<div class="text-right">
-								<ion-button [disabled]="submitAttempt" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top: 5px; margin-bottom: 9px;"  size="small" (click)="addContact()">
+								<ion-button expand="block" [disabled]="submitAttempt" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top: 5px; margin-bottom: 9px;"  size="small" (click)="addContact()">
 									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
 									{{'erp.app.pages.pos.pos-order.add-contact' | translate}}
 								</ion-button>
 							</div>
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'erp.app.pages.pos.pos-order.idaddress-placeholder' | translate}}">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'erp.app.pages.pos.pos-order.idaddress-placeholder' | translate}}">								
 								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
 									{{i.Name}}
 									<small *ngIf="a">
@@ -158,7 +166,7 @@
 								</ng-template>
 								<ng-template ng-option-tmp let-i="item" let-a="item.Address" let-search="searchTerm">
 									<div *ngIf="i">
-										<div>
+										<div>											
 											<span [ngOptionHighlight]="search">{{i.Name}}</span>
 											<span *ngIf="i.WorkPhone"> | <small> <b [ngOptionHighlight]="search">{{i.WorkPhone}}</b> </small></span>
 										</div>
@@ -179,7 +187,9 @@
 							</ng-select>
 							
 						</div>
-
+						<div class="c-control">
+							<input style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="NumberOfGuests" (change)="saveChange();" placeholder="Số khách"/>							
+						</div>
 						<div class="c-control">
 							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Tables" (change)="changeTable();" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.table-placeholder' | translate}}">
 								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
@@ -285,23 +295,20 @@
 								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
 								<span class="table-name clickable" (click)="addToCart(i, i.UoMs[0].Id)">{{i.Name}}</span>
 								<ng-container *ngFor="let u of i.UoMs">
-									<!-- <ion-button *ngIf="u.PriceList.length" color="danger" size="small" fill="clear" (click)="addToCart(i, u.Id)">
-										<span *ngFor="let p of u.PriceList">
-											{{p.Price | number: '1.0-0'}} <small>{{u.Name}}</small>
-										</span>
-									</ion-button> -->
+									
 
 									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">
 										<span class="price-list" *ngFor="let p of u.PriceList">
 											<span *ngIf="!p.NewPrice">											
-												{{p.Price | number: '1.0-0'}} / {{u.Name}}
+												{{p.Price | number: '1.0-0'}}/{{u.Name}}
 											</span>
-											<span *ngIf="p.NewPrice">																																			
-												<div><small class="old-price">{{p.Price | number: '1.0-0'}}</small></div>
-												<div>{{p.NewPrice | number: '1.0-0'}} / {{u.Name}}</div>	
+											<span *ngIf="p.NewPrice">	
+												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}																																		
+												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}}%
+												
 											</span>																																	
-										</span>	
-									</a>
+										</span>											
+									</a>						
 								</ng-container>
 
 							</div>
@@ -445,9 +452,13 @@
 													<td class="title">Service Charge</td>
 													<td class="text-right"><span>{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span></td>
 												</tr>
+												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
+													<td class="title">{{'erp.app.pages.pos.pos-order.total-discount-from-saleman' | translate}}</td>
+													<td class="text-right"><span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
+												</tr>
 												<tr>
 													<td class="title bold">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</td>
-													<td class="text-right bold"><span>{{item.CalcTotalOriginal | number: '1.0-0'}}</span></td>
+													<td class="text-right bold"><span>{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
 											</table>
 										</div>

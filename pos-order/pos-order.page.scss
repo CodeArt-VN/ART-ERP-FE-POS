@@ -126,6 +126,17 @@ ion-content {
             margin-right: 5px;
             font-size: 1.5rem;
         }
+        .col-guest {
+            order: 1;
+            padding: 1px 7px !important;
+            border-radius: 3px;          
+            color: var(--ion-color-primary);
+            min-width: fit-content !important;
+            max-width: fit-content !important;
+            margin-bottom: 5px;
+            margin-right: 5px;
+            font-size: 1.5rem;           
+        }
         .col-code {
             order: 2;
             font-size: 110%;
@@ -228,4 +239,7 @@ ion-content {
     to {
         background: var(--ion-color-warning);
     }
+}
+.number-guest{
+    color: var(--ion-color-primary);
 }

@@ -29,6 +29,10 @@
 										<div class="od-price">
 											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
 										</div>
+										<div *ngIf="line.OriginalDiscountFromSalesman > 0">
+											<span title="Được tặng cho sản phẩm này"><ion-icon name="gift" color="primary"></ion-icon></span> 
+											<ion-text color="primary"> {{line.OriginalDiscountFromSalesman | number: '1.0-0'}}đ</ion-text>
+										</div>
 									</div>
 								</div>
 
@@ -48,6 +52,9 @@
 											{{line.Quantity}}
 										</ion-text>
 										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
+										<span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
+											<ion-icon color="primary" name="arrow-redo"></ion-icon> <sup>{{line.ShippedQuantity}} </sup> 
+										</span>
 									</span>
 								</div>
 								<div class="od-remark clickable" (click)="openQuickMemo(line)">
@@ -80,7 +87,7 @@
 							</span>
 
 						</label> -->
-						<label class="c-label" *ngIf="!pageConfig.canEdit">Chiết khấu
+						<label class="c-label" *ngIf="item.OriginalTotalDiscount>0">Chiết khấu
 							<span class="c-value">
 								{{item.OriginalTotalDiscount | number: '1.0-0'}}
 							</span>
@@ -93,17 +100,26 @@
 							<span class="c-value">{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span>
 						</label>
 
+						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0  ">Khuyến mãi từ CSKH 
+							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
+						</label>
+
 						<label class="c-label total">Tổng tiền
 							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
-								{{item.CalcTotalOriginal | number: '1.0-0'}}
+								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
 							</ion-text>
 						</label>						
 					</div>
 				</div>
 				
 			</div>	
-			<ion-button *ngIf="pageConfig.canEdit" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
+			<ion-button *ngIf="pageConfig.canEdit" color="danger" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
 				<ion-text >Đặt hàng</ion-text>
+			</ion-button>
+
+			<ion-button class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalShipedQuantity <= 0">
+				<ion-text *ngIf="item.Status !='Done' && item.Status !='Cancelled' ">Thanh toán</ion-text>
+				<ion-text *ngIf="item.Status =='Done'">Xem chi tiết</ion-text>
 			</ion-button>
 		</form>
 	</ion-fab>
@@ -150,11 +166,11 @@
 									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">										
 										<span class="price-list" *ngFor="let p of u.PriceList">
 											<span *ngIf="!p.NewPrice">											
-												{{p.Price | number: '1.0-0'}} / {{u.Name}}
+												{{p.Price | number: '1.0-0'}}/{{u.Name}}
 											</span>
 											<span *ngIf="p.NewPrice">	
-												<div><small class="old-price" style="margin-right: 5px;">{{p.Price | number: '1.0-0'}} </small>   -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}} %</div>											
-												{{p.NewPrice | number: '1.0-0'}} / {{u.Name}}												
+												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}																																		
+												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}}%												
 											</span>																																	
 										</span>										
 									</a>
