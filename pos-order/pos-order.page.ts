@@ -59,7 +59,20 @@ export class POSOrderPage extends PageBase {
 					break;
             }
         });
+        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
+			switch (data.Code) {
+				case 'app:POSOrderPaymentUpdate':
+					this.notifyPayment(data);
+					break;
+            }
+        })
         super.ngOnInit();
+    }
+    private notifyPayment(data){
+        const value = JSON.parse(data.Value);       
+        if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
+            this.env.showMessage("Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder,"warning");
+        }
     }
     private notify(data){  
         const value = JSON.parse(data.value);    
@@ -76,7 +89,8 @@ export class POSOrderPage extends PageBase {
         }                
     }
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrder?.unsubscribe(); 
+        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
+        this.pageConfig?.subscribePOSOrder?.unsubscribe();
         super.ngOnDestroy();
     }
     preLoadData(event?: any): void {

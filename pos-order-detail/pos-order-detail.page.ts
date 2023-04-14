@@ -162,7 +162,7 @@ export class POSOrderDetailPage extends PageBase {
     }
     private notify(data){
         if(this.id == data.id){
-            this.env.showMessage("Khách gọi","warning");
+            this.env.showMessage("Khách gọi món","warning");
             this.refresh();
         }
     }

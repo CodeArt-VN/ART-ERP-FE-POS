@@ -109,6 +109,8 @@ export class POSPaymentModalPage extends PageBase {
             IDCustomer: this.item.IDContact,
             IDSaleOrder: this.item.Id,
             DebtAmount: this.DebtAmount,
+            IsActiveInputAmount : true,
+            IsActiveTypeCash: true,
             Timestamp:Date.now()
         };
         let str = window.btoa(JSON.stringify(payment));
