@@ -3,7 +3,7 @@ import { NavController, LoadingController, AlertController, ModalController, Pop
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { CRM_ContactProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, SALE_OrderProvider, SYS_ConfigProvider, SYS_PrinterProvider, } from 'src/app/services/static/services.service';
+import { CRM_ContactProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, POS_TerminalProvider, SALE_OrderProvider, SYS_ConfigProvider, SYS_PrinterProvider, } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
@@ -59,6 +59,7 @@ export class POSOrderDetailPage extends PageBase {
         public contactProvider: CRM_ContactProvider,
         public sysConfigProvider: SYS_ConfigProvider,
         public printerProvider: SYS_PrinterProvider,
+        public printerTerminalProvider: POS_TerminalProvider,
         public env: EnvService,
         public navCtrl: NavController,
         public route: ActivatedRoute,
@@ -559,88 +560,90 @@ export class POSOrderDetailPage extends PageBase {
         this.printData.undeliveredItems.push(this.item.OrderLines[0]);
         let newKitchenList = [];
 
-        this.printerProvider.search({ IDBranch: this.env.selectedBranch, Remark: 'Receipt Printer', IsDeleted: false, IsDisabled: false }).toPromise().then(async (defaultPrinter: any) => {
-            console.log(defaultPrinter);
-            if (defaultPrinter && defaultPrinter.length != 0) {
-                defaultPrinter.forEach((p: any) => {
-                    let Info = {
-                        Id: p.Id,
-                        Name: p.Name,
-                        Code: p.Code,
-                        Host: p.Host,
-                        Port: p.Port
-                    }
-                    newKitchenList.push({ 'Printer': Info });
-                });
-            }
-            else {
+        this.printerTerminalProvider.search({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).toPromise().then(async (results: any) => {
+            this.printerProvider.search({Id:results[0].IDPrinter}).toPromise().then(async (defaultPrinter: any) => {
                 console.log(defaultPrinter);
-                this.env.showTranslateMessage('Recheck Receipt Printer information!', 'warning');
-                return
-            }
-
-            for (let index = 0; index < newKitchenList.length; index++) {
-                if (Status) {
-                    this.item.Status = Status;
+                if (defaultPrinter && defaultPrinter.length != 0) {
+                    defaultPrinter.forEach((p: any) => {
+                        let Info = {
+                            Id: p.Id,
+                            Name: p.Name,
+                            Code: p.Code,
+                            Host: p.Host,
+                            Port: p.Port
+                        }
+                        newKitchenList.push({ 'Printer': Info });
+                    });
                 }
-                //this.item.PaymentMethod = this.item.PaymentMethod.toString();
-                this.item.OrderLines.forEach(e => {
-                    if (e.Remark) {
-                        e.Remark = e.Remark.toString();
+                else {
+                    console.log(defaultPrinter);
+                    this.env.showTranslateMessage('Recheck Receipt Printer information!', 'warning');
+                    return
+                }
+    
+                for (let index = 0; index < newKitchenList.length; index++) {
+                    if (Status) {
+                        this.item.Status = Status;
                     }
-                });
-
-                let object: any = document.getElementById('bill');
-                let list = object.classList;
-                list.add("show-bill");
-
-                var opt = { // Make Bill Printing Clearer
-                    logging: true,
-                    scale: 7,
-                };
-
-                await this.setKitchenID('all').then(_=> {
-                    Promise.all([
-                        newKitchenList[idx2],
-                        html2canvas(object, opt),
-                        idx2++
-                    ]).then((values: any) => {
-                        let printerInfo = values[0];
-                        let canvasResult = values[1];
-    
-                        let printerCode = printerInfo.Printer.Code;
-                        let printerHost = printerInfo.Printer.Host;
-                        let temp = canvasResult.toDataURL();
-                        let base64data = temp.split(',')[1];
-    
-                        let data =
-                            [{
-                                type: 'Pixel',
-                                format: 'image',
-                                flavor: 'base64',
-                                data: base64data
-                            }];
-    
-                        console.log(printerCode);
-                        printerCodeList.push(printerCode);
-                        base64dataList.push(data);
-    
-                        if (idx == base64dataList.length) {
-                            this.QZsetCertificate().then(() => {
-                                this.QZsignMessage().then(() => {
-                                    console.log(printerCodeList);
-                                    this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, receipt).catch(err => {
-                                        console.log(err);
-                                        this.submitAttempt = false;
-                                        skipTime++;
-                                    });
-                                });
-                            });
+                    //this.item.PaymentMethod = this.item.PaymentMethod.toString();
+                    this.item.OrderLines.forEach(e => {
+                        if (e.Remark) {
+                            e.Remark = e.Remark.toString();
                         }
                     });
-                    idx++;
-                }); //Xem toàn bộ bill
-            }
+    
+                    let object: any = document.getElementById('bill');
+                    let list = object.classList;
+                    list.add("show-bill");
+    
+                    var opt = { // Make Bill Printing Clearer
+                        logging: true,
+                        scale: 7,
+                    };
+    
+                    await this.setKitchenID('all').then(_=> {
+                        Promise.all([
+                            newKitchenList[idx2],
+                            html2canvas(object, opt),
+                            idx2++
+                        ]).then((values: any) => {
+                            let printerInfo = values[0];
+                            let canvasResult = values[1];
+        
+                            let printerCode = printerInfo.Printer.Code;
+                            let printerHost = printerInfo.Printer.Host;
+                            let temp = canvasResult.toDataURL();
+                            let base64data = temp.split(',')[1];
+        
+                            let data =
+                                [{
+                                    type: 'Pixel',
+                                    format: 'image',
+                                    flavor: 'base64',
+                                    data: base64data
+                                }];
+        
+                            console.log(printerCode);
+                            printerCodeList.push(printerCode);
+                            base64dataList.push(data);
+        
+                            if (idx == base64dataList.length) {
+                                this.QZsetCertificate().then(() => {
+                                    this.QZsignMessage().then(() => {
+                                        console.log(printerCodeList);
+                                        this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, receipt).catch(err => {
+                                            console.log(err);
+                                            this.submitAttempt = false;
+                                            skipTime++;
+                                        });
+                                    });
+                                });
+                            }
+                        });
+                        idx++;
+                    }); //Xem toàn bộ bill
+                }
+            });
         });
     }
 
