@@ -456,12 +456,28 @@
 													<td class="title">{{'erp.app.pages.pos.pos-order.total-discount-from-saleman' | translate}}</td>
 													<td class="text-right"><span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
-												<tr>
+												<tr >
 													<td class="title bold">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</td>
 													<td class="text-right bold"><span>{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
+												
+												
 											</table>
 										</div>
+										<ng-container *ngIf="item.Status == 'Done'">
+											<div class="table-info-top">
+												<table>		
+													<tr>
+														<td class="title bold">Type</td>
+														<td class="text-right bold"><span>Amount</span></td>
+													</tr>										
+													<tr *ngFor="let p of paymentList">
+														<td class="title">{{p.IncomingPayment.TypeText}}</td>
+														<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>
+													</tr>
+												</table>
+											</div>											
+										</ng-container>
 										<div class="message">
 											<div><small>{{'erp.app.pages.pos.pos-order.bill-info' | translate}}</small></div>
 											<div><small>This bill is valid within day</small></div>

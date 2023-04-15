@@ -37,6 +37,8 @@ export class POSOrderDetailPage extends PageBase {
     tableList = [];
     menuList = [];
     dealList = [];
+    paymentList = [];
+    paymentType = [];
     statusList; //Show on bill
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
@@ -173,22 +175,24 @@ export class POSOrderDetailPage extends PageBase {
     }
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
-        Promise.all([
+        Promise.all([           
             this.env.getStatus('POSOrder'),
             this.getTableGroupFlat(forceReload),
             this.getMenu(forceReload),
             this.getDeal(),
-            this.sysConfigProvider.read({ Code: 'SODefaultBusinessPartner' })
-        ]).then((values: any) => {        
+            this.sysConfigProvider.read({ Code: 'SODefaultBusinessPartner' }),  
+            this.env.getType('PaymentType'),       
+        ]).then((values: any) => {              
             this.statusList = values[0];
             this.tableList = values[1];
             this.menuList = values[2];
-            this.dealList = values[3];
+            this.dealList = values[3];                     
             if (values[4]['data'].length) {
                 let dbp = JSON.parse(values[4]['data'][0].Value);
                 this.contactListSelected.push(dbp);
                 console.log(dbp);
-            }
+            }   
+            this.paymentType = values[5];            
             super.preLoadData(event);
         }).catch(err => {
             this.loadedData();
@@ -204,6 +208,7 @@ export class POSOrderDetailPage extends PageBase {
         }
         else {
             this.patchOrderValue();
+            this.getPayments();
         }       
         this.loadOrder();
         this.contactSearch(); 
@@ -1399,6 +1404,32 @@ export class POSOrderDetailPage extends PageBase {
         }     
         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark, OriginalDiscountFromSalesman: OriginalDiscountFromSalesman }] });
     }
+    private getPayments(){
+        let apiPath = {
+            method: "GET",
+            url: function(){return ApiSetting.apiDomain("BANK/IncomingPaymentDetail")}  
+        };  
+        return new Promise((resolve, reject) => {
+            let query = {
+                IDBranch:this.item.IDBranch,
+                IDSaleOrder: this.item.Id,
+                IsDeleted: false,
+                Keyword: '',
+                Take: 100,
+                Skip: 0,
+            }                 
+            this.commonService.connect(apiPath.method, apiPath.url(),query).toPromise()
+					.then((result: any) => {					
+						this.paymentList = result.filter(p=>p.IncomingPayment.Status=="Success");
+                        this.paymentList.forEach(e => {                          
+                            e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentType, 'Name', '--', 'Code');                          
+                        });    
+					})
+					.catch(err => {						
+						reject(err);
+					});
+        });
+    }  
 }
 
 
