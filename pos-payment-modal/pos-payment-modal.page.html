@@ -28,11 +28,10 @@
                             <section class="table">
                                 <header class="bold">   
                                     <div class="col-id cell">#</div> 
-                                    <div class="col-code cell">Mã GD</div>                          
-                                    <div class="col-type cell">Hình thức</div>                              
-                                    <div class="col-status cell">Trạng thái</div>
-                                    
-                                    <div class="col-money cell">Số tiền</div>                                                                       
+                                    <div class="col-code cell" style="padding-left: 0px;">Mã GD</div>                          
+                                    <div class="col-type cell" style="padding-left: 0px;">Hình thức</div>                              
+                                    <div class="col-status cell">Trạng thái</div>                                  
+                                    <div class="col-money cell" style="padding-right: 0px;">Số tiền</div>                                                                       
                                 </header>
                                 <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">
                                     <div class="col-id">
