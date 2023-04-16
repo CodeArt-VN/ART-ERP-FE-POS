@@ -1,0 +1,190 @@
+<ion-header>
+	<app-list-toolbar pageTitle="Quản lý bếp"
+		[pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh()"
+		(export)="export()" (import)="import($event)" (help)="help()" (unselect)="unselect()"
+		(archiveItems)="archiveItems()" (deleteItems)="deleteItems()"
+		(changeBranch)="changeBranch($event)"></app-list-toolbar>
+</ion-header>
+
+<ion-content appScrollbarTheme [ngClass]="{withFeature: pageConfig.isShowFeature}" style="z-index: 11;">
+	<ion-fab *ngIf="pageConfig.isShowFeature" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
+		<div>
+			<ng-container *ngIf="item">
+				<!-- Phiếu in -->
+				<div id="bill" class="bill" style="overflow: auto; width: 72mm;">
+					<div class="receipt giao-nhan" style="overflow: auto;">
+						<section class="sheet rpt p1">
+							<table>
+								<thead>
+									<tr>
+										<td>
+											<div class="page-header-space"></div>
+										</td>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>
+			
+											<div>
+												<div class="header">
+													<span class="logo"><img [src]="printData.currentBranch?.LogoURL || 'assets/logo/logo-in-holdings.png'" (error)="$event.src='assets/logos/logo-the-log.png'"></span>
+													<span class="brand">{{printData.currentBranch?.ShortName || 'ShortName'}}</span>
+													<span class="address">{{printData.currentBranch?.Address || 'Address'}}</span>
+													<span class="phone">{{printData.currentBranch?.Phone || 'Phone'}}</span>
+			
+													<ng-container>
+														<span class="brand">[ ORDER ]</span>
+														<span>({{'erp.app.pages.pos.pos-order.bill-no' | translate}}: {{item.IDOrder}})</span>
+													</ng-container>
+			
+												</div>
+												<div class="table-info">
+													<table>
+														<tr>
+															<td class="title">{{'erp.app.pages.pos.pos-order.table' | translate}}</td>
+															<td><span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span></td>
+														</tr>
+														<tr>
+															<td class="title">{{'erp.app.pages.pos.pos-order.date' | translate}}</td>
+															<td>{{item.CreatedDate | date: 'HH:mm dd/MM'}}</td>
+														</tr>
+														<tr>
+															<td class="title">{{'erp.app.pages.pos.pos-order.customer' | translate}}</td>
+															<td>{{item._Customer?.Name}}
+			
+															</td>
+														</tr>
+														<tr>
+															<td class="title">{{'erp.app.pages.pos.pos-order.send-to' | translate}}</td>
+															<td><span>Kitchen</span></td>
+														</tr>
+													</table>
+												</div>
+												<div class="items">
+													<table>
+														<tr class="bold">
+															<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
+															<td class="total">{{'erp.app.pages.pos.pos-order.quantity' | translate}}</td>
+														</tr>
+														<ng-container>
+															<tr>
+																<td>
+																	{{item.ItemName}}
+																</td>
+																<td class="total"><span class="bold quantity">{{item.Quantity}}</span> </td>
+															</tr>
+															<tr *ngIf="item.Remark">
+																<td colspan="2">
+																	Note: {{item.Remark}}
+																</td>
+															</tr>
+														</ng-container>
+													</table>
+												</div>
+												<div style="border-bottom: none;" class="table-info">
+													<table>
+														<tr>
+															<td class="title">{{'erp.app.pages.pos.pos-order.print-date' | translate}}</td>
+															<td class="text-right"><span>{{printData.printDate}}</span></td>
+														</tr>
+													</table>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<td>
+											<div class="page-footer-space"></div>
+										</td>
+									</tr>
+								</tfoot>
+							</table>
+						</section>
+					</div>
+				</div>
+
+				<!-- functions-list -->
+				<div *ngIf="item" class="functions-list">
+					<ion-grid fixed>
+						<ion-row *ngIf="item" style="flex-wrap: nowrap;">
+							<ion-col>
+								<ion-button fill="outline" expand="block" (click)="prevStatus()" [disabled]="submitAttempt">
+									Bước trước
+								</ion-button>
+							</ion-col>
+							<ion-col>
+								<ion-button fill="outline" expand="block" (click)="nextStatus()" [disabled]="submitAttempt">
+									Bước tiếp
+								</ion-button>
+							</ion-col>
+						</ion-row>
+						<ion-row *ngIf="item" style="flex-wrap: nowrap;">
+							<ion-col>
+								<ion-button expand="block" (click)="print()" [disabled]="submitAttempt">
+									<ion-text>In đơn</ion-text>
+								</ion-button>
+							</ion-col>
+						</ion-row>
+					</ion-grid>
+				</div>
+			</ng-container>
+
+			<div class="empty-message" *ngIf="!item">
+				<div class="icon">
+				  <img appSvgImage style="width: 51vw; max-width: 300px;" src="../../../assets/undraw_no_data_qbuo.svg">
+				</div>
+				<div class="message">
+				  <div class="title">
+					{{'erp.app.components.page-message.message' | translate}}
+				  </div>
+				  <div class="detail">
+					<ion-text>
+					  {{'erp.app.components.page-message.sub-message' | translate}}
+					</ion-text>
+					<ng-content></ng-content>
+				  </div>
+				</div>
+			</div>
+		</div>
+	</ion-fab>
+
+
+
+	<div class="ion-padding" style="min-height: calc(100vh - 110px);">
+		<div cdkDropListGroup>
+			<ng-container *ngFor="let s of orderDetailStatusList">
+				<div class="example-container">
+					<div class="status-group">
+						<div class="group-header">
+							<ion-text [color]="s.Color"><b>{{s.Name}}</b></ion-text>
+						</div>
+						<div class="group-total">
+							<!-- <ion-text><b>{{s.ItemList.length}}</b></ion-text> -->
+						</div>
+					</div>
+	
+					<div cdkDropList [cdkDropListData]="s.ItemList" class="example-list" (cdkDropListDropped)="drop($event, s)">
+						<div class="example-box note" *ngFor="let i of s.ItemList" cdkDrag (click)="showDetail(i); pageConfig.isShowFeature = true;">
+							<div class="example-handle" cdkDragHandle>
+								<ion-icon name="expand-outline"></ion-icon>
+							</div>
+							<div class="example-custom-placeholder" *cdkDragPlaceholder></div>
+							<div class="note-header">
+								<div class="name">{{i.ItemName}}</div>
+								<div class="remark">{{i.Remark}}</div>
+							</div>
+							<div class="note-body">
+								<div>Bàn: </div>
+								<div>SL: {{i.Quantity}}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</ng-container>
+		</div>
+	</div>
+
+</ion-content>
