@@ -23,16 +23,10 @@
 						<input class="c-input"  id="Name" formControlName="Name" type="text">
 					</div>
 					<div class="c-control">
-						<label class="c-label" for="CompanyName">Tên Công Ty
-							<span *ngIf="!formGroup['controls'].CompanyName.valid && !formGroup['controls'].CompanyName.pending && (formGroup['controls'].CompanyName.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-						</label>
-						<input class="c-input"  id="CompanyName" formControlName="CompanyName" type="text">
-					</div>
-					<div class="c-control">
 						<label class="c-label" for="TaxCode">Mã số thuế
 							<span *ngIf="!formGroup['controls'].TaxCode.valid && !formGroup['controls'].TaxCode.pending && (formGroup['controls'].TaxCode.dirty || submitAttempt)" ion-text color="danger">(*)</span>
 						</label>
-						<input class="c-input" id="TaxCode" formControlName="TaxCode" type="text">
+						<input (change)="changeTaxCode($event)" class="c-input" id="TaxCode" formControlName="TaxCode" type="text">
 					</div>
 					<div class="c-control">
 						<label class="c-label" for="Email">Email
@@ -40,15 +34,25 @@
 						</label>
 						<input (change)="saveChange()" class="c-input" id="Email" formControlName="Email" type="text">
 					</div>
+					
 					<div class="c-control">
-						<label class="c-label" for="BillingAddress">Địa chỉ hóa đơn 
+						<label class="c-label" for="CompanyName">Tên Công Ty
+							<span *ngIf="!formGroup['controls'].CompanyName.valid && !formGroup['controls'].CompanyName.pending && (formGroup['controls'].CompanyName.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+						</label>
+						<input class="c-input"  id="CompanyName" formControlName="CompanyName" type="text">
+					</div>					
+					<div class="c-control">
+						<label class="c-label" for="BillingAddress">Địa chỉ công ty
 							<span *ngIf="!formGroup['controls'].BillingAddress.valid && !formGroup['controls'].BillingAddress.pending && (formGroup['controls'].BillingAddress.dirty || submitAttempt)" ion-text color="danger">(*)</span>
 						</label>
 						<input class="c-input" id="BillingAddress" formControlName="BillingAddress" type="text">
 					</div>
 					<div *ngIf="IsShowSave" class="c-control ion-text-right">
 						<label class="c-label" for=""></label>
-						<ion-button expand="block" (click)="saveChange()">Cập nhật</ion-button>
+						<ion-button expand="block" (click)="saveChange()">
+							<ion-text *ngIf="!IsShowSpinner">Cập nhật</ion-text>
+							<ion-spinner *ngIf="IsShowSpinner" name="dots" ></ion-spinner>
+						</ion-button>
 					</div>
 					<div *ngIf="IsShowApply" class="c-control ion-text-right">
 						<label class="c-label" for=""></label>

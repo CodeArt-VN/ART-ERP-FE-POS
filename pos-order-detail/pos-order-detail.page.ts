@@ -91,7 +91,7 @@ export class POSOrderDetailPage extends PageBase {
             Deductions: this.formBuilder.array([]),
             Tables: [[this.idTable]],
             IDBranch: [this.env.selectedBranch],
-            OrderDate: [new Date()],
+            //OrderDate: [new Date()],
             IDContact: [922],
             IDAddress: [902],
             IDType: [293],
@@ -154,6 +154,7 @@ export class POSOrderDetailPage extends PageBase {
         
     }
     ngOnInit() {
+        
         this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {         
 			switch (data.Code) {
 				case 'app:POSOrderFromCustomer':
@@ -905,8 +906,7 @@ export class POSOrderDetailPage extends PageBase {
         }
         this.calcOrder();
         if (this.item.OrderLines.length) {
-            //this.debounce(() => { this.saveChange() }, 5000);
-            this.saveChange();
+            this.debounce(() => { this.saveChange() }, 5000);
         }
 
     }
