@@ -303,6 +303,12 @@ export class POSOrderDetailPage extends PageBase {
             }
             else {
                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
+                    let tempQty = line.Quantity;
+                    tempQty += quantity;
+                    if (tempQty == 0 && this.item.OrderLines.length == 1) {
+                        this.env.showMessage('Đơn hàng phải có ít nhất 1 sản phẩm!','warning');
+                        return;
+                    }
                     line.Quantity += quantity;
                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
                 }).catch(_ => { });
@@ -905,8 +911,7 @@ export class POSOrderDetailPage extends PageBase {
         }
         this.calcOrder();
         if (this.item.OrderLines.length) {
-            //this.debounce(() => { this.saveChange() }, 5000);
-            this.saveChange();
+            this.debounce(() => { this.saveChange() }, 2000);
         }
 
     }

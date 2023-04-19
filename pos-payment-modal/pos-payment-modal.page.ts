@@ -3,7 +3,7 @@ import { NavController, ModalController, NavParams, LoadingController, AlertCont
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { BANK_IncomingPaymentDetailProvider, BANK_IncomingPaymentProvider } from 'src/app/services/static/services.service';
+import { BANK_IncomingPaymentDetailProvider, BANK_IncomingPaymentProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
 import { FormBuilder } from '@angular/forms';
 import { lib } from 'src/app/services/static/global-functions';
 import { CommonService } from 'src/app/services/core/common.service';
@@ -21,9 +21,17 @@ export class POSPaymentModalPage extends PageBase {
     Amount = 0;
     statusList;
     typeList;
+    printData = {
+        undeliveredItems: [], //To track undelivered items to the kitchen
+        printDate: null,
+        currentBranch: null,
+        selectedTables: [],
+    }
+
     constructor(
         public pageProvider: BANK_IncomingPaymentDetailProvider,      
         public IncomingPaymentProvider: BANK_IncomingPaymentProvider,
+        public saleOrderProvider: SALE_OrderProvider,
         public commonService: CommonService,
 
         public env: EnvService,
@@ -102,21 +110,28 @@ export class POSPaymentModalPage extends PageBase {
             this.calcPayment();
         });
     }
-    toPayment(){
-        let payment = {
-            IDBranch: this.item.IDBranch,
-            IDStaff: this.env.user.StaffID,
-            IDCustomer: this.item.IDContact,
-            IDSaleOrder: this.item.Id,
-            DebtAmount: this.DebtAmount,
-            IsActiveInputAmount : true,
-            IsActiveTypeCash: true,
-            Timestamp:Date.now()
-        };
-        let str = window.btoa(JSON.stringify(payment));
-        let code =  this.convertUrl(str);
-        let url = environment.appDomain + "Payment?Code="+code;
-        window.open(url, "_blank");
+    toPayment() {
+        this.updateShippedQuantity().then(result => {
+            if (!result) {
+                return;
+            }
+            else {
+                let payment = {
+                    IDBranch: this.item.IDBranch,
+                    IDStaff: this.env.user.StaffID,
+                    IDCustomer: this.item.IDContact,
+                    IDSaleOrder: this.item.Id,
+                    DebtAmount: this.DebtAmount,
+                    IsActiveInputAmount : true,
+                    IsActiveTypeCash: true,
+                    Timestamp:Date.now()
+                };
+                let str = window.btoa(JSON.stringify(payment));
+                let code =  this.convertUrl(str);
+                let url = environment.appDomain + "Payment?Code="+code;
+                window.open(url, "_blank");
+            }
+        })
     }
     toDetail(code){
         let url = environment.appDomain + "Payment?Code="+code;
@@ -127,7 +142,7 @@ export class POSPaymentModalPage extends PageBase {
             IDIncomingPayment: data.Id,
             IDSaleOrder:this.item.Id
         }  
-        this.pageProvider.read(query).then((result: any)=>{                                              
+        this.pageProvider.read(query).then((result: any)=>{
             if(result['count']>0 && result['data'][0].IDSaleOrder == this.item.Id){
                 let index = this.items.findIndex((i => i.IncomingPayment.Id == data.Id)); 
                 console.log(index);
@@ -143,33 +158,87 @@ export class POSPaymentModalPage extends PageBase {
             }                           
         })
     }
+
     doneOrder(){
-        if(this.DebtAmount > 0) {
-            this.alertCtrl.create({
-                header: 'Thông báo',             
-                message: 'Bạn có chắc chắn kết thúc đơn? Đơn sẽ được ghi nhận là thanh toán sau.',
-                buttons: [
-                    {
-                        text: 'Không',
-                        role: 'cancel',
-                        handler: () => {                      
+        this.updateShippedQuantity().then(result => {
+            if (!result) {
+                return;
+            }
+            else {
+                if(this.DebtAmount > 0) {
+                    this.alertCtrl.create({
+                        header: 'Thông báo',             
+                        message: 'Bạn có chắc chắn kết thúc đơn? Đơn sẽ được ghi nhận là thanh toán sau.',
+                        buttons: [
+                            {
+                                text: 'Không',
+                                role: 'cancel',
+                                handler: () => {                      
+                                }
+                            },
+                            {
+                                text: 'Đồng ý',
+                                cssClass: 'success-btn',
+                                handler: () => {
+                                    return this.modalController.dismiss(this.item,'Done');
+                                }
+                            }
+                        ]
+                    }).then(alert => {
+                        alert.present();
+                    })
+                }
+                else{
+                    return this.modalController.dismiss(this.item,'Done');
+                }
+            }
+        });
+    }
+
+    async updateShippedQuantity() {
+        this.item.OrderLines.forEach(e => {
+            e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
+            if (e._undeliveredQuantity > 0) {
+                this.printData.undeliveredItems.push(e);
+            }
+        });
+        return new Promise((resolve, reject) => {
+            if (this.printData.undeliveredItems.length > 0) {
+                this.alertCtrl.create({
+                    header: 'Thông báo',             
+                    message: 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục hoàn tất?',
+                    buttons: [
+                        {
+                            text: 'Không',
+                            role: 'cancel',
+                            handler: () => {
+                                resolve(false);
+                            }
+                        },
+                        {
+                            text: 'Đồng ý',
+                            cssClass: 'success-btn',
+                            handler: () => {
+                                this.item.OrderLines.forEach(e => {
+                                    e.ShippedQuantity = e.Quantity;
+                                    e.ReturnedQuantity =  e.Quantity - e.ShippedQuantity;
+                                    e._undeliveredQuantity =  e.Quantity - e.ShippedQuantity;
+                                });
+                                this.saleOrderProvider.save(this.item).then(savedData => {
+                                    this.item = savedData;
+                                    this.printData.undeliveredItems = []; //<-- clear;
+                                    resolve(true);
+                                });
+                            }
                         }
-                    },
-                    {
-                        text: 'Đồng ý',
-                        cssClass: 'success-btn',
-                        handler: () => {
-                            return this.modalController.dismiss(this.DebtAmount,'Done');
-                        }
-                    }
-                ]
-            }).then(alert => {
-                alert.present();
-            })
-        }
-        else{
-            return this.modalController.dismiss(this.DebtAmount,'Done');
-        }
-        
+                    ]
+                }).then(alert => {
+                    alert.present();
+                })
+            }
+            else {
+                resolve(true);
+            }
+        });
     }
 }
