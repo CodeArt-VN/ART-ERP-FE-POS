@@ -66,8 +66,7 @@ export class POSCustomerOrderPage extends PageBase {
             Additions: this.formBuilder.array([]),
             Deductions: this.formBuilder.array([]),
             Tables: [[this.idTable]],
-            IDBranch: [''],
-            OrderDate: [new Date()],
+            IDBranch: [''],         
             IDOwner: [-1],
             IDContact: [-1],
             IDAddress: [-1],
@@ -75,8 +74,7 @@ export class POSCustomerOrderPage extends PageBase {
             IDStatus: [101],           
             Type: ['POSOrder'],
             SubType: ['TableService'],
-            Status: new FormControl({ value: 'New', disabled: true }),
-            //IDOwner: [this.env.user.StaffID],
+            Status: new FormControl({ value: 'New', disabled: true }),          
             IDTable: [this.idTable],
             IsCOD: [],
             IsInvoiceRequired: [],
@@ -144,8 +142,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
         
-        super.loadedData(event, ignoredFromGroup);
-        
+        super.loadedData(event, ignoredFromGroup);      
         if (!this.item?.Id) {
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch); 
             Object.assign(this.item, this.formGroup.getRawValue()); 
@@ -289,10 +286,6 @@ export class POSCustomerOrderPage extends PageBase {
             return;
         }       
 
-        // if (this.item.Tables == null || this.item.Tables.length == 0) {
-        //     this.env.showTranslateMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
-        //     return;
-        // }
         if (!this.pageConfig.canEdit) {
             this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
             return;
@@ -334,8 +327,9 @@ export class POSCustomerOrderPage extends PageBase {
             if(price.NewPrice){                
                 line.UoMPrice = price.NewPrice;
             }  
-            this.calcOrderLine(line);
-            this.item.OrderLines.push(line);            
+            this.calcOrderLine(line);          
+            this.item.OrderLines.push(line);  
+                      
             this.addOrderLine(line);         
             this.setOrderValue({ OrderLines: [line] });
             if(this.id==0){
@@ -490,25 +484,11 @@ export class POSCustomerOrderPage extends PageBase {
 
         }
         this.loadInfoOrder();
-        this.calcOrder();
-        // if (this.item.OrderLines.length) {
-            
-        //     //this.debounce(() => { this.saveChange() }, 5000);     
-        //     this.saveChange();
-        // }
-
+        this.calcOrder();      
     }
     sendOrder(){
         this.saveChange();    
-        this.AllowSendOrder = false; 
-        
-        // if(this.item.OrderLines.length){
-        //     this.saveChange();    
-        //     this.AllowSendOrder = false;        
-        // }
-        // else{
-        //     this.env.showMessage("Vui lòng chọn món","warning")
-        // }
+        this.AllowSendOrder = false;             
     }
     async saveChange() {
         let submitItem = this.getDirtyValues(this.formGroup);
@@ -517,22 +497,27 @@ export class POSCustomerOrderPage extends PageBase {
     }
     savedChange(savedItem?: any, form?: FormGroup<any>): void {
         if (savedItem) {
+            let message = "Đặt hàng thành công";
+            if(this.id!=0){
+                message = "cập nhật thành công";
+            }
+            this.env.setStorage("OrderLines"+this.idTable,[]);
+            this.env.showTranslateMessage(message, 'success');
             if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id)
                 form.controls.Id.setValue(savedItem.Id);
 
             if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
                 this.id = savedItem.Id;
-                let newURL = '#pos-customer-order/' + savedItem.Id + '/' + this.idTable;
+                let newURL = '#/pos-customer-order/' + savedItem.Id + '/' + this.idTable;
                 history.pushState({}, null, newURL);
             }
 
             this.item = savedItem;
+            //this.env.setStorage("IDOrder",{Id:this.item.Id});
+            //this.env.setStorage("IDOrders",{Id:this.item.Id,Status:this.item.Status});
         }      
         this.loadedData();
-
         this.submitAttempt = false;
-        this.env.showTranslateMessage('Đặt hàng thành công', 'success');
-            
     }
     private calcOrder() {
         this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
@@ -546,7 +531,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.item.CalcTotalOriginal = 0;
         this.item.OriginalDiscountFromSalesman = 0;     
         this.item._OriginalTotalAfterDiscountFromSalesman = 0;
-     
+        
         for (let line of this.item.OrderLines) {            
             this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount; 
             this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;           
@@ -603,8 +588,7 @@ export class POSCustomerOrderPage extends PageBase {
 
         if (role == 'confirm') {
             line.Remark = data ? data.toString() : null;
-            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
-            this.sendOrder();
+            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });           
         }
     }
 
@@ -618,6 +602,4 @@ export class POSCustomerOrderPage extends PageBase {
         }
 
     }
-
-    
 }

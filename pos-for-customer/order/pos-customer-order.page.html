@@ -11,6 +11,9 @@
 		<ion-button color="none" slot="end"   (click)="refresh()">
 			<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
 		</ion-button>
+		<ion-button color="none" slot="end" *ngIf="pageConfig.isShowFeature"   (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+			<ion-icon color="primary" slot="icon-only" name="close-circle-outline"></ion-icon>
+		</ion-button>
 	</ion-toolbar>
 </ion-header>
 
@@ -116,12 +119,12 @@
 				</div>
 				
 			</div>	
-			<ion-button *ngIf="pageConfig.canEdit" color="danger" [disabled]="!AllowSendOrder || item.OrderLines?.length == 0" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
+			<ion-button *ngIf="pageConfig.canEdit" color="danger" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
 				<ion-text *ngIf="id==0">Đặt hàng</ion-text>
 				<ion-text *ngIf="id!=0">Cập nhật</ion-text>
 			</ion-button>
 
-			<ion-button color="success" class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalQuantity <= 0">
+			<ion-button class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalQuantity <= 0">
 				<ion-text *ngIf="item.Status !='Done' && item.Status !='Cancelled' ">Thanh toán</ion-text>
 				<ion-text *ngIf="item.Status =='Done'">Xem chi tiết</ion-text>
 			</ion-button>

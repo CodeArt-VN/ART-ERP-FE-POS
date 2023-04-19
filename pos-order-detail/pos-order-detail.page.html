@@ -60,7 +60,7 @@
 									<span disabled class="c-input ion-margin-bottom"><span class="ion-float-left">Tổng tiền SP</span> <span class="ion-float-right">{{line.CalcTotalOriginal | number: '1.0-0'}} đ</span> </span>
 									<span class="c-input ion-margin-bottom">
 										<span class="ion-float-left">Số tiền giảm</span>
-										<input style="text-align: right; border: none; outline: none; width: 130px;" class="ion-float-right" mask="separator.2"  thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" [disabled]="submitAttempt || line._Locked " (change)="discountFromSalesman(line,g)" formControlName="OriginalDiscountFromSalesman"  placeholder="Số tiền tặng"/>
+										<input style="text-align: right; border: none; outline: none; width: 130px; background: none;" class="ion-float-right" mask="separator.2"  thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" (change)="discountFromSalesman(line,g)" formControlName="OriginalDiscountFromSalesman"  placeholder="Số tiền tặng"/>
 									</span>
 																															
 								</div>

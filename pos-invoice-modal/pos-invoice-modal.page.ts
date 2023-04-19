@@ -4,6 +4,8 @@ import { ModalController, NavController, LoadingController } from '@ionic/angula
 import { EnvService } from 'src/app/services/core/env.service';
 import { CRM_ContactProvider } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { ApiSetting } from 'src/app/services/static/api-setting';
+import { CommonService } from 'src/app/services/core/common.service';
 
 
 @Component({
@@ -14,6 +16,7 @@ import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 export class POSInvoiceModalPage extends PageBase {
 	IsShowSave = true;
 	IsShowApply = false;
+	IsShowSpinner = false;
 	constructor(
 		public pageProvider: CRM_ContactProvider,
 		public env: EnvService,
@@ -23,6 +26,7 @@ export class POSInvoiceModalPage extends PageBase {
 		public formBuilder: FormBuilder,
 		public cdr: ChangeDetectorRef,
 		public loadingController: LoadingController,
+		public commonService: CommonService,
 
 	) {
 		super();	
@@ -33,7 +37,7 @@ export class POSInvoiceModalPage extends PageBase {
 			Name: ['',Validators.required],
 			TaxCode: ['',Validators.required],
 			CompanyName: ['',Validators.required],
-			Email: ['', Validators.required],
+			Email: ['', Validators.required ],
 			BillingAddress: ['', Validators.required]
 		});
 		
@@ -65,5 +69,34 @@ export class POSInvoiceModalPage extends PageBase {
 		this.IsShowSave = true;
 		this.IsShowApply = false;
 		this.formGroup.reset();
+	}
+	changeTaxCode(event){
+		let value = event.target.value;
+		this.IsShowSave = true;		
+		this.IsShowApply = false;
+		this.formGroup.controls.CompanyName.patchValue("");
+		this.formGroup.controls.BillingAddress.patchValue("");	
+		if(value.length>9){
+			this.IsShowSpinner = true;
+			Object.assign(this.query, {TaxCode:value});			
+				let apiPath = {
+					method: "GET",
+					url: function () { return ApiSetting.apiDomain("CRM/Contact/SearchUnitInforByTaxCode") }
+				};				
+				this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise().then((result: any) => {
+					this.patchValue(result);
+					this.IsShowSpinner = false;
+				}).catch(err=>{
+					this.env.showTranslateMessage('Mã số thuế không hợp lệ!', 'danger');
+					this.IsShowSpinner = false;
+				})
+		}
+		
+	}
+	patchValue(data){
+		this.formGroup.controls.CompanyName.patchValue(data.TenChinhThuc);
+		this.formGroup.controls.BillingAddress.patchValue(data.DiaChiGiaoDichChinh);
+		this.formGroup.controls.CompanyName.markAsDirty();
+		this.formGroup.controls.BillingAddress.markAsDirty();
 	}
 }
