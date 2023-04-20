@@ -147,20 +147,19 @@ export class POSCustomerOrderPage extends PageBase {
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch); 
             Object.assign(this.item, this.formGroup.getRawValue()); 
             this.env.getStorage("OrderLines"+this.idTable).then(result=>{
-                if(result.length>0){
+                if(result?.length>0){
                     this.item.OrderLines = result;
-                    this.AllowSendOrder = false;
                     this.patchOrderValue();
                     this.loadOrder();
                     this.loadInfoOrder();
                     this.setOrderValue(this.item);
                 }
-                
-                
+                else {
+                    this.setOrderValue(this.item);
+                    this.AllowSendOrder = false;      
+                }
             });
-            this.setOrderValue(this.item);
-            this.AllowSendOrder = false;              
-        }                                               
+        }   
         else {
             this.patchOrderValue();
         }       
@@ -333,6 +332,9 @@ export class POSCustomerOrderPage extends PageBase {
                       
             this.addOrderLine(line);         
             this.setOrderValue({ OrderLines: [line] });
+            if(this.id==0){
+                this.env.setStorage("OrderLines"+this.idTable,this.item.OrderLines);
+            }
         }
         else {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
@@ -343,22 +345,29 @@ export class POSCustomerOrderPage extends PageBase {
                 line.Quantity += quantity;
                 this.calcOrderLine(line);
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                
+                if(this.id==0){
+                    this.env.setStorage("OrderLines"+this.idTable,this.item.OrderLines);
+                }
             }
             else {
                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
+                    let tempQty = line.Quantity;
+                    tempQty += quantity;
+                    if (tempQty == 0 && this.item.OrderLines.length == 1) {
+                        this.env.showMessage('Đơn hàng phải có ít nhất 1 sản phẩm!','warning');
+                        return;
+                    }
                     line.Quantity += quantity;
                     this.calcOrderLine(line);
+                    this.loadInfoOrder();
                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                    if(this.id==0){
+                        this.env.setStorage("OrderLines"+this.idTable,this.item.OrderLines);
+                    }
                 }).catch(_ => { });
             }
              
         }
-        if(this.id==0){
-            this.env.setStorage("OrderLines"+this.idTable,this.item.OrderLines);
-        }
-        
-               
     }
     calcOrderLine(line){
         line._serviceCharge = 0;
