@@ -914,9 +914,9 @@ export class POSOrderDetailPage extends PageBase {
         }
         this.calcOrder();
        
-        // if (this.item.OrderLines.length || this.item.DeletedLines.length) {
-        //     this.debounce(() => { this.saveChange() }, 10000);
-        // }
+        if (this.item.OrderLines.length || this.item.DeletedLines.length) {
+            this.debounce(() => { this.saveChange() }, 1000);
+        }
 
     }
 
