@@ -9,11 +9,9 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
-import { SaleOrderMobileAddContactModalPage } from '../../SALE/sale-order-mobile-add-contact-modal/sale-order-mobile-add-contact-modal.page';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
-import { POSIntroModalPage } from '../pos-intro-modal/pos-intro-modal.page';
 import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
 import * as qz from 'qz-tray';
 import html2canvas from 'html2canvas';
@@ -191,7 +189,6 @@ export class POSOrderDetailPage extends PageBase {
             if (values[4]['data'].length) {
                 let dbp = JSON.parse(values[4]['data'][0].Value);
                 this.contactListSelected.push(dbp);
-                console.log(dbp);
             }   
             this.paymentType = values[5];            
             super.preLoadData(event);
@@ -303,13 +300,14 @@ export class POSOrderDetailPage extends PageBase {
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
             }
             else {
-                this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
-                    let tempQty = line.Quantity;
+					let tempQty = line.Quantity;
                     tempQty += quantity;
                     if (tempQty == 0 && this.item.OrderLines.length == 1) {
                         this.env.showMessage('Đơn hàng phải có ít nhất 1 sản phẩm!','warning');
                         return;
                     }
+                this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
+                    
                     line.Quantity += quantity;
                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
                 }).catch(_ => { });
@@ -533,17 +531,13 @@ export class POSOrderDetailPage extends PageBase {
                         flavor: 'base64',
                         data: base64data
                     }];
-
-                console.log(printerCode);
                 printerCodeList.push(printerCode);
                 base64dataList.push(data);
 
                 if (idx == base64dataList.length) {
                     this.QZsetCertificate().then(() => {
                         this.QZsignMessage().then(() => {
-                            console.log(printerCodeList);
                             this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, false).catch(err => {
-                                console.log(err);
                                 this.submitAttempt = false;
                                 skipTime++;
                             });
@@ -574,7 +568,6 @@ export class POSOrderDetailPage extends PageBase {
 
         this.printerTerminalProvider.search({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).toPromise().then(async (results: any) => {
             this.printerProvider.search({Id:results[0].IDPrinter}).toPromise().then(async (defaultPrinter: any) => {
-                console.log(defaultPrinter);
                 if (defaultPrinter && defaultPrinter.length != 0) {
                     defaultPrinter.forEach((p: any) => {
                         let Info = {
@@ -588,7 +581,6 @@ export class POSOrderDetailPage extends PageBase {
                     });
                 }
                 else {
-                    console.log(defaultPrinter);
                     this.env.showTranslateMessage('Recheck Receipt Printer information!', 'warning');
                     return
                 }
@@ -635,16 +627,13 @@ export class POSOrderDetailPage extends PageBase {
                                     data: base64data
                                 }];
         
-                            console.log(printerCode);
                             printerCodeList.push(printerCode);
                             base64dataList.push(data);
         
                             if (idx == base64dataList.length) {
                                 this.QZsetCertificate().then(() => {
                                     this.QZsignMessage().then(() => {
-                                        console.log(printerCodeList);
                                         this.sendQZTray(printerHost, printerCodeList, base64dataList, skipTime, receipt).catch(err => {
-                                            console.log(err);
                                             this.submitAttempt = false;
                                             skipTime++;
                                         });
@@ -698,6 +687,7 @@ export class POSOrderDetailPage extends PageBase {
 
     }
 
+    //Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về. 
     private calcOrder() {
         this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
         this.item.OriginalTotalBeforeDiscount = 0;
@@ -722,22 +712,35 @@ export class POSOrderDetailPage extends PageBase {
             //Parse data + Tính total
             line.UoMPrice = line.IsPromotionItem ? 0 : parseFloat(line.UoMPrice) || 0;
             line.TaxRate = parseFloat(line.TaxRate) || 0;
-            line.Quantity = parseFloat(line.Quantity) || 0;         
+            line.Quantity = parseFloat(line.Quantity) || 0;
+            line.OriginalTotalBeforeDiscount = line.UoMPrice * line.Quantity;
             this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount;
 
             //line.OriginalPromotion
-           
+            line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount1) || 0;
+            line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount2) || 0;
+            line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
+            line.OriginalDiscountByGroup = 0;
+            line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
+            line.OriginalDiscountByOrder = 0;
+            line.OriginalTotalDiscount = line.OriginalDiscountByLine + line.OriginalDiscountByOrder;
             this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;
 
-            
-            this.item.OriginalTax += line.OriginalTax;           
+            line.OriginalTotalAfterDiscount = line.OriginalTotalBeforeDiscount - line.OriginalTotalDiscount;
+            line.OriginalTax = line.OriginalTotalAfterDiscount * (line.TaxRate / 100.0);
+            this.item.OriginalTax += line.OriginalTax;
+            line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
             this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
-            this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions; 
-            this.item.CalcTotalOriginal += line.CalcTotalOriginal ;    
-            this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman;
+            line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
+            this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
+
+
+            line.CalcTotalOriginal = line.OriginalTotalAfterTax + line.CalcOriginalTotalAdditions;
+            this.item.CalcTotalOriginal += line.CalcTotalOriginal;
+            line.OriginalDiscountFromSalesman = parseFloat(line.OriginalDiscountFromSalesman) || 0;
             line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
 
-
+            this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman;
 
             //Lấy hình & hiển thị thông tin số lượng đặt hàng lên menu
             for (let m of this.menuList)
@@ -772,7 +775,6 @@ export class POSOrderDetailPage extends PageBase {
     private patchOrderValue() {
         this.formGroup?.patchValue(this.item);
         this.patchOrderLinesValue();
-        console.log(this.getDirtyValues(this.formGroup));
     }
 
     private patchOrderLinesValue() {
@@ -911,9 +913,10 @@ export class POSOrderDetailPage extends PageBase {
 
         }
         this.calcOrder();
-        if (this.item.OrderLines.length) {
-            this.debounce(() => { this.saveChange() }, 2000);
-        }
+       
+        // if (this.item.OrderLines.length || this.item.DeletedLines.length) {
+        //     this.debounce(() => { this.saveChange() }, 10000);
+        // }
 
     }
 
@@ -1084,7 +1087,6 @@ export class POSOrderDetailPage extends PageBase {
         await this.QZConnect(ConnectOption).then(() => {
 
             this.QZFindPrinter().then(async (printersDB) => {
-                console.log("Printers List:" + printersDB);
                 if (printerCodeList.length != 0) {
                     printerCodeList.forEach(p => {
                         if (printersDB.indexOf(p) > -1) { // Use this when fixed Printer
@@ -1114,19 +1116,16 @@ export class POSOrderDetailPage extends PageBase {
                         }
                     });
                 }).catch(err => {
-                    console.log(err);
                     this.submitAttempt = false;
                     this.QCCloseConnection();
                 });
             }).catch(err => {
-                console.log(err);
                 this.submitAttempt = false;
                 this.QCCloseConnection();
             });
 
         }).catch(err => {
             err;
-            console.log(err);
             this.submitAttempt = false;
             this.QCCloseConnection();
         });
