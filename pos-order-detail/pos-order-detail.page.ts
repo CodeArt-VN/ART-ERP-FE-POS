@@ -383,6 +383,7 @@ export class POSOrderDetailPage extends PageBase {
     async processPayments() {
         const modal = await this.modalController.create({
             component: POSPaymentModalPage,
+            id: 'POSPaymentModalPage',
             swipeToClose: true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
@@ -393,11 +394,13 @@ export class POSOrderDetailPage extends PageBase {
         await modal.present();
         const { data , role } = await modal.onWillDismiss();
         if (role == 'Done') {
+            this.item = data;
+            this.patchOrderValue();
             this.formGroup.controls.IDStatus.patchValue(114);
             this.formGroup.controls.IDStatus.markAsDirty();
             this.formGroup.controls.Status.patchValue("Done");
             this.formGroup.controls.Status.markAsDirty();
-            this.saveSO();
+            this.setOrderValue({ OrderLines: this.item.OrderLines });
         } 
     }
     InvoiceRequired(){
@@ -567,7 +570,7 @@ export class POSOrderDetailPage extends PageBase {
         let newKitchenList = [];
 
         this.printerTerminalProvider.search({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).toPromise().then(async (results: any) => {
-            this.printerProvider.search({Id:results[0].IDPrinter}).toPromise().then(async (defaultPrinter: any) => {
+            this.printerProvider.search({Id: (results[0]?.IDPrinter || 0 )}).toPromise().then(async (defaultPrinter: any) => {
                 if (defaultPrinter && defaultPrinter.length != 0) {
                     defaultPrinter.forEach((p: any) => {
                         let Info = {
@@ -1068,6 +1071,13 @@ export class POSOrderDetailPage extends PageBase {
         // Save Order >> 
         // Close Connection >> Done.
 
+        let printInfo = {
+            printerHost: printerHost,
+            printerCodeList: printerCodeList, 
+            base64dataList: base64dataList,
+            skipTime: skipTime,
+            receipt: receipt
+        }
 
         let actualPrinters = [];
 
@@ -1076,58 +1086,51 @@ export class POSOrderDetailPage extends PageBase {
             // host: '192.168.1.97', //<< Use for test
             host: printerHost,
             keepAlive: 60,
-            retries: 10,
+            retries: 0,
         }
 
         let checkCon = qz.websocket.isActive();
-        // if (checkCon) {
-        //     qz.websocket.disconnect();
-        // }
+        if (checkCon) {
+            qz.websocket.disconnect();
+        }
 
-        await this.QZConnect(ConnectOption).then(() => {
-
-            this.QZFindPrinter().then(async (printersDB) => {
-                if (printerCodeList.length != 0) {
-                    printerCodeList.forEach(p => {
-                        if (printersDB.indexOf(p) > -1) { // Use this when fixed Printer
-                            let config = qz.configs.create(p, { copies: 1 });
-                            actualPrinters.push(config);
-                        }
-                        else {
-                            // let config = qz.configs.create("PDF");
+        await this.QZConnect(ConnectOption, printInfo).then(() => {
+            if (qz.websocket.isActive()) {
+                this.QZFindPrinter(null, ConnectOption, printInfo).then(async (printersDB:any) => {
+                    if (printerCodeList.length != 0 && printersDB) {
+                        printerCodeList.forEach(p => {
+                            if (printersDB.indexOf(p) > -1) { // Use this when fixed Printer
+                                let config = qz.configs.create(p, { copies: 1 });
+                                actualPrinters.push(config);
+                            }
+                            else {
+                                // let config = qz.configs.create("PDF");
+                                // actualPrinters.push(config);
+                                this.env.showTranslateMessage("Printer " + p + " Not Found! Using PDF Printing Instead!", "warning");
+                            }
+    
+                            // let config = qz.configs.create("PDF"); // USE For test
                             // actualPrinters.push(config);
-                            this.env.showTranslateMessage("Printer " + p + " Not Found! Using PDF Printing Instead!", "warning");
-                        }
-
-                        // let config = qz.configs.create("PDF"); // USE For test
-                        // actualPrinters.push(config);
-                    });
-                }
-                else {
-                    this.env.showTranslateMessage("No Printers Available, Please Check Printers' IP  / Printers' Power", "warning");
-                    this.QCCloseConnection();
-                    return;
-                }
-
-                await this.QZActualPrinting(actualPrinters, base64dataList).then(async () => {
-                    await this.QZCheckData(skipTime, receipt).then(_ => {
-                        if (this.item.Status == "Done" || this.item.Status == "Cancelled") {
-                            this.nav('/pos-order', 'back');
-                        }
-                    });
-                }).catch(err => {
-                    this.submitAttempt = false;
-                    this.QCCloseConnection();
+                        });
+                    }
+                    else {
+                        this.env.showTranslateMessage("No Printers Available, Please Check Printers' IP  / Printers' Power", "warning");
+                        this.submitAttempt = false;
+                    }
+    
+                    if (actualPrinters.length != 0) {
+                        await this.QZActualPrinting(actualPrinters, base64dataList, ConnectOption, printInfo).then(async (result:any) => {
+                            if (result) {
+                                await this.QZCheckData(skipTime, receipt).then(_ => {
+                                    if (this.item.Status == "Done" || this.item.Status == "Cancelled") {
+                                        this.nav('/pos-order', 'back');
+                                    }
+                                });
+                            }
+                        });
+                    }
                 });
-            }).catch(err => {
-                this.submitAttempt = false;
-                this.QCCloseConnection();
-            });
-
-        }).catch(err => {
-            err;
-            this.submitAttempt = false;
-            this.QCCloseConnection();
+            }
         });
     }
 
@@ -1215,16 +1218,33 @@ export class POSOrderDetailPage extends PageBase {
         });
     }
 
-    async QZConnect(options) {
-        return qz.websocket.connect(options);
+    async ConnectionPrompt(options, printInfo) {
+        this.env.showPrompt('Bạn có muốn tiếp tục in?', options.host, 'Có lỗi khi gọi đến server').then(_ => {
+            this.QCCloseConnection().then(() => {
+                this.sendQZTray(printInfo.printerHost, printInfo.printerCodeList, printInfo.base64dataList, printInfo.skipTime, printInfo.receipt);
+            });
+        }).catch(_ => {
+            this.submitAttempt = false;
+            this.QCCloseConnection();
+        });
     }
 
-    async QZFindPrinter(printerCode = null) {
+    async QZConnect(options, printInfo) {
+        return qz.websocket.connect(options).then().catch(err => { 
+            this.ConnectionPrompt(options, printInfo);
+        });
+    }
+
+    async QZFindPrinter(printerCode = null, options, printInfo) {
         if (printerCode == null) {
-            return qz.printers.find();
+            return qz.printers.find().catch(err => { 
+                this.ConnectionPrompt(options, printInfo);
+            });
         }
         else {
-            return qz.printers.find(printerCode);
+            return qz.printers.find(printerCode).catch(err => { 
+                this.ConnectionPrompt(options, printInfo);
+            });
         }
     }
 
@@ -1232,11 +1252,14 @@ export class POSOrderDetailPage extends PageBase {
         return qz.printers.getDefault(signature, signingTimestamp);
     }
 
-    async QZActualPrinting(actualPrinters, base64dataList) {
-        actualPrinters;
-        base64dataList;
-
-        return qz.print(actualPrinters, base64dataList, true);
+    async QZActualPrinting(actualPrinters, base64dataList, options, printInfo) {
+        return new Promise((resolve, reject) => {
+            qz.print(actualPrinters, base64dataList, true).then(() => {
+                resolve(true);
+            }).catch(err => {
+                this.ConnectionPrompt(options, printInfo);
+            });
+        });
     }
 
     async QZCheckData(skipTime, receipt = true) {
@@ -1280,7 +1303,7 @@ export class POSOrderDetailPage extends PageBase {
     async QCCloseConnection() {
         let checkCon = qz.websocket.isActive();
         if (checkCon) {
-            qz.websocket.disconnect();
+            return qz.websocket.disconnect();
         }
     }
 
