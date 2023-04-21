@@ -1,17 +1,14 @@
 <ion-header>
 	<ion-toolbar class="toolbar-no">
 		<ion-searchbar slot="start" class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
+		<ion-button color="none" slot="end" (click)="refresh()">
+			<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
+		</ion-button>
 		<ion-button color="none" slot="end" *ngIf="!pageConfig.isShowFeature" class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
 			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
 		</ion-button>
 		<ion-button color="none" slot="end" *ngIf="pageConfig.isShowFeature" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-			<ion-icon color="primary" slot="icon-only" name="close-circle-outline"></ion-icon>
-		</ion-button>
-		<ion-button color="none" slot="end"   (click)="refresh()">
-			<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
-		</ion-button>
-		<ion-button color="none" slot="end" *ngIf="pageConfig.isShowFeature"   (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon color="primary" slot="icon-only" name="close-circle-outline"></ion-icon>
 		</ion-button>
 	</ion-toolbar>
