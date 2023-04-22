@@ -210,7 +210,7 @@
 
 						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
 							<label for=""></label>
-							<ion-button size="small" color="danger" expand="block" fill="outline" (click)="cancelPOSOrder();" [disabled]="submitAttempt">
+							<ion-button size="small" color="danger" expand="block" fill="outline" (click)="cancelPOSOrder();" [disabled]="submitAttempt || !pageConfig.canCancelOrder">
 								{{'erp.app.pages.pos.pos-order.cancel' | translate}}
 							</ion-button>
 						</div>
@@ -372,7 +372,7 @@
 											</tr>
 											<tr *ngIf="kitchenQuery!='all'">
 												<td class="title">{{'erp.app.pages.pos.pos-order.send-to' | translate}}</td>
-												<td><span *ngFor="let k of kitchenList | filter:{Id: kitchenQuery}">{{k.Name}}</span></td>
+												<td><span *ngFor="let k of kitchenList | filter:{Id:kitchenQuery}">{{k.Name}}</span></td>
 											</tr>
 										</table>
 									</div>
@@ -383,7 +383,7 @@
 												<td class="text-right">Discount</td>
 												<td class="text-right">{{'erp.app.pages.pos.pos-order.amount' | translate}}</td>
 											</tr>
-											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen': kitchenQuery}">
+											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
 												<tr>
 													<td colspan="3" class="name">
 														<div>{{o._item?.Name}}</div>
@@ -407,7 +407,7 @@
 												<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
 												<td class="total">{{'erp.app.pages.pos.pos-order.quantity' | translate}}</td>
 											</tr>
-											<ng-container *ngFor="let o of item.OrderLines ; let idx = index">
+											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery} ; let idx = index ">
 												<ng-container *ngIf="o._undeliveredQuantity > 0">
 													<tr>
 														<td>
@@ -441,19 +441,19 @@
 													<td class="text-right"><span>{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title">Discount</td>
+													<td class="title">Discount [ {{item.OriginalTotalDiscountPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}}</td>
+													<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalTax | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title">Service Charge</td>
+													<td class="title">Service Charge [ {{item.CalcOriginalTotalAdditionsPercent}}% ]</td>
 													<td class="text-right"><span>{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
-													<td class="title">{{'erp.app.pages.pos.pos-order.total-discount-from-saleman' | translate}}</td>
+													<td class="title">{{'erp.app.pages.pos.pos-order.total-discount-from-saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr >
@@ -501,4 +501,84 @@
 			</section>
 		</div>
 	</div>
+
+	<!-- Kitchen Dishes Printing -->
+	<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
+		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}; let idx = index">
+			<div [id]="'bill-item-each-'+o.IDItem" class="bill" style="overflow: auto; width: 72mm;">
+				<div class="receipt giao-nhan" style="overflow: auto;">
+					<section class="sheet rpt p1">
+						<table>
+							<thead>
+								<tr>
+									<td>
+										<!-- <div class="page-header-space"></div> -->
+									</td>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+										<div >
+											<div class="items">
+												<table>
+													<tr>
+														<td class="title table-name-bill" colspan="2">
+															<ion-text class="bold ">{{'erp.app.pages.pos.pos-order.table' | translate}}: </ion-text>
+															<ng-container *ngFor="let t of printData.selectedTables">
+																<ion-text class="bold">{{t.Name}};</ion-text>
+															</ng-container>
+														</td>
+													</tr>
+												</table>
+												<table>
+													<tr class="bold">
+														<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
+														<td class="total">{{'erp.app.pages.pos.pos-order.quantity' |
+															translate}}</td>
+													</tr>
+													<ng-container>
+														<tr>
+															<td>
+																{{idx + 1}}. <span>{{o._item?.Name}}</span>
+															</td>
+															<td class="total"><span
+																	class="bold quantity">{{o._undeliveredQuantity}}</span>
+															</td>
+														</tr>
+														<tr *ngIf="o.Remark">
+															<td colspan="2">
+																Note: {{o.Remark}}
+															</td>
+														</tr>
+													</ng-container>
+												</table>
+											</div>
+											<div style="border-bottom: none;" class="table-info"
+												*ngIf="kitchenQuery!='all'">
+												<table>
+													<tr>
+														<td class="title">{{'erp.app.pages.pos.pos-order.print-date' |
+															translate}}</td>
+														<td class="text-right"><span>{{printData.printDate}}</span></td>
+													</tr>
+												</table>
+											</div>
+										</div>
+									</td>
+								</tr>
+							</tbody>
+							<tfoot>
+								<tr>
+									<td>
+										<div class="page-footer-space"></div>
+									</td>
+								</tr>
+							</tfoot>
+						</table>
+					</section>
+				</div>
+			</div>
+		</ng-container>
+	</ng-container>
 </ion-content>
