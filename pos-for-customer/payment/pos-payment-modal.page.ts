@@ -203,6 +203,12 @@ export class POSForCustomerPaymentModalPage extends PageBase {
             case 'CC':
                 code = "Thẻ Visa,Master"
                 break;
+            case 'Card':
+                code = "Cà thẻ"
+                break;
+            case 'Transfer':
+                code = "Chuyển khoản"
+                break;
             default:
                 code = "Tiền mặt"
                 break;

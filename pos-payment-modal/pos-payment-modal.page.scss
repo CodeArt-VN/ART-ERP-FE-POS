@@ -71,13 +71,11 @@ ion-card-content{
         max-width: 25px !important;
         min-width: 25px !important;
     }
-    .col-code {
-        max-width: 130px !important;
-        min-width: 130px !important;
-    }
     .col-type {
-        max-width: 105px !important;
-        min-width: 105px !important;
+        padding-left: 0px;
+        text-align: left;
+        max-width: 120px !important;
+        min-width: 120px !important;
     }
     .col-money {
         max-width: 115px !important;
@@ -91,6 +89,14 @@ ion-card-content{
         min-width: 95px;
         max-width: 95px;
     }  
+    .col-remark {
+        justify-content: right !important;
+        max-width: 120px !important;
+        min-width: 120px !important;
+        padding-left: 10px;
+        float: right;
+        text-align: right;
+    }
 }
 
 .header-box {
