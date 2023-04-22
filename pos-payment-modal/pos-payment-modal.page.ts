@@ -161,17 +161,13 @@ export class POSPaymentModalPage extends PageBase {
 
         if (this.printData.undeliveredItems.length > 0) {
             this.env.showPrompt('Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục hoàn tất?', null, 'Thông báo').then(_ => {
-                this.item.OrderLines.forEach(e => {
-                    e.ShippedQuantity = e.Quantity;
-                    e.ReturnedQuantity =  e.Quantity - e.ShippedQuantity;
-                    e._undeliveredQuantity =  e.Quantity - e.ShippedQuantity;
-                });
+                
                 this.printData.undeliveredItems = []; //<-- clear;
-                return this.modalController.dismiss(this.item, 'Done', 'POSPaymentModalPage');
+                return this.modalController.dismiss({SetShippedQuantity: true, SetDone: true}, 'confirm', 'POSPaymentModalPage');
             }).catch(_ => { });
         }
         else {
-            return this.modalController.dismiss(this.item, 'Done', 'POSPaymentModalPage');
+            return this.modalController.dismiss({SetShippedQuantity: false, SetDone: true}, 'confirm', 'POSPaymentModalPage');
         }
     }
 
