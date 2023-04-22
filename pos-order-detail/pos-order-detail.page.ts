@@ -703,7 +703,7 @@ export class POSOrderDetailPage extends PageBase {
         let newKitchenList = [];
 
         this.printerTerminalProvider.search({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).toPromise().then(async (results: any) => {
-            this.printerProvider.search({Id: (results[0].IDPrinter || 0 )}).toPromise().then(async (defaultPrinter: any) => {
+            this.printerProvider.search({Id: (results[0]?.IDPrinter || 0 )}).toPromise().then(async (defaultPrinter: any) => {
                 if (defaultPrinter && defaultPrinter.length != 0) {
                     defaultPrinter.forEach((p: any) => {
                         let Info = {
