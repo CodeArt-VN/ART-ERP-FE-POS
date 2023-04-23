@@ -421,6 +421,9 @@ export class POSOrderDetailPage extends PageBase {
 
             this.setOrderValue(changed);
         }
+        else {
+            this.refresh();
+        }
     }
     InvoiceRequired() {
         if (this.pageConfig.canEdit == false) {
