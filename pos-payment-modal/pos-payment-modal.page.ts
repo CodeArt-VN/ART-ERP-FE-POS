@@ -90,7 +90,9 @@ export class POSPaymentModalPage extends PageBase {
             }
         });    
         this.PaidAmounted = PaidAmounted;
-        this.DebtAmount = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.PaidAmounted;    
+        this.DebtAmount = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.PaidAmounted;
+        this.item.Received = PaidAmounted;
+        this.item.Debt = this.DebtAmount;
     }
     getStatus(i,id){
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
