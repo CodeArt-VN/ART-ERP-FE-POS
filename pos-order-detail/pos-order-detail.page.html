@@ -485,14 +485,10 @@
 										</div>
 										<ng-container *ngIf="item.Status == 'Done'">
 											<div class="table-info-top">
-												<table>		
+												<table>											
 													<tr>
-														<td class="title bold">Type</td>
-														<td class="text-right bold"><span>Amount</span></td>
-													</tr>										
-													<tr *ngFor="let p of paymentList">
-														<td class="title">{{p.IncomingPayment.TypeText}}</td>
-														<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>
+														<td class="title">Deposit:</td>
+														<td class="text-right"><span>{{sumDeposit | number: '1.0-0'}}</span></td>
 													</tr>
 												</table>
 											</div>											
