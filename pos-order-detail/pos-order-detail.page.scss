@@ -522,7 +522,7 @@
 }
 
 .bill {
-	display: none;
+	display: block;
 	color: #000;
 	overflow: hidden !important;
 
@@ -790,4 +790,13 @@
 
 .table-name-bill {
 	font-size: 16px;
+}
+
+.table-info-top {
+	td {
+		padding-top: 5px;
+	}
+	.small {
+		font-size: smaller !important;
+	}
 }
