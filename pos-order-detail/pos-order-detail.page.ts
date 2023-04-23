@@ -43,7 +43,6 @@ export class POSOrderDetailPage extends PageBase {
     kitchenQuery = 'all';
     OrderAdditionTypeList = [];
     OrderDeductionTypeList = [];
-    sumDeposit = 0;
 
     printData = {
         undeliveredItems: [], //To track undelivered items to the kitchen
@@ -1618,15 +1617,11 @@ export class POSOrderDetailPage extends PageBase {
                     this.paymentList.forEach(e => {
                         e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentType, 'Name', '--', 'Code');
                     });
-<<<<<<< HEAD
                     this.item.Received = this.paymentList?.filter(x => x.IncomingPayment.Status == 'Success').map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
                     this.item.Debt = this.item.CalcTotalOriginal -this.item.Received;
                     if (this.item.Debt > 0) {
                         this.item.IsDebt = true;
                     }
-=======
-                    this.sumDeposit = this.paymentList?.map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
->>>>>>> origin/main
                 })
                 .catch(err => {
                     reject(err);
