@@ -122,6 +122,16 @@
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
 							</ion-text> 
 						</label>
+						<label class="c-label total" *ngIf="item.Received > 0">Đã nhận
+							<ion-text class="c-value total">
+								{{item.Received | number: '1.0-0'}}
+							</ion-text> 
+						</label>
+						<label class="c-label total" *ngIf="item.Debt > 0">Còn nợ
+							<ion-text class="c-value total">
+								{{item.Debt | number: '1.0-0'}}
+							</ion-text> 
+						</label>
 
 						<span class="c-label" style="margin-top: 15px;" *ngIf="item?.OrderLines?.length > 0">
 							<label class="InvoiceOptions">
@@ -485,10 +495,14 @@
 										</div>
 										<ng-container *ngIf="item.Status == 'Done'">
 											<div class="table-info-top">
-												<table>											
+												<table>
 													<tr>
 														<td class="title">Deposit:</td>
 														<td class="text-right"><span>{{item.Received | number: '1.0-0'}}</span></td>
+													</tr>
+													<tr *ngIf="item.Debt > 0">
+														<td class="title">Debt:</td>
+														<td class="text-right"><span>{{item.Debt | number: '1.0-0'}}</span></td>
 													</tr>
 												</table>
 											</div>											
