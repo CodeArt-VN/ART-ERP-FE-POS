@@ -378,23 +378,23 @@
 									</div>
 									<div class="items" *ngIf="kitchenQuery=='all'">
 										<table>
-											<tr class="bold">
+											<tr class="bold small">
 												<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
+												<td>Price</td>
+												<td>Qty</td>
 												<td class="text-right">Discount</td>
 												<td class="text-right">{{'erp.app.pages.pos.pos-order.amount' | translate}}</td>
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
-												<tr>
-													<td colspan="3" class="name">
+												<tr class="small">
+													<td colspan="5" class="name">
 														<div>{{o._item?.Name}}</div>
 													</td>
 												</tr>
-												<tr>
-													<td>
-														<div>
-															<span class="od-price">{{o.UoMPrice | number: '1.0-0'}} </span> x <span class="quantity"> {{o.Quantity}}</span>
-														</div>
-													</td>
+												<tr class="small">
+													<td>&#8203;</td>
+													<td class="od-price total"><span>{{o.UoMPrice | number: '1.0-0'}}</span></td>
+													<td class="quantity total"><span>{{o.Quantity}}</span></td>
 													<td class="total"><span>{{o.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
 													<td class="total"><span>{{o.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
 												</tr>
@@ -437,31 +437,50 @@
 										<div class="table-info-top">
 											<table>
 												<tr>
-													<td class="title">{{'erp.app.pages.pos.pos-order.total-before-discount' | translate}}</td>
+													<td class="title">TOTAL</td>
 													<td class="text-right"><span>{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
 													<td class="title">Discount [ {{item.OriginalTotalDiscountPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
 												</tr>
+											</table>
+										</div>
+										<div class="table-info-top">
+											<table>
 												<tr>
-													<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
-													<td class="text-right"><span>{{item.OriginalTax | number: '1.0-0'}}</span></td>
+													<td class="title">Discounted Amount</td>
+													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
 													<td class="title">Service Charge [ {{item.CalcOriginalTotalAdditionsPercent}}% ]</td>
 													<td class="text-right"><span>{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span></td>
 												</tr>
+											</table>
+										</div>
+										<div class="table-info-top">
+											<table>
+												<tr>
+													<td class="title">Base VAT Amount</td>
+													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount + item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span></td>
+												</tr>
+												<tr>
+													<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
+													<td class="text-right"><span>{{item.OriginalTax | number: '1.0-0'}}</span></td>
+												</tr>
+											</table>
+										</div>
+
+										<div class="table-info-top">
+											<table>
 												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
 													<td class="title">{{'erp.app.pages.pos.pos-order.total-discount-from-saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
-												<tr >
+												<tr>
 													<td class="title bold">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</td>
 													<td class="text-right bold"><span>{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
-												
-												
 											</table>
 										</div>
 										<ng-container *ngIf="item.Status == 'Done'">
