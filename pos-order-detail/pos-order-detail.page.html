@@ -122,13 +122,13 @@
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
 							</ion-text> 
 						</label>
-						<label class="c-label total" *ngIf="item.Received > 0">Đã nhận
-							<ion-text class="c-value total">
+						<label class="c-label" *ngIf="item.Received > 0">Đã thanh toán
+							<ion-text class="c-value" color="dark">
 								{{item.Received | number: '1.0-0'}}
 							</ion-text> 
 						</label>
-						<label class="c-label total" *ngIf="item.Debt > 0">Còn nợ
-							<ion-text class="c-value total">
+						<label class="c-label" *ngIf="item.Debt > 0">Còn lại
+							<ion-text class="c-value" color="dark">
 								{{item.Debt | number: '1.0-0'}}
 							</ion-text> 
 						</label>

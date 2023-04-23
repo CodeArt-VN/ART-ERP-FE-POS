@@ -91,6 +91,13 @@ export class POSCustomerOrderPage extends PageBase {
         Object.assign(this.query, {IDTable: this.idTable});
     }
     ngOnInit() {
+        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
+			switch (data.Code) {
+				case 'app:POSOrderPaymentUpdate':
+					this.refresh();
+					break;
+            }
+        });
         this.pageConfig.subscribePOSOrderCustomer = this.env.getEvents().subscribe((data) => {         
 			switch (data.Code) {
 				case 'app:POSOrderFromStaff':
@@ -106,6 +113,7 @@ export class POSCustomerOrderPage extends PageBase {
         }
     }
     ngOnDestroy() {
+        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
         this.pageConfig?.subscribePOSOrderCustomer?.unsubscribe(); 
         super.ngOnDestroy();
     }
@@ -541,7 +549,8 @@ export class POSCustomerOrderPage extends PageBase {
             this.item.CalcTotalOriginal += line.CalcTotalOriginal ;    
             this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman; 
             this.item._OriginalTotalAfterDiscountFromSalesman += line._OriginalTotalAfterDiscountFromSalesman;
-        }     
+        }
+        this.item.Debt = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received;  
     }
     loadInfoOrder(){
         for (let line of this.item.OrderLines) {

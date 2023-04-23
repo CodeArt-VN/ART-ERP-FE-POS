@@ -152,7 +152,13 @@ export class POSOrderDetailPage extends PageBase {
 
     }
     ngOnInit() {
-
+        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
+			switch (data.Code) {
+				case 'app:POSOrderPaymentUpdate':
+                    this.getPayments();
+					break;
+            }
+        });
         this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
             switch (data.Code) {
                 case 'app:POSOrderFromCustomer':
@@ -169,6 +175,7 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
     ngOnDestroy() {
+        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
         this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
         super.ngOnDestroy();
     }
@@ -919,6 +926,7 @@ export class POSOrderDetailPage extends PageBase {
         this.item.OriginalTaxPercent = ((this.item.OriginalTax / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
         this.item.CalcOriginalTotalAdditionsPercent = ((this.item.CalcOriginalTotalAdditions / this.item.OriginalTotalAfterTax) * 100.0).toFixed(0);
         this.item.OriginalDiscountFromSalesmanPercent = ((this.item.OriginalDiscountFromSalesman / this.item.CalcTotalOriginal) * 100.0).toFixed(0);
+        this.item.Debt = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received;
     }
 
 
@@ -1598,20 +1606,8 @@ export class POSOrderDetailPage extends PageBase {
         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark, OriginalDiscountFromSalesman: OriginalDiscountFromSalesman }] });
     }
     private getPayments() {
-        let apiPath = {
-            method: "GET",
-            url: function () { return ApiSetting.apiDomain("BANK/IncomingPaymentDetail") }
-        };
         return new Promise((resolve, reject) => {
-            let query = {
-                IDBranch: this.item.IDBranch,
-                IDSaleOrder: this.item.Id,
-                IsDeleted: false,
-                Keyword: '',
-                Take: 100,
-                Skip: 0,
-            }
-            this.commonService.connect(apiPath.method, apiPath.url(), query).toPromise()
+            this.commonService.connect('GET', 'BANK/IncomingPaymentDetail', {IDSaleOrder: this.item.Id}).toPromise()
                 .then((result: any) => {
                     this.paymentList = result.filter(p => p.IncomingPayment.Status == "Success");
                     this.paymentList.forEach(e => {
