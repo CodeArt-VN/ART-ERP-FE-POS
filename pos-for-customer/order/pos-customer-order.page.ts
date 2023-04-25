@@ -89,8 +89,17 @@ export class POSCustomerOrderPage extends PageBase {
             ReceivedDiscountFromSalesman: new FormControl({ value: null, disabled: true }),
         })
         Object.assign(this.query, {IDTable: this.idTable});
+        this.env.getStorage("Order").then(result=>{
+            if(result?.Id && result?.IDTable == this.idTable && result.Status=="New"){   
+                this.id = result.Id;           
+                let newURL = '#/pos-customer-order/' + result.Id + '/' + this.idTable;
+                history.pushState({}, null, newURL);
+                this.refresh();
+            }                
+        });
     }
     ngOnInit() {
+        
         this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
 			switch (data.Code) {
 				case 'app:POSOrderPaymentUpdate':
@@ -106,10 +115,12 @@ export class POSCustomerOrderPage extends PageBase {
             }
         });
         super.ngOnInit();
+        
     }
     private notify(data){
         if(this.item.Id == data.id){
             this.refresh();
+            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
         }
     }
     ngOnDestroy() {
@@ -121,6 +132,8 @@ export class POSCustomerOrderPage extends PageBase {
         this.segmentView = ev;
     }
     preLoadData(event?: any): void {
+        
+
         let forceReload = event === 'force';
         this.AllowSendOrder = false;      
         Promise.all([         
@@ -169,6 +182,7 @@ export class POSCustomerOrderPage extends PageBase {
             });
         }   
         else {
+            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
             this.patchOrderValue();
         }       
         
@@ -520,9 +534,8 @@ export class POSCustomerOrderPage extends PageBase {
                 history.pushState({}, null, newURL);
             }
 
-            this.item = savedItem;
-            //this.env.setStorage("IDOrder",{Id:this.item.Id});
-            //this.env.setStorage("IDOrders",{Id:this.item.Id,Status:this.item.Status});
+            this.item = savedItem;         
+            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
         }      
         this.loadedData();
         this.submitAttempt = false;
