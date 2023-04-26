@@ -1,7 +1,7 @@
 <ion-header>
 	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
 		<span class="hide-small" title>{{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}</span>
-		<span class="hide-small ion-margin-start"  title>Số khách: {{numberOfGuestCounter}}</span>
+		<span class="hide-small ion-margin-start" title>Số khách: {{numberOfGuestCounter}}</span>
 		<ion-buttons slot="end">
 			<ion-button color="warning" title="{{'erp.app.pages.pos.pos-order.change.change-button' | translate}}" (click)="changeTable($event)">
 				<ion-icon slot="icon-only" name="git-compare">
@@ -33,13 +33,13 @@
 	</ion-toolbar>
 	<div class="so-rows">
 		<ion-toolbar class="no-padding ">
-			<ion-searchbar class="search-box" [(ngModel)]="query.Id" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'erp.app.pages.pos.pos-order.search-placeholder' | translate}}"></ion-searchbar>
-			
-			  <ion-buttons slot="primary">
+			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'erp.app.pages.pos.pos-order.search-placeholder' | translate}}"></ion-searchbar>
+
+			<ion-buttons slot="primary">
 				<ion-button (click)="filter()" title="Ản/Hiện đơn đã xong">
 					<ion-icon slot="icon-only" [name]="query.Status == ''? 'bookmarks-outline':'bookmark-outline'"></ion-icon>
-				  </ion-button>
-			  </ion-buttons>
+				</ion-button>
+			</ion-buttons>
 		</ion-toolbar>
 	</div>
 
@@ -60,26 +60,88 @@
 						</ion-col>
 					</ion-row>
 					<ion-row class="table-holder">
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': t._Order}" *ngFor="let t of g.TableList">
-							<!-- <span class="tag left" *ngIf="t._Order">
+						<ion-col class="shadow table-item" [ngClass]="{'in-serve': t._Orders?.length}" *ngFor="let t of g.TableList">
+							<!-- <span class="tag left" *ngIf="t._Orders">
 								<ion-text class="tag-content">
-									<ion-icon size="medium" color="primary" name="person"></ion-icon> <sup class="number-guest">{{t._Order.NumberOfGuests}}</sup>
+									<ion-icon size="medium" color="primary" name="person"></ion-icon> <sup class="number-guest">{{t._Orders[0].NumberOfGuests}}</sup>
 								</ion-text>
 							</span> -->
-							<span class="tag right" *ngIf="t._Order">
-								<ion-text class="tag-content" [color]="t._Order._Status.Color">
-									{{t._Order.OrderDate | date: 'HH:mm'}}
+							<span class="tag right" *ngIf="t._Orders?.length == 1">
+								<ion-text class="tag-content" [color]="t._Orders[0]._Status.Color">
+									{{t._Orders[0].OrderDate | date: 'HH:mm'}}
 								</ion-text>
 							</span>
-							<a routerDirection="back"  [routerLink]="['/'+pageConfig.pageName+'/'+(t._Order?.Id || 0)+'/'+t.Id]">
-								
+							<span class="tag right" *ngIf="t._Orders?.length > 1">
+								<ion-text class="tag-content" color="danger">
+									{{t._Orders?.length}}
+								</ion-text>
+							</span>
+
+							<a routerDirection="back" *ngIf="!t._Orders || t._Orders?.length < 2" [routerLink]="['/'+pageConfig.pageName+'/'+((t._Orders && t._Orders[0]?.Id) || 0)+'/'+t.Id]">
 								<span class="table-name">{{t.Name}}</span>
-								<span class="table-status" *ngIf="t._Order">
-									<ion-text [color]="t._Order._Status.Color" [title]="t._Order._Status.Name">
-										#{{t._Order.Id}} - {{t._Order._Status.Name}}
+								<span class="table-status" *ngIf="t._Orders?.length == 1">
+									<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name">
+										#{{t._Orders[0].Id}} - {{t._Orders[0]._Status.Name}}
 									</ion-text>
 								</span>
 							</a>
+
+							<a [id]="'popover-button-'+t.Id" *ngIf="t._Orders?.length > 1">
+								<span class="table-name">{{t.Name}}</span>
+							</a>
+
+
+							<ion-popover [trigger]="'popover-button-'+t.Id" [dismissOnSelect]="true" [backdropDismiss]="true" *ngIf="t._Orders?.length > 1">
+								<ng-template>
+									<ion-content>
+										<ion-list>
+											<ion-list-header>
+												<ion-label>Bàn {{t.Name}}</ion-label>
+											</ion-list-header>
+											<ion-item [button]="true" [detail]="false" routerDirection="forward" [routerLink]="['/'+pageConfig.pageName+'/0/'+t.Id]" (click)="$event.stopPropagation(); this.popoverCtrl.dismiss();">
+												<ion-icon color="success" slot="icon-only" name="add-outline" slot="end"></ion-icon>
+												<ion-text color="success">Thêm đơn mới</ion-text>
+											</ion-item>
+
+											<ng-container *ngFor="let od of t._Orders">
+												<ion-item >
+													<ion-icon color="primary" slot="icon-only" name="ellipsis-vertical" slot="end" [id]="'nested-trigger-'+od.Id"></ion-icon>
+													<ion-label>
+														<a routerDirection="forward" [routerLink]="['/'+pageConfig.pageName+'/'+od.Id+'/'+t.Id]" (click)="$event.stopPropagation(); this.popoverCtrl.dismiss();">
+															<h3>#{{od.Id}}</h3>
+															<p>
+																<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name">
+																	{{od.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}} - {{od._Status.Name}}
+																</ion-text>
+															</p>
+														</a>
+													</ion-label>
+												</ion-item>
+												<ion-popover [trigger]="'nested-trigger-'+od.Id" [dismissOnSelect]="true" side="end">
+													<ng-template>
+														<ion-content>
+															<ion-list>
+																<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();">
+																	Chuyển bàn
+																	<ion-icon color="warning" slot="icon-only" name="git-compare" slot="start"></ion-icon>
+																</ion-item>
+																<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();">
+																	Chia đơn
+																	<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
+																</ion-item>
+															</ion-list>
+														</ion-content>
+													</ng-template>
+												</ion-popover>
+											</ng-container>
+										</ion-list>
+									</ion-content>
+								</ng-template>
+							</ion-popover>
+
+
+
+
 						</ion-col>
 					</ion-row>
 				</ng-container>
@@ -106,8 +168,8 @@
 								<div class="col-id cell">
 									{{i.Id}}
 								</div>
-								<div class="col-guest cell">					
-									 <ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup> 
+								<div class="col-guest cell">
+									<ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
 								</div>
 								<div class="col-code cell">
 									<span *ngFor="let t of i._Tables">{{t.Name}}</span>

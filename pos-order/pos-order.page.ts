@@ -125,7 +125,6 @@ export class POSOrderPage extends PageBase {
             o._Locked = this.noLockStatusList.indexOf(o.Status) == -1;
             o._Status = this.soStatusList.find(d => d.Code == o.Status);
             o._Tables = [];
-
             if (!o._Locked) {
                 this.orderCounter++ ;
                 this.numberOfGuestCounter = this.numberOfGuestCounter + o.NumberOfGuests;
@@ -145,23 +144,28 @@ export class POSOrderPage extends PageBase {
         for (let g of this.tableGroupList) {
             for (let t of g.TableList) {
                 if (!o && !tid)
-                    t._Order = null;
+                    t._Orders = [];
 
                 if (t.Id == tid) {
                     o._Tables.push(t);
 
-                    if (!o._Locked)
-                        t._Order = {
+                    if (!o._Locked) {
+                        let order = {
                             _Status: o._Status,
                             Id: o.Id,
                             OrderDate: o.OrderDate,
                             NumberOfGuests: o.NumberOfGuests,
-                        }
-
+                            CalcTotalOriginal: o.CalcTotalOriginal,
+                            Order: o
+                        };
+                        t._Orders.push(order);
+                    }
                 }
             };
         };
     }
+
+    // nav('/pos-order/'+od.Id+'/'+t.Id,'back')
 
     filter(type = null) {
         
