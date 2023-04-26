@@ -81,7 +81,7 @@ export class POSPaymentModalPage extends PageBase {
         this.items.forEach(e => {
             e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd')+"_"+e.IncomingPayment.Id;
             e.IncomingPayment.CreatedDateText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'dd/mm/yyyy');
-            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM:ss');
+            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM');
             e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusText = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusColor = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Color', 'dark', 'Code');

@@ -42,7 +42,7 @@
                                     <div class="col-type cell"  style="display: block !important;">
                                         {{i.IncomingPayment.TypeText}}
                                         <div class="clickable" (click)="toDetail(i.IncomingPayment.Code)">
-                                            <ion-text color="primary">{{i.IncomingPayment.CreatedDateText}}</ion-text> <small *ngIf="i.CreatedTimeText != '00:00' ">{{i.IncomingPayment.CreatedTimeText}}</small>                                         
+                                            <small><ion-text color="primary">{{i.IncomingPayment.CreatedDateText}}</ion-text></small> <small *ngIf="i.CreatedTimeText != '00:00' ">{{i.IncomingPayment.CreatedTimeText}}</small>                                         
                                         </div>
                                     </div>                                
                                     <div class="col-status cell">
