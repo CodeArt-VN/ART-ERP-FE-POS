@@ -82,6 +82,8 @@ export class POSCustomerOrderPage extends PageBase {
             InvoicDate: new FormControl({ value: null, disabled: true }),
             InvoiceNumber: new FormControl({ value: null, disabled: true }),
 
+            CalcTotalOriginal: [0],
+
             IsDebt: new FormControl({ value: null, disabled: true }),
             Debt: new FormControl({ value: null, disabled: true }),
             IsPaymentReceived: new FormControl({ value: null, disabled: true }),
@@ -458,6 +460,7 @@ export class POSCustomerOrderPage extends PageBase {
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
+                this.formGroup.controls.CalcTotalOriginal.markAsDirty();
 
                 for (const line of data[c]) {
                     let idx = -1;
@@ -509,6 +512,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.calcOrder();      
     }
     sendOrder(){
+        this.formGroup?.patchValue(this.item);
         this.saveChange();    
         this.AllowSendOrder = false;             
     }
