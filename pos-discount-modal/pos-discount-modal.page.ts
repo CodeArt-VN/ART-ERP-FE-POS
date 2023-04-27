@@ -26,9 +26,7 @@ export class POSDiscountModalPage extends PageBase {
     }
     loadData(event) {
         this.Discount.Amount = this.item.OriginalTotalDiscount;
-        this.Discount.Percent = this.Discount.Amount *100 / this.item.OriginalTotalBeforeDiscount;    
-        console.log(this.item); 
-
+        this.Discount.Percent = this.Discount.Amount *100 / this.item.OriginalTotalBeforeDiscount;
     }
     changePercentDiscount() { //SalesOff
         this.Discount.Amount = this.Discount.Percent * this.item.OriginalTotalBeforeDiscount / 100 

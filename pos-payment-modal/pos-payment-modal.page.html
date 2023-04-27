@@ -2,7 +2,7 @@
     <ion-toolbar> 
         <ion-title>Đơn hàng #{{item.Id}}</ion-title>
         <ion-buttons slot="primary">
-            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="primary" (click)="refresh()">
+            <ion-button title="{{'erp.app.components.detail-toolbar.refresh' | translate}}" color="primary" (click)="refresh()">
                 <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
             </ion-button>
             <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="closeModal()">
@@ -17,8 +17,8 @@
         <ion-grid fixed style="max-width: 500px;">
             <ion-row>
                 <ion-col size="12" class="ion-text-center">
-                    <ion-text >Tổng Tiền Phải Thanh Toán</ion-text>
-                    <ion-text color="primary"><b><h5>{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}} đ</h5></b></ion-text>
+                    <ion-text >Tổng Tiền Đã Thanh Toán</ion-text>
+                    <ion-text color="primary"><b><h5>{{PaidAmounted | number: '1.0-0'}} đ</h5></b></ion-text>
                 </ion-col>
 
                 <ion-col size="12" *ngIf="items.length>0">
@@ -26,29 +26,29 @@
                         <div class="c-label header-title-payment ion-text-center"><ion-text color="primary">Các lần thanh toán</ion-text></div>
                         <div class="table-contain">
                             <section class="table">
-                                <header class="bold">   
-                                    <div class="col-id cell">#</div>                                                            
-                                    <div class="col-type cell" style="padding-left: 0px;">Hình thức</div>                              
+                                <header class="bold">                                                                                                  
+                                    <div class="col-type cell">Hình thức</div>                              
                                     <div class="col-status cell">Trạng thái</div>                                  
                                     <div class="col-money cell" style="padding-right: 0px;">Số tiền</div>   
                                     <div class="col-remark cell" style="padding-right: 0px;">Ghi chú</div>                                                                      
                                 </header>
-                                <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">
-                                    <div class="col-id">
-                                        <span title="kiểm tra" *ngIf="i.IncomingPayment.Status=='Processing' && i.IncomingPayment.Type !='Cash'" (click)="getStatus(idx,i.IncomingPayment.Id)">
-                                            <ion-icon style="pointer-events:none ;font-size: 15pt;" color="primary" name="refresh-circle-outline" ></ion-icon>
-                                        </span>                               
-                                    </div>
+                                <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">                                  
                                     <div class="col-type cell"  style="display: block !important;">
                                         {{i.IncomingPayment.TypeText}}
-                                        <div class="clickable" (click)="toDetail(i.IncomingPayment.Code)">
-                                            <small><ion-text color="primary">{{i.IncomingPayment.CreatedDateText}}</ion-text></small> <small *ngIf="i.CreatedTimeText != '00:00' ">{{i.IncomingPayment.CreatedTimeText}}</small>                                         
+                                        <div class="clickable" (click)="toDetail(i.IncomingPayment.Code)"><small style="margin-left: 0px;"><ion-text color="primary">{{i.IncomingPayment.PaymentCode}}</ion-text></small></div>
+                                        <div>
+                                            <small style="margin-left: 0px;" ><ion-text>{{i.IncomingPayment.CreatedDateText}}</ion-text></small> <small *ngIf="i.CreatedTimeText != '00:00' ">{{i.IncomingPayment.CreatedTimeText}}</small>                                         
                                         </div>
                                     </div>                                
                                     <div class="col-status cell">
-                                        <span class="bar-holder">
-                                            <ion-text class="bar-title" [color]="i.IncomingPayment.StatusColor">{{i.IncomingPayment.StatusText}}</ion-text>
-                                            <span class="bar" [ngClass]="{active: s.Code==i.IncomingPayment.Status}" [ngStyle]="{'background-color': 'var(--ion-color-'+s.Color+')'}" *ngFor="let s of statusList" [title]="s.Name"></span>        
+                                        <span class="bar-holder">                         
+                                            <ion-text class="bar-title" [color]="i.IncomingPayment.StatusColor">{{i.IncomingPayment.StatusText}}</ion-text>                                           
+                                            <ng-container *ngIf="i.IncomingPayment.Status!='Processing'">
+                                                <span  class="bar" [ngClass]="{active: s.Code==i.IncomingPayment.Status}" [ngStyle]="{'background-color': 'var(--ion-color-'+s.Color+')'}" *ngFor="let s of statusList" [title]="s.Name"></span>
+                                            </ng-container>   
+                                            <span *ngIf="i.IncomingPayment.Status=='Processing'" (click)="getStatus(idx,i.IncomingPayment.Id)">
+                                                <small class="clickable"><ion-text color="primary" >kiểm tra</ion-text></small>
+                                            </span>     
                                         </span>  
                                     </div>
                                     
@@ -64,8 +64,7 @@
                         </div>
                     </div>
                 </ion-col>
-                <ion-col size="12">
-                      
+                <!-- <ion-col size="12">                  
                     <ion-item lines="none" class="item-row">  
                         <ion-text slot="start">Đã thanh toán</ion-text>                                                                                                                                 
                         <ion-label slot="end" color="primary">{{PaidAmounted | number: '1.0-0'}} đ</ion-label>
@@ -80,13 +79,13 @@
                     <div *ngIf="item.Status != 'Done' && item.Status != 'Cancelled'" class="c-control ion-text-center">                          
                         <ion-button color="danger" (click)="doneOrder()" expand="block">Hoàn tất</ion-button>                                                         
                     </div>               
-                </ion-col>
+                </ion-col> -->
             </ion-row>
             <ion-row class="hr-group remove-padding">
                 
             </ion-row>
-            <ion-row class="sticky-btn">                                     
-            </ion-row>
+            <!-- <ion-row class="sticky-btn">                                     
+            </ion-row> -->
         </ion-grid>
     </div>
 </ion-content>
