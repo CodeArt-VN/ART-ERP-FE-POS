@@ -28,18 +28,18 @@ export class POSVoucherModalPage  extends PageBase {
     this.VoucherDiscountAmount = this.item.OriginalDiscount1;
   }
   changeVoucher(){
-    this.voucherProvider.read({Code:this.VoucherCode}).then(result=>{
-      this.Program = result['data'][0];         
-    }).catch(err=>{});
+    // this.voucherProvider.read({Code:this.VoucherCode}).then(result=>{
+    //   this.Program = result['data'][0];         
+    // }).catch(err=>{});
     
   }
   applyVoucher(apply = false){
     
-    if(this.Program.MinOrderValue > this.item.OriginalTotalBeforeDiscount){
-      this.env.showMessage("đơn hàng của bạn chưa đủ điều kiện áp dụng mã voucher này","warning");
-      return;
-    }
-    this.item.OriginalDiscount1 = this.Program.Value;
-    return this.modalController.dismiss(this.item, (apply ? 'confirm' : 'cancel'));
+    // if(this.Program.MinOrderValue > this.item.OriginalTotalBeforeDiscount){
+    //   this.env.showMessage("đơn hàng của bạn chưa đủ điều kiện áp dụng mã voucher này","warning");
+    //   return;
+    // }
+    // this.item.OriginalDiscount1 = this.Program.Value;
+    // return this.modalController.dismiss(this.item, (apply ? 'confirm' : 'cancel'));
   }
 }
