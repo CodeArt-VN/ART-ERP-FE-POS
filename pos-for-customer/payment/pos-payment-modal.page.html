@@ -27,22 +27,19 @@
                         <div class="table-contain">
                             <section class="table">
                                 <header class="bold">   
-                                    <div class="col-id cell">#</div>                                                             
-                                    <div class="col-type cell" style="padding-left: 0px;">Hình thức</div>                              
+                                                                                            
+                                    <div class="col-type cell">Hình thức</div>                              
                                     <div class="col-status cell">Trạng thái</div>                                  
                                     <div class="col-money cell" style="padding-right: 0px;">Số tiền</div> 
                                     <div class="col-remark cell" style="padding-right: 0px;">Ghi chú</div>                                                                      
                                 </header>
                                 <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">
-                                    <div class="col-id">
-                                        <!-- <span title="kiểm tra" *ngIf="i.IncomingPayment.Status=='Processing' && i.IncomingPayment.Type !='Cash'" (click)="getStatus(idx,i.IncomingPayment.Id)">
-                                            <ion-icon style="pointer-events:none ;font-size: 15pt;" color="primary" name="refresh-circle-outline" ></ion-icon>
-                                        </span>                                -->
-                                    </div>                                   
+                                                                     
                                     <div class="col-type cell" style="display: block;">
                                         {{i.IncomingPayment.TypeText}}
-                                        <div class="clickable" (click)="toDetail(i.IncomingPayment.Code)">
-                                            <small><ion-text color="primary">{{i.IncomingPayment.CreatedDateText}}</ion-text></small> <small *ngIf="i.CreatedTimeText != '00:00' ">{{i.IncomingPayment.CreatedTimeText}}</small>
+                                        <div class="clickable" (click)="toDetail(i.IncomingPayment.Code)"><small style="margin-left: 0px;"><ion-text color="primary">{{i.IncomingPayment.PaymentCode}}</ion-text></small></div>
+                                        <div >
+                                            <small style="margin-left: 0px;"><ion-text color="primary">{{i.IncomingPayment.CreatedDateText}}</ion-text></small> <small *ngIf="i.CreatedTimeText != '00:00' ">{{i.IncomingPayment.CreatedTimeText}}</small>
                                         </div>
                                     </div>                                
                                     <div class="col-status cell">
