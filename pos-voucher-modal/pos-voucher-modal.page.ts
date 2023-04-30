@@ -1,10 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { LoadingController, ModalController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { EnvService } from 'src/app/services/core/env.service';
 import { PR_ProgramProvider, SALE_OrderDeductionProvider } from 'src/app/services/static/services.service';
-
-
 
 @Component({
   selector: 'app-pos-voucher-modal',
