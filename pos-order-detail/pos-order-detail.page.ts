@@ -3,7 +3,7 @@ import { NavController, LoadingController, AlertController, ModalController, Pop
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { CRM_ContactProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, POS_TerminalProvider, SALE_OrderProvider, SYS_ConfigProvider, SYS_PrinterProvider, } from 'src/app/services/static/services.service';
+import { CRM_ContactProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, POS_TerminalProvider, SALE_OrderDeductionProvider, SALE_OrderProvider, SYS_ConfigProvider, SYS_PrinterProvider, } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
@@ -53,6 +53,7 @@ export class POSOrderDetailPage extends PageBase {
 
     constructor(
         public pageProvider: SALE_OrderProvider,
+        public deductionProvider:SALE_OrderDeductionProvider,
         public menuProvider: POS_MenuProvider,
         public tableGroupProvider: POS_TableGroupProvider,
         public tableProvider: POS_TableProvider,
@@ -393,7 +394,9 @@ export class POSOrderDetailPage extends PageBase {
         });
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
-        this.item = data;
+        if(data){
+            this.item = data;
+        }
     }
     async processPayments() {
         const modal = await this.modalController.create({
@@ -1681,6 +1684,13 @@ export class POSOrderDetailPage extends PageBase {
             this.setOrderValue(changed);
         }
           
+    }
+    deleteDeduction(i,d){
+        let deleteDeductions = [];
+        deleteDeductions.push(d);
+        this.deductionProvider.delete(deleteDeductions).then(result=>{
+            this.item.Deductions.splice(i,1);
+        }).catch(err=>{});
     }
 }
 
