@@ -368,7 +368,7 @@ export class POSOrderDetailPage extends PageBase {
     async processDiscounts() {
         const modal = await this.modalController.create({
             component: POSDiscountModalPage,
-            swipeToClose: true,
+            canDismiss:true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -384,7 +384,7 @@ export class POSOrderDetailPage extends PageBase {
     async processVouchers() {
         const modal = await this.modalController.create({
             component: POSVoucherModalPage,
-            swipeToClose: true,
+            canDismiss:true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -401,7 +401,7 @@ export class POSOrderDetailPage extends PageBase {
         const modal = await this.modalController.create({
             component: POSPaymentModalPage,
             id: 'POSPaymentModalPage',
-            swipeToClose: true,
+            canDismiss:true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -454,7 +454,7 @@ export class POSOrderDetailPage extends PageBase {
     async processInvoice() {
         const modal = await this.modalController.create({
             component: POSInvoiceModalPage,
-            swipeToClose: true,
+            canDismiss: true,
             cssClass: 'my-custom-class',
             componentProps: {
                 id: this.item.IDContact
@@ -1623,6 +1623,66 @@ export class POSOrderDetailPage extends PageBase {
                     reject(err);
                 });
         });
+    }
+    private convertUrl(str) {
+        return  str.replace("=","").replace("=","").replace("+", "-").replace("_", "/")
+    }
+    goToPayment(){
+        let payment = {
+            IDBranch: this.item.IDBranch,
+            IDStaff: this.env.user.StaffID,
+            IDCustomer: this.item.IDContact,
+            IDSaleOrder: this.item.Id,
+            DebtAmount: parseFloat(this.item.Debt),
+            IsActiveInputAmount : true,
+            IsActiveTypeCash: true,
+            Timestamp:Date.now()
+        };
+        let str = window.btoa(JSON.stringify(payment));
+        let code =  this.convertUrl(str);
+        let url = environment.appDomain + "Payment?Code="+code;
+        window.open(url, "_blank");
+    }
+    doneOrder(){
+        let changed: any = { OrderLines: [] };
+        if (this.printData.undeliveredItems.length > 0) {
+            let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục hoàn tất?';
+            if (this.item.Debt > 0) {
+                message = 'Bạn có sản phẩm chưa in gửi bếp và đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?'
+            }
+            this.env.showPrompt(message, null, 'Thông báo').then(_ => {              
+                this.printData.undeliveredItems = []; //<-- clear;
+                this.item.OrderLines.forEach(line => {
+                    if (line.Quantity > line.ShippedQuantity) {
+                        line.ShippedQuantity = line.Quantity;
+                        line.ReturnedQuantity = 0;
+                        changed.OrderLines.push({ Id: line.Id, IDUoM: line.IDUoM, ShippedQuantity: line.ShippedQuantity, ReturnedQuantity: 0 });
+                    }
+                });
+                changed.Status = 'Done';
+                changed.IDStatus = 114;
+                this.setOrderValue(changed);
+            }).catch(_ => { 
+
+            });
+        }
+        else if(this.item.Debt > 0) {
+            let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
+            this.env.showPrompt(message, null, 'Thông báo').then(_ => {              
+                changed.Status = 'Done';
+                changed.IDStatus = 114;
+                this.setOrderValue(changed);
+            }).catch(_ => { 
+
+            });
+             
+        }
+        else{
+            changed.Status = 'Done';
+            changed.IDStatus = 114;
+            this.setOrderValue(changed);
+        }
+          
     }
 }
 
