@@ -393,9 +393,7 @@ export class POSOrderDetailPage extends PageBase {
         });
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
-        if (role == 'confirm') {
-            this.item = data;
-        }
+        this.item = data;
     }
     async processPayments() {
         const modal = await this.modalController.create({

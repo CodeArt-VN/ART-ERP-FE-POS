@@ -15,24 +15,37 @@
         <ion-row>
           <ion-col>
             <div class="c-control">
-                <input (change)="changeVoucher()" class="c-input c-label"  [(ngModel)]="VoucherCode" type="text" placeholder="Nhập mã voucher">    
+                <input (change)="changeCode()" class="c-input c-label"  [(ngModel)]="Code" type="text" placeholder="Nhập mã voucher">    
             </div>                
           </ion-col>
         </ion-row>
-        <ion-row *ngIf="VoucherDiscountAmount > 0">
+        
+        <ion-row *ngIf="Voucher">
           <ion-col>
-            <div class="c-control">
-              <ion-text color="primary">{{VoucherDiscountAmount | number: '1.0-0'}} đ</ion-text>
-            </div>                
+            <ion-item class="c-input" lines="none">
+              <ion-label slot="start">{{Voucher.Name}}</ion-label>
+              <ion-text slot="start" color="primary">giảm {{Voucher.Value | number: '1.0-0'}} đ</ion-text>
+              <ion-button slot="end" (click)="applyVoucher(Voucher)">Áp dụng</ion-button>
+            </ion-item>                
           </ion-col>
         </ion-row>
-        <ion-row class="sticky-btn">
+       
+        <ion-row *ngFor="let i of items">
+          <ion-col>
+            <ion-item class="c-input" lines="none">
+              <ion-label slot="start">{{i.Name}}</ion-label>
+              <ion-text slot="start" color="primary">giảm {{i.Value | number: '1.0-0'}} đ</ion-text>
+              <ion-button slot="end" (click)="applyVoucher(i)">Áp dụng</ion-button>
+            </ion-item>               
+          </ion-col>
+        </ion-row>
+        <!-- <ion-row class="sticky-btn">
           <ion-col >
               <div class="c-control ion-text-center">
                   <ion-button expand="block"  (click)="applyVoucher(true)">Áp dụng</ion-button>
               </div>
           </ion-col>
-        </ion-row>
+        </ion-row> -->
       </ion-grid>
   </div>
 </ion-content>
