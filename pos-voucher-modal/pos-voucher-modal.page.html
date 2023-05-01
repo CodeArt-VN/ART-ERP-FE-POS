@@ -25,7 +25,8 @@
             <ion-item class="c-input" lines="none">
               <ion-label slot="start">{{Voucher.Name}}</ion-label>
               <ion-text slot="start" color="primary">giảm {{Voucher.Value | number: '1.0-0'}} đ</ion-text>
-              <ion-button slot="end" (click)="applyVoucher(Voucher)">Áp dụng</ion-button>
+              <ion-button *ngIf="Voucher.Used == false" slot="end" (click)="applyVoucher(Voucher)">Áp dụng</ion-button>
+              <ion-button [disabled]="Voucher.Used" *ngIf="Voucher.Used == true" slot="end">Đã áp dụng</ion-button>
             </ion-item>                
           </ion-col>
         </ion-row>
@@ -35,7 +36,9 @@
             <ion-item class="c-input" lines="none">
               <ion-label slot="start">{{i.Name}}</ion-label>
               <ion-text slot="start" color="primary">giảm {{i.Value | number: '1.0-0'}} đ</ion-text>
-              <ion-button slot="end" (click)="applyVoucher(i)">Áp dụng</ion-button>
+              <ion-text slot="start" color="primary">{{i.NumberOfUsed}}/{{i.NumberOfCoupon}}</ion-text>
+              <ion-button *ngIf="i.Used == false" slot="end" (click)="applyVoucher(i)">Áp dụng</ion-button>
+              <ion-button [disabled]="i.Used" *ngIf="i.Used == true" slot="end">Đã áp dụng</ion-button>
             </ion-item>               
           </ion-col>
         </ion-row>
