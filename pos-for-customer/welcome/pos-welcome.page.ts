@@ -31,6 +31,11 @@ export class POSWelcomePage extends PageBase {
         public commonService: CommonService
     ) {
         super();
+        this.env.getStorage("Order").then(result=>{
+            if(result?.Id && result?.IDTable == this.idTable && result.Status=="New"){   
+                this.navCtrl.navigateForward('/pos-customer-order/'+result.Id+'/'+ this.idTable);
+            }             
+        });
     }
 
     dummyRemark = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500"

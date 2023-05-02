@@ -292,7 +292,8 @@ export class POSCustomerOrderPage extends PageBase {
         });
     }
 
-    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {     
+    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {    
+        this.AllowSendOrder = true; 
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -360,7 +361,7 @@ export class POSCustomerOrderPage extends PageBase {
         }
         else {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
-                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ",item.Name+" đã chuyển bếp "+line.ShippedQuantity+" "+ line.UoMName,"Thông báo");
+                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ",item.Name+" đã chuyển bếp "+line.ShippedQuantity+" "+ line.UoMName,"Thông báo");               
             }
             else if ((line.Quantity + quantity) > 0) {
                 
@@ -448,7 +449,7 @@ export class POSCustomerOrderPage extends PageBase {
         groups.push(group);
     }
     setOrderValue(data) {
-        this.AllowSendOrder = true;
+        
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
