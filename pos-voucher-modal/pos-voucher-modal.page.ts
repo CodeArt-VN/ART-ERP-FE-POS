@@ -26,11 +26,14 @@ export class POSVoucherModalPage  extends PageBase {
     super();
   }
   loadData(event?: any): void {
+    let date =  new Date();
+    date.setHours(0,0,0,0);
     Object.assign(this.query, {
       IsPublic: true,
       IsDeleted:false,
-      BetweenDate: new Date(),
+      BetweenDate: date,
       Type:"Voucher",
+      CanUse: true,
     });
     super.loadData();
   }
@@ -56,22 +59,33 @@ export class POSVoucherModalPage  extends PageBase {
   }
   changeCode(){
     if(this.Code != ""){
+      let date =  new Date();
+      date.setHours(0,0,0,0);
+      
       let query = {
         Code_eq:this.Code,
-        IsPublic:false
+        BetweenDate: date,
+        Type:"Voucher",
+        CanUse: true,
       }
       this.pageProvider.read(query).then(result=>{
         if(result['count']>0)
         {
-          this.Voucher = result['data'][0];
-          this.Voucher.Used = false;
-          let find = this.item.Deductions.find(p=>p.IDProgram== this.Voucher.Id);
-          if(find){
-            this.Voucher.Used = true;
-          }
+            this.Voucher = result['data'][0];
+            this.Voucher.Used = false;
+            let find = this.item.Deductions.find(p=>p.IDProgram== this.Voucher.Id);
+            if(find){
+              this.Voucher.Used = true;
+            }
+            if(this.Voucher.IsByPercent == true){
+              this.Voucher.Value = this.Voucher.Value * this.item.OriginalTotalBeforeDiscount / 100;
+              if(this.Voucher.Value > this.Voucher.MaxValue){
+                this.Voucher.Value = this.Voucher.MaxValue;
+              }
+            }       
         }
         else{
-          this.Voucher = null;
+          this.env.showMessage("Mã Voucher không hợp lệ","danger");
         }
       }).catch(err=>{});
     }
@@ -79,6 +93,11 @@ export class POSVoucherModalPage  extends PageBase {
   async applyVoucher(line){
     let count = this.item.Deductions.filter(d=>d.Type=="Voucher").length;
     if(count<2){
+      
+      if(line.NumberOfUsed >= line.NumberOfCoupon){
+          this.env.showMessage("Voucher này đã hết lượt sử dụng","danger");
+          return false;
+      }
       if(line.IsApplyAllCustomer == false){
           const checkContact = await this.checkContact(line)
           if(checkContact == false){
