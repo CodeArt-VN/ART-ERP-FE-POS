@@ -374,11 +374,6 @@ export class POSCustomerOrderPage extends PageBase {
             }
             else {
                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
-                    let tempQty = line.Quantity;
-                    tempQty += quantity;                 
-                    if (tempQty == 0 && this.item.OrderLines.length == 1 && this.id ==0) {
-                        this.AllowSendOrder=false;
-                    }
                     line.Quantity += quantity;
                     this.calcOrderLine(line);
                     this.loadInfoOrder();
