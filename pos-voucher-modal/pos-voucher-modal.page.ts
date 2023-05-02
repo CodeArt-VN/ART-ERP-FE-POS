@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { LoadingController, ModalController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { EnvService } from 'src/app/services/core/env.service';
+import { PR_ProgramProvider } from 'src/app/services/static/services.service';
 
 
 
@@ -12,8 +13,10 @@ import { EnvService } from 'src/app/services/core/env.service';
 })
 export class POSVoucherModalPage  extends PageBase {
   VoucherCode = "";
+  Program;
   VoucherDiscountAmount = 0;
   constructor(
+    public voucherProvider: PR_ProgramProvider,
     public env: EnvService,
     public modalController: ModalController,
     public loadingController: LoadingController,
@@ -25,15 +28,18 @@ export class POSVoucherModalPage  extends PageBase {
     this.VoucherDiscountAmount = this.item.OriginalDiscount1;
   }
   changeVoucher(){
-    if(this.VoucherCode == "VC01"){
-      this.VoucherDiscountAmount = 10000;
-    }
-    if(this.VoucherCode == "VC02"){
-      this.VoucherDiscountAmount = 20000;
-    }
+    // this.voucherProvider.read({Code:this.VoucherCode}).then(result=>{
+    //   this.Program = result['data'][0];         
+    // }).catch(err=>{});
+    
   }
   applyVoucher(apply = false){
-    this.item.OriginalDiscount1 = this.VoucherDiscountAmount;
-    return this.modalController.dismiss(this.item, (apply ? 'confirm' : 'cancel'));
+    
+    // if(this.Program.MinOrderValue > this.item.OriginalTotalBeforeDiscount){
+    //   this.env.showMessage("đơn hàng của bạn chưa đủ điều kiện áp dụng mã voucher này","warning");
+    //   return;
+    // }
+    // this.item.OriginalDiscount1 = this.Program.Value;
+    // return this.modalController.dismiss(this.item, (apply ? 'confirm' : 'cancel'));
   }
 }

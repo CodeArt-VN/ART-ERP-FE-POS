@@ -371,7 +371,7 @@ export class POSOrderDetailPage extends PageBase {
     async processDiscounts() {
         const modal = await this.modalController.create({
             component: POSDiscountModalPage,
-            swipeToClose: true,
+            canDismiss:true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -387,7 +387,7 @@ export class POSOrderDetailPage extends PageBase {
     async processVouchers() {
         const modal = await this.modalController.create({
             component: POSVoucherModalPage,
-            swipeToClose: true,
+            canDismiss:true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -404,7 +404,7 @@ export class POSOrderDetailPage extends PageBase {
         const modal = await this.modalController.create({
             component: POSPaymentModalPage,
             id: 'POSPaymentModalPage',
-            swipeToClose: true,
+            canDismiss:true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -457,7 +457,7 @@ export class POSOrderDetailPage extends PageBase {
     async processInvoice() {
         const modal = await this.modalController.create({
             component: POSInvoiceModalPage,
-            swipeToClose: true,
+            canDismiss: true,
             cssClass: 'my-custom-class',
             componentProps: {
                 id: this.item.IDContact
