@@ -34,6 +34,7 @@ export class POSVoucherModalPage  extends PageBase {
       BetweenDate: date,
       Type:"Voucher",
       CanUse: true,
+      Status: 'Approved',
     });
     super.loadData();
   }
@@ -67,6 +68,7 @@ export class POSVoucherModalPage  extends PageBase {
         BetweenDate: date,
         Type:"Voucher",
         CanUse: true,
+        Status: 'Approved',
       }
       this.pageProvider.read(query).then(result=>{
         if(result['count']>0)
