@@ -1791,39 +1791,24 @@ export class POSOrderDetailPage extends PageBase {
    }
     
     `
-    deleteDeduction(i,d){
-        let deleteDeductions = [];
-        deleteDeductions.push(d);
-        this.deductionProvider.delete(deleteDeductions).then(async result=>{
-            const program = await this.programProvider.getAnItem(d.IDProgram).then(result=>{
-                return result;
-            });
-            program['NumberOfUsed'] = program['NumberOfUsed'] - 1;
-            this.programProvider.save(program);        
-            this.item.Deductions.splice(i,1);
-            let totalDeduction = this.item.Deductions?.map(x => x.OriginalAmount).reduce((a, b) => (+a) + (+b), 0);
-            let percent = totalDeduction/this.item.OriginalTotalBeforeDiscount * 100;
-            this.applyDiscountByOrder(percent);
-            this.refresh();
-        }).catch(err=>{});
-    }
-    applyDiscountByOrder(percent) {
+    deleteVoucher(i,d){
         let apiPath = {
             method: "POST",
-            url: function () { return ApiSetting.apiDomain("SALE/Order/UpdatePosOrderDiscount/") }
+            url: function () { return ApiSetting.apiDomain("SALE/Order/DeleteVoucher/") }
         };
         new Promise((resolve, reject) => {
-            this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {Id:this.item.Id,Percent:percent}).toPromise()
-            .then((savedItem: any) => {
+            this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {IDDeduction:d.Id,IDProgram:d.IDProgram,IDSaleOrder:d.IDOrder}).toPromise()
+            .then((savedItem: any) => {               
                 this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');   
-                resolve(true);                           
+                resolve(true);           
+                this.refresh();                
             })
             .catch(err => {
                 this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save','danger');
                 reject(err);
             });
         });       
-      }
+    }
 }
 
 

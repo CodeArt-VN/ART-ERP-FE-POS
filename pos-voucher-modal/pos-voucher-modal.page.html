@@ -25,12 +25,15 @@
             <ion-card>
               <ion-card-header class="ion-text-center">
                 <ion-text>{{Voucher.Name}}</ion-text>
-                <ion-icon *ngIf="Voucher.Remark != null" class="ion-float-right" id="voucher-trigger" name="help-circle-outline"></ion-icon>
-                <ion-popover  trigger="voucher-trigger" triggerAction="click">
-                  <ng-template>
-                    <ion-content class="ion-padding">{{Voucher.Remark}}</ion-content>
-                  </ng-template>
-                </ion-popover>
+                <ng-container *ngIf="Voucher.Remark != null">
+                  <ion-icon  class="ion-float-right" id="voucher-trigger" name="help-circle-outline"></ion-icon>
+                  <ion-popover  trigger="voucher-trigger" triggerAction="click">
+                    <ng-template>
+                      <ion-content class="ion-padding">{{Voucher.Remark}}</ion-content>
+                    </ng-template>
+                  </ion-popover>
+                </ng-container>
+                
               </ion-card-header>
               <ion-card-content>
                 <div class="ion-text-center"><ion-text color="danger" ><h4>{{Voucher.Value | number: '1.0-0'}} đ</h4></ion-text></div>
@@ -47,12 +50,15 @@
             <ion-card>
               <ion-card-header class="ion-text-center">
                 <ion-text>{{i.Name}}</ion-text>
-                <ion-icon *ngIf="i.Remark != null" class="ion-float-right" id="voucher-trigger-{{j}}" name="help-circle-outline"></ion-icon>
-                <ion-popover trigger="voucher-trigger-{{j}}" triggerAction="click">
-                  <ng-template>
-                    <ion-content class="ion-padding">{{i.Remark}}</ion-content>
-                  </ng-template>
-                </ion-popover>
+                <ng-container *ngIf="i.Remark != null">
+                  <ion-icon class="ion-float-right" id="voucher-trigger-{{j}}" name="help-circle-outline"></ion-icon>
+                  <ion-popover trigger="voucher-trigger-{{j}}" triggerAction="click">
+                    <ng-template>
+                      <ion-content class="ion-padding">{{i.Remark}}</ion-content>
+                    </ng-template>
+                  </ion-popover>
+                </ng-container>
+                
               </ion-card-header>
               <ion-card-content>
                 <div class="ion-text-center"><ion-text color="danger" size="large">{{i.Value | number: '1.0-0'}} đ</ion-text></div>

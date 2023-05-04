@@ -96,100 +96,25 @@ export class POSVoucherModalPage  extends PageBase {
     let count = this.item.Deductions.filter(d=>d.Type=="Voucher").length;
     if(count<2){
       
-      if(line.NumberOfUsed >= line.NumberOfCoupon){
-          this.env.showMessage("Voucher này đã hết lượt sử dụng","danger");
-          return false;
-      }
-      if(line.IsApplyAllCustomer == false){
-          const checkContact = await this.checkContact(line)
-          if(checkContact == false){
-            this.env.showMessage("Khách hàng không nằm trong chính sách giảm giá của Voucher này","danger");
-            return false;
-          }
-      }
-      if(line.IsApplyAllProduct == false){   
-        const checkitem = await this.checkItem(line);
-        if(checkitem == false){
-          this.env.showMessage("Đơn hàng của bạn chưa đủ điều kiện để áp dụng voucher này","danger");
-          return false;
-        }
-      }
-      if( this.item.OriginalTotalBeforeDiscount < line.MinOrderValue){
-          this.env.showMessage("Đơn hàng của bạn chưa đủ điều kiện để áp dụng voucher này","danger");
-          return false;
-      }
-      this.saveApply(line);    
+      let apiPath = {
+        method: "POST",
+        url: function () { return ApiSetting.apiDomain("SALE/Order/ApplyVoucher/") }
+      };
+      new Promise((resolve, reject) => {
+          this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {IDProgram:line.Id,IDSaleOrder:this.item.Id}).toPromise()
+          .then((savedItem: any) => {
+              this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');   
+              resolve(true);  
+              this.modalController.dismiss(this.item);         
+          })
+          .catch(err => {            
+              this.env.showTranslateMessage(err.error.Message,'danger');               
+          });
+      });         
     }
     else{
       this.env.showMessage("Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng", "warning");
     }
    
-  }
-  saveApply(line){
-    let item ={
-      IDOrder: this.item.Id,
-      Id:0,
-      Type:"Voucher",
-      Amount:0,
-      IDProgram:line.Id,
-      OriginalAmount: line.Value,
-    }
-    line.NumberOfUsed = line.NumberOfUsed + 1;
-    this.pageProvider.save(line);
-    this.deductionProvider.save(item).then(result=>{
-      let deduction = {
-        Amount:result['Amount'],
-        IDOrder:result['IDOrder'],
-        IDOrderLine:null,
-        Id:result['Id'],
-        IssuedBy:null,
-        Type:result['Type'],
-        OriginalAmount:result['OriginalAmount'],
-        IDProgram:result['IDProgram'],
-      }
-      this.item.Deductions.push(deduction);
-      let totalDeduction = this.item.Deductions?.map(x => x.OriginalAmount).reduce((a, b) => (+a) + (+b), 0);
-      let percent = totalDeduction/this.item.OriginalTotalBeforeDiscount * 100;
-      this.applyDiscountByOrder(percent);
-      this.loadProgram();
-    }).catch(err=>{console.log(err)})
-  }
-  checkContact(line) : Promise<boolean>{
-    return this.programPartnerProvider.read({ IDProgram: line.Id, IDPartner: this.item.IDContact, IsDeleted: false }).then(result => {
-      if (result['count'] == 0) {
-        return false;
-      } else {
-        return true;
-      }
-    }).catch(err => { return false; });
-   
-  }
-  checkItem(line) : Promise<boolean>{
-    let listItems = this.item.OrderLines.map(i=>i.IDItem);
-    return this.programItemProvider.read({IDProgram:line.Id,IDItem:listItems.toString(),IsDeleted:false}).then(result=>{
-      if(result['count']==0){
-        return false;
-      }else{
-        return true;
-      }
-    }).catch(err=>{return false});
-  }
-  applyDiscountByOrder(percent) {
-    let apiPath = {
-        method: "POST",
-        url: function () { return ApiSetting.apiDomain("SALE/Order/UpdatePosOrderDiscount/") }
-    };
-    new Promise((resolve, reject) => {
-        this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {Id:this.item.Id,Percent:percent}).toPromise()
-        .then((savedItem: any) => {
-            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');   
-            resolve(true);  
-            this.modalController.dismiss(this.item);         
-        })
-        .catch(err => {
-            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save','danger');
-            reject(err);
-        });
-    });       
   }
 }
