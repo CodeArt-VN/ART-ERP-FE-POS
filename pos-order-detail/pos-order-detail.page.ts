@@ -955,8 +955,7 @@ export class POSOrderDetailPage extends PageBase {
 
         }
         this.calcOrder();
-        Object.assign(this.item, this.formGroup.value);
-        if (this.item.OrderLines.length || this.item.DeletedLines.length) {
+        if (this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value) {
             this.debounce(() => { this.saveChange() }, 1000);
         }
     }
