@@ -1793,7 +1793,7 @@ export class POSOrderDetailPage extends PageBase {
     deleteVoucher(i,d){
         let apiPath = {
             method: "POST",
-            url: function () { return ApiSetting.apiDomain("SALE/Order/DeleteVoucher/") }
+            url: function () { return ApiSetting.apiDomain("PR/Program/DeleteVoucher/") }
         };
         new Promise((resolve, reject) => {
             this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {IDDeduction:d.Id,IDProgram:d.IDProgram,IDSaleOrder:d.IDOrder}).toPromise()

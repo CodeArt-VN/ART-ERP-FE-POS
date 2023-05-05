@@ -98,7 +98,7 @@ export class POSVoucherModalPage  extends PageBase {
       
       let apiPath = {
         method: "POST",
-        url: function () { return ApiSetting.apiDomain("SALE/Order/ApplyVoucher/") }
+        url: function () { return ApiSetting.apiDomain("PR/Program/ApplyVoucher/") }
       };
       new Promise((resolve, reject) => {
           this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {IDProgram:line.Id,IDSaleOrder:this.item.Id}).toPromise()
