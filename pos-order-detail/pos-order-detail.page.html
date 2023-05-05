@@ -122,13 +122,21 @@
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
 							</ion-text> 
 						</label>
-						<label class="c-label" *ngIf="item.Received >= 0">Đã thanh toán <ion-icon class="clickable" (click)="processPayments()" name="open-outline"></ion-icon>
+
+						<label class="c-label" *ngIf="item.Received">Đã thanh toán 
+							<ion-icon class="clickable" (click)="processPayments()" name="chevron-down"></ion-icon>
 							<ion-text class="c-value" color="dark">
-								<span *ngIf="item.Received">{{item.Received | number: '1.0-0'}}</span>
-								<span *ngIf="!item.Received">0</span>
+								<span >{{item.Received | number: '1.0-0'}}</span>
 							</ion-text> 
 						</label>
-						<label class="c-label" *ngIf="item.Debt > 0">Còn lại
+
+
+						
+
+
+
+
+						<label class="c-label" *ngIf="item.Received">Còn lại
 							<ion-text class="c-value" color="dark">
 								{{item.Debt | number: '1.0-0'}}
 							</ion-text> 
@@ -248,7 +256,7 @@
 				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
 					<ion-col>
 						<ion-button class="gr-btn-order" *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt">
-							<ion-text >Thanh toán</ion-text>							
+							<ion-text >Thanh toán [ {{item.Debt | number: '1.0-0'}} ]</ion-text>							
 						</ion-button>
 						<ion-button  color="danger" class="gr-btn-order ion-margin-top" expand="block" (click)="doneOrder()" [disabled]="submitAttempt">
 							<ion-text >Hoàn tất</ion-text>							
