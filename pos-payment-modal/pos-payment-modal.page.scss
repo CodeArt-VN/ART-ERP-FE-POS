@@ -67,32 +67,28 @@ ion-card-content{
         background: var(--ion-color-tertiary-tint);
         min-width: 480px;
     }
-    .col-id {
-        max-width: 25px !important;
-        min-width: 25px !important;
-    }
     .col-type {
-        padding-left: 0px;
+        padding-left: 10px;
         text-align: left;
-        max-width: 120px !important;
-        min-width: 120px !important;
+        max-width: 125px !important;
+        min-width: 125px !important;
     }
     .col-money {
-        max-width: 115px !important;
-        min-width: 115px !important;
+        max-width: 120px !important;
+        min-width: 120px !important;
         color: var(--ion-color-primary);
     }
     .col-status {
         white-space: break-spaces;
         overflow: hidden;
         text-overflow: ellipsis;
-        min-width: 95px;
-        max-width: 95px;
+        min-width: 100px;
+        max-width: 100px;
     }  
     .col-remark {
         justify-content: right !important;
-        max-width: 120px !important;
-        min-width: 120px !important;
+        max-width: 125px !important;
+        min-width: 125px !important;
         padding-left: 10px;
         float: right;
         text-align: right;

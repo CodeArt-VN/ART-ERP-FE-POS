@@ -160,9 +160,9 @@
 				<ion-text *ngIf="id==0">Đặt hàng</ion-text>
 				<ion-text *ngIf="id!=0">Cập nhật</ion-text>
 			</ion-button>
-			<ion-button class="ion-margin-top" expand="block" (click)="processPayments()"
-				[disabled]="item._TotalQuantity <= 0">
-				<ion-text *ngIf="item.Status !='Done' && item.Status !='Cancelled' ">Thanh toán</ion-text>
+
+			<ion-button *ngIf="item.Status =='New' || item.Status =='Done'"  class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalQuantity <= 0">
+				<ion-text *ngIf="item.Status =='New'">Thanh toán</ion-text>
 				<ion-text *ngIf="item.Status =='Done'">Xem chi tiết</ion-text>
 			</ion-button>
 		</form>

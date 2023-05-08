@@ -17,7 +17,6 @@ export class POSNotificationModalPage extends PageBase {
 	sdt   			: any;
 	currentBranch	: any;
     constructor(
-        public pageProvider: POS_MemoProvider,
         public env: EnvService,
         public navCtrl: NavController,
         public route: ActivatedRoute,

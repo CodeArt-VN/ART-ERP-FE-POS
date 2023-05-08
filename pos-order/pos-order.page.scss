@@ -80,6 +80,12 @@ ion-content {
                 display: block;
             }
         }
+
+
+        a{
+            box-shadow: var(--ion-color-danger) 0px 0px 25px 1px;
+            border: solid 1px var(--ion-color-danger);
+        }
         // .table-status{
         //     color: var(--ion-color-success);
         // }

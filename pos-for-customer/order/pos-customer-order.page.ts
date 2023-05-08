@@ -92,8 +92,17 @@ export class POSCustomerOrderPage extends PageBase {
             ReceivedDiscountFromSalesman: new FormControl({ value: null, disabled: true }),
         })
         Object.assign(this.query, {IDTable: this.idTable});
+        this.env.getStorage("Order").then(result=>{
+            if(result?.Id && result?.IDTable == this.idTable && result.Status=="New"){   
+                this.id = result.Id;           
+                let newURL = '#/pos-customer-order/' + result.Id + '/' + this.idTable;
+                history.pushState({}, null, newURL);
+                this.refresh();
+            }                
+        });
     }
     ngOnInit() {
+        
         this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
 			switch (data.Code) {
 				case 'app:POSOrderPaymentUpdate':
@@ -109,10 +118,12 @@ export class POSCustomerOrderPage extends PageBase {
             }
         });
         super.ngOnInit();
+        
     }
     private notify(data){
         if(this.item.Id == data.id){
             this.refresh();
+            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
         }
     }
     ngOnDestroy() {
@@ -124,6 +135,8 @@ export class POSCustomerOrderPage extends PageBase {
         this.segmentView = ev;
     }
     preLoadData(event?: any): void {
+        
+
         let forceReload = event === 'force';
         this.AllowSendOrder = false;      
         Promise.all([         
@@ -174,6 +187,7 @@ export class POSCustomerOrderPage extends PageBase {
             });
         }   
         else {
+            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
             this.patchOrderValue();
         }       
         
@@ -301,7 +315,8 @@ export class POSCustomerOrderPage extends PageBase {
         });
     }
 
-    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {     
+    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {  
+        this.AllowSendOrder = true;   
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -369,7 +384,7 @@ export class POSCustomerOrderPage extends PageBase {
         }
         else {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
-                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ",item.Name+" đã chuyển bếp "+line.ShippedQuantity+" "+ line.UoMName,"Thông báo");
+                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ",item.Name+" đã chuyển bếp "+line.ShippedQuantity+" "+ line.UoMName,"Thông báo");               
             }
             else if ((line.Quantity + quantity) > 0) {
                 
@@ -382,12 +397,6 @@ export class POSCustomerOrderPage extends PageBase {
             }
             else {
                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
-                    let tempQty = line.Quantity;
-                    tempQty += quantity;
-                    if (tempQty == 0 && this.item.OrderLines.length == 1) {
-                        this.env.showMessage('Đơn hàng phải có ít nhất 1 sản phẩm!','warning');
-                        return;
-                    }
                     line.Quantity += quantity;
                     this.calcOrderLine(line);
                     this.loadInfoOrder();
@@ -463,7 +472,7 @@ export class POSCustomerOrderPage extends PageBase {
         groups.push(group);
     }
     setOrderValue(data) {
-        this.AllowSendOrder = true;
+        
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
@@ -545,9 +554,8 @@ export class POSCustomerOrderPage extends PageBase {
                 history.pushState({}, null, newURL);
             }
 
-            this.item = savedItem;
-            //this.env.setStorage("IDOrder",{Id:this.item.Id});
-            //this.env.setStorage("IDOrders",{Id:this.item.Id,Status:this.item.Status});
+            this.item = savedItem;         
+            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
         }      
         this.loadedData();
         this.submitAttempt = false;
@@ -637,7 +645,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
     onButtonClick() {
         this.presentModal(); 
-        // this.sendOrder();
+        this.sendOrder();
     }
     ///TASK:152
     async presentModal() {

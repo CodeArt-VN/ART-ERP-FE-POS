@@ -95,7 +95,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
         this.items.forEach(e => {
             e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd')+"_"+e.IncomingPayment.Id;
             e.IncomingPayment.CreatedDateText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'dd/mm/yyyy');
-            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM:ss');    
+            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM');    
             e.IncomingPayment.TypeText = this.getTypeText(e.IncomingPayment.Type);  
             e.IncomingPayment.StatusText = this.getStatusText(e.IncomingPayment.Status); 
             if(e.IncomingPayment.Status=="Success"){

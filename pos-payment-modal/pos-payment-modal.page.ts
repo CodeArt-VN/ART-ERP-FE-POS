@@ -81,7 +81,7 @@ export class POSPaymentModalPage extends PageBase {
         this.items.forEach(e => {
             e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd')+"_"+e.IncomingPayment.Id;
             e.IncomingPayment.CreatedDateText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'dd/mm/yyyy');
-            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM:ss');
+            e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM');
             e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusText = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusColor = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Color', 'dark', 'Code');
@@ -90,10 +90,10 @@ export class POSPaymentModalPage extends PageBase {
             }
         });    
         this.PaidAmounted = PaidAmounted;
-        this.DebtAmount = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.PaidAmounted;
+        this.DebtAmount = this.item.CalcTotalOriginal - this.PaidAmounted;
     }
-    getStatus(i,id){
-        this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
+    getStatus(i,id){          
+        this.IncomingPaymentProvider.getAnItem(id).then(data=>{                           
             this.items[i].IncomingPayment.Status= data['Status'];
             switch (data['Status']) {
 				case 'Success':
@@ -107,24 +107,26 @@ export class POSPaymentModalPage extends PageBase {
 					break;
             }
             this.calcPayment();
+        }).catch(err=>{
+            console.log(err);
         });
     }
-    toPayment(){
-        let payment = {
-            IDBranch: this.item.IDBranch,
-            IDStaff: this.env.user.StaffID,
-            IDCustomer: this.item.IDContact,
-            IDSaleOrder: this.item.Id,
-            DebtAmount: this.DebtAmount,
-            IsActiveInputAmount : true,
-            IsActiveTypeCash: true,
-            Timestamp:Date.now()
-        };
-        let str = window.btoa(JSON.stringify(payment));
-        let code =  this.convertUrl(str);
-        let url = environment.appDomain + "Payment?Code="+code;
-        window.open(url, "_blank");
-    }
+    // toPayment(){
+    //     let payment = {
+    //         IDBranch: this.item.IDBranch,
+    //         IDStaff: this.env.user.StaffID,
+    //         IDCustomer: this.item.IDContact,
+    //         IDSaleOrder: this.item.Id,
+    //         DebtAmount: this.DebtAmount,
+    //         IsActiveInputAmount : true,
+    //         IsActiveTypeCash: true,
+    //         Timestamp:Date.now()
+    //     };
+    //     let str = window.btoa(JSON.stringify(payment));
+    //     let code =  this.convertUrl(str);
+    //     let url = environment.appDomain + "Payment?Code="+code;
+    //     window.open(url, "_blank");
+    // }
     toDetail(code){
         let url = environment.appDomain + "Payment?Code="+code;
         window.open(url, "_blank");
@@ -151,24 +153,24 @@ export class POSPaymentModalPage extends PageBase {
         })
     }
 
-    doneOrder(){
-        this.item.OrderLines.forEach(e => {
-            e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
-            if (e._undeliveredQuantity > 0) {
-                this.printData.undeliveredItems.push(e);
-            }
-        });
+    // doneOrder(){
+    //     this.item.OrderLines.forEach(e => {
+    //         e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
+    //         if (e._undeliveredQuantity > 0) {
+    //             this.printData.undeliveredItems.push(e);
+    //         }
+    //     });
 
-        if (this.printData.undeliveredItems.length > 0) {
-            this.env.showPrompt('Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục hoàn tất?', null, 'Thông báo').then(_ => {
+    //     if (this.printData.undeliveredItems.length > 0) {
+    //         this.env.showPrompt('Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục hoàn tất?', null, 'Thông báo').then(_ => {
                 
-                this.printData.undeliveredItems = []; //<-- clear;
-                return this.modalController.dismiss({SetShippedQuantity: true, SetDone: true}, 'confirm', 'POSPaymentModalPage');
-            }).catch(_ => { });
-        }
-        else {
-            return this.modalController.dismiss({SetShippedQuantity: false, SetDone: true}, 'confirm', 'POSPaymentModalPage');
-        }
-    }
+    //             this.printData.undeliveredItems = []; //<-- clear;
+    //             return this.modalController.dismiss({SetShippedQuantity: true, SetDone: true}, 'confirm', 'POSPaymentModalPage');
+    //         }).catch(_ => { });
+    //     }
+    //     else {
+    //         return this.modalController.dismiss({SetShippedQuantity: false, SetDone: true}, 'confirm', 'POSPaymentModalPage');
+    //     }
+    // }
 
 }

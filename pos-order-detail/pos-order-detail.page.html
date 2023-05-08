@@ -59,9 +59,10 @@
 									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="line._isShowNote =! line._isShowNote; line._isShowFoC = false">
 										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
 									</ion-button>
-									<ion-button title='Giảm giá từ chăm sóc khách hàng' fill="clear"  color="primary" class="gift ion-no-padding" size="small" (click)="line._isShowFoC =! line._isShowFoC; line._isShowNote = false">														
+									<!-- <ion-icon name="pricetags-outline"></ion-icon> -->
+									<!-- <ion-button title='Giảm giá từ chăm sóc khách hàng' fill="clear"  color="primary" class="gift ion-no-padding" size="small" (click)="line._isShowFoC =! line._isShowFoC; line._isShowNote = false">														
 										<ion-icon [name]="(line.OriginalDiscountFromSalesman > 0)? 'person':'person-outline'"></ion-icon> <sup><ion-icon name="pricetags"></ion-icon></sup>
-									</ion-button>
+									</ion-button> -->
 									<span class="quantity">
 										<small>x</small>
 										<ion-text color="dark">
@@ -91,13 +92,15 @@
 				<div class="box-content">
 					<div class="check-out">
 						<label class="c-label ion-text-center"><b>Voucher giảm giá</b></label>
-						<ion-card *ngIf="item.OriginalDiscount1 > 0">
-							<ion-item lines="none">
-								<img slot="start" height="20px" width="20px" src="/assets/icons/icon-72x72.png"/>
-								
-								<ion-label>Giảm {{item.OriginalDiscount1 | number: '1.0-0'}} đ</ion-label>								
-							</ion-item>
-						</ion-card>
+						<ng-container *ngIf="item.Deductions.length > 0">
+							<ion-card *ngFor="let d of item.Deductions; let i=index">
+								<ion-item lines="none" *ngIf="d.Type=='Voucher'">
+									<img slot="start" height="20px" width="20px" src="/assets/icons/icon-72x72.png"/>								
+									<ion-label>{{d.OriginalAmount | number: '1.0-0'}} đ</ion-label>
+									<ion-button fill="none" (click)="deleteVoucher(i,d)"><ion-icon color="danger" name="trash-outline"></ion-icon></ion-button>								
+								</ion-item>
+							</ion-card>
+						</ng-container>
 						<label class="c-label clickable ion-text-center" *ngIf="pageConfig.canEdit" (click)="processVouchers()">							
 							<ion-text color="primary" >Chọn hoặc nhập mã Voucher</ion-text> 						
 						</label>					
@@ -140,12 +143,21 @@
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
 							</ion-text> 
 						</label>
-						<label class="c-label" *ngIf="item.Received > 0">Đã thanh toán
+
+						<label class="c-label" *ngIf="item.Received">Đã thanh toán 
+							<ion-icon class="clickable" (click)="processPayments()" name="chevron-down"></ion-icon>
 							<ion-text class="c-value" color="dark">
-								{{item.Received | number: '1.0-0'}}
+								<span >{{item.Received | number: '1.0-0'}}</span>
 							</ion-text> 
 						</label>
-						<label class="c-label" *ngIf="item.Debt > 0">Còn lại
+
+
+						
+
+
+
+
+						<label class="c-label" *ngIf="item.Received">Còn lại
 							<ion-text class="c-value" color="dark">
 								{{item.Debt | number: '1.0-0'}}
 							</ion-text> 
@@ -258,34 +270,26 @@
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
 					<ion-col *ngIf="pageConfig.canEdit">
-						<ion-button [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
+						<ion-button  class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
 							Chuyển BAR/KIT
 						</ion-button>
 					</ion-col>
 					<ion-col>
-						<ion-button color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt">
+						<ion-button class="gr-btn-order" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt">
 							In đơn
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<!-- <ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
+				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
 					<ion-col>
-						<ion-button color="medium" fill="outline" expand="block" size="small" (click)="processDiscounts()" [disabled]="submitAttempt">
-							Discount
+						<ion-button class="gr-btn-order" *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt">
+							<ion-text >Thanh toán [ {{item.Debt | number: '1.0-0'}} ]</ion-text>							
 						</ion-button>
-					</ion-col>
-				</ion-row> -->
-
-				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col>
-						<ion-button expand="block" (click)="processPayments()" [disabled]="submitAttempt">
-							<ion-text *ngIf="pageConfig.canEdit">Thanh toán</ion-text>
-							<ion-text *ngIf="!pageConfig.canEdit">Xem chi tiết</ion-text>
+						<ion-button  color="danger" class="gr-btn-order ion-margin-top" expand="block" (click)="doneOrder()" [disabled]="submitAttempt">
+							<ion-text >Hoàn tất</ion-text>							
 						</ion-button>
 					</ion-col>
 				</ion-row>
-
-
 			</ion-grid>
 		</div>
 	</ion-fab>
