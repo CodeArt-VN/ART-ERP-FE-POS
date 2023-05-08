@@ -173,8 +173,37 @@ export class POSSplitModalPage extends PageBase {
         this.tableSearch();
         super.loadedData(event);
         console.log(this.selectedOrder);
-        console.log(this.items);
-    }
+    }   
+    generateUniqueNames(orders) {
+        var counts = {};
+        var result = [];
+        for (var i = 0; i < orders.length; i++) {
+          var order = orders[i];
+          if (order.TableName in counts) {
+            counts[order.TableName]++;
+            result.push(order.TableName + '-' + counts[order.TableName]);
+          } else {
+            counts[order.TableName] = 1;
+            result.push(order.TableName);
+          }
+        }
+        for (var j = 0; j < result.length; j++) {
+          if (result[j] in counts && counts[result[j]] > 1) {
+            var count = counts[result[j]];
+            var baseName = result[j].replace(/-\d+$/, '');
+            for (var k = 1; k <= count; k++) {
+              var newName = baseName + '-' + k;
+              if (result.indexOf(newName) === -1) {
+                result[j] = newName;
+                counts[newName] = counts[result[j]];
+                delete counts[result[j]];
+                break;
+              }
+            }
+          }
+        }
+        return result;
+      }
 
     contactList$
     contactListLoading = false;
