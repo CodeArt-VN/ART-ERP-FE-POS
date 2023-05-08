@@ -239,3 +239,13 @@ ion-col{
         background: var(--ion-color-warning);
     }
 }
+.cell {
+    padding: 1px 7px 1px 0 !important;
+    
+}
+.col-checkbox {
+    // order: 0;
+    margin-left: 5px;
+    margin-top: 5px;
+    padding: 0 !important;
+}

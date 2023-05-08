@@ -36,6 +36,9 @@
 						<ion-button fill="clear" color="danger" size="small" (click)="deleteitem(i)" class="table-item-icon" *ngIf="pageConfig.canDelete">
 							<ion-icon name="trash-outline" slot="icon-only"></ion-icon>
 						</ion-button>
+						<div class="col-checkbox cell">
+							<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
+						</div>
 						<a (click)="showModalTable(i)">
 							<span class="table-name">{{i.Name}}</span>
 						</a>
