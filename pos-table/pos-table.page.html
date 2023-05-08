@@ -28,8 +28,8 @@
 							<ion-icon name="add" slot="icon-only"></ion-icon>
 						</ion-button>
 					</ion-col>
-
 				</ion-row>
+				
 				<ion-row class="table-holder">
 					<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.Order, 'test-btn': i.NeedPrint}" *ngFor="let i of g.TableList">
 						<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
@@ -55,14 +55,6 @@
 					</ion-col>
 				</ion-row>
 			</ng-container>
-
 		</ion-grid>
 	</div>
-
-	<ion-infinite-scroll color="primary" threshold="20%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
-		<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
-	</ion-infinite-scroll>
-
-
-
 </ion-content>

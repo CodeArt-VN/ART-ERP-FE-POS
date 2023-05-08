@@ -1,4 +1,4 @@
-import { Component} from '@angular/core';
+import { Component } from '@angular/core';
 import { NavController, ModalController, AlertController, LoadingController, PopoverController } from '@ionic/angular';
 import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
@@ -16,34 +16,35 @@ import { POSTableGroupDetailPage } from '../pos-table-group-detail/pos-table-gro
 export class POSTablePage extends PageBase {
     tableGroupList = [];
     tableList = [];
-   
+
     calendarHeatmapData: any = {};
-  ListOfAllEvents;
-  pageData: any = {};
- 
+    ListOfAllEvents;
+    pageData: any = {};
+
     constructor(
         public pageProvider: POS_TableProvider,
         public tableGroupProvider: POS_TableGroupProvider,
         public modalController: ModalController,
-		public popoverCtrl: PopoverController,
+        public popoverCtrl: PopoverController,
         public alertCtrl: AlertController,
         public loadingController: LoadingController,
         public env: EnvService,
         public navCtrl: NavController,
-        
+
     ) {
-        super()    
+        super()
     }
 
-    preLoadData(event?: any): void{
+    preLoadData(event?: any): void {
         this.query.IDBranch = this.env.selectedBranch;
         this.query.Take = 5000;
         Promise.all([
-            this.tableGroupProvider.read({IDBranch: this.env.selectedBranch})
+            this.tableGroupProvider.read({ IDBranch: this.env.selectedBranch })
         ]).then(values => {
             this.tableGroupList = values[0]['data'];
+            super.preLoadData(event);
         });
-        super.preLoadData(event);
+        
     }
 
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
@@ -54,88 +55,66 @@ export class POSTablePage extends PageBase {
         super.loadedData(event, ignoredFromGroup);
     }
 
-    
-    deleteitem(item:any,isgrouptable?: boolean){
+    deleteitem(item: any, isgrouptable?: boolean) {
         if (this.pageConfig.canDelete) {
-            this.alertCtrl.create({
-                header: 'Xóa' + (item.Name ? ' ' + item.Name : ''),
-                //subHeader: '---',
-                message: 'Bạn chắc muốn xóa' + (item.Name ? ' ' + item.Name : '') + '?',
-                buttons: [
-                    {
-                        text: 'Không',
-                        role: 'cancel',
-                        handler: () => {
-                        }
-                    },
-                    {
-                        text: 'Đồng ý xóa',
-                        cssClass: 'danger-btn',
-                        handler: () => {
-                            let ltitem = this.items
-                            if(isgrouptable){
-                                
-                                this.tableGroupProvider.delete(item).then(() => {
-                                    this.env.showTranslateMessage('erp.app.app-component.page-bage.delete-complete','success');
-                                    this.env.publishEvent({ Code: this.pageConfig.pageName });
-                                    ltitem.removeChild(item)
-    
-                                }).catch(err => {
-                                    
-                                })
-                            }else{
-                                this.pageProvider.delete(item).then(() => {
-                                    this.env.showTranslateMessage('erp.app.app-component.page-bage.delete-complete','success');
-                                    this.env.publishEvent({ Code: this.pageConfig.pageName });
-                                    ltitem.removeChild(item)
-    
-                                }).catch(err => {
-                                    
-                                })
-                            }
-                            
-                        }
-                    }
-                ]
-            }).then(alert => {
-                alert.present();
-            })
+            this.env.showPrompt('Bạn chắc muốn xóa' + (item.Name ? ' ' + item.Name : '') + '?', null, 'Xóa' + (item.Name ? ' ' + item.Name : '')).then(_ => {
+                let ltitem = this.items
+                if (isgrouptable) {
+
+                    this.tableGroupProvider.delete(item).then(() => {
+                        this.env.showTranslateMessage('erp.app.app-component.page-bage.delete-complete', 'success');
+                        this.env.publishEvent({ Code: this.pageConfig.pageName });
+                        ltitem.removeChild(item)
+                    }).catch(err => { })
+                } else {
+                    this.pageProvider.delete(item).then(() => {
+                        this.env.showTranslateMessage('erp.app.app-component.page-bage.delete-complete', 'success');
+                        this.env.publishEvent({ Code: this.pageConfig.pageName });
+                        ltitem.removeChild(item)
+                    }).catch(err => { })
+                }
+            }).catch(_ => { });
         }
     }
-    async showModalTable(i:any){
-             const modal = await this.modalController.create({            
-                component: POSTableDetailPage,
-                componentProps: {
-                    items : this.items,
-                    item: i,
-                    id: i.Id
-                },
-            });
-            
-            await modal.present();  
-            this.preLoadData();
+    async showModalTable(i: any) {
+        const modal = await this.modalController.create({
+            component: POSTableDetailPage,
+            componentProps: {
+                items: this.items,
+                item: i,
+                id: i.Id
+            },
+        });
+
+        await modal.present();
+        const { role } = await modal.onWillDismiss();
+        this.preLoadData();
+        
+        
     }
-    async showModalTableGroup(i:any){
-        const modal1 = await this.modalController.create({            
-                component: POSTableGroupDetailPage,
-                componentProps: {
-                    item: i,
-                    id: i.Id
-                },
-            });
-            await modal1.present();  
-            this.preLoadData();
+    async showModalTableGroup(i: any) {
+        const modal = await this.modalController.create({
+            component: POSTableGroupDetailPage,
+            componentProps: {
+                item: i,
+                id: i.Id
+            },
+        });
+        await modal.present();
+        const { role } = await modal.onWillDismiss();
+        this.preLoadData();
+        
     }
 
-    add(idTableGroup?:any,isgrouptable?: boolean) {
+    add(idTableGroup?: any, isgrouptable?: boolean) {
         let newItem = {
             Id: 0,
             IsDisabled: false,
-            IDTableGroup:idTableGroup
+            IDTableGroup: idTableGroup
         };
-        if(isgrouptable){
+        if (isgrouptable) {
             this.showModalTableGroup(newItem)
-        }else{
+        } else {
             this.showModalTable(newItem)
         }
     }
@@ -144,5 +123,5 @@ export class POSTablePage extends PageBase {
         super.removeSelectedItems();
         this.loadedData();
     }
-   
+
 }
