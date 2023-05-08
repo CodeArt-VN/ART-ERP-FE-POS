@@ -155,7 +155,7 @@
 
 
     </div>
-
+    <!-- TODO: CHI TIẾT -->
     <div class="main-view" *ngIf="segmentView != 's1'">
         <div class="row-full shadow full-screen">
             <div style="min-height: calc(90vh - 80px);">
@@ -167,12 +167,14 @@
                                     <div style=" min-width: 100%; max-width: 100%;">
                                         <table style="max-width: 100%; min-width: 100%;">
                                             <tr>
-                                                <td class="label">
+                                                <!-- <td class="label">
+
+                                                </td> -->
+                                                <td style=" min-width: 480px !important; max-width: 480px !important">
 
                                                 </td>
-
-                                                <td class="UoM col-total c-control" *ngFor="let o of item.SplitedOrders; let jdx = index;">
-                                                    <input [disabled]="true" class="c-input" [(ngModel)]="o.TableName">
+                                                <td style="padding-left: 5px !important;"  class="UoM col-total c-control" *ngFor="let o of generateUniqueNames(item.SplitedOrders); let jdx = index;">
+                                                    <input [disabled]="true" class="c-input" [ngModel]="o" (ngModelChange)="item.SplitedOrders[jdx].TableName = $event">
                                                 </td>
                                             </tr>
                                         </table>
@@ -185,35 +187,100 @@
                                 <div class="col-name cell">
                                     <div style=" min-width: 100%; max-width: 100%;">
                                         <div style="max-width: 100%;">
-                                            <ng-select [disabled]="true" [id]="'drl'+idx" class="c-input" appendTo="#pos-split-page" [(ngModel)]="i.IDItem" [labelForId]="'IDItem'+idx" [items]="itemList$ | async" [typeahead]="itemListInput$" [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-iditem' | translate}}">
+                                            <!-- <ion-grid>
+                                                <ion-row>
+                                                    <ion-col class="label" >
+                                                        <ng-select [disabled]="true" [id]="'drl'+idx" class="c-input" appendTo="#pos-split-page" [(ngModel)]="i.IDItem" [labelForId]="'IDItem'+idx" [items]="itemList$ | async" [typeahead]="itemListInput$" [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-iditem' | translate}}">
+                                                            <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                                                                <div *ngIf="i">
+                                                                    <div><span>{{i.Name}}</span></div>
+                                                                    <small>#<b><span class="important">{{i.Id}} - {{i.Code}}</span></b></small>
+                                                                </div>
+                                                            </ng-template>
+                                                        </ng-select>
+                                                    </ion-col>
+                                                    <ion-col class="UoM col-total c-control"  *ngFor="let o of i.splitDetail; let jdx = index;">
+                                                        <input type="tel" (focus)="$event.target.select()" (blur)="changedCalc(i, o, 'Quantity')" class="c-input" [min]="i._UoM?i._UoM.MinQuantity:0" [max]="i._UoM?i._UoM.MaxQuantity:999999999999999999" mask="separator.0" thousandSeparator="," [(ngModel)]="o.Quantity" step="1" onkeydown="return event.keyCode !== 190">
+                                                    </ion-col>
+                                                </ion-row>
+                                            </ion-grid> -->
+
+                                            <div class="row">
+                                                <div class="col-name cell">
+                                                    <div style=" min-width: 100%; max-width: 100%;">
+                                                        <table style="max-width: 100%; min-width: 100%;">
+                                                            <tr >
+                                                                <td style="min-width:480px !important;max-width: 480px !important">
+                                                                    <ng-select  title="{{i.Name}}"  [disabled]="true" [id]="'drl'+idx" class="c-input" appendTo="#pos-split-page" [(ngModel)]="i.IDItem"
+                                                                        [labelForId]="'IDItem'+idx" [items]="itemList$ | async" [typeahead]="itemListInput$" [virtualScroll]="true"
+                                                                        bindLabel="Name" bindValue="Id"
+                                                                        placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-iditem' | translate}}">
+                                                                        <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                                                                            <div *ngIf="i">
+                                                                                <div ><span>{{i.Name}}</span></div>
+                                                                                <small>#<b><span class="important">{{i.Id}} - {{i.Code}}</span></b></small>
+                                                                            </div>
+                                                                        </ng-template>
+                                                                    </ng-select>
+                                                                </td>
+                                                                <td style="padding-left: 5px !important;" class="UoM col-total c-control"  *ngFor="let o of i.splitDetail; let jdx = index;">
+                                                                    <input type="tel" (focus)="$event.target.select()" (blur)="changedCalc(i, o, 'Quantity')" class="c-input" [min]="i._UoM?i._UoM.MinQuantity:0" [max]="i._UoM?i._UoM.MaxQuantity:999999999999999999"
+                                                                     mask="separator.0" thousandSeparator="," [(ngModel)]="o.Quantity" step="1" onkeydown="return event.keyCode !== 190">
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+
+                                            <!-- <table style="max-width: 100%; min-width: 100%;">
+                                                <tr class="row">
+                                                    <td style="width: 100px !important ; ">
+                                                        <ng-select [disabled]="true" [id]="'drl'+idx" class="c-input" appendTo="#pos-split-page" [(ngModel)]="i.IDItem" [labelForId]="'IDItem'+idx" [items]="itemList$ | async" [typeahead]="itemListInput$" [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-iditem' | translate}}">
+                                                            <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                                                                <div *ngIf="i">
+                                                                    <div><span>{{i.Name}}</span></div>
+                                                                    <small>#<b><span class="important">{{i.Id}} - {{i.Code}}</span></b></small>
+                                                                </div>
+                                                            </ng-template>
+                                                        </ng-select>
+
+                                                    </td>
+                                                    <td *ngFor="let o of i.splitDetail; let jdx = index;">
+                                                        <input type="tel" (focus)="$event.target.select()" (blur)="changedCalc(i, o, 'Quantity')" class="c-input" [min]="i._UoM?i._UoM.MinQuantity:0" [max]="i._UoM?i._UoM.MaxQuantity:999999999999999999" mask="separator.0" thousandSeparator="," [(ngModel)]="o.Quantity" step="1" onkeydown="return event.keyCode !== 190">
+                                                    </td>
+                                                </tr>
+                                            </table> -->
+                                            <!-- <ng-select [disabled]="true" [id]="'drl'+idx" class="c-input" appendTo="#pos-split-page" [(ngModel)]="i.IDItem" [labelForId]="'IDItem'+idx" [items]="itemList$ | async" [typeahead]="itemListInput$" [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-iditem' | translate}}">
                                                 <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
                                                     <div *ngIf="i">
                                                         <div><span>{{i.Name}}</span></div>
                                                         <small>#<b><span class="important">{{i.Id}} - {{i.Code}}</span></b></small>
                                                     </div>
                                                 </ng-template>
-                                            </ng-select>
+                                            </ng-select> -->
                                         </div>
 
                                         <table style="max-width: 100%; min-width: 100%;">
-                                            <tr>
+                                            <!-- <tr> -->
                                                 <!-- Unit -->
-                                                <td class="label">{{'erp.app.pages.sale.sale-order.split.id-uom' | translate}}</td>
+                                                <!-- <td class="label">{{'erp.app.pages.sale.sale-order.split.id-uom' | translate}}</td>
                                                 <td class="UoM col-total c-control" *ngFor="let o of i.splitDetail; let jdx = index;">
-                                                    <input readonly class="c-input"  type="text" [(ngModel)]="o.UoMName"/>
+                                                    <input readonly class="c-input"  type="text" [(ngModel)]="o.UoMName"/> -->
                                                     <!-- <select [disabled]="true" class="c-input c-dropdown" [(ngModel)]="o.IDUoM">
                                                         <option disabled value=""> {{'erp.app.pages.sale.sale-order.split.unit-option' | translate}}</option>
                                                         <option [disabled]="t.Flag" *ngFor="let t of i._itemData?.UoMs" [value]="t.Id">{{t.Name}}</option>
                                                     </select> -->
-                                                </td>
-                                            </tr>
-                                            <tr>
+                                                <!-- </td> -->
+                                            <!-- </tr> -->
+                                            <!-- <tr> -->
                                                 <!-- Quantity -->
-                                                <td class="label">{{'erp.app.pages.sale.sale-order.split.quantity' | translate}}</td>
+                                                <!-- <td class="label">{{'erp.app.pages.sale.sale-order.split.quantity' | translate}}</td>
                                                 <td *ngFor="let o of i.splitDetail; let jdx = index;">
                                                     <input type="tel" (focus)="$event.target.select()" (blur)="changedCalc(i, o, 'Quantity')" class="c-input" [min]="i._UoM?i._UoM.MinQuantity:0" [max]="i._UoM?i._UoM.MaxQuantity:999999999999999999" mask="separator.0" thousandSeparator="," [(ngModel)]="o.Quantity" step="1" onkeydown="return event.keyCode !== 190">
-                                                </td>
-                                            </tr>
+                                                </td> -->
+                                            <!-- </tr> -->
                                             <!-- <tr *ngIf="i.Quantity && pageConfig.canEditPrice && !i.IsPromotionItem">
                                                 <td class="label">
                                                     <span *ngIf="!pageConfig.canEdit || i.UoMPrice == i._UoMPrice">Đơn giá</span>
@@ -241,7 +308,7 @@
                                                 </td>
                                             </tr>
 
-                                            <tr>
+                                            <!-- <tr>
                                                 <td class="label">
                                                     <ion-button [disabled]="true" size="small" color="primary" [fill]="i.IsPromotionItem? 'solid': 'outline'">
                                                         {{'erp.app.pages.sale.sale-order.split.promotion' | translate}}
@@ -250,7 +317,7 @@
                                                 <td *ngFor="let o of i.splitDetail; let jdx = index;">
                                                     <input *ngIf="i.Quantity" class="c-input disable" [disabled]="true" mask="separator.2" thousandSeparator="," [(ngModel)]="o.OriginalTotalAfterDiscount">
                                                 </td>
-                                            </tr>
+                                            </tr> -->
 
                                             <tr *ngIf="i.Quantity && pageConfig.canUseDiscountFromSalesman && !i.IsPromotionItem">
                                                 <td class="label">
@@ -269,7 +336,7 @@
                     </section>
                 </div>
 
-                <div class="table-contain">
+                <div class="table-contain ion-float-right">
                     <div class="row">
                         <div class="cell">
                             <!-- <ion-button class="ion-margin" fill="solid" size="block" (click)="addOrderLine()" *ngIf="pageConfig.canEdit && item.Id  ">
@@ -278,7 +345,7 @@
                             </ion-button> -->
 
 
-                            <ion-button (click)="splitSaleOrder()" [disabled]="!isCanSplit || submitAttempt"
+                            <ion-button   (click)="splitSaleOrder()" [disabled]="!isCanSplit || submitAttempt"
                                 style="max-width: 300px" class="ion-margin ion-float-right" size="block">
                                 {{'erp.app.pages.sale.sale-order.split.split-sale-order' | translate}}
                             </ion-button>

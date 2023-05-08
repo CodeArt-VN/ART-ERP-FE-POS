@@ -1,0 +1,32 @@
+  .cancel-message {
+    background-color: #ffe6cc;
+    color: #ff6600;
+    padding: 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .cancel-message-icon {
+    color: #ff6600;
+    margin-right: 10px;
+    font-size: 20px;
+  }
+  ion-item {
+    --border-style: none;
+  }
+
+  .other-reason-input {
+    position: unset;
+    margin: 0;
+
+    .c-input {
+        width: calc(100% - 16px);
+
+        border-color: var(--ion-color-danger);
+
+        margin: 4px;
+      
+    }
+
+}
