@@ -1,4 +1,4 @@
-import { Component,ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { NavController, LoadingController, AlertController, ModalController, PopoverController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
@@ -21,7 +21,6 @@ import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { ApiSetting } from 'src/app/services/static/api-setting';
-import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -29,8 +28,6 @@ import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
     styleUrls: ['./pos-order-detail.page.scss'],
 })
 export class POSOrderDetailPage extends PageBase {
-
-    @ViewChild('numberOfGuestsInput') numberOfGuestsInput: ElementRef;
     isOpenMemoModal = false;
     AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
     segmentView = 'all';
@@ -80,8 +77,10 @@ export class POSOrderDetailPage extends PageBase {
         this.pageConfig.isDetailPage = true;
         this.pageConfig.isShowFeature = true;
         this.idTable = this.route.snapshot?.paramMap?.get('table');
-            
-           this.formGroup = formBuilder.group({
+        this.idTable = typeof (this.idTable) == 'string' ? parseInt(this.idTable) : this.idTable;
+
+
+        this.formGroup = formBuilder.group({
             Id: new FormControl({ value: 0, disabled: true }),
             Code: [],
             Name: [],
@@ -154,10 +153,6 @@ export class POSOrderDetailPage extends PageBase {
         });
 
     }
-
-    
-
-    
     ngOnInit() {
         this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
 			switch (data.Code) {
@@ -175,10 +170,6 @@ export class POSOrderDetailPage extends PageBase {
         });
         super.ngOnInit();
     }
-
-    
-
-    
     private notify(data) {
         if (this.id == data.id) {
             this.env.showMessage("Khách gọi món", "warning");
@@ -243,209 +234,93 @@ export class POSOrderDetailPage extends PageBase {
         this.preLoadData('force');
     }
 
-    // async addToCart(item, idUoM, quantity = 1) {
-    // console.log("🚀 ~ file: pos-order-detail.page.ts:236 ~ POSOrderDetailPage ~ addToCart ~ quantity:", quantity)
-    // console.log("🚀 ~ file: pos-order-detail.page.ts:236 ~ POSOrderDetailPage ~ addToCart ~ idUoM:", idUoM)
-    // console.log("🚀 ~ file: pos-order-detail.page.ts:236 ~ POSOrderDetailPage ~ addToCart ~ item:", item)
-    //     debugger
-    //     const parentElement = this.numberOfGuestsInput.nativeElement.parentElement;
-    //     parentElement.classList.add('shake');
-    //     setTimeout(() => {
-    //         parentElement.classList.remove('shake');
-    //     }, 2000);
-
-    //     if (this.submitAttempt) {
-
-    //         let element = document.getElementById('item' + item.Id);
-    //         if (element) {
-    //             element = element.parentElement;
-    //             element.classList.add('shake');
-    //             setTimeout(() => {
-    //                 element.classList.remove('shake');
-    //             }, 400);
-    //         }
-    //         return;
-    //     }
-
-    //     if (!this.pageConfig.canAdd) {
-    //         this.env.showTranslateMessage('Bạn không có quyền thêm sản phẩm!','warning');
-    //         return;
-    //     }
-
-
-    //     if (!this.pageConfig.canEdit) {
-    //         this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
-    //         return;
-    //     }
-
-    //     if (this.item.Tables == null || this.item.Tables.length == 0) {
-    //         this.env.showTranslateMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
-    //         return;
-    //     }
-
-    //     if (!item.UoMs.length) {
-    //         this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
-    //         return;
-    //     }
-
-    //     let uom = item.UoMs.find(d => d.Id == idUoM);
-    //     let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
-
-    //     let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
-    //     if (!line) {
-    //         let UoMPrice = price.Price;
-    //         if (price.NewPrice) {
-    //             UoMPrice = price.NewPrice;
-    //         }
-    //         line = {
-
-    //             IDOrder: this.item.Id,
-    //             Id: 0,
-    //             Type: 'TableService',
-    //             Status: 'New',
-
-    //             IDItem: item.Id,
-    //             IDTax: item.IDSalesTaxDefinition,
-    //             TaxRate: item.SaleVAT,
-    //             IDUoM: idUoM,
-    //             UoMPrice: UoMPrice,
-
-    //             Quantity: 1,
-    //             IDBaseUoM: idUoM,
-    //             UoMSwap: 1,
-    //             UoMSwapAlter: 1,
-    //             BaseQuantity: 0,
-
-    //             ShippedQuantity: 0,
-
-    //             Remark: null,
-    //             IsPromotionItem: false,
-    //             IDPromotion: null,
-
-    //             OriginalDiscountFromSalesman: 0,
-    //         };
-
-    //         this.item.OrderLines.push(line);
-           
-    //         this.addOrderLine(line);
-    //         this.setOrderValue({ OrderLines: [line] });
-    //     }
-    //     else {
-    //         if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
-    //             this.env.showPrompt('Sản phẩm này đã được chuyển bếp, bạn chắc vẫn muốn thay đổi số lượng?', item.Name, 'Thay đổi số lượng').then(_ => {
-    //                 line.Quantity += quantity;
-    //                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-    //             }).catch(_ => { });
-    //         }
-    //         else if ((line.Quantity + quantity) > 0) {
-    //             line.Quantity += quantity;
-    //             this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-    //         }
-    //         else {
-	// 				let tempQty = line.Quantity;
-    //                 tempQty += quantity;
-    //                 if (tempQty == 0 && this.item.OrderLines.length == 1) {
-    //                     this.env.showMessage('Đơn hàng phải có ít nhất 1 sản phẩm!','warning');
-    //                     return;
-    //                 }
-    //             if (this.pageConfig.canDeleteItems) {
-    //                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
-                    
-    //                     line.Quantity += quantity;
-    //                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-    //                 }).catch(_ => { });
-    //             }
-    //             else {
-    //                 this.env.showMessage('Bạn không có quyền xóa sản phẩm!','warning');
-    //             }
-    //         }
-          
-    //     }
-    // }
-
     async addToCart(item, idUoM, quantity = 1) {
-        
-            const parentElement = this.numberOfGuestsInput.nativeElement.parentElement;
-            parentElement.classList.add('shake');
-            setTimeout(() => {
-                parentElement.classList.remove('shake');
-            }, 2000);
-    
-            if (this.submitAttempt) {
-    
-                let element = document.getElementById('item' + item.Id);
-                if (element) {
-                    element = element.parentElement;
-                    element.classList.add('shake');
-                    setTimeout(() => {
-                        element.classList.remove('shake');
-                    }, 400);
-                }
-                return;
+        if (this.submitAttempt) {
+
+            let element = document.getElementById('item' + item.Id);
+            if (element) {
+                element = element.parentElement;
+                element.classList.add('shake');
+                setTimeout(() => {
+                    element.classList.remove('shake');
+                }, 400);
             }
-    
-            if (!this.pageConfig.canAdd) {
-                this.env.showTranslateMessage('Bạn không có quyền thêm sản phẩm!','warning');
-                return;
+
+
+            return;
+        }
+
+        if (!this.pageConfig.canAdd) {
+            this.env.showTranslateMessage('Bạn không có quyền thêm sản phẩm!','warning');
+            return;
+        }
+
+
+        if (!this.pageConfig.canEdit) {
+            this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+            return;
+        }
+
+        if (this.item.Tables == null || this.item.Tables.length == 0) {
+            this.env.showTranslateMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
+            return;
+        }
+
+        if (!item.UoMs.length) {
+            this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
+            return;
+        }
+
+        let uom = item.UoMs.find(d => d.Id == idUoM);
+        let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
+
+        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        if (!line) {
+            let UoMPrice = price.Price;
+            if (price.NewPrice) {
+                UoMPrice = price.NewPrice;
             }
-    
-    
-            if (!this.pageConfig.canEdit) {
-                this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
-                return;
+            line = {
+
+                IDOrder: this.item.Id,
+                Id: 0,
+                Type: 'TableService',
+                Status: 'New',
+
+                IDItem: item.Id,
+                IDTax: item.IDSalesTaxDefinition,
+                TaxRate: item.SaleVAT,
+                IDUoM: idUoM,
+                UoMPrice: UoMPrice,
+
+                Quantity: 1,
+                IDBaseUoM: idUoM,
+                UoMSwap: 1,
+                UoMSwapAlter: 1,
+                BaseQuantity: 0,
+
+                ShippedQuantity: 0,
+
+                Remark: null,
+                IsPromotionItem: false,
+                IDPromotion: null,
+
+                OriginalDiscountFromSalesman: 0,
+            };
+            this.item.OrderLines.push(line);
+            this.addOrderLine(line);
+            this.setOrderValue({ OrderLines: [line] });
+        }
+        else {
+            if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
+                this.env.showPrompt('Sản phẩm này đã được chuyển bếp, bạn chắc vẫn muốn thay đổi số lượng?', item.Name, 'Thay đổi số lượng').then(_ => {
+                    line.Quantity += quantity;
+                    this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                }).catch(_ => { });
             }
-    
-            if (this.item.Tables == null || this.item.Tables.length == 0) {
-                this.env.showTranslateMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
-                return;
-            }
-    
-            if (!item.UoMs.length) {
-                this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
-                return;
-            }
-    
-            let uom = item.UoMs.find(d => d.Id == idUoM);
-            let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
-    
-            let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
-            if (!line) {
-                let UoMPrice = price.Price;
-                if (price.NewPrice) {
-                    UoMPrice = price.NewPrice;
-                }
-                line = {
-    
-                    IDOrder: this.item.Id,
-                    Id: 0,
-                    Type: 'TableService',
-                    Status: 'New',
-    
-                    IDItem: item.Id,
-                    IDTax: item.IDSalesTaxDefinition,
-                    TaxRate: item.SaleVAT,
-                    IDUoM: idUoM,
-                    UoMPrice: UoMPrice,
-    
-                    Quantity: 1,
-                    IDBaseUoM: idUoM,
-                    UoMSwap: 1,
-                    UoMSwapAlter: 1,
-                    BaseQuantity: 0,
-    
-                    ShippedQuantity: 0,
-    
-                    Remark: null,
-                    IsPromotionItem: false,
-                    IDPromotion: null,
-    
-                    OriginalDiscountFromSalesman: 0,
-                };
-    
-                this.item.OrderLines.push(line);
-               
-                this.addOrderLine(line);
-                this.setOrderValue({ OrderLines: [line] });
+            else if ((line.Quantity + quantity) > 0) {
+                line.Quantity += quantity;
+                this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
             }
             else {
                 if (this.pageConfig.canDeleteItems) {
@@ -455,31 +330,12 @@ export class POSOrderDetailPage extends PageBase {
                         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
                     }).catch(_ => { });
                 }
-                else if ((line.Quantity + quantity) > 0) {
-                    line.Quantity += quantity;
-  
-                    this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                }
                 else {
-                        let tempQty = line.Quantity;
-                        tempQty += quantity;
-                        if (tempQty == 0 && this.item.OrderLines.length == 1) {
-                            this.env.showMessage('Đơn hàng phải có ít nhất 1 sản phẩm!','warning');
-                            return;
-                        }
-                    if (this.pageConfig.canDeleteItems) {
-                        this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
-                            line.Quantity += quantity;
-                            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                        }).catch(_ => { });
-                    }
-                    else {
-                        this.env.showMessage('Bạn không có quyền xóa sản phẩm!','warning');
-                    }
+                    this.env.showMessage('Bạn không có quyền xóa sản phẩm!','warning');
                 }
-              
             }
         }
+    }
 
     async openQuickMemo(line) {
         if (this.submitAttempt) return;
@@ -622,105 +478,12 @@ export class POSOrderDetailPage extends PageBase {
             this.item.IsInvoiceRequired = false;
         }
     }
-  
-    async presentCancelOrderAlert() {
-        const alert = await this.alertCtrl.create({
-          header: 'Hủy đơn hàng',
-          message: 'Vui lòng chọn lý do hủy đơn hàng',
-          cssClass: 'yellow-alert',
-          inputs: [
-            {
-              name: 'reason',
-              type: 'checkbox',
-              label: 'Chọn lý do',
-              value: 'reason',
-              handler: () => {
-                const select : any = document.createElement('ion-select');
-                select.placeholder = 'Chọn lý do';
-                select.interfaceOptions = {
-                  header: 'Lý do hủy đơn hàng',
-                  cssClass: 'my-custom-interface-options'
-                };
-                select.items = [
-                  { label: 'Không còn hàng', value: 'Không còn hàng' },
-                  { label: 'Khách hàng thay đổi ý định mua hàng', value: 'Khách hàng thay đổi ý định mua hàng' },
-                  { label: 'Không thể giao hàng đúng thời gian', value: 'Không thể giao hàng đúng thời gian' },
-                ];
-                select.okText = 'Xác nhận';
-                select.cancelText = 'Huỷ bỏ';
-      
-                select.addEventListener('ionCancel', () => {
-                  alert.dismiss();
-                });
-      
-                select.addEventListener('ionChange', (event: any) => {
-                  console.log('Lý do hủy đơn hàng:', event.detail.value);
-                  // Xử lý lý do hủy đơn hàng ở đây
-                });
-      
-                alert.inputs.push({
-                  type: 'checkbox',
-                  name: 'selected_reason'
-                });
-      
-                alert.message = select.outerHTML;
-                select.present();
-              }
-            }
-          ],
-          buttons: [
-            {
-              text: 'Huỷ bỏ',
-              role: 'cancel',
-              cssClass: 'secondary',
-              handler: () => {
-                console.log('Đã huỷ bỏ');
-              }
-            },
-            {
-              text: 'Xác nhận',
-              handler: (data) => {
-                console.log('Lý do hủy đơn hàng:', data.selected_reason);
-                // Xử lý lý do hủy đơn hàng ở đây
-              }
-            }
-          ]
-        });
-      
-        await alert.present();
-      }
-      
-    async cancelStatus() {
-        const modal = await this.modalController.create({
-            component: POSCancelModalPage,
-            swipeToClose: true,
-            cssClass: 'my-custom-class',
-            componentProps: {
-                item: null
-            }
-        });
-        await modal.present();
-        const { data } = await modal.onWillDismiss();
-        if (data) {
-            this.changedIDAddress(data);
-            this.contactListSelected.push(data);
-            this.contactListSelected = [...this.contactListSelected];
-            this.contactSearch();
-        }
-
-    }
-
-
-
-
     cancelPOSOrder() {
         this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {
             let publishEventCode = this.pageConfig.pageName;
             if (this.submitAttempt == false) {
                 this.submitAttempt = true;
-                
 
-                
                 this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelOrders/', { Type: 'POSOrder', Ids: [this.item.Id] }).toPromise()
                     .then((savedItem: any) => {
                         if (publishEventCode) {
@@ -916,6 +679,7 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     private UpdatePrice() {
+
         this.dealList.forEach(d => {
             this.menuList.forEach(m => {
                 let index = m.Items.findIndex(i => i.SalesUoM == d.IDItemUoM);
@@ -1144,90 +908,19 @@ export class POSOrderDetailPage extends PageBase {
 
         });
         groups.push(group);
-         //#region: Update lại số lượng khách bằng số lượng món trên giỏ hàng
-         let totalQuantity = 0;
-         groups.value.forEach((element: any) => {
-             totalQuantity += element.Quantity;
-         });
-         this.formGroup.get('NumberOfGuests').setValue(totalQuantity);
-         //#endregion
-
     }
-
-    
-    // setOrderValue(data) {
-    //     debugger
-    //     for (const c in data) {
-    //         if (c == 'OrderLines' || c == 'OrderLines') {
-    //             let fa = <FormArray>this.formGroup.controls.OrderLines;
-
-    //             for (const line of data[c]) {
-    //                 let idx = -1;
-    //                 if (c == 'OrderLines') {
-    //                     idx = this.item[c].findIndex(d => d.Id == line.Id && d.IDUoM == line.IDUoM);
-    //                 }
-    //                 //Remove Order line
-    //                 if (line.Quantity < 1) {
-    //                     if (line.Id) {
-    //                         let deletedLines = this.formGroup.get('DeletedLines').value;
-    //                         deletedLines.push(line.Id);
-    //                         this.formGroup.get('DeletedLines').setValue(deletedLines);
-    //                         this.formGroup.get('DeletedLines').markAsDirty();
-    //                     }
-    //                     this.item.OrderLines.splice(idx, 1);
-    //                     fa.removeAt(idx);
-    //                 }
-    //                 //Update 
-    //                 else {
-    //                     let cfg = <FormGroup>fa.controls[idx];
-
-    //                     for (const lc in line) {
-    //                         let fc = <FormControl>cfg.controls[lc];
-    //                         if (fc) {
-    //                             fc.setValue(line[lc]);
-    //                             fc.markAsDirty();
-    //                         }
-    //                     }
-    //                 }
-
-
-    //             }
-    //         }
-    //         else {
-    //             let fc = <FormControl>this.formGroup.controls[c];
-    //             if (fc) {
-    //                 fc.setValue(data[c]);
-    //                 fc.markAsDirty();
-    //             }
-    //         }
-    //         //#region: Update lại số lượng khách bằng số lượng món trên giỏ hàng
-    //         let totalQuantity = 0;
-    //         this.formGroup.controls.OrderLines.value.forEach((element: any) => {
-    //             totalQuantity += element.Quantity;
-    //         });
-    //         this.formGroup.get('NumberOfGuests').setValue(totalQuantity);
-    //         //#endregion
-    //     }
-    //     this.calcOrder();
-
-    //     if (this.item.OrderLines.length || this.item.DeletedLines.length) {
-    //         this.debounce(() => { this.saveChange() }, 1000);
-    //     }
-
-    // }
 
     setOrderValue(data) {
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
-                console.log("🚀 ~ file: pos-order-detail.page.ts:1395 ~ POSOrderDetailPage ~ setOrderValue ~ fa:", fa)
 
                 for (const line of data[c]) {
                     let idx = -1;
                     if (c == 'OrderLines') {
                         idx = this.item[c].findIndex(d => d.Id == line.Id && d.IDUoM == line.IDUoM);
-                        console.log("🚀 ~ file: pos-order-detail.page.ts:1402 ~ POSOrderDetailPage ~ setOrderValue ~ idx:", idx)
                     }
+
                     //Remove Order line
                     if (line.Quantity < 1) {
                         if (line.Id) {
@@ -1251,6 +944,8 @@ export class POSOrderDetailPage extends PageBase {
                             }
                         }
                     }
+
+
                 }
             }
             else {
@@ -1260,13 +955,7 @@ export class POSOrderDetailPage extends PageBase {
                     fc.markAsDirty();
                 }
             }
-            //#region: Update lại số lượng khách bằng số lượng món trên giỏ hàng
-            let totalQuantity = 0;
-            this.formGroup.controls.OrderLines.value.forEach((element: any) => {
-                totalQuantity += element.Quantity;
-            });
-            this.formGroup.get('NumberOfGuests').setValue(totalQuantity);
-            //#endregion
+
         }
         this.calcOrder();
         if (this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value) {
@@ -1322,12 +1011,6 @@ export class POSOrderDetailPage extends PageBase {
 
     }
 
-
-
-    
-   
-
-   
     changedIDAddress(address) {
 
         if (address) {
@@ -1375,6 +1058,7 @@ export class POSOrderDetailPage extends PageBase {
 
     async saveChange() {
         let submitItem = this.getDirtyValues(this.formGroup);
+        console.log(submitItem);
         this.saveChange2();
     }
 

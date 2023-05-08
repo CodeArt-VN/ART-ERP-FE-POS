@@ -12,6 +12,7 @@ import { NgxMaskModule } from 'ngx-mask';
 import { PipesModule } from 'src/app/pipes/pipes.module';
 import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
 import { POSForCustomerPaymentModalPage } from '../payment/pos-payment-modal.page';
+
 const routes: Routes = [
   {
     path: '',

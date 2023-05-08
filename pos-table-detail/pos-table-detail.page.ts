@@ -3,7 +3,7 @@ import { NavController, LoadingController, AlertController, ModalController, Nav
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { POS_TableGroupProvider, POS_TableProvider, } from 'src/app/services/static/services.service';
+import { POS_TableGroupProvider, POS_TableProvider,  } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import QRCode from 'qrcode';
@@ -28,18 +28,16 @@ export class POSTableDetailPage extends PageBase {
         public commonService: CommonService,
         public modalController: ModalController,
         public navParams: NavParams,
-        private cd: ChangeDetectorRef
     ) {
         super();
         this.pageConfig.isDetailPage = true;
 
         this.formGroup = formBuilder.group({
             IDBranch: [''],
-            IsDisabled: [''],
             IDTableGroup: ['', Validators.required],
             Id: new FormControl({ value: '', disabled: true }),
             Code: [''],
-            Name: ['', Validators.required]
+            Name: ['', Validators.required],
         });
 
         // this.id = this.route.snapshot?.paramMap?.get('id');
@@ -49,10 +47,10 @@ export class POSTableDetailPage extends PageBase {
 
 
     preLoadData() {
-        if (this.pageConfig.canEditFunction) {
+        if(this.pageConfig.canEditFunction){
             this.pageConfig.canEdit = true;
         }
-
+        
         if (this.navParams) {
             this.items = JSON.parse(JSON.stringify(this.navParams.data.items));
             this.items.forEach(i => {
@@ -70,7 +68,7 @@ export class POSTableDetailPage extends PageBase {
         }
     }
 
-
+    
 
     loadedData(event?: any) {
 
@@ -80,13 +78,14 @@ export class POSTableDetailPage extends PageBase {
             that.item.QRC = url;
         });
 
-        this.tableGroupProvider.read({ IDBranch: this.env.selectedBranch }).then((results: any) => {
+        this.tableGroupProvider.read({IDBranch: this.env.selectedBranch}).then((results:any) => {
             this.tableGroupList = results.data;
         });
     }
-
+   
     async saveChange() {
-        super.saveChange2();
+        this.formGroup.controls.IDBranch.setValue(this.env.selectedBranch);
+        super.saveChange();
     }
-
+    
 }

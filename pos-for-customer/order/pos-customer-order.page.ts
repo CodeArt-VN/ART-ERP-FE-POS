@@ -12,7 +12,6 @@ import { environment } from 'src/environments/environment';
 import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
 import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
 import { POSForCustomerPaymentModalPage } from '../payment/pos-payment-modal.page';
-import { POSNotificationModalPage } from '../../pos-notification-modal/pos-notification-modal.page';
 
 @Component({
     selector: 'app-pos-customer-order',
@@ -28,7 +27,6 @@ export class POSCustomerOrderPage extends PageBase {
     Table:any;
     menuList = [];
     IDBranch = null;
-    Branch;
     dealList = [];
     statusList; //Show on bill
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
@@ -38,7 +36,6 @@ export class POSCustomerOrderPage extends PageBase {
         currentBranch: null,
         selectedTables: [],
     }
-
     constructor(
         public pageProvider: POS_ForCustomerProvider,
         public env: EnvService,
@@ -166,10 +163,8 @@ export class POSCustomerOrderPage extends PageBase {
     }
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
         
-        super.loadedData(event, ignoredFromGroup);  
-        this.getBranch(this.Table.IDBranch);    
+        super.loadedData(event, ignoredFromGroup);      
         if (!this.item?.Id) {
-            
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch); 
             Object.assign(this.item, this.formGroup.getRawValue()); 
             this.env.getStorage("OrderLines"+this.idTable).then(result=>{
@@ -194,7 +189,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.loadOrder();
         
         this.loadInfoOrder();
-        console.log(this.env.branchList);
+        
        
     }
     private UpdatePrice(){
@@ -258,7 +253,7 @@ export class POSCustomerOrderPage extends PageBase {
         };  
         return new Promise((resolve, reject) => {
             this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
-					.then((result: any) => {
+					.then((result: any) => {					
 						resolve(result);
 					})
 					.catch(err => {						
@@ -273,7 +268,7 @@ export class POSCustomerOrderPage extends PageBase {
         };  
         return new Promise((resolve, reject) => {
             this.commonService.connect(apiPath.method, apiPath.url(this.idTable), this.query).toPromise()
-					.then((result: any) => {
+					.then((result: any) => {					
 						resolve(result);
 					})
 					.catch(err => {						
@@ -297,26 +292,8 @@ export class POSCustomerOrderPage extends PageBase {
         });
     }
 
-    private getBranch(id) {
-        let apiPath = {
-            method: "GET",
-            url: function(id){return ApiSetting.apiDomain("POS/ForCustomer/Branch/") + id}  
-        };  
-        return new Promise((resolve, reject) => {
-            this.commonService.connect(apiPath.method, apiPath.url(id), this.query).toPromise()
-					.then((result: any) => {
-						resolve(result);
-                        this.Branch = result;
-                        console.log("🚀 ~ file: pos-customer-order.page.ts:296 ~ POSCustomerOrderPage ~ .then ~ this.Branch :", this.Branch )
-					})
-					.catch(err => {						
-						reject(err);
-					});
-        });
-    }
-
-    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {  
-        this.AllowSendOrder = true;   
+    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {    
+        this.AllowSendOrder = true; 
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -532,19 +509,17 @@ export class POSCustomerOrderPage extends PageBase {
     }
     async saveChange() {
         let submitItem = this.getDirtyValues(this.formGroup);
+        console.log(submitItem);
         this.saveChange2();
     }
     savedChange(savedItem?: any, form?: FormGroup<any>): void {
         if (savedItem) {
-
-
-            // let message = "Đặt hàng thành công";
-            // if(this.id!=0){
-            //     message = "cập nhật thành công";
-            // }
-            // this.env.setStorage("OrderLines"+this.idTable,[]);
-            // this.env.showTranslateMessage(message, 'success');
-            
+            let message = "Đặt hàng thành công";
+            if(this.id!=0){
+                message = "cập nhật thành công";
+            }
+            this.env.setStorage("OrderLines"+this.idTable,[]);
+            this.env.showTranslateMessage(message, 'success');
             if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id)
                 form.controls.Id.setValue(savedItem.Id);
 
@@ -642,23 +617,6 @@ export class POSCustomerOrderPage extends PageBase {
         if (val.length > 2 || val == '') {
             this.query.Keyword = val;                  
         }
+
     }
-    onButtonClick() {
-        this.presentModal(); 
-        this.sendOrder();
-    }
-    ///TASK:152
-    async presentModal() {
-          var titleValue = (this.id === 0) ? 'Đặt hàng thành công' : 'Cập nhật thành công';
-          const modal = await this.modalController.create({
-          component: POSNotificationModalPage,
-          swipeToClose: true,
-          cssClass: 'my-custom-class', 
-          componentProps: {
-            title     : titleValue,
-            dataInfo  : this.Branch,
-          }
-        });
-         await modal.present();
-      }
 }

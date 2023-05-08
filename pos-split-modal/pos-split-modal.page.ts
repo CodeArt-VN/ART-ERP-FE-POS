@@ -90,6 +90,7 @@ export class POSSplitModalPage extends PageBase {
 
         this.tableProvider.getAnItem(this.selectedOrder.Tables[0]).then(value => {
             this.currentTable = value;
+
             this.item = { Id: this.selectedOrder.Id, SplitedOrders: [] };
             this.item.SplitedOrders.push({
                 isFirst: true,
@@ -172,37 +173,8 @@ export class POSSplitModalPage extends PageBase {
         this.tableSearch();
         super.loadedData(event);
         console.log(this.selectedOrder);
-    }   
-    generateUniqueNames(orders) {
-        var counts = {};
-        var result = [];
-        for (var i = 0; i < orders.length; i++) {
-          var order = orders[i];
-          if (order.TableName in counts) {
-            counts[order.TableName]++;
-            result.push(order.TableName + '-' + counts[order.TableName]);
-          } else {
-            counts[order.TableName] = 1;
-            result.push(order.TableName);
-          }
-        }
-        for (var j = 0; j < result.length; j++) {
-          if (result[j] in counts && counts[result[j]] > 1) {
-            var count = counts[result[j]];
-            var baseName = result[j].replace(/-\d+$/, '');
-            for (var k = 1; k <= count; k++) {
-              var newName = baseName + '-' + k;
-              if (result.indexOf(newName) === -1) {
-                result[j] = newName;
-                counts[newName] = counts[result[j]];
-                delete counts[result[j]];
-                break;
-              }
-            }
-          }
-        }
-        return result;
-      }
+        console.log(this.items);
+    }
 
     contactList$
     contactListLoading = false;
@@ -455,9 +427,6 @@ export class POSSplitModalPage extends PageBase {
                 break;
             }
         }
-        // this.item.SplitedOrders.forEach(element => {
-            
-        // });
 
         this.isCanSplit;
 
@@ -516,6 +485,7 @@ export class POSSplitModalPage extends PageBase {
 
     splitSaleOrder() {
         let publishEventCode = this.pageConfig.pageName;
+    
         return new Promise((resolve, reject) => {
             if (!this.isCanSplit) {
                 this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.check-customer-atleast-one', 'warning');
@@ -526,6 +496,7 @@ export class POSSplitModalPage extends PageBase {
                 if (!this.item.IDBranch) {
                     this.item.IDBranch = this.env.selectedBranch;
                 }
+
                 this.pageProvider.commonService.connect('POST', 'SALE/Order/SplitPosOrder/', this.item).toPromise().then((savedItem: any) => {
                     if (publishEventCode) {
                         this.env.publishEvent({ Code: publishEventCode });

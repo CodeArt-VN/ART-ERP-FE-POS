@@ -18,8 +18,8 @@
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
 						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
-							<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line" >
-								<!-- <div style="display: flex;">									
+							<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
+								<div style="display: flex;">									
 									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 									<div class="od-info" *ngIf="line._item">
 										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
@@ -27,35 +27,16 @@
 											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
 										</div>
 									</div>
-								</div> -->
-								<ion-item-sliding style="--border-width: 0;" class="animated infinite pulse">
-									<ion-item  lines="none" class="no-border-bottom">
-										<div style="display: flex;">									
-											<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
-											<div class="od-info" *ngIf="line._item">
-												<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
-												<div class="od-price">
-													<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
-												</div>
-											</div>
-										</div>
-									</ion-item>
-									<ion-item-options style="border-bottom-width: 0 !important;">
-										<ion-button  fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity)); line._isShowFoC = false;">
-											<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-										</ion-button>
-									  </ion-item-options>
-								</ion-item-sliding>
+								</div>
+
 								<div class="od-quantity">
+									
 									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
 									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
-									<!-- <ion-button fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity)); line._isShowFoC = false;">
-										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-									</ion-button> -->
 									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="line._isShowNote =! line._isShowNote; line._isShowFoC = false">
 										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
 									</ion-button>
@@ -228,7 +209,7 @@
 							
 						</div>
 						<div class="c-control">
-							<input style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty"  formControlName="NumberOfGuests"  placeholder="Số khách"  #numberOfGuestsInput/>							
+							<input style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="NumberOfGuests" (change)="saveChange();" placeholder="Số khách"/>							
 						</div>
 						<div class="c-control">
 							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Tables" (change)="changeTable();" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.table-placeholder' | translate}}">
@@ -247,16 +228,10 @@
 								</ng-template>
 							</ng-select>
 						</div>
-						<!-- <div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
+
+						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
 							<label for=""></label>
 							<ion-button size="small" color="danger" expand="block" fill="outline" (click)="cancelPOSOrder();" [disabled]="submitAttempt || !pageConfig.canCancelOrder">
-								{{'erp.app.pages.pos.pos-order.cancel' | translate}}
-							</ion-button>
-						</div> -->
-						<div class="c-control">
-							<label for=""></label>
-							<!-- (click)="cancelStatus();" -->
-							<ion-button size="small" color="danger" (click)="cancelStatus();" expand="block" fill="outline">
 								{{'erp.app.pages.pos.pos-order.cancel' | translate}}
 							</ion-button>
 						</div>
