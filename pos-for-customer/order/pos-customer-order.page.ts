@@ -6,7 +6,6 @@ import { EnvService } from 'src/app/services/core/env.service';
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { TranslateService } from '@ngx-translate/core';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { environment } from 'src/environments/environment';
 import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
@@ -24,31 +23,33 @@ export class POSCustomerOrderPage extends PageBase {
     segmentView = 'all';
     AllowSendOrder = false;
     idTable: any; //Default table
-    Table:any;
+    Table: any;
     menuList = [];
     IDBranch = null;
+    Branch;
     dealList = [];
     statusList; //Show on bill
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
+    noLockLineStatusList = ['New', 'Waiting'];
     printData = {
         undeliveredItems: [], //To track undelivered items to the kitchen
         printDate: null,
         currentBranch: null,
         selectedTables: [],
     }
+
     constructor(
         public pageProvider: POS_ForCustomerProvider,
         public env: EnvService,
         public navCtrl: NavController,
         public route: ActivatedRoute,
         public modalController: ModalController,
-        public popoverCtrl: PopoverController,
         public alertCtrl: AlertController,
+        public popoverCtrl: PopoverController,
         public formBuilder: FormBuilder,
         public cdr: ChangeDetectorRef,
         public loadingController: LoadingController,
         public commonService: CommonService,
-        public translate: TranslateService
     ) {
         super();
         this.pageConfig.isDetailPage = true;
@@ -66,19 +67,19 @@ export class POSCustomerOrderPage extends PageBase {
             Additions: this.formBuilder.array([]),
             Deductions: this.formBuilder.array([]),
             Tables: [[this.idTable]],
-            IDBranch: [''],         
+            IDBranch: [''],
             IDOwner: [-1],
             IDContact: [-1],
             IDAddress: [-1],
             IDType: [293],
-            IDStatus: [101],           
+            IDStatus: [101],
             Type: ['POSOrder'],
             SubType: ['TableService'],
-            Status: new FormControl({ value: 'New', disabled: true }),          
+            Status: new FormControl({ value: 'New', disabled: true }),
             IDTable: [this.idTable],
             IsCOD: [],
             IsInvoiceRequired: [],
-            NumberOfGuests : [1],
+            NumberOfGuests: [1],
             InvoicDate: new FormControl({ value: null, disabled: true }),
             InvoiceNumber: new FormControl({ value: null, disabled: true }),
 
@@ -88,87 +89,70 @@ export class POSCustomerOrderPage extends PageBase {
             Received: new FormControl({ value: null, disabled: true }),
             ReceivedDiscountFromSalesman: new FormControl({ value: null, disabled: true }),
         })
-        Object.assign(this.query, {IDTable: this.idTable});
-        this.env.getStorage("Order").then(result=>{
-            if(result?.Id && result?.IDTable == this.idTable && result.Status=="New"){   
-                this.id = result.Id;           
+        Object.assign(this.query, { IDTable: this.idTable });
+        this.env.getStorage("Order").then(result => {
+            if (result?.Id && result?.IDTable == this.idTable && result.Status == "New") {
+                this.id = result.Id;
                 let newURL = '#/pos-customer-order/' + result.Id + '/' + this.idTable;
                 history.pushState({}, null, newURL);
                 this.refresh();
-            }                
-        });
-    }
-    ngOnInit() {
-        
-        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
-			switch (data.Code) {
-				case 'app:POSOrderPaymentUpdate':
-					this.refresh();
-					break;
             }
         });
-        this.pageConfig.subscribePOSOrderCustomer = this.env.getEvents().subscribe((data) => {         
-			switch (data.Code) {
-				case 'app:POSOrderFromStaff':
-					this.notify(data.Data);
-					break;
+    }
+
+    ////EVENTS
+    ngOnInit() {
+        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
+            switch (data.Code) {
+                case 'app:POSOrderPaymentUpdate':
+                    this.refresh();
+                    break;
+            }
+        });
+        this.pageConfig.subscribePOSOrderCustomer = this.env.getEvents().subscribe((data) => {
+            switch (data.Code) {
+                case 'app:POSOrderFromStaff':
+                    this.notify(data.Data);
+                    break;
             }
         });
         super.ngOnInit();
-        
     }
-    private notify(data){
-        if(this.item.Id == data.id){
-            this.refresh();
-            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
-        }
-    }
+
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
-        this.pageConfig?.subscribePOSOrderCustomer?.unsubscribe(); 
+        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe();
+        this.pageConfig?.subscribePOSOrderCustomer?.unsubscribe();
         super.ngOnDestroy();
     }
-    segmentChanged(ev: any) {
-        this.segmentView = ev;
-    }
-    preLoadData(event?: any): void {
-        
 
+    preLoadData(event?: any): void {
         let forceReload = event === 'force';
-        this.AllowSendOrder = false;      
-        Promise.all([         
-            this.env.getStatus('POSOrder'),           
-            this.getMenu(),  
+        this.AllowSendOrder = false;
+        Promise.all([
+            this.env.getStatus('POSOrder'),
+            this.getMenu(),
             this.getTable(),
             this.getDeal(),
-        ]).then((values: any) => { 
-            this.statusList = values[0];    
-            this.menuList = values[1]; 
-            this.Table = values[2];    
-            this.dealList = values[3];        
+        ]).then((values: any) => {
+            this.statusList = values[0];
+            this.menuList = values[1];
+            this.Table = values[2];
+            this.dealList = values[3];
             super.preLoadData(event);
-        }).catch(err => {           
+        }).catch(err => {
             this.loadedData(event);
         })
     }
-    jumpToItem(line) {
-        let element = document.getElementById('item' + line.IDItem);
-        if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
-            element.classList.add('blink');
-            setTimeout(() => {
-                element.classList.remove('blink');
-            }, 2000);
-        }
-    }
+
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
-        
-        super.loadedData(event, ignoredFromGroup);      
+        super.loadedData(event, ignoredFromGroup);
+        this.getBranch(this.Table.IDBranch);
         if (!this.item?.Id) {
-            this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch); 
-            Object.assign(this.item, this.formGroup.getRawValue()); 
-            this.env.getStorage("OrderLines"+this.idTable).then(result=>{
-                if(result?.length>0){
+
+            this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
+            Object.assign(this.item, this.formGroup.getRawValue());
+            this.env.getStorage("OrderLines" + this.idTable).then(result => {
+                if (result?.length > 0) {
                     this.item.OrderLines = result;
                     this.patchOrderValue();
                     this.loadOrder();
@@ -177,123 +161,25 @@ export class POSCustomerOrderPage extends PageBase {
                 }
                 else {
                     this.setOrderValue(this.item);
-                    this.AllowSendOrder = false;      
+                    this.AllowSendOrder = false;
                 }
             });
-        }   
+        }
         else {
-            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
+            this.env.setStorage("Order", { Id: this.item.Id, IDTable: this.idTable, Status: this.item.Status });
             this.patchOrderValue();
-        }       
-        
+        }
         this.loadOrder();
         
         this.loadInfoOrder();
-        
-       
     }
-    private UpdatePrice(){
-        
-        this.dealList.forEach(d=>{                     
-            this.menuList.forEach(m=>{                             
-                let index = m.Items.findIndex(i=>i.SalesUoM == d.IDItemUoM);
-                if(index != -1){ 
-                    let idexUom =  m.Items[index].UoMs.findIndex(u=>u.Id == d.IDItemUoM);                    
-                    let newPrice = d.Price;
-                    if(d.IsByPercent == true){
-                        newPrice = d.OriginalPrice - (d.OriginalPrice * d.DiscountByPercent/100);
-                    }      
-                    m.Items[index].UoMs[idexUom].PriceList.find(p=>p.Type=="SalePriceList").NewPrice = newPrice;  
-                   
-                    if(d.MaxPerOrder != null){
-                        m.Items[index].UoMs[idexUom].MaxPerOrder = d.MaxPerOrder;
-                    }               
-                }
-            });
-        })           
-    }
-    
-    private loadOrder() {
-        this.printData.undeliveredItems = [];       
-        this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
 
-        this.item._Locked = !this.pageConfig.canEdit ? false : this.noLockStatusList.indexOf(this.item.Status) == -1;
-        this.printData.currentBranch = this.env.branchList.find(d => d.Id == this.item.IDBranch);
-
-        if (this.item._Locked) {
-            this.pageConfig.canEdit = false;
-            this.formGroup?.disable();
-        }
-        
-        this.UpdatePrice();
-        this.calcOrder();       
-        
-
-    }
-    private patchOrderValue() {
-        this.formGroup?.patchValue(this.item);
-        this.patchOrderLinesValue();
-        console.log(this.getDirtyValues(this.formGroup));
-    }
-    private patchOrderLinesValue() {
-        this.formGroup.controls.OrderLines = new FormArray([]);
-        if (this.item.OrderLines?.length) {
-            for (let i of this.item.OrderLines) {
-                this.addOrderLine(i);
-            }
-        }
-    }
     refresh(event?: any): void {
         this.preLoadData('force');
     }
-    private getMenu() {
-        let apiPath = {
-            method: "GET",
-            url: function(){return ApiSetting.apiDomain("POS/ForCustomer/Menu")}  
-        };  
-        return new Promise((resolve, reject) => {
-            this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
-					.then((result: any) => {					
-						resolve(result);
-					})
-					.catch(err => {						
-						reject(err);
-					});
-        });
-    }
-    private getTable() {
-        let apiPath = {
-            method: "GET",
-            url: function(id){return ApiSetting.apiDomain("POS/ForCustomer/Table/") + id}  
-        };  
-        return new Promise((resolve, reject) => {
-            this.commonService.connect(apiPath.method, apiPath.url(this.idTable), this.query).toPromise()
-					.then((result: any) => {					
-						resolve(result);
-					})
-					.catch(err => {						
-						reject(err);
-					});
-        });
-    }
-    private getDeal(){
-        let apiPath = {
-            method: "GET",
-            url: function(){return ApiSetting.apiDomain("POS/ForCustomer/Deal")}  
-        };  
-        return new Promise((resolve, reject) => {          
-            this.commonService.connect(apiPath.method, apiPath.url(),this.query).toPromise()
-					.then((result: any) => {					
-						resolve(result);
-					})
-					.catch(err => {						
-						reject(err);
-					});
-        });
-    }
 
-    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {    
-        this.AllowSendOrder = true; 
+    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {
+        this.AllowSendOrder = true;
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -305,9 +191,8 @@ export class POSCustomerOrderPage extends PageBase {
                 }, 400);
             }
 
-
             return;
-        }       
+        }
 
         if (!this.pageConfig.canEdit) {
             this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
@@ -320,10 +205,10 @@ export class POSCustomerOrderPage extends PageBase {
         }
 
         let uom = item.UoMs.find(d => d.Id == idUoM);
-        let price = uom.PriceList.find(d => d.Type == 'SalePriceList');            
-        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)                
-        
-        if (!line) {                                     
+        let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
+
+        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        if (!line) {
             line = {
                 IDOrder: this.item.Id,
                 Id: 0,
@@ -334,88 +219,354 @@ export class POSCustomerOrderPage extends PageBase {
                 IDTax: item.IDSalesTaxDefinition,
                 TaxRate: item.SaleVAT,
                 IDUoM: idUoM,
-                UoMPrice: price.Price,  
+                UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
 
-                Quantity: 1,              
+                Quantity: 1,
                 IDBaseUoM: idUoM,
                 UoMSwap: 1,
                 UoMSwapAlter: 1,
-                BaseQuantity: 0,               
+                BaseQuantity: 0,
                 ShippedQuantity: 0,
 
                 Remark: null,
                 IsPromotionItem: false,
-                IDPromotion: null
+                IDPromotion: null,
+
+                OriginalDiscountFromSalesman: 0,
             };
-            if(price.NewPrice){                
-                line.UoMPrice = price.NewPrice;
-            }  
-            this.calcOrderLine(line);          
-            this.item.OrderLines.push(line);  
-                      
-            this.addOrderLine(line);         
+
+            this.item.OrderLines.push(line);
+
+            this.addOrderLine(line);
             this.setOrderValue({ OrderLines: [line] });
-            if(this.id==0){
-                this.env.setStorage("OrderLines"+this.idTable,this.item.OrderLines);
+            if (this.id == 0) {
+                this.env.setStorage("OrderLines" + this.idTable, this.item.OrderLines);
             }
         }
         else {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
-                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ",item.Name+" đã chuyển bếp "+line.ShippedQuantity+" "+ line.UoMName,"Thông báo");               
+                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ", item.Name + " đã chuyển bếp " + line.ShippedQuantity + " " + line.UoMName, "Thông báo");
             }
             else if ((line.Quantity + quantity) > 0) {
-                
                 line.Quantity += quantity;
-                this.calcOrderLine(line);
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                if(this.id==0){
-                    this.env.setStorage("OrderLines"+this.idTable,this.item.OrderLines);
+                if (this.id == 0) {
+                    this.env.setStorage("OrderLines" + this.idTable, this.item.OrderLines);
                 }
             }
             else {
                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
                     line.Quantity += quantity;
-                    this.calcOrderLine(line);
                     this.loadInfoOrder();
                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                    if(this.id==0){
-                        this.env.setStorage("OrderLines"+this.idTable,this.item.OrderLines);
+                    if (this.id == 0) {
+                        this.env.setStorage("OrderLines" + this.idTable, this.item.OrderLines);
                     }
                 }).catch(_ => { });
             }
-             
+
         }
     }
-    calcOrderLine(line){
-        line._serviceCharge = 0;
-        if (this.item.IDBranch == 174 //W-Cafe
-            || this.item.IDBranch == 17 //The Log
-            || (this.item.IDBranch == 416) //Gem Cafe && set menu  && line._item.IDMenu == 218
-        ) {
-            line._serviceCharge = 5;
-        }                      
-        line.OriginalTotalBeforeDiscount = line.Quantity * line.UoMPrice;
-        line.OriginalPromotion = parseFloat(line.OriginalPromotion) || 0;
-        line.OriginalDiscount1 = parseFloat(line.OriginalDiscount1) || 0;
-        line.OriginalDiscount2 = parseFloat(line.OriginalDiscount2) || 0;
-        line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
-        line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
-        line.OriginalDiscountByGroup = line.OriginalPromotion/100 * line.OriginalTotalBeforeDiscount;
-        line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
-        line.OriginalTotalDiscount = line.OriginalDiscountByOrder + line.OriginalDiscountByLine;
-        
 
-        line.OriginalTotalAfterDiscount = line.OriginalTotalBeforeDiscount -  line.OriginalTotalDiscount;
-        line.OriginalTax = line.OriginalTotalAfterDiscount*line.TaxRate/100;
-        line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount +  line.OriginalTax;
+    async openQuickMemo(line) {
+        if (this.submitAttempt) return;
 
-        line.OriginalDiscountFromSalesman = parseFloat(line.OriginalDiscountFromSalesman) || 0;
-        
-        line.CalcOriginalTotalAdditions =  line.OriginalTotalAfterDiscount * (line._serviceCharge / 100) * (1 + line.TaxRate / 100);
-        line.CalcTotalOriginal  = line.OriginalTotalAfterTax + line.CalcOriginalTotalAdditions;                   
-        line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;   
-        this.calcOrder();     
+        const modal = await this.modalController.create({
+            component: POSCustomerMemoModalPage,
+            id: 'POSMemoModalPage',
+            swipeToClose: true,
+            backdropDismiss: true,
+            cssClass: 'modal-quick-memo',
+            componentProps: {
+                item: JSON.parse(JSON.stringify(line))
+            }
+        });
+        await modal.present();
+        const { data, role } = await modal.onWillDismiss();
+
+        if (role == 'confirm') {
+            line.Remark = data ? data.toString() : null;
+            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
+        }
     }
+
+    jumpToItem(line) {
+        let element = document.getElementById('item' + line.IDItem);
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            element.classList.add('blink');
+            setTimeout(() => {
+                element.classList.remove('blink');
+            }, 2000);
+        }
+    }
+
+    segmentChanged(ev: any) {
+        this.segmentView = ev;
+    }
+
+    search(ev) {
+        var val = ev.target.value.toLowerCase();
+        if (val == undefined) {
+            val = '';
+        }
+        if (val.length > 2 || val == '') {
+            this.query.Keyword = val;
+        }
+    }
+
+    async processPayments() {
+        const modal = await this.modalController.create({
+            component: POSForCustomerPaymentModalPage,
+            swipeToClose: true,
+            backdropDismiss: true,
+            cssClass: 'modal-change-table',
+            componentProps: {
+                item: this.item,
+            }
+        });
+        await modal.present();
+        const { data, role } = await modal.onWillDismiss();
+    }
+
+
+
+
+
+    ////PRIVATE METHODS
+    private UpdatePrice() {
+        this.dealList.forEach(d => {
+            this.menuList.forEach(m => {
+                let index = m.Items.findIndex(i => i.SalesUoM == d.IDItemUoM);
+                if (index != -1) {
+                    let idexUom = m.Items[index].UoMs.findIndex(u => u.Id == d.IDItemUoM);
+                    let newPrice = d.Price;
+                    if (d.IsByPercent == true) {
+                        newPrice = d.OriginalPrice - (d.OriginalPrice * d.DiscountByPercent / 100);
+                    }
+                    m.Items[index].UoMs[idexUom].PriceList.find(p => p.Type == "SalePriceList").NewPrice = newPrice;
+
+                    if (d.MaxPerOrder != null) {
+                        m.Items[index].UoMs[idexUom].MaxPerOrder = d.MaxPerOrder;
+                    }
+                }
+            });
+        })
+    }
+
+    private loadOrder() {
+        this.printData.undeliveredItems = [];
+        this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
+
+        this.item._Locked = !this.pageConfig.canEdit ? false : this.noLockStatusList.indexOf(this.item.Status) == -1;
+        this.printData.currentBranch = this.env.branchList.find(d => d.Id == this.item.IDBranch);
+
+        if (this.item._Locked) {
+            this.pageConfig.canEdit = false;
+            this.formGroup?.disable();
+        }
+        this.UpdatePrice();
+        this.calcOrder();
+    }
+
+    //Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về. 
+    private calcOrder() {
+        this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+        this.item._TotalShipedQuantity = this.item.OrderLines?.map(x => x.ShippedQuantity).reduce((a, b) => (+a) + (+b), 0);
+        this.item.OriginalTotalBeforeDiscount = 0;
+        this.item.OriginalDiscountByOrder = 0;
+        this.item.OriginalDiscountFromSalesman = 0;
+        this.item.OriginalTotalDiscount = 0;
+        this.item.OriginalTotalAfterDiscount = 0;
+        this.item.OriginalTax = 0;
+        this.item.OriginalTotalAfterTax = 0;
+        this.item.CalcOriginalTotalAdditions = 0;
+        this.item.CalcTotalOriginal = 0;
+
+        this.item.OriginalTotalDiscountPercent = 0;
+        this.item.OriginalTaxPercent = 0;
+        this.item.CalcOriginalTotalAdditionsPercent = 0;
+        this.item.OriginalDiscountFromSalesmanPercent = 0;
+        this.item._OriginalTotalAfterDiscountFromSalesman = 0;
+
+        for (let m of this.menuList) for (let mi of m.Items) mi.BookedQuantity = 0;
+
+        for (let line of this.item.OrderLines) {
+
+            line._serviceCharge = 0;
+            if (this.item.IDBranch == 174 //W-Cafe
+                || this.item.IDBranch == 17 //The Log
+                || (this.item.IDBranch == 416) //Gem Cafe && set menu  && line._item.IDMenu == 218
+            ) {
+                line._serviceCharge = 5;
+            }
+
+            //Parse data + Tính total
+            line.UoMPrice = line.IsPromotionItem ? 0 : parseFloat(line.UoMPrice) || 0;
+            line.TaxRate = parseFloat(line.TaxRate) || 0;
+            line.Quantity = parseFloat(line.Quantity) || 0;
+            line.OriginalTotalBeforeDiscount = line.UoMPrice * line.Quantity;
+            this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount;
+
+            //line.OriginalPromotion
+            line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount1) || 0;
+            line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount2) || 0;
+            line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
+            line.OriginalDiscountByGroup = 0;
+            line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
+            line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
+            this.item.OriginalDiscountByOrder += line.OriginalDiscountByOrder;
+            line.OriginalTotalDiscount = line.OriginalDiscountByLine + line.OriginalDiscountByOrder;
+            this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;
+
+            line.OriginalTotalAfterDiscount = line.OriginalTotalBeforeDiscount - line.OriginalTotalDiscount;
+            line.OriginalTax = line.OriginalTotalAfterDiscount * (line.TaxRate / 100.0);
+            this.item.OriginalTotalAfterDiscount += line.OriginalTotalAfterDiscount;
+            this.item.OriginalTax += line.OriginalTax;
+            line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
+            this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
+            line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
+            this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
+
+
+            line.CalcTotalOriginal = line.OriginalTotalAfterTax + line.CalcOriginalTotalAdditions;
+            this.item.CalcTotalOriginal += line.CalcTotalOriginal;
+            line.OriginalDiscountFromSalesman = parseFloat(line.OriginalDiscountFromSalesman) || 0;
+            line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
+
+            this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman;
+
+            //Lấy hình & hiển thị thông tin số lượng đặt hàng lên menu
+            for (let m of this.menuList)
+                for (let mi of m.Items) {
+                    if (mi.Id == line.IDItem) {
+                        mi.BookedQuantity = this.item.OrderLines.filter(x => x.IDItem == line.IDItem).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+                        line._item = mi;
+                    }
+                }
+
+            line._background = { 'background-image': 'url("' + environment.posImagesServer + ((line._item && line._item.Image) ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")' };
+
+
+            //Tính số lượng item chưa gửi bếp
+            line._undeliveredQuantity = line.Quantity - line.ShippedQuantity;
+            if (line._undeliveredQuantity > 0) {
+                this.printData.undeliveredItems.push(line);
+                line.Status = 'New';
+            }
+            else {
+                line.Status = 'Waiting';
+            }
+
+            line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
+
+
+        }
+
+        this.item.OriginalTotalDiscountPercent = ((this.item.OriginalTotalDiscount / this.item.OriginalTotalBeforeDiscount) * 100.0).toFixed(0);
+        this.item.OriginalTaxPercent = ((this.item.OriginalTax / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
+        this.item.CalcOriginalTotalAdditionsPercent = ((this.item.CalcOriginalTotalAdditions / this.item.OriginalTotalAfterTax) * 100.0).toFixed(0);
+        this.item.OriginalDiscountFromSalesmanPercent = ((this.item.OriginalDiscountFromSalesman / this.item.CalcTotalOriginal) * 100.0).toFixed(0);
+        this.item.Debt = (this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman) - this.item.Received;
+    }
+
+    //patch value to form
+    private patchOrderValue() {
+        this.formGroup?.patchValue(this.item);
+        this.patchOrderLinesValue();
+    }
+
+    private patchOrderLinesValue() {
+        this.formGroup.controls.OrderLines = new FormArray([]);
+        if (this.item.OrderLines?.length) {
+            for (let i of this.item.OrderLines) {
+                this.addOrderLine(i);
+            }
+        }
+    }
+
+    private notify(data) {
+        if (this.item.Id == data.id) {
+            this.refresh();
+            this.env.setStorage("Order", { Id: this.item.Id, IDTable: this.idTable, Status: this.item.Status });
+        }
+    }
+
+    private getMenu() {
+        let apiPath = {
+            method: "GET",
+            url: function () { return ApiSetting.apiDomain("POS/ForCustomer/Menu") }
+        };
+        return new Promise((resolve, reject) => {
+            this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
+                .then((resp: any) => {
+                    let menuList = resp;
+                        menuList.forEach((m: any) => {
+                            m.menuImage = environment.posImagesServer + (m.Image ? m.Image : 'assets/pos-icons/POS-Item-demo.png');
+                            m.Items.sort((a, b) => a['Sort'] - b['Sort']);
+                            m.Items.forEach(i => {
+                                i.imgPath = environment.posImagesServer + (i.Image ? i.Image : 'assets/pos-icons/POS-Item-demo.png');
+                            });
+                        });
+                        resolve(menuList);
+
+                    
+                })
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    }
+
+    private getTable() {
+        let apiPath = {
+            method: "GET",
+            url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/Table/") + id }
+        };
+        return new Promise((resolve, reject) => {
+            this.commonService.connect(apiPath.method, apiPath.url(this.idTable), this.query).toPromise()
+                .then((result: any) => {
+                    resolve(result);
+                })
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    }
+
+    private getDeal() {
+        let apiPath = {
+            method: "GET",
+            url: function () { return ApiSetting.apiDomain("POS/ForCustomer/Deal") }
+        };
+        return new Promise((resolve, reject) => {
+            this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
+                .then((result: any) => {
+                    resolve(result);
+                })
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    }
+
+    private getBranch(id) {
+        let apiPath = {
+            method: "GET",
+            url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/Branch/") + id }
+        };
+        return new Promise((resolve, reject) => {
+            this.commonService.connect(apiPath.method, apiPath.url(id), this.query).toPromise()
+                .then((result: any) => {
+                    this.Branch = result;
+                    resolve(result);
+                })
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    }
+
     private addOrderLine(line) {
         let groups = <FormArray>this.formGroup.controls.OrderLines;
         let group = this.formBuilder.group({
@@ -444,12 +595,58 @@ export class POSCustomerOrderPage extends PageBase {
             IsPromotionItem: [line.IsPromotionItem],
             IDPromotion: [line.IDPromotion],
 
+            OriginalDiscountFromSalesman: [line.OriginalDiscountFromSalesman],
+
+
+
+            // OriginalTotalBeforeDiscount
+            // OriginalPromotion
+            // OriginalDiscount1
+            // OriginalDiscount2
+            // OriginalDiscountByItem
+            // OriginalDiscountByGroup
+            // OriginalDiscountByLine
+            // OriginalDiscountByOrder
+            // OriginalDiscountFromSalesman
+            // OriginalTotalDiscount
+            // OriginalTotalAfterDiscount
+            // OriginalTax
+            // OriginalTotalAfterTax
+            // CalcOriginalTotalAdditions
+            // CalcOriginalTotalDeductions
+            // CalcTotalOriginal
+
+            // ShippedQuantity
+            // ReturnedQuantity
+
+            // TotalBeforeDiscount
+            // Discount1
+            // Discount2
+            // DiscountByItem
+            // Promotion
+            // DiscountByGroup
+            // DiscountByLine
+            // DiscountByOrder
+            // DiscountFromSalesman
+            // TotalDiscount
+            // TotalAfterDiscount
+            // Tax
+            // TotalAfterTax
+            // CalcTotalAdditions
+            // CalcTotalDeductions
+            // CalcTotal
+
+
+            // CreatedBy
+            // ModifiedBy
+            // CreatedDate
+            // ModifiedDate
 
         });
         groups.push(group);
     }
+
     setOrderValue(data) {
-        
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
@@ -459,7 +656,6 @@ export class POSCustomerOrderPage extends PageBase {
                     if (c == 'OrderLines') {
                         idx = this.item[c].findIndex(d => d.Id == line.Id && d.IDUoM == line.IDUoM);
                     }
-
                     //Remove Order line
                     if (line.Quantity < 1) {
                         if (line.Id) {
@@ -468,14 +664,11 @@ export class POSCustomerOrderPage extends PageBase {
                             this.formGroup.get('DeletedLines').setValue(deletedLines);
                             this.formGroup.get('DeletedLines').markAsDirty();
                         }
-                        
                         this.item.OrderLines.splice(idx, 1);
-                        
                         fa.removeAt(idx);
                     }
                     //Update 
                     else {
-                        
                         let cfg = <FormGroup>fa.controls[idx];
 
                         for (const lc in line) {
@@ -486,40 +679,27 @@ export class POSCustomerOrderPage extends PageBase {
                             }
                         }
                     }
-
-
                 }
             }
             else {
-                
                 let fc = <FormControl>this.formGroup.controls[c];
                 if (fc) {
                     fc.setValue(data[c]);
                     fc.markAsDirty();
                 }
             }
-
         }
         this.loadInfoOrder();
-        this.calcOrder();      
+        this.calcOrder();
     }
-    sendOrder(){
-        this.saveChange();    
-        this.AllowSendOrder = false;             
-    }
+
     async saveChange() {
         let submitItem = this.getDirtyValues(this.formGroup);
-        console.log(submitItem);
         this.saveChange2();
     }
+
     savedChange(savedItem?: any, form?: FormGroup<any>): void {
         if (savedItem) {
-            let message = "Đặt hàng thành công";
-            if(this.id!=0){
-                message = "cập nhật thành công";
-            }
-            this.env.setStorage("OrderLines"+this.idTable,[]);
-            this.env.showTranslateMessage(message, 'success');
             if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id)
                 form.controls.Id.setValue(savedItem.Id);
 
@@ -529,94 +709,44 @@ export class POSCustomerOrderPage extends PageBase {
                 history.pushState({}, null, newURL);
             }
 
-            this.item = savedItem;         
-            this.env.setStorage("Order",{Id:this.item.Id,IDTable:this.idTable,Status:this.item.Status});
-        }      
+            this.item = savedItem;
+            this.isSuccessModalOpen = true;
+            this.env.setStorage("Order", { Id: this.item.Id, IDTable: this.idTable, Status: this.item.Status });
+        }
         this.loadedData();
+
         this.submitAttempt = false;
     }
-    private calcOrder() {
-        this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
-        this.item._TotalShipedQuantity = this.item.OrderLines?.map(x => x.ShippedQuantity).reduce((a, b) => (+a) + (+b), 0);
-        
-        this.item.OriginalTotalBeforeDiscount = 0;
-        this.item.OriginalTotalDiscount = 0;
-        this.item.OriginalTax = 0;
-        this.item.OriginalTotalAfterTax = 0;
-        this.item.CalcOriginalTotalAdditions = 0;
-        this.item.CalcTotalOriginal = 0;
-        this.item.OriginalDiscountFromSalesman = 0;     
-        this.item._OriginalTotalAfterDiscountFromSalesman = 0;
-        
-        for (let line of this.item.OrderLines) {            
-            this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount; 
-            this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;           
-            this.item.OriginalTax += line.OriginalTax;           
-            this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
-            this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions; 
-            this.item.CalcTotalOriginal += line.CalcTotalOriginal ;    
-            this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman; 
-            this.item._OriginalTotalAfterDiscountFromSalesman += line._OriginalTotalAfterDiscountFromSalesman;
-        }
-        this.item.Debt = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received;  
+
+    sendOrder() {
+        this.saveChange();
+        this.AllowSendOrder = false;
     }
-    loadInfoOrder(){
+
+
+
+
+
+    loadInfoOrder() {
         for (let line of this.item.OrderLines) {
             for (let m of this.menuList)
-                    for (let mi of m.Items) {
-                        if (mi.Id == line.IDItem) {
-                            mi.BookedQuantity = this.item.OrderLines.filter(x => x.IDItem == line.IDItem).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
-                            line._item = mi;
-                        }
+                for (let mi of m.Items) {
+                    if (mi.Id == line.IDItem) {
+                        mi.BookedQuantity = this.item.OrderLines.filter(x => x.IDItem == line.IDItem).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+                        line._item = mi;
                     }
+                }
 
-                line._background = { 'background-image': 'url("' + environment.posImagesServer + ((line._item && line._item.Image) ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")' };
-            }
-        
-    }
-    async processPayments() {
-        const modal = await this.modalController.create({
-            component: POSForCustomerPaymentModalPage,
-            swipeToClose: true,
-            backdropDismiss: true,
-            cssClass: 'modal-change-table',
-            componentProps: {
-                item: this.item,
-            }
-        });
-        await modal.present();
-        const { data , role } = await modal.onWillDismiss();     
-    }
-    async openQuickMemo(line) {
-        if (this.submitAttempt) return;
-
-        const modal = await this.modalController.create({
-            component: POSCustomerMemoModalPage,
-            id: 'POSMemoModalPage',
-            swipeToClose: true,
-            backdropDismiss: true,
-            cssClass: 'modal-quick-memo',
-            componentProps: {
-                item: JSON.parse(JSON.stringify(line))
-            }
-        });
-        await modal.present();
-        const { data, role } = await modal.onWillDismiss();
-
-        if (role == 'confirm') {
-            line.Remark = data ? data.toString() : null;
-            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });           
-        }
-    }
-
-    search(ev) {
-        var val = ev.target.value.toLowerCase();
-        if (val == undefined) {
-            val = '';
-        }
-        if (val.length > 2 || val == '') {
-            this.query.Keyword = val;                  
+            line._background = { 'background-image': 'url("' + environment.posImagesServer + ((line._item && line._item.Image) ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")' };
         }
 
     }
+
+
+
+
+
+    isSuccessModalOpen = false;
+ 
+
 }

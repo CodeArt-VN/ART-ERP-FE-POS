@@ -1,0 +1,36 @@
+<ion-header>
+	<ion-toolbar>
+		<ion-title>Lý do hủy</ion-title>
+		<ion-buttons slot="primary">
+			<ion-button (click)="dismiss()" title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="medium">
+				<ion-icon slot="icon-only" name="close"></ion-icon>
+			</ion-button>
+		</ion-buttons>
+
+	</ion-toolbar>
+</ion-header>
+<ion-content appScrollbarTheme>
+	<div class="ion-padding">
+		<ion-text color="warning">
+			<ion-icon color="danger" name="alert-circle-outline" class="cancel-message-icon"></ion-icon>
+			Vui lòng chọn lý do hủy. Với lý do này, bạn sẽ hủy tất cả sản phẩm có trong đơn hàng và không thể thay đổi sau đó.
+		</ion-text>
+	</div>
+	<ion-list>
+		<ion-radio-group [(ngModel)]="item">
+			<ion-item *ngFor="let t of typeList">
+				<ion-radio slot="start" aria-label="Danger" color="danger" class="radio-icon" [value]="t" mode="md"></ion-radio>
+				<ion-label style="white-space: normal;">{{t.Name}}</ion-label>
+			</ion-item>
+			<ion-item *ngIf="item?.Code == 'Other'">
+				<ion-textarea class="c-text-area ion-text-left" [(ngModel)]="item.CancelNote" autoGrow placeholder="Xin vui lòng nhập lý do.."></ion-textarea>
+			</ion-item>
+		</ion-radio-group>
+	</ion-list>
+
+</ion-content>
+<ion-footer>
+	<ion-toolbar>
+		<ion-button color="danger" (click)="dismiss('confirm')" expand="block">ĐỒNG Ý</ion-button>
+	</ion-toolbar>
+</ion-footer>

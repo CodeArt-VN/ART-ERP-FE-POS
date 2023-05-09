@@ -15,17 +15,17 @@
 </ion-header>
 
 <ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
-	
-<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
+	<!-- list Item -->
+	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
-			
+			<!-- Dishes -->
 			<div class="box" *ngIf="item?.OrderLines?.length">
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
 						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
 							<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
-								<div style="display: flex;">								
+								<div style="display: flex;">
 									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 									<div class="od-info" *ngIf="line._item">
 										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
@@ -33,7 +33,9 @@
 											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
 										</div>
 										<div *ngIf="line.OriginalDiscountFromSalesman > 0">
-											<span title="Được tặng cho sản phẩm này"><ion-icon name="gift" color="primary"></ion-icon></span> 
+											<span title="Được tặng cho sản phẩm này">
+												<ion-icon name="gift" color="primary"></ion-icon>
+											</span>
 											<ion-text color="primary"> {{line.OriginalDiscountFromSalesman | number: '1.0-0'}}đ</ion-text>
 										</div>
 									</div>
@@ -56,40 +58,32 @@
 										</ion-text>
 										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
 										<span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
-											<ion-icon color="primary" name="arrow-redo"></ion-icon> <sup>{{line.ShippedQuantity}} </sup> 
+											<ion-icon color="primary" name="arrow-redo"></ion-icon>
+											<sup>{{line.ShippedQuantity}} </sup>
 										</span>
 									</span>
 								</div>
 								<div class="od-remark clickable" (click)="openQuickMemo(line)">
-									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món">
-								</textarea>
+									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>
 								</div>
 							</div>
 						</ng-container>
 					</div>
 				</div>
-			</div>		
+			</div>
 			<div class="box ion-padding">
-				
 				<div class="box-content">
-					
 					<div class="check-out">
 						<label class="c-label">Bàn
-							<span class="c-value">
+							<b class="c-value">
 								{{Table.Name}}
-							</span>
+							</b>
 						</label>
 						<label class="c-label">Tiền hàng
 							<span class="c-value">
 								{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}
 							</span>
 						</label>
-						<!-- <label class="c-label clickable" *ngIf="pageConfig.canEdit" (click)="processDiscounts()">Chiết khấu <ion-icon name="open-outline"></ion-icon>
-							<span class="c-value">
-								{{item.OriginalTotalDiscount | number: '1.0-0'}}
-							</span>
-
-						</label> -->
 						<label class="c-label" *ngIf="item.OriginalTotalDiscount>0">Chiết khấu
 							<span class="c-value">
 								{{item.OriginalTotalDiscount | number: '1.0-0'}}
@@ -99,11 +93,17 @@
 							<span class="c-value">{{item.OriginalTax | number: '1.0-0'}}</span>
 						</label>
 
-						<label class="c-label" *ngIf="item.CalcOriginalTotalAdditions">Service charge <i class="info-tooltip" title="Phí dịch vụ theo từng item có thể khác nhau."></i>
+						<label class="c-label" *ngIf="item.CalcOriginalTotalAdditions" id="click-trigger-total-additions">Service charge <i class="info-tooltip"></i>
 							<span class="c-value">{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span>
 						</label>
 
-						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0  ">Khuyến mãi từ CSKH 
+						<ion-popover trigger="click-trigger-total-additions" triggerAction="click">
+							<ng-template>
+								<ion-content class="ion-padding">Phí dịch vụ theo từng item có thể khác nhau.</ion-content>
+							</ng-template>
+						</ion-popover>
+
+						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">Chiết khấu NVBH
 							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 						</label>
 
@@ -112,26 +112,80 @@
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
 							</ion-text>
 						</label>
-						<label class="c-label" *ngIf="item.Received > 0">Đã thanh toán
+
+						<label class="c-label" *ngIf="item.Received">Đã thanh toán
 							<ion-text class="c-value" color="dark">
 								{{item.Received | number: '1.0-0'}}
-							</ion-text> 
+							</ion-text>
 						</label>
-						<label class="c-label" *ngIf="item.Debt > 0">Còn lại
+
+						<label class="c-label" *ngIf="item.Received">Còn lại
 							<ion-text class="c-value" color="dark">
 								{{item.Debt | number: '1.0-0'}}
-							</ion-text> 
-						</label>					
+							</ion-text>
+						</label>
+
+
 					</div>
 				</div>
-				
-			</div>	
+			</div>
+
+			<!-- <div class="box ion-padding">
+				<div class="box-content">
+					<div class="check-out">
+						<ion-note>
+							Trong trường hợp khẩn cấp, xin vui lòng gọi hotline
+							<a [href]="'tel:'+Branch?.Phone">
+								<ion-text color="danger">
+									<b>{{ Branch?.Phone }}</b>
+								</ion-text>
+							</a>
+						</ion-note>
+					</div>
+				</div>
+			</div> -->
+
 			<ion-button *ngIf="pageConfig.canEdit" color="danger" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
 				<ion-text *ngIf="id==0">Đặt hàng</ion-text>
 				<ion-text *ngIf="id!=0">Cập nhật</ion-text>
 			</ion-button>
 
-			<ion-button *ngIf="item.Status =='New' || item.Status =='Done'"  class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalQuantity <= 0">
+			<ion-modal [isOpen]="isSuccessModalOpen">
+				<ng-template>
+					<ion-content [fullscreen]="true">
+						<ion-fab slot="fixed" vertical="top" horizontal="end">
+							<ion-fab-button (click)="isSuccessModalOpen = false">
+								<ion-icon name="close"></ion-icon>
+							</ion-fab-button>
+						</ion-fab>
+						<div class="ion-padding" style="text-align: center;">
+							<img style="max-height: 50vh; height: 200px;" class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
+
+							<ion-text color="success">
+								<h1>{{ this.id ? 'ĐÃ CẬP NHẬT ĐƠN HÀNG' : 'ĐÃ TIẾP NHẬN ĐƠN HÀNG' }}</h1>
+							</ion-text>
+
+							<p>
+								Cảm ơn Quý khách đã đặt hàng. <br>
+								Bộ phận phụ trách sẽ phụ vụ Quý khách trong thời gian sớm nhất. <br>
+								<br>
+								<ion-note>
+									Trong trường hợp khẩn cấp, xin vui lòng gọi hotline
+									<a [href]="'tel:'+Branch?.Phone">
+										<ion-text color="danger">
+											<b>{{ Branch?.Phone }}</b>
+										</ion-text>
+									</a>
+								</ion-note>
+							</p>
+						</div>
+
+					</ion-content>
+				</ng-template>
+			</ion-modal>
+
+
+			<ion-button *ngIf="item.Status =='New' || item.Status =='Done'" class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalQuantity <= 0">
 				<ion-text *ngIf="item.Status =='New'">Thanh toán</ion-text>
 				<ion-text *ngIf="item.Status =='Done'">Xem chi tiết</ion-text>
 			</ion-button>
@@ -146,7 +200,7 @@
 				<ion-label>tất cả</ion-label>
 			</div>
 			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
-				<ion-img  [src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
+				<ion-img [src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
 				<ion-label>{{g.Name}}</ion-label>
 			</div>
 		</div>
@@ -174,19 +228,22 @@
 							</span>
 							<div class="card" [id]="'item'+i.Id">
 
-								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" [src]="i.Image ? ImagesServer + i.Image: 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
+								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
 								<span class="table-name clickable" (click)="addToCart(i, i.UoMs[0].Id)">{{i.Name}}</span>
-								<ng-container *ngFor="let u of i.UoMs">								
-									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">										
+								<ng-container *ngFor="let u of i.UoMs">
+
+
+									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">
 										<span class="price-list" *ngFor="let p of u.PriceList">
-											<span *ngIf="!p.NewPrice">											
+											<span *ngIf="!p.NewPrice">
 												{{p.Price | number: '1.0-0'}}/{{u.Name}}
 											</span>
-											<span *ngIf="p.NewPrice">	
-												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}																																		
-												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}}%												
-											</span>																																	
-										</span>										
+											<span *ngIf="p.NewPrice">
+												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}
+												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}}%
+
+											</span>
+										</span>
 									</a>
 								</ng-container>
 
@@ -199,5 +256,4 @@
 		</ion-grid>
 		<app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 	</div>
-	
 </ion-content>
