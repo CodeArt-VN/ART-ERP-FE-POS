@@ -14,7 +14,6 @@ import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.p
 
 import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
 import * as qz from 'qz-tray';
-import html2canvas from 'html2canvas';
 import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
@@ -47,6 +46,7 @@ export class POSOrderDetailPage extends PageBase {
     kitchenList = [];
     OrderAdditionTypeList = [];
     OrderDeductionTypeList = [];
+    promotionAppliedPrograms = [];
     defaultPrinter = [];
     printData = {
         undeliveredItems: [], //To track undelivered items to the kitchen
@@ -208,6 +208,16 @@ export class POSOrderDetailPage extends PageBase {
         super.loadedData(event, ignoredFromGroup);
         if (!this.item?.Id) {
 
+            
+      
+            this.programProvider.commonService.connect('GET', 'PR/Program/AppliedProgramInSaleOrder', { IDSO: this.id }).toPromise().then((data: any) => {
+                this.promotionAppliedPrograms = data;
+            }).catch(err => {
+                console.log(err);
+            })
+        
+
+
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
         }
@@ -311,33 +321,44 @@ export class POSOrderDetailPage extends PageBase {
             this.setOrderValue({ OrderLines: [line] });
         }
         else {
-            if (this.pageConfig.canDeleteItems) {
-                this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
+            if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
+                if (this.pageConfig.canDeleteItems) {
+                    this.env.showPrompt('Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?', item.Name, 'Xóa sẩn phẩm').then(_ => {
+    
+                        line.Quantity += quantity;
+                        this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                    }).catch(_ => { });
+                }
+                else{
+                    this.env.showMessage('Item đã chuyển Bar/Bếp');
+                    return;
+                }
 
-                    line.Quantity += quantity;
-                    this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                }).catch(_ => { });
             }
+            
             else if ((line.Quantity + quantity) > 0) {
                 line.Quantity += quantity;
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
             }
             else {
-                let tempQty = line.Quantity;
-                tempQty += quantity;
-                if (tempQty == 0 && this.item.OrderLines.length == 1) {
-                    this.env.showMessage('Đơn hàng phải có ít nhất 1 sản phẩm!', 'warning');
-                    return;
-                }
-                if (this.pageConfig.canDeleteItems) {
+                if (this.item.Status == 'New') {
                     this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
                         line.Quantity += quantity;
                         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
                     }).catch(_ => { });
                 }
-                else {
-                    this.env.showMessage('Bạn không có quyền xóa sản phẩm!', 'warning');
+                else{
+                    if (this.pageConfig.canDeleteItems) {
+                        this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
+                            line.Quantity += quantity;
+                            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                        }).catch(_ => { });
+                    }
+                    else {
+                        this.env.showMessage('Tài khoản chưa được cấp quyền xóa sản phẩm!', 'warning');
+                    }
                 }
+                
             }
 
         }
@@ -1125,9 +1146,9 @@ export class POSOrderDetailPage extends PageBase {
             //#endregion
         }
         this.calcOrder();
-        if (this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value) {
+        if (this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) {
             this.debounce(() => { this.saveChange() }, 1000);
-        }
+        }   
     }
 
     async saveChange() {

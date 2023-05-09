@@ -30,6 +30,7 @@
 								</div>
 
 								<div class="od-quantity">
+
 									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
@@ -74,28 +75,49 @@
 			<div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">
 				<div class="box-content">
 					<div class="check-out">
-						<label class="c-label ion-text-center"><b>Voucher giảm giá</b></label>
-						<ng-container *ngIf="item.Deductions.length > 0">
-							<ion-card *ngFor="let d of item.Deductions; let i=index">
-								<ion-item lines="none" *ngIf="d.Type=='Voucher'">
-									<img slot="start" height="20px" width="20px" src="/assets/icons/icon-72x72.png" />
-									<ion-label>{{d.OriginalAmount | number: '1.0-0'}} đ</ion-label>
-									<ion-button fill="none" (click)="deleteVoucher(i,d)">
-										<ion-icon color="danger" name="trash-outline"></ion-icon>
-									</ion-button>
-								</ion-item>
-							</ion-card>
-						</ng-container>
-						<label class="c-label clickable ion-text-center" *ngIf="pageConfig.canEdit" (click)="processVouchers()">
-							<ion-text color="primary">Chọn hoặc nhập mã Voucher</ion-text>
-						</label>
+						<div class="box-title">
+							Khuyến mãi / Voucher
+						</div>
+						<div class="check-out" style="min-height: 20px;">
+							<!-- <div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
+								<div class="coupon-left">
+									<div class="coupon-left-content">
+										{{p.Type}}
+									</div>
+									
+								</div>
+								<div class="coupon-right">
+									<div class="coupon-right-content">
+										<ion-label>Giảm {{p.Value | number: '1.0-0'}} <span *ngIf="p.IsByPercent">%</span></ion-label>
+										<ion-note *ngIf="p.MinOrderValue">Cho đơn hàng từ {{p.MinOrderValue | number: '1.0-0'}}</ion-note>
+										<ion-note *ngIf="p.ToDate">{{p.ToDate | date: 'dd/MM/yyyy'}}</ion-note>
+
+									</div>
+								</div>
+							</div> -->
+							<ng-container *ngFor="let p of promotionAppliedPrograms; let i=index">
+								<ion-chip color="warning" *ngIf="p.Type=='Voucher'">
+									<ion-icon name="alert-circle-outline" [id]="'voucher-trigger-'+ i"></ion-icon>
+									<ion-label>Giảm {{p.Value | number: '1.0-0'}} <span *ngIf="p.IsByPercent">%</span></ion-label>
+									<ion-icon name="close" (click)="deleteVoucher(i,p)"></ion-icon>
+								</ion-chip>
+								<ion-popover [trigger]="'voucher-trigger-'+ i" triggerAction="click">
+									<ng-template>
+										<ion-content class="ion-padding">{{p.Remark}}</ion-content>
+									</ng-template>
+								</ion-popover>
+
+							</ng-container>
+						</div>
+						<a class="clickable" *ngIf="pageConfig.canEdit" (click)="processVouchers()">
+							<ion-icon name="ticket-outline"></ion-icon> Chọn hoặc nhập mã Voucher
+						</a>
 					</div>
 				</div>
+
 			</div>
 			<div class="box ion-padding">
-
 				<div class="box-content">
-
 					<div class="check-out">
 						<label class="c-label">Tiền hàng
 							<span class="c-value">
@@ -130,7 +152,6 @@
 						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">Chiết khấu NVBH
 							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 						</label>
-
 						<label class="c-label total">Tổng tiền
 							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
@@ -140,7 +161,7 @@
 						<label class="c-label" *ngIf="item.Received">Đã thanh toán
 							<ion-icon class="clickable" (click)="processPayments()" name="chevron-down"></ion-icon>
 							<ion-text class="c-value" color="dark">
-								{{item.Received | number: '1.0-0'}}
+								<span>{{item.Received | number: '1.0-0'}}</span>
 							</ion-text>
 						</label>
 
@@ -161,6 +182,28 @@
 							</label>
 
 						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="box ion-padding">
+				<div class="box-content">
+					<div class="box-title">
+						Thanh toán
+					</div>
+					<div class="check-out">
+						<label class="c-label" *ngFor="let p of paymentList">
+							{{p.IncomingPayment.TypeText}}
+							<ion-note *ngIf="p.IncomingPayment.Remark">({{p.IncomingPayment.Remark}})</ion-note>
+
+							<span class="c-value">
+								{{p.Amount | number: '1.0-0'}}
+							</span>
+						</label>
+
+						<label class="c-label total">Tổng thanh toán
+							<span class="c-value">{{item.Received | number: '1.0-0'}}</span>
+						</label>
 					</div>
 				</div>
 			</div>
@@ -215,7 +258,7 @@
 
 						</div>
 						<div class="c-control">
-							<input style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="NumberOfGuests" placeholder="Số khách" #numberOfGuestsInput />
+							<input #numberOfGuestsInput style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="NumberOfGuests" (change)="saveChange();" placeholder="Số khách" />
 						</div>
 						<div class="c-control">
 							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Tables" (change)="changeTable();" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.table-placeholder' | translate}}">
@@ -263,7 +306,7 @@
 				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
 					<ion-col>
 						<ion-button class="gr-btn-order" *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt">
-							<ion-text>Thanh toán [ {{item.Debt | number: '1.0-0'}} ]</ion-text>
+							<ion-text>Thanh toán {{item.Debt | number: '1.0-0'}} </ion-text>
 						</ion-button>
 						<ion-button color="danger" class="gr-btn-order ion-margin-top" expand="block" (click)="doneOrder()" [disabled]="submitAttempt">
 							<ion-text>Hoàn tất</ion-text>
