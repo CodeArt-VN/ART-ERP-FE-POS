@@ -24,35 +24,37 @@
 									<div class="od-info" *ngIf="line._item">
 										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
 										<div class="od-price">
-											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
+											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 										</div>
 									</div>
 								</div>
 
 								<div class="od-quantity">
-
+									<ion-button title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity));">
+										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+									</ion-button>
 									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
+									<!-- <ion-button fill="outline" class="ion-float-right qty-btn qty-box" size="small" >
+										{{line.Quantity}}
+									</ion-button> -->
 									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
-									<!-- <ion-button fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity)); line._isShowFoC = false;">
-										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-									</ion-button> -->
+
+
+
+
+
 									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="line._isShowNote =! line._isShowNote; line._isShowFoC = false">
 										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
 									</ion-button>
-									<!-- <ion-icon name="pricetags-outline"></ion-icon> -->
-									<!-- <ion-button title='Giảm giá từ chăm sóc khách hàng' fill="clear"  color="primary" class="gift ion-no-padding" size="small" (click)="line._isShowFoC =! line._isShowFoC; line._isShowNote = false">														
-										<ion-icon [name]="(line.OriginalDiscountFromSalesman > 0)? 'person':'person-outline'"></ion-icon> <sup><ion-icon name="pricetags"></ion-icon></sup>
-									</ion-button> -->
 									<span class="quantity">
 										<small>x</small>
 										<ion-text color="dark">
 											{{line.Quantity}}
 										</ion-text>
-										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
 									</span>
 								</div>
 
@@ -79,35 +81,21 @@
 							Khuyến mãi / Voucher
 						</div>
 						<div class="check-out" style="min-height: 20px;">
-							<!-- <div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
+							<div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
+								<ion-button fill="clear" color="danger" class="ion-float-right ion-no-padding del-btn" size="small" (click)="deleteVoucher(p)">
+									<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+								</ion-button>
 								<div class="coupon-left">
-									<div class="coupon-left-content">
-										{{p.Type}}
-									</div>
-									
+									<ion-icon size="large" name="ticket-outline"></ion-icon>
 								</div>
 								<div class="coupon-right">
-									<div class="coupon-right-content">
-										<ion-label>Giảm {{p.Value | number: '1.0-0'}} <span *ngIf="p.IsByPercent">%</span></ion-label>
-										<ion-note *ngIf="p.MinOrderValue">Cho đơn hàng từ {{p.MinOrderValue | number: '1.0-0'}}</ion-note>
-										<ion-note *ngIf="p.ToDate">{{p.ToDate | date: 'dd/MM/yyyy'}}</ion-note>
-
-									</div>
+									<span>Giảm {{p.Value | number: '1.0-0'}}<span *ngIf="p.IsByPercent">%</span></span>
+									<small *ngIf="p.MinOrderValue">
+										Cho đơn hàng từ {{p.MinOrderValue | number: '1.0-0'}} <span *ngIf="p.MaxValue"> - tối đa {{p.MaxValue | number: '1.0-0'}}</span>
+									</small>
+									<small *ngIf="p.ToDate">HSD: {{p.ToDate | date: 'dd/MM/yyyy'}}</small>
 								</div>
-							</div> -->
-							<ng-container *ngFor="let p of promotionAppliedPrograms; let i=index">
-								<ion-chip color="warning" *ngIf="p.Type=='Voucher'">
-									<ion-icon name="alert-circle-outline" [id]="'voucher-trigger-'+ i"></ion-icon>
-									<ion-label>Giảm {{p.Value | number: '1.0-0'}} <span *ngIf="p.IsByPercent">%</span></ion-label>
-									<ion-icon name="close" (click)="deleteVoucher(i,p)"></ion-icon>
-								</ion-chip>
-								<ion-popover [trigger]="'voucher-trigger-'+ i" triggerAction="click">
-									<ng-template>
-										<ion-content class="ion-padding">{{p.Remark}}</ion-content>
-									</ng-template>
-								</ion-popover>
-
-							</ng-container>
+							</div>
 						</div>
 						<a class="clickable" *ngIf="pageConfig.canEdit" (click)="processVouchers()">
 							<ion-icon name="ticket-outline"></ion-icon> Chọn hoặc nhập mã Voucher
@@ -125,10 +113,7 @@
 							</span>
 						</label>
 						<label class="c-label clickable" *ngIf="pageConfig.canEdit" (click)="processDiscounts()">Chiết khấu <ion-icon name="open-outline"></ion-icon>
-							<span class="c-value">
-								{{item.OriginalTotalDiscount | number: '1.0-0'}}
-							</span>
-
+							<span class="c-value">{{item.OriginalTotalDiscount | number: '1.0-0'}}</span>
 						</label>
 						<label class="c-label" *ngIf="!pageConfig.canEdit">Chiết khấu
 							<span class="c-value">
@@ -178,9 +163,7 @@
 								<ion-label [ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}" [color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'">
 									Xuất hóa đơn?
 								</ion-label>
-
 							</label>
-
 						</span>
 					</div>
 				</div>
@@ -283,7 +266,7 @@
 								{{'erp.app.pages.pos.pos-order.cancel' | translate}}
 							</ion-button>
 						</div>
-						
+
 					</div>
 				</div>
 			</div>
@@ -353,15 +336,15 @@
 							</span>
 							<div class="card" [id]="'item'+i.Id">
 
-								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
-								<span class="table-name clickable" (click)="addToCart(i, i.UoMs[0].Id)">{{i.Name}}</span>
+								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
+								<span class="table-name clickable">{{i.Name}}</span>
 								<ng-container *ngFor="let u of i.UoMs">
 
 
-									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">
+									<a *ngIf="u.PriceList.length" class="price clickable">
 										<span class="price-list" *ngFor="let p of u.PriceList">
 											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}/{{u.Name}}
+												{{p.Price | number: '1.0-0'}}/<span class="uom">{{u.Name}}</span>
 											</span>
 											<span *ngIf="p.NewPrice">
 												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}
@@ -369,6 +352,10 @@
 
 											</span>
 										</span>
+
+										<ion-button fill="clear" class="ion-float-right" size="small" (click)="addToCart(i, u.Id)">
+											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+										</ion-button>
 									</a>
 								</ng-container>
 

@@ -30,18 +30,15 @@
 									<div class="od-info" *ngIf="line._item">
 										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
 										<div class="od-price">
-											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}}</small></span>
-										</div>
-										<div *ngIf="line.OriginalDiscountFromSalesman > 0">
-											<span title="Được tặng cho sản phẩm này">
-												<ion-icon name="gift" color="primary"></ion-icon>
-											</span>
-											<ion-text color="primary"> {{line.OriginalDiscountFromSalesman | number: '1.0-0'}}đ</ion-text>
+											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 										</div>
 									</div>
 								</div>
 
 								<div class="od-quantity">
+									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity));">
+										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+									</ion-button>
 									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true)">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
@@ -57,10 +54,10 @@
 											{{line.Quantity}}
 										</ion-text>
 										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
-										<span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
+										<!-- <span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
 											<ion-icon color="primary" name="arrow-redo"></ion-icon>
 											<sup>{{line.ShippedQuantity}} </sup>
-										</span>
+										</span> -->
 									</span>
 								</div>
 								<div class="od-remark clickable" (click)="openQuickMemo(line)">
@@ -228,15 +225,15 @@
 							</span>
 							<div class="card" [id]="'item'+i.Id">
 
-								<ion-img class="item-image clickable" (click)="addToCart(i, i.UoMs[0].Id)" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
-								<span class="table-name clickable" (click)="addToCart(i, i.UoMs[0].Id)">{{i.Name}}</span>
+								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
+								<span class="table-name clickable">{{i.Name}}</span>
 								<ng-container *ngFor="let u of i.UoMs">
 
 
-									<a *ngIf="u.PriceList.length" class="price clickable" (click)="addToCart(i, u.Id)">
+									<a *ngIf="u.PriceList.length" class="price clickable" >
 										<span class="price-list" *ngFor="let p of u.PriceList">
 											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}/{{u.Name}}
+												{{p.Price | number: '1.0-0'}}/<span class="uom">{{u.Name}}</span>
 											</span>
 											<span *ngIf="p.NewPrice">
 												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}
@@ -244,6 +241,10 @@
 
 											</span>
 										</span>
+
+										<ion-button fill="clear" class="ion-float-right" size="small" (click)="addToCart(i, u.Id)">
+											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+										</ion-button>
 									</a>
 								</ng-container>
 

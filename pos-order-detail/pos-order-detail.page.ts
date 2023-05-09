@@ -208,22 +208,13 @@ export class POSOrderDetailPage extends PageBase {
         super.loadedData(event, ignoredFromGroup);
         if (!this.item?.Id) {
 
-            
-      
-            this.programProvider.commonService.connect('GET', 'PR/Program/AppliedProgramInSaleOrder', { IDSO: this.id }).toPromise().then((data: any) => {
-                this.promotionAppliedPrograms = data;
-            }).catch(err => {
-                console.log(err);
-            })
-        
-
-
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
         }
         else {
             this.patchOrderValue();
             this.getPayments();
+            this.getPromotionProgram();
         }
         this.loadOrder();
         this.contactSearch();
@@ -243,12 +234,6 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     async addToCart(item, idUoM, quantity = 1) {
-
-        const parentElement = this.numberOfGuestsInput.nativeElement.parentElement;
-        parentElement.classList.add('shake');
-        setTimeout(() => {
-            parentElement.classList.remove('shake');
-        }, 2000);
 
         if (this.submitAttempt) {
 
@@ -382,7 +367,7 @@ export class POSOrderDetailPage extends PageBase {
 
         if (role == 'confirm') {
             line.Remark = data ? data.toString() : null;
-            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] });
+            this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }] }, true);
         }
     }
 
@@ -440,7 +425,7 @@ export class POSOrderDetailPage extends PageBase {
                 changed.IDStatus = 114;
             }
 
-            this.setOrderValue(changed);
+            this.setOrderValue(changed, true);
         }
     }
 
@@ -795,6 +780,7 @@ export class POSOrderDetailPage extends PageBase {
     //Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về. 
     private calcOrder() {
         this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+
         this.item.OriginalTotalBeforeDiscount = 0;
         this.item.OriginalDiscountByOrder = 0;
         this.item.OriginalDiscountFromSalesman = 0;
@@ -1085,17 +1071,9 @@ export class POSOrderDetailPage extends PageBase {
 
         });
         groups.push(group);
-        //#region: Update lại số lượng khách bằng số lượng món trên giỏ hàng
-        let totalQuantity = 0;
-        groups.value.forEach((element: any) => {
-            totalQuantity += element.Quantity;
-        });
-        this.formGroup.get('NumberOfGuests').setValue(totalQuantity);
-        //#endregion
-
     }
 
-    setOrderValue(data) {
+    setOrderValue(data, instantly = false) {
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
@@ -1128,6 +1106,15 @@ export class POSOrderDetailPage extends PageBase {
                             }
                         }
                     }
+
+                    let numberOfGuests = this.formGroup.get('NumberOfGuests');
+                    numberOfGuests.setValue(this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0));
+                    numberOfGuests.markAsDirty();
+                    
+                    const parentElement = this.numberOfGuestsInput.nativeElement.parentElement;
+                    parentElement.classList.add('shake');
+                    setTimeout(() => { parentElement.classList.remove('shake'); }, 2000);
+
                 }
             }
             else {
@@ -1137,17 +1124,15 @@ export class POSOrderDetailPage extends PageBase {
                     fc.markAsDirty();
                 }
             }
-            //#region: Update lại số lượng khách bằng số lượng món trên giỏ hàng
-            let totalQuantity = 0;
-            this.formGroup.controls.OrderLines.value.forEach((element: any) => {
-                totalQuantity += element.Quantity;
-            });
-            this.formGroup.get('NumberOfGuests').setValue(totalQuantity);
-            //#endregion
         }
         this.calcOrder();
+
+
         if (this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) {
-            this.debounce(() => { this.saveChange() }, 1000);
+            if (instantly) 
+                this.saveChange();
+            else
+                this.debounce(() => { this.saveChange() }, 1000);
         }   
     }
 
@@ -1178,6 +1163,14 @@ export class POSOrderDetailPage extends PageBase {
         if (savedItem.Status == "Done") {
             this.sendPrint(savedItem.Status, true);
         }
+    }
+
+    getPromotionProgram(){
+        this.programProvider.commonService.connect('GET', 'PR/Program/AppliedProgramInSaleOrder', { IDSO: this.id }).toPromise().then((data: any) => {
+            this.promotionAppliedPrograms = data;
+        }).catch(err => {
+            console.log(err);
+        })
     }
 
     changeTable() {
@@ -1226,33 +1219,19 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     changedIDAddress(address) {
-
         if (address) {
-
             this.setOrderValue({
                 IDContact: address.Id,
                 IDAddress: address.IDAddress
-            });
+            }, true);
             this.item._Customer = address;
         }
     }
-
-
-
-
-
-
 
     private saveSO() {
         Object.assign(this.item, this.formGroup.value);
         this.saveChange();
     }
-
-
-
-
-
-
 
     discountFromSalesman(line, form) {
         let OriginalDiscountFromSalesman = form.controls.OriginalDiscountFromSalesman.value;
@@ -1264,7 +1243,7 @@ export class POSOrderDetailPage extends PageBase {
             this.env.showMessage("Số tiền tặng không lớn hơn trị giá sản phẩm!", "danger");
             return false;
         }
-        this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark, OriginalDiscountFromSalesman: OriginalDiscountFromSalesman }] });
+        this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark, OriginalDiscountFromSalesman: OriginalDiscountFromSalesman }] }, true);
     }
 
     private getPayments() {
@@ -1326,7 +1305,7 @@ export class POSOrderDetailPage extends PageBase {
                 });
                 changed.Status = 'Done';
                 changed.IDStatus = 114;
-                this.setOrderValue(changed);
+                this.setOrderValue(changed, true);
             }).catch(_ => {
 
             });
@@ -1336,7 +1315,7 @@ export class POSOrderDetailPage extends PageBase {
             this.env.showPrompt(message, null, 'Thông báo').then(_ => {
                 changed.Status = 'Done';
                 changed.IDStatus = 114;
-                this.setOrderValue(changed);
+                this.setOrderValue(changed, true);
             }).catch(_ => {
 
             });
@@ -1345,7 +1324,7 @@ export class POSOrderDetailPage extends PageBase {
         else {
             changed.Status = 'Done';
             changed.IDStatus = 114;
-            this.setOrderValue(changed);
+            this.setOrderValue(changed, true);
         }
 
     }
@@ -1589,13 +1568,13 @@ export class POSOrderDetailPage extends PageBase {
    }
     
     `
-    deleteVoucher(i, d) {
+    deleteVoucher(p) {
         let apiPath = {
             method: "POST",
             url: function () { return ApiSetting.apiDomain("PR/Program/DeleteVoucher/") }
         };
         new Promise((resolve, reject) => {
-            this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), { IDDeduction: d.Id, IDProgram: d.IDProgram, IDSaleOrder: d.IDOrder }).toPromise()
+            this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), { IDProgram: p.Id, IDSaleOrder: this.item.Id }).toPromise()
                 .then((savedItem: any) => {
                     this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete', 'success');
                     resolve(true);
