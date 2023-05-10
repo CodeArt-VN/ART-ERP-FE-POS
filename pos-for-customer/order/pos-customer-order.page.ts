@@ -255,7 +255,7 @@ export class POSCustomerOrderPage extends PageBase {
                 }
             }
             else {
-                this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sẩn phẩm').then(_ => {
+                this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm').then(_ => {
                     line.Quantity += quantity;
                     this.loadInfoOrder();
                     this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });

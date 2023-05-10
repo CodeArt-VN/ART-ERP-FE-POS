@@ -176,7 +176,7 @@
 					</div>
 					<div class="check-out">
 						<label class="c-label" *ngFor="let p of paymentList">
-							{{p.IncomingPayment.TypeText}}
+							{{p.IncomingPayment.TypeText}} <ion-text *ngIf="p.IncomingPayment.Type=='Card' || p.IncomingPayment.Type=='Transfer'">| {{p.IncomingPayment.SubType}}</ion-text>
 							<ion-note *ngIf="p.IncomingPayment.Remark">({{p.IncomingPayment.Remark}})</ion-note>
 
 							<span class="c-value">
