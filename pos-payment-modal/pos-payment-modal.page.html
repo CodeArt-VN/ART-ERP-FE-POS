@@ -34,7 +34,7 @@
                                 </header>
                                 <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">                                  
                                     <div class="col-type cell"  style="display: block !important;">
-                                        {{i.IncomingPayment.TypeText}}
+                                        {{i.IncomingPayment.TypeText}} <ion-text *ngIf="i.IncomingPayment.Type=='Card' || i.IncomingPayment.Type=='Transfer'">| {{i.IncomingPayment.SubType}}</ion-text>
                                         <div class="clickable" (click)="toDetail(i.IncomingPayment.Code)"><small style="margin-left: 0px;"><ion-text color="primary">{{i.IncomingPayment.PaymentCode}}</ion-text></small></div>
                                         <div>
                                             <small style="margin-left: 0px;" ><ion-text>{{i.IncomingPayment.CreatedDateText}}</ion-text></small> <small *ngIf="i.CreatedTimeText != '00:00' ">{{i.IncomingPayment.CreatedTimeText}}</small>                                         
