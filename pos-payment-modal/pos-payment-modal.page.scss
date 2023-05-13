@@ -60,23 +60,29 @@ ion-card-content{
 
 .table-contain {
     .bold{
-        min-width: 480px;
+        min-width: 650px;
     }
     .row {
         padding-right: 6px;
         background: var(--ion-color-tertiary-tint);
-        min-width: 480px;
+        min-width: 650px;
     }
     .col-type {
         padding-left: 10px;
         text-align: left;
-        max-width: 135px !important;
-        min-width: 135px !important;
+        max-width: 170px !important;
+        min-width: 170px !important;
     }
     .col-money {
         max-width: 120px !important;
         min-width: 120px !important;
         color: var(--ion-color-primary);
+    }
+    .col-refund {
+        max-width: 130px !important;
+        min-width: 130px !important;
+        color: var(--ion-color-primary);
+        justify-content: right !important;
     }
     .col-status {
         white-space: break-spaces;
@@ -87,9 +93,9 @@ ion-card-content{
     }  
     .col-remark {
         justify-content: right !important;
-        max-width: 115px !important;
-        min-width: 115px !important;
-        padding-left: 10px;
+        max-width: 120px !important;
+        min-width: 120px !important;
+        padding-right: 10px;
         float: right;
         text-align: right;
     }
@@ -125,4 +131,7 @@ ion-card-content{
 
 .col-del {
     width: 35px;
+}
+ion-popover {
+    --width: 370px;
 }

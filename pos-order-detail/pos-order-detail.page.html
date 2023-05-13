@@ -143,16 +143,21 @@
 							</ion-text>
 						</label>
 
-						<label class="c-label" *ngIf="item.Received">Đã thanh toán
+						<label class="c-label">Đã thanh toán
 							<ion-icon class="clickable" (click)="processPayments()" name="chevron-down"></ion-icon>
 							<ion-text class="c-value" color="dark">
-								<span>{{item.Received | number: '1.0-0'}}</span>
+								<span *ngIf="item.Received">{{item.Received  | number: '1.0-0'}}</span>
+								<span *ngIf="!item.Received">{{0  | number: '1.0-0'}}</span>
 							</ion-text>
 						</label>
-
-						<label class="c-label" *ngIf="item.Received">Còn lại
+						<label class="c-label" *ngIf="item.Debt >=0">Còn lại
 							<ion-text class="c-value" color="dark">
 								{{item.Debt | number: '1.0-0'}}
+							</ion-text>
+						</label>
+						<label class="c-label" *ngIf="item.Debt <0">Tiền thừa | <ion-text color="primary" class="clickable" (click)="processPayments()">Hoàn lại</ion-text>
+							<ion-text class="c-value" color="dark">
+								{{item.Debt * -1 | number: '1.0-0'}}
 							</ion-text>
 						</label>
 
@@ -171,19 +176,34 @@
 
 			<div class="box ion-padding">
 				<div class="box-content">
-					<div class="box-title">
-						Thanh toán
-					</div>
+					
 					<div class="check-out">
+						<div class="box-title">
+							Thanh toán
+						</div>
 						<label class="c-label" *ngFor="let p of paymentList">
-							{{p.IncomingPayment.TypeText}} <ion-text *ngIf="p.IncomingPayment.Type=='Card' || p.IncomingPayment.Type=='Transfer'">| {{p.IncomingPayment.SubType}}</ion-text>
-							<ion-note *ngIf="p.IncomingPayment.Remark">({{p.IncomingPayment.Remark}})</ion-note>
+							<ng-container *ngIf="p.IncomingPayment.IsRefundTransaction == false && p.IncomingPayment.Status == 'Success'">
+								{{p.IncomingPayment.TypeText}} <ion-text *ngIf="p.IncomingPayment.Type=='Card' || p.IncomingPayment.Type=='Transfer'">| {{p.IncomingPayment.SubType}}</ion-text>
+								<ion-note *ngIf="p.IncomingPayment.Remark">({{p.IncomingPayment.Remark}})</ion-note>
 
-							<span class="c-value">
-								{{p.Amount | number: '1.0-0'}}
-							</span>
+								<span class="c-value">
+									{{p.Amount | number: '1.0-0'}}
+								</span>
+							</ng-container>
 						</label>
+						<div class="box-title ion-margin-top">
+							Hoàn tiền
+						</div>
+						<label class="c-label" *ngFor="let p of paymentList">
+							<ng-container *ngIf="p.IncomingPayment.IsRefundTransaction == true">
+								{{p.IncomingPayment.TypeText}} <ion-text *ngIf="p.IncomingPayment.Type=='Card' || p.IncomingPayment.Type=='Transfer'">| {{p.IncomingPayment.SubType}}</ion-text>
+								<ion-note *ngIf="p.IncomingPayment.Remark">({{p.IncomingPayment.Remark}})</ion-note>
 
+								<span class="c-value">
+									{{p.Amount | number: '1.0-0'}}
+								</span>
+							</ng-container>
+						</label>
 						<label class="c-label total">Tổng thanh toán
 							<span class="c-value">{{item.Received | number: '1.0-0'}}</span>
 						</label>
