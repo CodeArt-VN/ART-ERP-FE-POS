@@ -207,24 +207,20 @@ export class POSChangeTableModalPage extends PageBase {
                                 let bindOrder;
                                 this.item.Ids = [];
                                 this.item.Ids.push(this.selectedOrder.Id);
-                                debugger
                                 this.items.forEach(e => {
                                     let temp = [];                                    
                                     if(this.checkBillStatus.indexOf(e._Status.Status) == -1) { 
-
                                         temp.push(e);
                                     }
 
                                     temp.forEach(t => {
                                         if(t.Tables.indexOf(i.Id) != -1) { 
                                             bindOrder = t.Id;
-
+                                            this.item.Ids.push(bindOrder);
                                             return;
                                         }
                                     });
                                 });
-
-                                this.item.Ids.push(bindOrder);
                                 this.item.Ids;
                             }
                         }

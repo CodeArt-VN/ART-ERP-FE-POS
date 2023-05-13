@@ -787,3 +787,15 @@
 .page-footer-space{
 	margin-top: 30px;
 }
+
+.customer-message {
+	text-align: center;
+    display: flex;
+    flex-direction: column;
+    margin-top: 50px;
+
+	.logo-wrapper {
+    	width: 250px;
+    	margin: 0 auto 50px;
+	}
+}

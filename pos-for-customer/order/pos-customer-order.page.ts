@@ -37,6 +37,9 @@ export class POSCustomerOrderPage extends PageBase {
         currentBranch: null,
         selectedTables: [],
     }
+    ipWhitelist = [];
+    myIP = '';
+    isWifiSecuredModalOpen = false;
 
     constructor(
         public pageProvider: POS_ForCustomerProvider,
@@ -133,15 +136,49 @@ export class POSCustomerOrderPage extends PageBase {
             this.getMenu(),
             this.getTable(),
             this.getDeal(),
+            this.pageProvider.commonService.connect('GET', ApiSetting.apiDomain("Account/MyIP"), null).toPromise(),
         ]).then((values: any) => {
             this.statusList = values[0];
             this.menuList = values[1];
             this.Table = values[2];
             this.dealList = values[3];
-            super.preLoadData(event);
+            this.checkIPConfig(event);
         }).catch(err => {
             this.loadedData(event);
         })
+    }
+
+    async checkIPConfig(event) {
+        Promise.all([
+            this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/ConfigByBranch', {Code: 'IsUseIPWhitelist', IDBranch: this.Table.IDBranch}).toPromise(),
+            this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/ConfigByBranch', {Code: 'IPWhitelistInput', IDBranch: this.Table.IDBranch}).toPromise(),
+            this.pageProvider.commonService.connect('GET', ApiSetting.apiDomain("Account/MyIP"), null).toPromise()
+        ]).then((values: any) => {
+            if (values[0]['Value']) {
+                this.pageConfig.IsUseIPWhitelist = Boolean(JSON.parse(values[0]['Value']));
+            }
+            if (this.pageConfig.IsUseIPWhitelist) {
+                this.ipWhitelist = JSON.parse(values[1]['Value']);
+                this.myIP = values[2];
+                if (this.ipWhitelist) {
+                    if (this.ipWhitelist.indexOf(this.myIP) > -1) {
+                        this.pageConfig.canEdit = true;
+                        this.isWifiSecuredModalOpen = false;
+                    }
+                    else {
+                        // this.env.showTranslateMessage('Vui lòng kết nối wifi tòa nhà để đặt món!', 'warning');
+                        this.pageConfig.canEdit = false;
+                        this.isWifiSecuredModalOpen = true;
+                    }
+                }
+                else {
+                    // this.env.showTranslateMessage('Vui lòng kiểm tra danh sách IP Whitelist!', 'warning');
+                    this.pageConfig.canEdit = false;
+                    this.isWifiSecuredModalOpen = true;
+                }
+            }
+            super.preLoadData(event);
+        });
     }
 
     loadedData(event?: any, ignoredFromGroup?: boolean): void {
@@ -377,6 +414,8 @@ export class POSCustomerOrderPage extends PageBase {
         this.item.OriginalDiscountByOrder = 0;
         this.item.OriginalDiscountFromSalesman = 0;
         this.item.OriginalTotalDiscount = 0;
+        this.item.AdditionsAmount = 0;
+        this.item.AdditionsTax = 0;
         this.item.OriginalTotalAfterDiscount = 0;
         this.item.OriginalTax = 0;
         this.item.OriginalTotalAfterTax = 0;
@@ -386,6 +425,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.item.OriginalTotalDiscountPercent = 0;
         this.item.OriginalTaxPercent = 0;
         this.item.CalcOriginalTotalAdditionsPercent = 0;
+        this.item.AdditionsAmountPercent = 0;
         this.item.OriginalDiscountFromSalesmanPercent = 0;
         this.item._OriginalTotalAfterDiscountFromSalesman = 0;
 
@@ -426,6 +466,9 @@ export class POSCustomerOrderPage extends PageBase {
             line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
             this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
             line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
+            line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
+            this.item.AdditionsAmount += line.AdditionsAmount;
+            this.item.AdditionsTax += (line.CalcOriginalTotalAdditions - line.AdditionsAmount);
             this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
 
 
@@ -464,8 +507,9 @@ export class POSCustomerOrderPage extends PageBase {
         }
 
         this.item.OriginalTotalDiscountPercent = ((this.item.OriginalTotalDiscount / this.item.OriginalTotalBeforeDiscount) * 100.0).toFixed(0);
-        this.item.OriginalTaxPercent = ((this.item.OriginalTax / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
+        this.item.OriginalTaxPercent = (((this.item.OriginalTax + this.item.AdditionsTax) / (this.item.OriginalTotalAfterDiscount + this.item.AdditionsAmount)) * 100.0).toFixed(0);
         this.item.CalcOriginalTotalAdditionsPercent = ((this.item.CalcOriginalTotalAdditions / this.item.OriginalTotalAfterTax) * 100.0).toFixed(0);
+        this.item.AdditionsAmountPercent = ((this.item.AdditionsAmount / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
         this.item.OriginalDiscountFromSalesmanPercent = ((this.item.OriginalDiscountFromSalesman / this.item.CalcTotalOriginal) * 100.0).toFixed(0);
         this.item.Debt = (this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman) - this.item.Received;
     }

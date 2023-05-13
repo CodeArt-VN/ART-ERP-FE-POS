@@ -86,19 +86,14 @@
 								{{item.OriginalTotalDiscount | number: '1.0-0'}}
 							</span>
 						</label>
+
+						<label class="c-label" *ngIf="item.AdditionsAmount" >Service charge
+							<span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
+						</label>
+
 						<label class="c-label">VAT
-							<span class="c-value">{{item.OriginalTax | number: '1.0-0'}}</span>
+							<span class="c-value">{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
 						</label>
-
-						<label class="c-label" *ngIf="item.CalcOriginalTotalAdditions" id="click-trigger-total-additions">Service charge <i class="info-tooltip"></i>
-							<span class="c-value">{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span>
-						</label>
-
-						<ion-popover trigger="click-trigger-total-additions" triggerAction="click">
-							<ng-template>
-								<ion-content class="ion-padding">Phí dịch vụ theo từng item có thể khác nhau.</ion-content>
-							</ng-template>
-						</ion-popover>
 
 						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">Chiết khấu NVBH
 							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
@@ -155,26 +150,29 @@
 								<ion-icon name="close"></ion-icon>
 							</ion-fab-button>
 						</ion-fab>
-						<div class="ion-padding" style="text-align: center;">
-							<img style="max-height: 50vh; height: 200px;" class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
-
-							<ion-text color="success">
-								<h1>{{ this.id ? 'ĐÃ CẬP NHẬT ĐƠN HÀNG' : 'ĐÃ TIẾP NHẬN ĐƠN HÀNG' }}</h1>
-							</ion-text>
-
-							<p>
-								Cảm ơn Quý khách đã đặt hàng. <br>
-								Bộ phận phụ trách sẽ phụ vụ Quý khách trong thời gian sớm nhất. <br>
-								<br>
-								<ion-note>
-									Trong trường hợp khẩn cấp, xin vui lòng gọi hotline
-									<a [href]="'tel:'+Branch?.Phone">
-										<ion-text color="danger">
-											<b>{{ Branch?.Phone }}</b>
-										</ion-text>
-									</a>
-								</ion-note>
-							</p>
+						<div class="ion-padding" class="customer-message">
+							<div class="logo-wrapper">
+								<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
+							</div>
+							<div>
+								<ion-text color="success">
+									<h1>{{ this.id ? 'ĐÃ CẬP NHẬT ĐƠN HÀNG' : 'ĐÃ TIẾP NHẬN ĐƠN HÀNG' }}</h1>
+								</ion-text>
+	
+								<p>
+									Cảm ơn Quý khách đã đặt hàng. <br>
+									Bộ phận phụ trách sẽ phục vụ Quý khách trong thời gian sớm nhất. <br>
+									<br>
+									<ion-note>
+										Trong trường hợp khẩn cấp, xin vui lòng gọi hotline<br>
+										<a [href]="'tel:'+Branch?.Phone">
+											<ion-text color="danger">
+												<b>{{ Branch?.Phone }}</b>
+											</ion-text>
+										</a>
+									</ion-note>
+								</p>
+							</div>
 						</div>
 
 					</ion-content>
@@ -182,12 +180,49 @@
 			</ion-modal>
 
 
-			<ion-button *ngIf="item.Status =='New' || item.Status =='Done'" class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalQuantity <= 0">
+			<ion-button *ngIf="item.Status =='New' || item.Status =='Done'" class="ion-margin-top" expand="block" (click)="processPayments()" [disabled]="item._TotalQuantity <= 0 || !pageConfig.canEdit">
 				<ion-text *ngIf="item.Status =='New'">Thanh toán</ion-text>
 				<ion-text *ngIf="item.Status =='Done'">Xem chi tiết</ion-text>
 			</ion-button>
 		</form>
 	</ion-fab>
+
+	<ion-modal [isOpen]="isWifiSecuredModalOpen">
+		<ng-template>
+			<ion-content [fullscreen]="true">
+				<ion-fab slot="fixed" vertical="top" horizontal="end">
+					<ion-fab-button (click)="isWifiSecuredModalOpen = false">
+						<ion-icon name="close"></ion-icon>
+					</ion-fab-button>
+				</ion-fab>
+				<div class="ion-padding" class="customer-message">
+					<div class="logo-wrapper">
+						<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
+					</div>
+					<div>
+						<ion-text color="warning">
+							<h1>KIỂM TRA KẾT NỐI MẠNG</h1>
+						</ion-text>
+
+						<p>
+							Xin quý khách kiểm tra lại kết nối <br>
+							Vui lòng kết nối wifi tòa nhà để đặt đơn trên thiết bị<br>
+							<br>
+							<ion-note>
+								Trong trường hợp khẩn cấp, xin vui lòng gọi hotline<br>
+								<a [href]="'tel:'+Branch?.Phone">
+									<ion-text color="danger">
+										<b>{{ Branch?.Phone }}</b>
+									</ion-text>
+								</a>
+							</ion-note>
+						</p>
+					</div>
+				</div>
+
+			</ion-content>
+		</ng-template>
+	</ion-modal>
 
 	<!-- Menu Group -->
 	<div class="no-print menu-holder">

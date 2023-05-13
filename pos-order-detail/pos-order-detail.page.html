@@ -120,19 +120,14 @@
 								{{item.OriginalTotalDiscount | number: '1.0-0'}}
 							</span>
 						</label>
+
+						<label class="c-label" *ngIf="item.AdditionsAmount">Service charge
+							<span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
+						</label>
+
 						<label class="c-label">VAT
-							<span class="c-value">{{item.OriginalTax | number: '1.0-0'}}</span>
+							<span class="c-value">{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
 						</label>
-
-						<label class="c-label" *ngIf="item.CalcOriginalTotalAdditions" id="click-trigger-total-additions">Service charge <i class="info-tooltip"></i>
-							<span class="c-value">{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span>
-						</label>
-
-						<ion-popover trigger="click-trigger-total-additions" triggerAction="click">
-							<ng-template>
-								<ion-content class="ion-padding">Phí dịch vụ theo từng item có thể khác nhau.</ion-content>
-							</ng-template>
-						</ion-popover>
 
 						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">Chiết khấu NVBH
 							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
@@ -292,26 +287,31 @@
 			</div>
 		</form>
 
-		<div *ngIf="item?.OrderLines?.length > 0" class="functions-list">
+		<div class="functions-list">
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col *ngIf="pageConfig.canEdit">
+					<ion-col *ngIf="pageConfig.canEdit && pageConfig.IsAutoSave">
 						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
 							Chuyển BAR/KIT
 						</ion-button>
 					</ion-col>
+					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.IsAutoSave">
+						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
+							Lưu đơn
+						</ion-button>
+					</ion-col>
 					<ion-col>
-						<ion-button class="gr-btn-order" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt">
+						<ion-button class="gr-btn-order" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id">
 							In đơn
 						</ion-button>
 					</ion-col>
 				</ion-row>
 				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
 					<ion-col>
-						<ion-button class="gr-btn-order" *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt">
+						<ion-button class="gr-btn-order" *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>Thanh toán {{item.Debt | number: '1.0-0'}} </ion-text>
 						</ion-button>
-						<ion-button color="danger" class="gr-btn-order ion-margin-top" expand="block" (click)="doneOrder()" [disabled]="submitAttempt">
+						<ion-button color="danger" class="gr-btn-order ion-margin-top" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>Hoàn tất</ion-text>
 						</ion-button>
 					</ion-col>
@@ -521,8 +521,8 @@
 													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title">Service Charge [ {{item.CalcOriginalTotalAdditionsPercent}}% ]</td>
-													<td class="text-right"><span>{{item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span></td>
+													<td class="title">Service Charge [ {{item.AdditionsAmountPercent}}% ]</td>
+													<td class="text-right"><span>{{item.AdditionsAmount | number: '1.0-0'}}</span></td>
 												</tr>
 											</table>
 										</div>
@@ -530,11 +530,11 @@
 											<table>
 												<tr>
 													<td class="title">Base VAT Amount</td>
-													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount + item.CalcOriginalTotalAdditions | number: '1.0-0'}}</span></td>
+													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount + item.AdditionsAmount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
 													<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
-													<td class="text-right"><span>{{item.OriginalTax | number: '1.0-0'}}</span></td>
+													<td class="text-right"><span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span></td>
 												</tr>
 											</table>
 										</div>
@@ -555,8 +555,12 @@
 											<div class="table-info-top">
 												<table>
 													<tr>
-														<td class="title">Deposit:</td>
-														<td class="text-right"><span>{{item.Received | number: '1.0-0'}}</span></td>
+														<td class="title bold">Type</td>
+														<td class="text-right bold"><span>Amount</span></td>
+													</tr>										
+													<tr *ngFor="let p of paymentList">
+														<td class="title">{{p.IncomingPayment.TypeText}}<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span></td>
+														<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>
 													</tr>
 													<tr *ngIf="item.Debt > 0">
 														<td class="title">Debt:</td>
