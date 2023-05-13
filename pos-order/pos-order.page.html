@@ -1,17 +1,8 @@
 <ion-header>
-	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
+	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowAdd]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (cancelOrder)="openCancellationReason()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
 		<span class="hide-small" title>{{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}</span>
 		<span class="hide-small ion-margin-start" title>Số khách: {{numberOfGuestCounter}}</span>
-		<ion-buttons slot="end">
-			<ion-button color="warning" title="{{'erp.app.pages.pos.pos-order.change.change-button' | translate}}" (click)="changeTable($event)">
-				<ion-icon slot="icon-only" name="git-compare">
-				</ion-icon>
-			</ion-button>
-			<ion-button color="warning" title="{{'erp.app.pages.pos.pos-order.split-bill' | translate}}" (click)="splitPOSBill()">
-				<ion-icon slot="icon-only" name="git-branch">
-				</ion-icon>
-			</ion-button>
-		</ion-buttons>
+
 		<ion-button class="toggle" title="{{'erp.app.pages.pos.pos-order.show-feature' | translate}}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon slot="icon-only" [name]="pageConfig.isShowFeature? 'albums-outline':'albums-outline'">
 			</ion-icon>
@@ -128,6 +119,10 @@
 																<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();">
 																	Chia đơn
 																	<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
+																</ion-item>
+																<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); openCancellationReason(); this.popoverCtrl.dismiss();">
+																	Hủy đơn
+																	<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
 																</ion-item>
 															</ion-list>
 														</ion-content>

@@ -11,6 +11,7 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { environment } from 'src/environments/environment';
+import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 
 @Component({
     selector: 'app-pos-order',
@@ -274,6 +275,50 @@ export class POSOrderPage extends PageBase {
         this.selectedItems = [];
         this.refresh();
 
+    }
+
+    async openCancellationReason() {
+        if (this.submitAttempt) return;
+
+        const modal = await this.modalController.create({
+            component: POSCancelModalPage,
+            id: 'POSCancelModalPage',
+            swipeToClose: true,
+            backdropDismiss: true,
+            cssClass: 'modal-cancellation-reason',
+            componentProps: { item: {} }
+        });
+        modal.present();
+
+        const { data, role } = await modal.onWillDismiss();
+
+        if (role == 'confirm') {
+            let cancelData: any = { CancellationReason: data.Code };
+            if (cancelData.CancellationReason == 'Other') {
+                cancelData.Remark = data.CancelNote
+            }
+
+            this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {
+                let publishEventCode = this.pageConfig.pageName;
+                if (this.submitAttempt == false) {
+                    this.submitAttempt = true;
+                    cancelData.Type = 'POSOrder';
+                    cancelData.Ids = [this.item.Id];
+
+                    this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelOrders/', cancelData).toPromise()
+                        .then(() => {
+                            if (publishEventCode) {
+                                this.env.publishEvent({ Code: publishEventCode });
+                            }
+                            this.loadData();
+                            this.submitAttempt = false;
+                            this.nav('/pos-order', 'back');
+                        }).catch(err => {
+                            this.submitAttempt = false;
+                        });
+                }
+            }).catch(_ => { });
+        }
     }
 
     interval = null;
