@@ -10,7 +10,7 @@
         </ion-buttons>
 
     </ion-toolbar>
-</ion-header> -->
+</ion-header>
 <ion-content appScrollbarTheme class="ion-padding" fullscreen>
     <form [formGroup]="formGroup">
         <ion-grid fixed>
@@ -40,8 +40,22 @@
                         </label>
                         <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
                     </div>
-
-                    
+                    <div class="c-control">
+                        <div class="c-input" style="margin-top: 7px;">
+                          <ion-label>Cho phép khách hàng đặt món</ion-label>
+                          <span class="ion-float-right">
+                            <ion-toggle  (ionChange)="saveChange()" formControlName="IsAllowCustomerOrder"></ion-toggle>
+                          </span>                          
+                        </div>                                     
+                    </div>
+                    <div class="c-control">
+                        <div class="c-input" style="margin-top: 7px;">
+                          <ion-label>Cho phép nhiều đơn hàng</ion-label>
+                          <span class="ion-float-right">
+                            <ion-toggle  (ionChange)="saveChange()" formControlName="IsAllowMultipleOrder"></ion-toggle>
+                          </span>                          
+                        </div>                                     
+                    </div>
 
                 </ion-col>
                 <!-- <ion-col size="12" size-sm size-xl="4">

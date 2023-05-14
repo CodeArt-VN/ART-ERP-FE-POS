@@ -357,7 +357,7 @@ export class POSCustomerOrderPage extends PageBase {
             component: POSForCustomerPaymentModalPage,
             swipeToClose: true,
             backdropDismiss: true,
-            cssClass: 'modal-change-table',
+            cssClass: 'modal-payments',
             componentProps: {
                 item: this.item,
             }
@@ -763,8 +763,14 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     sendOrder() {
-        this.saveChange();
-        this.AllowSendOrder = false;
+        if(this.Table.IsAllowCustomerOrder == true){
+            this.saveChange();
+            this.AllowSendOrder = false;
+        }
+        else{
+            this.env.showTranslateMessage('Xin lỗi quý khách bạn này chưa được kích hoạt gọi món', 'warning');
+            return false;
+        }
     }
 
 

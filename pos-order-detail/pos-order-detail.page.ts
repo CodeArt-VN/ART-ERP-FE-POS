@@ -54,7 +54,6 @@ export class POSOrderDetailPage extends PageBase {
         currentBranch: null,
         selectedTables: [],
     }
-
     constructor(
         public pageProvider: SALE_OrderProvider,
         public programProvider: PR_ProgramProvider,
@@ -411,7 +410,7 @@ export class POSOrderDetailPage extends PageBase {
             id: 'POSPaymentModalPage',
             canDismiss: true,
             backdropDismiss: true,
-            cssClass: 'modal-change-table',
+            cssClass: 'modal-payments',
             componentProps: {
                 item: this.item,
             }
@@ -522,6 +521,10 @@ export class POSOrderDetailPage extends PageBase {
 
     async openCancellationReason() {
         if (this.submitAttempt) return;
+        if (this.item.Received > 0) {
+            this.env.showTranslateMessage('Đơn hàng đã thanh toán không thể hủy, vui lòng hoàn tiền lại để hủy đơn hàng này!', 'warning');
+            return false;
+        };
 
         const modal = await this.modalController.create({
             component: POSCancelModalPage,
@@ -536,8 +539,8 @@ export class POSOrderDetailPage extends PageBase {
         const { data, role } = await modal.onWillDismiss();
 
         if (role == 'confirm') {
-            let cancelData: any = { CancellationReason: data.Code };
-            if (cancelData.CancellationReason == 'Other') {
+            let cancelData: any = { Code: data.Code };
+            if (cancelData.Code == 'Other') {
                 cancelData.Remark = data.CancelNote
             }
 
@@ -1279,12 +1282,15 @@ export class POSOrderDetailPage extends PageBase {
         return new Promise((resolve, reject) => {
             this.commonService.connect('GET', 'BANK/IncomingPaymentDetail', { IDSaleOrder: this.item.Id }).toPromise()
                 .then((result: any) => {
-                    this.paymentList = result.filter(p => p.IncomingPayment.Status == "Success");
+                    this.paymentList = result.filter(p => p.IncomingPayment.Status == "Success" || p.IncomingPayment.Status == "Processing");
                     this.paymentList.forEach(e => {
                         e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentType, 'Name', '--', 'Code');
                     });
-                    this.item.Received = this.paymentList?.filter(x => x.IncomingPayment.Status == 'Success').map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
-                    this.item.Debt = this.item.CalcTotalOriginal - this.item.Received;
+                    let PaidAmounted = this.paymentList?.filter(x => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
+                    let RefundAmount = this.paymentList?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
+                    
+                    this.item.Received = PaidAmounted - RefundAmount;                 
+                    this.item.Debt = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received;
                     if (this.item.Debt > 0) {
                         this.item.IsDebt = true;
                     }

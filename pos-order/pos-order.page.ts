@@ -293,8 +293,8 @@ export class POSOrderPage extends PageBase {
         const { data, role } = await modal.onWillDismiss();
 
         if (role == 'confirm') {
-            let cancelData: any = { CancellationReason: data.Code };
-            if (cancelData.CancellationReason == 'Other') {
+            let cancelData: any = { Code: data.Code };
+            if (cancelData.Code == 'Other') {
                 cancelData.Remark = data.CancelNote
             }
 

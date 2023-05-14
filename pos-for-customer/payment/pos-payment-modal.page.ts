@@ -22,6 +22,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
     Amount = 0;
     statusList;
     typeList;
+    payments;
     constructor(          
         public IncomingPaymentProvider: BANK_IncomingPaymentProvider,
         public commonService: CommonService,
@@ -91,18 +92,24 @@ export class POSForCustomerPaymentModalPage extends PageBase {
         return  str.replace("=","").replace("=","").replace("+", "-").replace("_", "/")
     } 
     private calcPayment(){
-        let PaidAmounted = 0;
-        this.items.forEach(e => {
+        let PaidAmounted = this.items?.filter(x => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
+        let RefundAmount = this.items?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
+        this.payments = this.items?.filter(x => x.IncomingPayment.IsRefundTransaction == false);
+        this.payments.forEach(e => {
+            let TotalRefund =  this.items?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
             e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd')+"_"+e.IncomingPayment.Id;
             e.IncomingPayment.CreatedDateText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'dd/mm/yyyy');
             e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM');    
             e.IncomingPayment.TypeText = this.getTypeText(e.IncomingPayment.Type);  
             e.IncomingPayment.StatusText = this.getStatusText(e.IncomingPayment.Status); 
-            if(e.IncomingPayment.Status=="Success"){
-                PaidAmounted = PaidAmounted + e.IncomingPayment.Amount 
-            }
+            e.IncomingPayment.TotalRefund = TotalRefund; 
+            e.IncomingPayment.Refund = this.items?.filter(x =>x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id);
+            e.IncomingPayment.Refund.forEach(r =>{
+                r.IncomingPayment.TypeText = this.getTypeText(e.IncomingPayment.Type); 
+                r.IncomingPayment.StatusText = this.getStatusText(e.IncomingPayment.Status); 
+            });
         });    
-        this.PaidAmounted = PaidAmounted;
+        this.PaidAmounted = PaidAmounted - RefundAmount;
         this.DebtAmount = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman)  - this.PaidAmounted;         
     }
     getStatus(i,id){

@@ -65,7 +65,7 @@ ion-card-content{
     .row {
         padding-right: 6px;
         background: var(--ion-color-tertiary-tint);
-        min-width: 480px;
+        min-width: 600px;
     }
    
     .col-type {
@@ -125,4 +125,7 @@ ion-card-content{
 
 .col-del {
     width: 35px;
+}
+ion-popover {
+    --width: 370px;
 }

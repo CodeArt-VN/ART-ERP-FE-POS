@@ -16,7 +16,7 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 export class POSWelcomePage extends PageBase {
     idTable = this.route.snapshot.paramMap.get('id');
     currentBranch: any;
-
+    Table;
     constructor(
         //public pageProvider: POS_TableProvider,
        
@@ -273,10 +273,48 @@ export class POSWelcomePage extends PageBase {
     //         });
     //     });
     // }
-
-    closeWelcome() {
+    preLoadData(event?: any): void {
+        let forceReload = event === 'force';
         
-        this.navCtrl.navigateForward('/pos-customer-order/0/'+ this.idTable);
-        
+        Promise.all([
+            this.getTable(),
+        ]).then((values: any) => {
+            this.Table = values[0];
+            super.preLoadData(event);
+        }).catch(err => {
+            this.loadedData(event);
+        })
+    }
+    async closeWelcome() {
+        if(this.Table.IsAllowMultipleOrder == true){
+            this.navCtrl.navigateForward('/pos-customer-order/0/'+ this.idTable);
+        }
+        else{
+            let apiPath = { method: "GET",url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/OrderOfTable/") + id }};
+            this.commonService.connect(apiPath.method, apiPath.url(this.idTable), this.query).toPromise().then(result=>{
+                if(result){               
+                    this.navCtrl.navigateForward('/pos-customer-order/'+result+'/'+ this.idTable);
+                }
+                else{
+                    this.navCtrl.navigateForward('/pos-customer-order/0/'+ this.idTable);
+                }
+            }).catch(err => {});
+        }    
+    }
+    private getTable() {
+        let apiPath = {
+            method: "GET",
+            url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/Table/") + id }
+        };
+        return new Promise((resolve, reject) => {
+            this.commonService.connect(apiPath.method, apiPath.url(this.idTable), this.query).toPromise()
+                .then((result: any) => {
+                    resolve(result);
+                })
+                .catch(err => {
+                    reject(err);
+                });
+        });
     }
 }
+

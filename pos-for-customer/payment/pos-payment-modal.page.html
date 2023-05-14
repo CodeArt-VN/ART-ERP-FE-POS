@@ -31,9 +31,10 @@
                                     <div class="col-type cell">Hình thức</div>                              
                                     <div class="col-status cell">Trạng thái</div>                                  
                                     <div class="col-money cell" style="padding-right: 0px;">Số tiền</div> 
+                                    <div class="col-money cell" style="padding-right: 0px;">Hoàn lại</div>
                                     <div class="col-remark cell" style="padding-right: 0px;">Ghi chú</div>                                                                      
                                 </header>
-                                <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of items, let idx = index;">
+                                <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of payments, let idx = index;">
                                                                      
                                     <div class="col-type cell" style="display: block;">
                                         {{i.IncomingPayment.TypeText}}
@@ -48,6 +49,27 @@
                                     
                                     <div class="col-money cell">
                                         {{i.IncomingPayment.Amount | number: '1.0-0'}} đ
+                                    </div>
+                                    <div class="col-money cell">
+                                        <ng-container *ngIf="i.IncomingPayment.TotalRefund > 0">
+                                            <ion-text title="xem chi tiết" class="clickable" color="dark" id="refund-trigger-{{idx}}"> {{i.IncomingPayment.TotalRefund | number: '1.0-0'}} đ </ion-text>
+                                            <ion-popover trigger="refund-trigger-{{idx}}" triggerAction="click">
+                                              <ng-template>
+                                                <ion-content>
+                                                    <ion-item *ngFor="let r of i.IncomingPayment.Refund" lines="full">
+                                                        <ion-text slot="start">
+                                                            <div>{{r.IncomingPayment.TypeText}} <ion-text *ngIf="r.IncomingPayment.Type=='Card' || r.IncomingPayment.Type=='Transfer'">| <small>{{r.IncomingPayment.SubType}}</small></ion-text></div>
+                                                            <div><small>{{r.IncomingPayment.StatusText}} <ion-text color="danger" *ngIf="r.IncomingPayment.Remark!=null"> ({{r.IncomingPayment.Remark}})</ion-text></small></div>                                                      
+                                                        </ion-text>
+                                                        <ion-text slot="end">
+                                                            <ion-text class="text-right" color="primary">{{r.IncomingPayment.Amount | number: '1.0-0'}} đ</ion-text>                                                       
+                                                        </ion-text>
+                                                    </ion-item>
+                                                </ion-content>
+                                              </ng-template>
+                                            </ion-popover>
+                                        </ng-container>
+                                        
                                     </div>
                                     <div class="col-remark cell">
                                         {{i.IncomingPayment.Remark}}

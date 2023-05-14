@@ -8,6 +8,8 @@ import { FormBuilder } from '@angular/forms';
 import { lib } from 'src/app/services/static/global-functions';
 import { CommonService } from 'src/app/services/core/common.service';
 import { environment } from 'src/environments/environment';
+import { number } from 'echarts';
+import { flattenDiagnosticMessageText } from 'typescript';
 
 
 @Component({
@@ -21,6 +23,7 @@ export class POSPaymentModalPage extends PageBase {
     Amount = 0;
     statusList;
     typeList;
+    payments;
     printData = {
         undeliveredItems: [], //To track undelivered items to the kitchen
         printDate: null,
@@ -36,7 +39,7 @@ export class POSPaymentModalPage extends PageBase {
         public env: EnvService,
         public navCtrl: NavController,
         public route: ActivatedRoute,
-
+ 
         public modalController: ModalController,
         public alertCtrl: AlertController,
         public navParams: NavParams,
@@ -77,56 +80,107 @@ export class POSPaymentModalPage extends PageBase {
         return  str.replace("=","").replace("=","").replace("+", "-").replace("_", "/")
     } 
     private calcPayment(){
-        let PaidAmounted = 0;
-        this.items.forEach(e => {
+        let PaidAmounted = this.items?.filter(x => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
+        let RefundAmount = this.items?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
+        this.payments = this.items?.filter(x => x.IncomingPayment.IsRefundTransaction == false);
+        this.payments.forEach(e => {
+            let TotalRefund =  this.items?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
             e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd')+"_"+e.IncomingPayment.Id;
             e.IncomingPayment.CreatedDateText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'dd/mm/yyyy');
             e.IncomingPayment.CreatedTimeText = lib.dateFormat(e.IncomingPayment.CreatedDate, 'hh:MM');
             e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusText = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Name', '--', 'Code');
             e.IncomingPayment.StatusColor = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Color', 'dark', 'Code');
-            if(e.IncomingPayment.Status=="Success"){
-                PaidAmounted = PaidAmounted + e.IncomingPayment.Amount 
-            }
+            e.IncomingPayment.TotalRefund = TotalRefund;          
+            e.IncomingPayment.Refund = this.items?.filter(x =>x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id);
+            e.IncomingPayment.Refund.forEach(r =>{
+                r.IncomingPayment.TypeText = lib.getAttrib(r.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
+                r.IncomingPayment.StatusText = lib.getAttrib(r.IncomingPayment.Status, this.statusList, 'Name', '--', 'Code');
+            });
         });    
-        this.PaidAmounted = PaidAmounted;
+        this.PaidAmounted = PaidAmounted - RefundAmount;
         this.DebtAmount = this.item.CalcTotalOriginal - this.PaidAmounted;
     }
     getStatus(i,id){          
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                           
             this.items[i].IncomingPayment.Status= data['Status'];
-            switch (data['Status']) {
-				case 'Success':
-					this.env.showTranslateMessage('Thanh toán thành công', 'success');
-					break;
-                case 'Fail':
-					this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
-					break;
-                default:
-					this.env.showTranslateMessage('Đang chờ khách hàng thanh toán', 'warning');
-					break;
+            if(data['IsRefundTransaction'] == true){
+                switch (data['Status']) {
+                    case 'Success':
+                        this.env.showTranslateMessage('Hoàn tiền thành công', 'success');
+                        break;
+                    case 'Fail':
+                        this.env.showTranslateMessage('Hoàn tiền thất bại', 'danger');
+                        break;
+                    default:
+                        this.env.showTranslateMessage('Hoàn tiền đang chờ xử lý', 'warning');
+                        break;
+                }
+            }
+            else{
+                switch (data['Status']) {
+                    case 'Success':
+                        this.env.showTranslateMessage('Thanh toán thành công', 'success');
+                        break;
+                    case 'Fail':
+                        this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
+                        break;
+                    default:
+                        this.env.showTranslateMessage('Đang chờ khách hàng thanh toán', 'warning');
+                        break;
+                }
             }
             this.calcPayment();
         }).catch(err=>{
             console.log(err);
         });
     }
-    // toPayment(){
-    //     let payment = {
-    //         IDBranch: this.item.IDBranch,
-    //         IDStaff: this.env.user.StaffID,
-    //         IDCustomer: this.item.IDContact,
-    //         IDSaleOrder: this.item.Id,
-    //         DebtAmount: this.DebtAmount,
-    //         IsActiveInputAmount : true,
-    //         IsActiveTypeCash: true,
-    //         Timestamp:Date.now()
-    //     };
-    //     let str = window.btoa(JSON.stringify(payment));
-    //     let code =  this.convertUrl(str);
-    //     let url = environment.appDomain + "Payment?Code="+code;
-    //     window.open(url, "_blank");
-    // }
+    goToRefund(i){
+        if(!this.pageConfig.canRefund){
+            this.env.showTranslateMessage('Bạn không có quyền hoàn tiền', 'danger');
+            return false;
+        }
+        // if(i.IncomingPayment.Status != "Success"){
+        //     this.env.showTranslateMessage('Không thể hoàn tiền trên giao dịch này', 'danger');
+        //     return false;
+        // }
+        if(parseInt(i.IncomingPayment.TotalRefund) >= parseInt(i.IncomingPayment.Amount)){
+            this.env.showTranslateMessage('Không thể tiếp tục hoàn tiền trên giao dịch này', 'danger');
+            return false;
+        }
+        let RefundAmount =  i.IncomingPayment.Amount-i.IncomingPayment.TotalRefund;
+        let payment = {
+            IDBranch: this.item.IDBranch,
+            IDStaff: this.env.user.StaffID,
+            IDCustomer: this.item.IDContact,
+            IDSaleOrder: this.item.Id,
+            DebtAmount:RefundAmount,
+            IsActiveInputAmount : true,
+            IsActiveTypeCash: true,
+            IsRefundTransaction: true,
+            IDOriginalTransaction:i.IDIncomingPayment,
+            IsActiveTypeZalopayApp: false,
+            IsActiveTypeATM: false,
+            IsActiveTypeCC: false,
+            Timestamp:Date.now()
+        };
+        if(i.IncomingPayment.Type != "Cash" && i.IncomingPayment.Type != "Card" && i.IncomingPayment.Type != "Transfer"){
+            payment.IsActiveTypeCash = false;
+        }
+        if(i.IncomingPayment.Type == "ATM"){
+            payment.IsActiveTypeATM = true;
+        }
+        if(i.IncomingPayment.Type == "CC"){
+            payment.IsActiveTypeCC = true;
+        }
+        if(i.IncomingPayment.Type == "ZalopayApp"){
+            payment.IsActiveTypeZalopayApp = true;
+        }
+        let str = window.btoa(JSON.stringify(payment));
+        let code =  this.convertUrl(str);
+        let url = environment.appDomain + "Payment?Code="+code;
+        window.open(url, "_blank");
+    }
     toDetail(code){
         let url = environment.appDomain + "Payment?Code="+code;
         window.open(url, "_blank");

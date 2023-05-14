@@ -38,6 +38,8 @@ export class POSTableDetailPage extends PageBase {
             Id: new FormControl({ value: '', disabled: true }),
             Code: [''],
             Name: ['', Validators.required],
+            IsAllowMultipleOrder:[false],
+            IsAllowCustomerOrder:[false],
         });
 
         // this.id = this.route.snapshot?.paramMap?.get('id');
