@@ -570,7 +570,9 @@ export class POSOrderDetailPage extends PageBase {
     saveOrderData() {
         let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
         this.env.showPrompt(message, null, 'Thông báo').then(_ => {
-            this.sendKitchen();
+            this.saveChange().then(() => {
+                this.submitAttempt = false;
+                this.sendKitchen()});
         }).catch(_ => {
             this.saveChange();
         });
@@ -1853,6 +1855,7 @@ export class POSOrderDetailPage extends PageBase {
             });
             this.item.Status = 'Scheduled';
             this.pageProvider.save(this.item).then((data:any) => {
+
                 this.item.Status = data.Status;
                 this.formGroup?.controls['Status'].setValue(this.item.Status);
                 this.item.OrderLines.forEach(e => {
