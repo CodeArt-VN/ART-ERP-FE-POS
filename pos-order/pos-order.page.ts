@@ -303,8 +303,7 @@ export class POSOrderPage extends PageBase {
                 if (this.submitAttempt == false) {
                     this.submitAttempt = true;
                     cancelData.Type = 'POSOrder';
-                    cancelData.Ids = [this.item.Id];
-
+                    cancelData.Ids = this.selectedItems.map(m => m.Id);
                     this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelOrders/', cancelData).toPromise()
                         .then(() => {
                             if (publishEventCode) {
