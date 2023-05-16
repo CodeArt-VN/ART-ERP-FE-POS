@@ -5,7 +5,7 @@ ion-content{
     --padding-top: var(--ion-padding, 0);
     --padding-bottom: var(--ion-padding, 0);
 
-    background-color: white !important;
+    --background: white !important;
 }
 ion-toolbar{display: none !important}
 .slide-holder{

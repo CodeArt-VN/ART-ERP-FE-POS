@@ -1,16 +1,26 @@
 <ion-header>
 	<ion-toolbar class="toolbar-no">
-		<ion-searchbar slot="start" class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
-		<ion-button color="none" slot="end" (click)="refresh()">
-			<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
-		</ion-button>
-		<ion-button color="none" slot="end" *ngIf="!pageConfig.isShowFeature" class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-			<ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
-			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
-		</ion-button>
-		<ion-button color="none" slot="end" *ngIf="pageConfig.isShowFeature" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-			<ion-icon color="primary" slot="icon-only" name="close-circle-outline"></ion-icon>
-		</ion-button>
+		<ion-buttons slot="start" *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">
+			<ion-button (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+				<ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+				Trở lại
+			</ion-button>
+		</ion-buttons>
+
+		<ion-title *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">Giỏ hàng</ion-title>
+		<ion-buttons slot="end" class="full-width">
+			<ion-searchbar [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}" slot="start" class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
+			<ion-button (click)="refresh()">
+				<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
+			</ion-button>
+			<ion-button *ngIf="!pageConfig.isShowFeature" class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+				<ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
+				<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
+			</ion-button>
+			<ion-button [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}" *ngIf="pageConfig.isShowFeature" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+				<ion-icon color="primary" slot="icon-only" name="close-circle-outline"></ion-icon>
+			</ion-button>
+		</ion-buttons>
 	</ion-toolbar>
 </ion-header>
 
@@ -87,7 +97,7 @@
 							</span>
 						</label>
 
-						<label class="c-label" *ngIf="item.AdditionsAmount" >Service charge
+						<label class="c-label" *ngIf="item.AdditionsAmount">Service charge
 							<span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
 						</label>
 
@@ -137,16 +147,16 @@
 				</div>
 			</div> -->
 
-			<ion-button *ngIf="pageConfig.canEdit" color="danger" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
+			<ion-button class="linear-blue-btn" *ngIf="pageConfig.canEdit" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
 				<ion-text *ngIf="id==0">Đặt hàng</ion-text>
 				<ion-text *ngIf="id!=0">Cập nhật</ion-text>
 			</ion-button>
 
 			<ion-modal [isOpen]="isSuccessModalOpen">
 				<ng-template>
-					<ion-content [fullscreen]="true">
+					<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
 						<ion-fab slot="fixed" vertical="top" horizontal="end">
-							<ion-fab-button (click)="isSuccessModalOpen = false">
+							<ion-fab-button (click)="closeSuccessModal()">
 								<ion-icon name="close"></ion-icon>
 							</ion-fab-button>
 						</ion-fab>
@@ -158,7 +168,7 @@
 								<ion-text color="success">
 									<h1>{{ this.id ? 'ĐÃ CẬP NHẬT ĐƠN HÀNG' : 'ĐÃ TIẾP NHẬN ĐƠN HÀNG' }}</h1>
 								</ion-text>
-	
+
 								<p>
 									Cảm ơn Quý khách đã đặt hàng. <br>
 									Bộ phận phụ trách sẽ phục vụ Quý khách trong thời gian sớm nhất. <br>
@@ -172,6 +182,10 @@
 										</a>
 									</ion-note>
 								</p>
+							</div>
+							<div class="ion-padding"></div>
+							<div class="ion-padding">
+								<ion-button expand="block" (click)="closeSuccessModal()">Trở lại</ion-button>
 							</div>
 						</div>
 
@@ -252,11 +266,11 @@
 						</ion-col>
 
 						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
-							<span class="tag right" *ngIf="i.BookedQuantity">
+							<!-- <span class="tag right" *ngIf="i.BookedQuantity">
 								<ion-text class="tag-content" color="danger">
 									{{i.BookedQuantity}}
 								</ion-text>
-							</span>
+							</span> -->
 							<div class="card" [id]="'item'+i.Id">
 
 								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
@@ -264,19 +278,21 @@
 								<ng-container *ngFor="let u of i.UoMs">
 
 
-									<a *ngIf="u.PriceList.length" class="price clickable" >
+									<a *ngIf="u.PriceList.length" class="price clickable">
 										<span class="price-list" *ngFor="let p of u.PriceList">
 											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}/<span class="uom">{{u.Name}}</span>
+												{{p.Price | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
 											</span>
 											<span *ngIf="p.NewPrice">
-												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}
+												{{p.NewPrice | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
 												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}}%
 
 											</span>
 										</span>
 
-										<ion-button fill="clear" class="ion-float-right" size="small" (click)="addToCart(i, u.Id)">
+										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToCart(i, u.Id)">
 											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 										</ion-button>
 									</a>

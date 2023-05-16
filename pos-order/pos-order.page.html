@@ -10,7 +10,7 @@
 
 
 	</app-list-toolbar>
-	<ion-toolbar style="position: absolute; z-index: 100;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" color="primary">
+	<ion-toolbar style="position: absolute; z-index: 100;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" >
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 			<ion-segment-button value="all">
 				<ion-label>{{'erp.app.pages.pos.pos-order.all' | translate}}</ion-label>
@@ -80,7 +80,6 @@
 							<a [id]="'popover-button-'+t.Id" *ngIf="t._Orders?.length > 1">
 								<span class="table-name">{{t.Name}}</span>
 							</a>
-
 
 							<ion-popover [trigger]="'popover-button-'+t.Id" [dismissOnSelect]="true" [backdropDismiss]="true" *ngIf="t._Orders?.length > 1">
 								<ng-template>
@@ -161,13 +160,13 @@
 									<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
 								</div>
 								<div class="col-id cell">
-									<span *ngFor="let t of i._Tables">{{t.Name}}</span>
+									<b><span *ngFor="let t of i._Tables">{{t.Name}}&nbsp;</span></b>
 								</div>
 								<div class="col-guest cell">
 									<ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
 								</div>
 								<div class="col-code cell">
-									<span>{{i.Id}}</span>
+									<span>#{{i.Id}}</span>
 								</div>
 								<!-- <div class="col-status cell">
 									<span class="bar-holder">
