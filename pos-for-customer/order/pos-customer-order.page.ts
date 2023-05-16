@@ -94,7 +94,7 @@ export class POSCustomerOrderPage extends PageBase {
         })
         Object.assign(this.query, { IDTable: this.idTable });
         this.env.getStorage("Order").then(result => {
-            if (result?.Id && result?.IDTable == this.idTable && result.Status == "New") {
+            if (result?.Id && result?.IDTable == this.idTable && (result.Status == "New" || result.Status == "Confirmed" || result.Status == "Picking" || result.Status == "Scheduled" || result.Status == "Delivered")) {
                 this.id = result.Id;
                 let newURL = '#/pos-customer-order/' + result.Id + '/' + this.idTable;
                 history.pushState({}, null, newURL);
@@ -222,7 +222,6 @@ export class POSCustomerOrderPage extends PageBase {
                     element.classList.remove('shake');
                 }, 400);
             }
-
             return;
         }
 
@@ -252,7 +251,7 @@ export class POSCustomerOrderPage extends PageBase {
                 TaxRate: item.SaleVAT,
                 IDUoM: idUoM,
                 UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
-
+                UoMName: uom.Name,
                 Quantity: 1,
                 IDBaseUoM: idUoM,
                 UoMSwap: 1,
@@ -763,6 +762,14 @@ export class POSCustomerOrderPage extends PageBase {
         this.loadedData();
 
         this.submitAttempt = false;
+    }
+
+    closeSuccessModal(){
+        this.isSuccessModalOpen = false; 
+        setTimeout(() => {
+            this.pageConfig.isShowFeature = false;
+        }, 1);
+        
     }
 
     sendOrder() {

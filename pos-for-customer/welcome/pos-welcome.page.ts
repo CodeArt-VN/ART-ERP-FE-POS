@@ -32,7 +32,7 @@ export class POSWelcomePage extends PageBase {
     ) {
         super();
         this.env.getStorage("Order").then(result=>{
-            if(result?.Id && result?.IDTable == this.idTable && result.Status=="New"){   
+            if(result?.Id && result?.IDTable == this.idTable && (result.Status == "New" || result.Status == "Confirmed" || result.Status == "Picking" || result.Status == "Scheduled" || result.Status == "Delivered")){   
                 this.navCtrl.navigateForward('/pos-customer-order/'+result.Id+'/'+ this.idTable);
             }             
         });
@@ -42,7 +42,7 @@ export class POSWelcomePage extends PageBase {
 
     SlidingCard = [
         {
-            Splash: 'assets/intro-screen/intro-1.png',
+            Splash: '',
             Header: 'Welcome!',
             Remark: "Chào mừng bạn đã đến với ứng dụng đặt món tại bàn."
         },
@@ -236,6 +236,8 @@ export class POSWelcomePage extends PageBase {
             this.currentBranch = result.Branch;
             this.env.branchList.push(this.currentBranch);
             this.env.selectedBranch = this.currentBranch.Id;
+
+            this.SlidingCard[0].Splash = this.currentBranch?.LogoURL;
         });
         // this.pageProvider.read({ Id: this.idTable }).then((result: any) => {
         //     if (result) {
@@ -274,7 +276,7 @@ export class POSWelcomePage extends PageBase {
     //     });
     // }
     preLoadData(event?: any): void {
-        let forceReload = event === 'force';
+        //let forceReload = event === 'force';{{currentBranch?.LogoURL}}
         
         Promise.all([
             this.getTable(),

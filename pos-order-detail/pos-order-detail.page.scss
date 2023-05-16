@@ -31,7 +31,6 @@
 .search-box {
 	min-width: 30vw;
 	height: 35px;
-	margin-top: 5px;
 	padding-bottom: 1px;
 	text-align: start;
 }
@@ -477,7 +476,7 @@
 
 		.price {
 			font-size: 1.4rem;
-			color: var(--ion-color-danger);
+			color: var(--ion-color-primary);
 			display: flex;
 			flex-direction: row;
 			align-items: center;
@@ -495,6 +494,34 @@
 
 			.uom {
 				font-size: 80%;
+			}
+
+			.add-to-cart-btn {
+				//background-color: var(--ion-color-primary);
+				height: 46px;
+				width: 46px;
+				--border-radius: 100px;
+				//color: var(--ion-color-primary-contrast);
+				margin-right: 8px;
+				font-size: 16px;
+				font-weight: bold;
+				position: relative;
+
+				&::before {
+					content: attr(title);
+					position: absolute;
+					right: 8px;
+					z-index: 1;
+					top: 5px;
+					font-size: 10px;
+					font-weight: bold;
+					width: 16px;
+					height: 16px;
+					line-height: 16px;
+					border-radius: 10px;
+					display: block;
+					opacity: 0.9;
+				}
 			}
 		}
 
@@ -801,6 +828,13 @@
 	}
 }
 
+.linear-blue-btn{
+	--background: linear-gradient(190deg, rgb(11, 31, 60) 10%, rgb(43, 88, 147) 85%);
+	--background-hover: linear-gradient(190deg, rgb(11, 31, 60) 40%, rgb(43, 88, 147) 100%);
+	--background-activated: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
+	--background-focused: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
+}
+
 .page-footer-space {
 	margin-top: 10px;
 }
@@ -847,8 +881,4 @@ ion-item {
 
 .item-options-ios.item-options-end {
 	--border-bottom-width: 0px !important;
-}
-
-.gr-btn-order {
-	height: 35px;
 }
