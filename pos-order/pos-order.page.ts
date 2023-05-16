@@ -26,7 +26,7 @@ export class POSOrderPage extends PageBase {
     segmentView = 'all';
     orderCounter = 0;
     numberOfGuestCounter = 0;
-    isShowNotify = false;
+    notifications:any = [];
     constructor(
         public pageProvider: SALE_OrderProvider,
         public tableGroupProvider: POS_TableGroupProvider,
@@ -53,10 +53,7 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
 			switch (data.Code) {
 				case 'app:POSOrderFromCustomer':
-                    if(this.isShowNotify ==false){
-                        this.isShowNotify = true; 
-                        this.notify(data.Data);
-                    }					
+                    this.notify(data.Data);				
 					break;
             }
         });
@@ -72,21 +69,19 @@ export class POSOrderPage extends PageBase {
     private notifyPayment(data){
         const value = JSON.parse(data.Value);       
         if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
-            this.env.showMessage("Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder,"warning");
+            let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
+            let url = "pos-order/"+data.Id+"/"+value.IDTable;
+            this.pushNotification(null,value.IDBranch,"pos-order","Khách gọi món","pos-order",message,url);
+            this.countNotification();
         }
     }
     private notify(data){  
         const value = JSON.parse(data.value);    
         if(this.env.selectedBranch == value.IDBranch){
-            this.env.showPrompt('Bạn có muốn xem không?', "Đơn hàng #"+data.id, "Khách bàn "+value.TableName+" Gọi món").then(_ => {   
-                this.isShowNotify = false;  
-                this.pageConfig?.subscribePOSOrder?.unsubscribe();     
-                this.nav("/pos-order/"+data.id+"/"+value.IDTable,"back");  
-
-            }).catch(_ => {
-                this.isShowNotify = false; 
-                this.refresh();
-             });
+            let message = "Khách bàn "+value.TableName+" Gọi món";
+            let url = "pos-order/"+data.Id+"/"+value.IDTable;
+            this.pushNotification(null,value.IDBranch,"pos-order","Khách gọi món","pos-order",message,url);
+            this.countNotification();
         }                
     }
     ngOnDestroy() {
@@ -123,7 +118,6 @@ export class POSOrderPage extends PageBase {
         this.orderCounter = 0;
         this.numberOfGuestCounter = 0;      
         this.checkTable(null, 0); //reset table status
-
         this.items.forEach(o => {
             o._Locked = this.noLockStatusList.indexOf(o.Status) == -1;
             o._Status = this.soStatusList.find(d => d.Code == o.Status);
@@ -141,6 +135,15 @@ export class POSOrderPage extends PageBase {
         });
 
         super.loadedData(event);
+        this.items.forEach(o=>{
+            if(o.Status=='New'){
+                let message = "Đơn hàng "+o.Id+" có sản phẩm chưa gửi bếp";
+                let url = "pos-order/"+o.Id+"/"+o.Tables[0];
+                this.pushNotification(null,o.IDBranch,"pos-order","chưa gửi bếp","pos-order",message,url);
+            }
+            
+        })
+        this.countNotification();
     }
 
     checkTable(o, tid) {       
@@ -375,11 +378,27 @@ export class POSOrderPage extends PageBase {
             canDismiss: true,
             backdropDismiss: true,
             cssClass: 'modal-notify',
-            componentProps: {
-                
+            componentProps: {     
+                notifications:this.notifications       
             }
         });
+        
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
+    }
+    countNotification(){
+        this.pageConfig.countNotifications = this.notifications.length;
+    }
+    pushNotification(Id?:number,IDBranch?:string,Type?:string,Name?:string,Code?:string,Message?:string,Url?:string){
+        let notification = {
+            Id:Id,
+            IDBranch:IDBranch,
+            Type:Type,
+            Name:Name,
+            Code:Code,
+            Message:Message,
+            Url:Url,
+        }
+        this.notifications.unshift(notification); 
     }
 }
