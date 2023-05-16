@@ -922,6 +922,20 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     private notify(data) {
+       this.env.getStorage('notifications').then((result:any)=>{
+        if(result){
+            let notify = {Id:1,Name:"thông báo",Code:"POS",Message:"",Type:"",SubType:"",Url:"",CreatedDate:""};
+            result.push(notify);
+            this.env.setStorage('notifications', result);
+        }else{
+            let result = [];
+            let notify = {Id:1,Name:"thông báo",Code:"POS",Message:"",Type:"",SubType:"",Url:"",CreatedDate:""};
+            result.push(notify);
+            this.env.setStorage('notifications', result);
+        }
+       });
+        
+        
         if (this.id == data.id) {
             this.env.showMessage("Khách gọi món", "warning");
             this.refresh();

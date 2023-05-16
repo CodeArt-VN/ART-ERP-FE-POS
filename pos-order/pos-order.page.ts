@@ -12,6 +12,7 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
+import { ModalNotifyComponent } from 'src/app/components/modal-notify/modal-notify.component';
 
 @Component({
     selector: 'app-pos-order',
@@ -46,8 +47,7 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.canSplit = true;
         this.pageConfig.canChangeTable = true;
         this.pageConfig.canImport = false;
-        this.pageConfig.canExport = false;     
-        
+        this.pageConfig.canExport = false;    
     }
     ngOnInit() {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
@@ -95,6 +95,7 @@ export class POSOrderPage extends PageBase {
         super.ngOnDestroy();
     }
     preLoadData(event?: any): void {
+        
         let forceReload = event === 'force';
         this.query.Type = 'POSOrder';
         this.query.Status = JSON.stringify(this.noLockStatusList);
@@ -118,6 +119,7 @@ export class POSOrderPage extends PageBase {
     }
 
     loadedData(event?: any): void {
+        
         this.orderCounter = 0;
         this.numberOfGuestCounter = 0;      
         this.checkTable(null, 0); //reset table status
@@ -366,5 +368,19 @@ export class POSOrderPage extends PageBase {
                 reject(err);
             });;
         })
+    }
+    async showNotify(){
+        const modal = await this.modalController.create({
+            component: ModalNotifyComponent,
+            id: 'ModalNotify',
+            canDismiss: true,
+            backdropDismiss: true,
+            cssClass: 'modal-notify',
+            componentProps: {
+                
+            }
+        });
+        await modal.present();
+        const { data, role } = await modal.onWillDismiss();
     }
 }
