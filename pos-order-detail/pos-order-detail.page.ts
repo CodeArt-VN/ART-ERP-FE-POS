@@ -21,6 +21,7 @@ import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
+import { ModalNotifyComponent } from 'src/app/components/modal-notify/modal-notify.component';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -53,7 +54,9 @@ export class POSOrderDetailPage extends PageBase {
         printDate: null,
         currentBranch: null,
         selectedTables: [],
-    }
+    };
+    notifications:any = [];
+    synth = speechSynthesis;
     constructor(
         public pageProvider: SALE_OrderProvider,
         public programProvider: PR_ProgramProvider,
@@ -155,26 +158,22 @@ export class POSOrderDetailPage extends PageBase {
 
     ////EVENTS
     ngOnInit() {
-        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
-            switch (data.Code) {
+        this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
+			switch (data.Code) {
                 case 'app:POSOrderPaymentUpdate':
                     this.getPayments();
+                    this.notifyPayment(data);
                     break;
-            }
-        });
-        this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
-            switch (data.Code) {
-                case 'app:POSOrderFromCustomer':
-                    this.notify(data.Data)
-                    break;
+				case 'app:POSOrderFromCustomer':
+                    this.notifyOrder(data.Data);				
+					break;
             }
         });
         super.ngOnInit();
     }
 
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe();
-        this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
+        this.pageConfig?.subscribePOSOrder?.unsubscribe();
         super.ngOnDestroy();
     }
 
@@ -922,27 +921,40 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-    private notify(data) {
-       this.env.getStorage('notifications').then((result:any)=>{
-        if(result){
-            let notify = {Id:1,Name:"thông báo",Code:"POS",Message:"",Type:"",SubType:"",Url:"",CreatedDate:""};
-            result.push(notify);
-            this.env.setStorage('notifications', result);
-        }else{
-            let result = [];
-            let notify = {Id:1,Name:"thông báo",Code:"POS",Message:"",Type:"",SubType:"",Url:"",CreatedDate:""};
-            result.push(notify);
-            this.env.setStorage('notifications', result);
-        }
-       });
-        
-        
-        if (this.id == data.id) {
-            this.env.showMessage("Khách gọi món", "warning");
-            this.refresh();
+    private notifyOrder(data){  
+        const value = JSON.parse(data.value);    
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("order");
+            let message = "Khách bàn "+value.TableName+" Gọi món";
+            let url = "pos-order/"+data.id+"/"+value.IDTable;
+            this.pushNotification(null,value.IDBranch,"pos-order","Khách gọi món","pos-order",message,url);
+            this.countNotification();
+            if(this.id == data.id){
+                this.refresh();
+            }
+        }                
+    }
+    private notifyPayment(data){
+        const value = JSON.parse(data.Value);    
+        if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
+            this.playAudio("payment");
+            let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
+            let url = "pos-order/"+value.IDSaleOrder+"/"+value.IDTable;
+            this.pushNotification(null,value.IDBranch,"pos-order","Thanh toán","pos-order",message,url);
+            this.countNotification();
         }
     }
-
+    private playAudio(type){
+        let audio = new Audio();
+        if(type=="order"){
+            audio.src = "../../../assets/audio/audio-order.wav";
+        }
+        if(type=="payment"){
+            audio.src = "../../../assets/audio/audio-payment.wav";
+        }
+        audio.load();
+        audio.play();
+    }
     private getMenu(forceReload) {
         return new Promise((resolve, reject) => {
             this.env.getStorage('menuList' + this.env.selectedBranch).then(data => {
@@ -1898,6 +1910,36 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
+    countNotification(){
+        this.pageConfig.countNotifications = this.notifications.length;
+    }
+    pushNotification(Id?:number,IDBranch?:string,Type?:string,Name?:string,Code?:string,Message?:string,Url?:string){
+        let notification = {
+            Id:Id,
+            IDBranch:IDBranch,
+            Type:Type,
+            Name:Name,
+            Code:Code,
+            Message:Message,
+            Url:Url,
+        }
+        this.notifications.unshift(notification); 
+    }
+    async showNotify(){
+        const modal = await this.modalController.create({
+            component: ModalNotifyComponent,
+            id: 'ModalNotify',
+            canDismiss: true,
+            backdropDismiss: true,
+            cssClass: 'modal-notify',
+            componentProps: {     
+                notifications:this.notifications       
+            }
+        });
+        
+        await modal.present();
+        const { data, role } = await modal.onWillDismiss();
+    }
 
 }
 

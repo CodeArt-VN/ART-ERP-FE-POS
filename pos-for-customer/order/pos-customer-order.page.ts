@@ -105,17 +105,13 @@ export class POSCustomerOrderPage extends PageBase {
 
     ////EVENTS
     ngOnInit() {
-        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
+        this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
             switch (data.Code) {
                 case 'app:POSOrderPaymentUpdate':
-                    this.refresh();
+                    this.notifyPayment(data);                 
                     break;
-            }
-        });
-        this.pageConfig.subscribePOSOrderCustomer = this.env.getEvents().subscribe((data) => {
-            switch (data.Code) {
                 case 'app:POSOrderFromStaff':
-                    this.notify(data.Data);
+                    this.notifyOrder(data.Data);
                     break;
             }
         });
@@ -123,8 +119,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe();
-        this.pageConfig?.subscribePOSOrderCustomer?.unsubscribe();
+        this.pageConfig?.subscribePOSOrder?.unsubscribe();
         super.ngOnDestroy();
     }
 
@@ -529,10 +524,16 @@ export class POSCustomerOrderPage extends PageBase {
         }
     }
 
-    private notify(data) {
+    private notifyOrder(data) {
         if (this.item.Id == data.id) {
             this.refresh();
             this.env.setStorage("Order", { Id: this.item.Id, IDTable: this.idTable, Status: this.item.Status });
+        }
+    }
+    private notifyPayment(data){
+        const value = JSON.parse(data.Value);  
+        if (this.item.Id == value.IDSaleOrder){
+            this.refresh();
         }
     }
 
@@ -738,6 +739,8 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     async saveChange() {
+        this.formGroup.controls.Status.patchValue("New");
+        this.formGroup.controls.Status.markAsDirty();
         let submitItem = this.getDirtyValues(this.formGroup);
         this.saveChange2();
     }

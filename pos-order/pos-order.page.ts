@@ -27,6 +27,7 @@ export class POSOrderPage extends PageBase {
     orderCounter = 0;
     numberOfGuestCounter = 0;
     notifications:any = [];
+    synth = speechSynthesis;
     constructor(
         public pageProvider: SALE_OrderProvider,
         public tableGroupProvider: POS_TableGroupProvider,
@@ -53,39 +54,48 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
 			switch (data.Code) {
 				case 'app:POSOrderFromCustomer':
-                    this.notify(data.Data);				
+                    this.notifyOrder(data.Data);				
 					break;
+                case 'app:POSOrderPaymentUpdate':
+                    this.notifyPayment(data);
+                    break;
             }
         });
-        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
-			switch (data.Code) {
-				case 'app:POSOrderPaymentUpdate':
-					this.notifyPayment(data);
-					break;
-            }
-        })
+        
         super.ngOnInit();
     }
     private notifyPayment(data){
-        const value = JSON.parse(data.Value);       
+        const value = JSON.parse(data.Value);    
         if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
+            this.playAudio("Payment");
             let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
-            let url = "pos-order/"+data.Id+"/"+value.IDTable;
-            this.pushNotification(null,value.IDBranch,"pos-order","Khách gọi món","pos-order",message,url);
-            this.countNotification();
+            let url = "pos-order/"+value.IDSaleOrder+"/"+value.IDTable;
+            this.pushNotification(null,value.IDBranch,value.IDSaleOrder,"Payment","Thanh toán","pos-order",message,url);            
         }
     }
-    private notify(data){  
+    private notifyOrder(data){  
         const value = JSON.parse(data.value);    
         if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Order");
             let message = "Khách bàn "+value.TableName+" Gọi món";
-            let url = "pos-order/"+data.Id+"/"+value.IDTable;
-            this.pushNotification(null,value.IDBranch,"pos-order","Khách gọi món","pos-order",message,url);
-            this.countNotification();
+            let url = "pos-order/"+data.id+"/"+value.IDTable;
+            this.pushNotification(null,value.IDBranch,data.id,"Order","Khách gọi món","pos-order",message,url);
         }                
     }
+
+    private playAudio(type){
+        let audio = new Audio();
+        if(type=="Order"){
+            audio.src = "../../../assets/audio/audio-order.wav";
+        }
+        if(type=="Payment"){
+            audio.src = "../../../assets/audio/audio-payment.wav";
+        }
+        audio.load();
+        audio.play();
+    }
+    
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
         this.pageConfig?.subscribePOSOrder?.unsubscribe();
         super.ngOnDestroy();
     }
@@ -139,7 +149,7 @@ export class POSOrderPage extends PageBase {
             if(o.Status=='New'){
                 let message = "Đơn hàng "+o.Id+" có sản phẩm chưa gửi bếp";
                 let url = "pos-order/"+o.Id+"/"+o.Tables[0];
-                this.pushNotification(null,o.IDBranch,"pos-order","chưa gửi bếp","pos-order",message,url);
+                this.pushNotification(null,o.IDBranch,o.Id,"Order","chưa gửi bếp","pos-order",message,url);
             }
             
         })
@@ -372,6 +382,13 @@ export class POSOrderPage extends PageBase {
         })
     }
     async showNotify(){
+        this.env.getStorage('NotificationsPayment').then((result:any)=>{
+            if(result){
+                result.forEach(n=>{
+                    this.notifications.unshift(n);
+                })
+            }
+        });
         const modal = await this.modalController.create({
             component: ModalNotifyComponent,
             id: 'ModalNotify',
@@ -386,19 +403,47 @@ export class POSOrderPage extends PageBase {
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
     }
-    countNotification(){
-        this.pageConfig.countNotifications = this.notifications.length;
+    async countNotification(){
+        const countnotifypayment = await  this.env.getStorage('NotificationsPayment').then((result:any)=>{
+            if(result){
+                return result.length;
+            }else{
+                return 0;
+            }
+        });
+        
+        this.pageConfig.countNotifications = this.notifications.length + countnotifypayment;
     }
-    pushNotification(Id?:number,IDBranch?:string,Type?:string,Name?:string,Code?:string,Message?:string,Url?:string){
+    pushNotification(Id,IDBranch,IDSaleOrder,Type,Name,Code,Message,Url){
         let notification = {
             Id:Id,
             IDBranch:IDBranch,
+            IDSaleOrder:IDSaleOrder,
             Type:Type,
             Name:Name,
             Code:Code,
             Message:Message,
             Url:Url,
         }
-        this.notifications.unshift(notification); 
+         
+        if(Type=="Payment"){
+            this.setStorageNotification(notification);
+        }
+        else{
+            this.notifications.unshift(notification);
+        }
+        this.countNotification();
+    }
+    setStorageNotification(notification){
+        this.env.getStorage('NotificationsPayment').then((result:any)=>{
+            if(result){
+                result.unshift(notification);
+            }
+            else{
+                let NotificationsPayments = [];
+                NotificationsPayments.unshift(notification);
+                this.env.setStorage('NotificationsPayment',NotificationsPayments);
+            }
+        });
     }
 }
