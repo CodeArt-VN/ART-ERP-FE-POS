@@ -1,5 +1,6 @@
 <ion-header>
 	<app-detail-toolbar [page]="this">
+		<span *ngIf="printData.selectedTables.length" class="hide-small" title>Tên bàn: {{printData.selectedTables?.[0]['Name']}}</span>
 		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
 		<ion-button class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>

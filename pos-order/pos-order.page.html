@@ -161,13 +161,13 @@
 									<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
 								</div>
 								<div class="col-id cell">
-									{{i.Id}}
+									<span *ngFor="let t of i._Tables">{{t.Name}}</span>
 								</div>
 								<div class="col-guest cell">
 									<ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
 								</div>
 								<div class="col-code cell">
-									<span *ngFor="let t of i._Tables">{{t.Name}}</span>
+									<span>{{i.Id}}</span>
 								</div>
 								<!-- <div class="col-status cell">
 									<span class="bar-holder">

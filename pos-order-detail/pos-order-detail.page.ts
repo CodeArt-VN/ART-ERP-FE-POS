@@ -570,9 +570,10 @@ export class POSOrderDetailPage extends PageBase {
     saveOrderData() {
         let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
         this.env.showPrompt(message, null, 'Thông báo').then(_ => {
-            this.saveChange().then(() => {
+            this.saveChange2().finally(async () => {
                 this.submitAttempt = false;
-                this.sendKitchen()});
+                await this.sendKitchen();
+            });
         }).catch(_ => {
             this.saveChange();
         });
