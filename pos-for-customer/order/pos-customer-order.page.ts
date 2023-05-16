@@ -94,7 +94,7 @@ export class POSCustomerOrderPage extends PageBase {
         })
         Object.assign(this.query, { IDTable: this.idTable });
         this.env.getStorage("Order").then(result => {
-            if (result?.Id && result?.IDTable == this.idTable && result.Status == "New") {
+            if (result?.Id && result?.IDTable == this.idTable && (result.Status == "New" || result.Status == "Confirmed" || result.Status == "Picking" || result.Status == "Scheduled" || result.Status == "Delivered")) {
                 this.id = result.Id;
                 let newURL = '#/pos-customer-order/' + result.Id + '/' + this.idTable;
                 history.pushState({}, null, newURL);
