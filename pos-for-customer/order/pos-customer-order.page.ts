@@ -227,7 +227,6 @@ export class POSCustomerOrderPage extends PageBase {
                     element.classList.remove('shake');
                 }, 400);
             }
-
             return;
         }
 
@@ -257,7 +256,7 @@ export class POSCustomerOrderPage extends PageBase {
                 TaxRate: item.SaleVAT,
                 IDUoM: idUoM,
                 UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
-
+                UoMName: uom.Name,
                 Quantity: 1,
                 IDBaseUoM: idUoM,
                 UoMSwap: 1,
@@ -760,6 +759,14 @@ export class POSCustomerOrderPage extends PageBase {
         this.loadedData();
 
         this.submitAttempt = false;
+    }
+
+    closeSuccessModal(){
+        this.isSuccessModalOpen = false; 
+        setTimeout(() => {
+            this.pageConfig.isShowFeature = false;
+        }, 1);
+        
     }
 
     sendOrder() {

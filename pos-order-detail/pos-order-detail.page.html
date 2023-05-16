@@ -1,12 +1,17 @@
 <ion-header>
 	<app-detail-toolbar [page]="this">
-		<span *ngIf="printData.selectedTables.length" class="hide-small" title>Tên bàn: {{printData.selectedTables?.[0]['Name']}}</span>
+		<ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
+			Bàn: <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
+		</ion-button>
+		
 		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
+		
 		<ion-button class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
 		</ion-button>
 	</app-detail-toolbar>
+
 </ion-header>
 
 <ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
@@ -133,6 +138,7 @@
 						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">Chiết khấu NVBH
 							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 						</label>
+
 						<label class="c-label total">Tổng tiền
 							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
@@ -172,7 +178,7 @@
 
 			<div class="box ion-padding">
 				<div class="box-content">
-					
+
 					<div class="check-out">
 						<div class="box-title">
 							Thanh toán
@@ -292,27 +298,31 @@
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
 					<ion-col *ngIf="pageConfig.canEdit && pageConfig.IsAutoSave">
-						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
+						<ion-button  [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
 							Chuyển BAR/KIT
 						</ion-button>
 					</ion-col>
 					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.IsAutoSave">
-						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
+						<ion-button  [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
 							Lưu đơn
 						</ion-button>
 					</ion-col>
 					<ion-col>
-						<ion-button class="gr-btn-order" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id">
+						<ion-button  color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id">
 							In đơn
 						</ion-button>
 					</ion-col>
 				</ion-row>
 				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
-					<ion-col>
-						<ion-button class="gr-btn-order" *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
+					<ion-col size="12">
+						<ion-button  *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>Thanh toán {{item.Debt | number: '1.0-0'}} </ion-text>
 						</ion-button>
-						<ion-button color="danger" class="gr-btn-order ion-margin-top" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
+					</ion-col>
+				</ion-row>
+				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
+					<ion-col>
+						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>Hoàn tất</ion-text>
 						</ion-button>
 					</ion-col>
@@ -350,11 +360,11 @@
 						</ion-col>
 
 						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
-							<span class="tag right" *ngIf="i.BookedQuantity">
+							<!-- <span class="tag right" *ngIf="i.BookedQuantity">
 								<ion-text class="tag-content" color="danger">
 									{{i.BookedQuantity}}
 								</ion-text>
-							</span>
+							</span> -->
 							<div class="card" [id]="'item'+i.Id">
 
 								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
@@ -362,22 +372,24 @@
 								<ng-container *ngFor="let u of i.UoMs">
 
 
-									<a *ngIf="u.PriceList.length" class="price clickable">
+									<span *ngIf="u.PriceList.length" class="price clickable">
 										<span class="price-list" *ngFor="let p of u.PriceList">
 											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}/<span class="uom">{{u.Name}}</span>
+												{{p.Price | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
 											</span>
 											<span *ngIf="p.NewPrice">
-												{{p.NewPrice | number: '1.0-0'}}/{{u.Name}}
+												{{p.NewPrice | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
 												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}}%
 
 											</span>
 										</span>
 
-										<ion-button fill="clear" class="ion-float-right" size="small" (click)="addToCart(i, u.Id)">
+										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToCart(i, u.Id)">
 											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 										</ion-button>
-									</a>
+									</span>
 								</ng-container>
 
 							</div>
@@ -558,7 +570,7 @@
 													<tr>
 														<td class="title bold">Type</td>
 														<td class="text-right bold"><span>Amount</span></td>
-													</tr>										
+													</tr>
 													<tr *ngFor="let p of paymentList">
 														<td class="title">{{p.IncomingPayment.TypeText}}<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span></td>
 														<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>

@@ -293,7 +293,7 @@ export class POSOrderDetailPage extends PageBase {
                 TaxRate: item.SaleVAT,
                 IDUoM: idUoM,
                 UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
-
+                UoMName: uom.Name,
                 Quantity: 1,
                 IDBaseUoM: idUoM,
                 UoMSwap: 1,
