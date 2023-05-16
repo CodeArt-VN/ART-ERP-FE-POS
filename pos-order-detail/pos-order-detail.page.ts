@@ -42,6 +42,7 @@ export class POSOrderDetailPage extends PageBase {
     statusList; //Show on bill
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
+    checkDoneLineStatusList = ['Done', 'Cancelled', 'Returned'];
     kitchenQuery = 'all';
     kitchenList = [];
     OrderAdditionTypeList = [];
@@ -241,7 +242,7 @@ export class POSOrderDetailPage extends PageBase {
         this.preLoadData('force');
     }
 
-    async addToCart(item, idUoM, quantity = 1) {
+    async addToCart(item, idUoM, quantity = 1, idx = -1) {
 
         if (this.submitAttempt) {
 
@@ -280,7 +281,14 @@ export class POSOrderDetailPage extends PageBase {
         let uom = item.UoMs.find(d => d.Id == idUoM);
         let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
 
-        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        let line;
+        if (quantity == 1) {
+            line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        }
+        else {
+            line = this.item.OrderLines[idx]; //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        }
+
         if (!line) {
             line = {
                 IDOrder: this.item.Id,
@@ -334,7 +342,7 @@ export class POSOrderDetailPage extends PageBase {
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New'});
             }
             else {
-                if (this.item.Status == 'New') {
+                if (line.Status == 'New') {
                     this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm').then(_ => {
                         line.Quantity += quantity;
                         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
@@ -594,6 +602,7 @@ export class POSOrderDetailPage extends PageBase {
                 e.Remark = e.Remark.toString();
             }
             if (e._undeliveredQuantity > 0) {
+                e.Status = 'Serving';
                 this.printData.undeliveredItems.push(e);
             }
         });
@@ -629,6 +638,7 @@ export class POSOrderDetailPage extends PageBase {
             e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
             e._IDKitchen = e._item?.Kitchen.Id;
             if (e._undeliveredQuantity > 0) {
+                e.Status = 'Serving';
                 this.printData.undeliveredItems.push(e);
             }
             if (e.Remark) {
@@ -663,8 +673,8 @@ export class POSOrderDetailPage extends PageBase {
 
                     await this.setKitchenID(kitchenPrinter.Id);
 
-                    let IDItem = ItemsForKitchen[index].IDItem;
-                    let object: any = document.getElementById('bill-item-each-' + IDItem);
+                    let LineID = ItemsForKitchen[index].Id;
+                    let object: any = document.getElementById('bill-item-each-' + LineID);
 
                     let printerInfo = kitchenPrinter['Printer'];
                     this.setupPrinting(printerInfo, object, false, times, true);
@@ -891,12 +901,13 @@ export class POSOrderDetailPage extends PageBase {
                 line.Status = 'New';
             }
             else {
-                line.Status = 'Waiting';
+                line.Status = 'Serving';
             }
 
             line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
-
-
+            if (this.pageConfig.canDeleteItems) {
+                line._Locked = false;
+            }
         }
 
         this.item.OriginalTotalDiscountPercent = ((this.item.OriginalTotalDiscount / this.item.OriginalTotalBeforeDiscount) * 100.0).toFixed(0);
@@ -1335,12 +1346,16 @@ export class POSOrderDetailPage extends PageBase {
             this.env.showPrompt(message, null, 'Thông báo').then(_ => {
                 this.printData.undeliveredItems = []; //<-- clear;
                 this.item.OrderLines.forEach(line => {
+                    if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+                        line.Status = 'Done';
+                    }
                     if (line.Quantity > line.ShippedQuantity) {
                         line.ShippedQuantity = line.Quantity;
                         line.ReturnedQuantity = 0;
                         changed.OrderLines.push({ Id: line.Id, IDUoM: line.IDUoM, ShippedQuantity: line.ShippedQuantity, ReturnedQuantity: 0 });
                     }
                 });
+                changed.OrderLines = this.item.OrderLines;
                 changed.Status = 'Done';
                 changed.IDStatus = 114;
                 this.setOrderValue(changed, true, true);
@@ -1351,6 +1366,12 @@ export class POSOrderDetailPage extends PageBase {
         else if (this.item.Debt > 0) {
             let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
             this.env.showPrompt(message, null, 'Thông báo').then(_ => {
+                this.item.OrderLines.forEach(line => {
+                    if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+                        line.Status = 'Done';
+                    }
+                });
+                changed.OrderLines = this.item.OrderLines;
                 changed.Status = 'Done';
                 changed.IDStatus = 114;
                 this.setOrderValue(changed, true, true);
@@ -1360,6 +1381,12 @@ export class POSOrderDetailPage extends PageBase {
 
         }
         else {
+            this.item.OrderLines.forEach(line => {
+                if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+                    line.Status = 'Done';
+                }
+            });
+            changed.OrderLines = this.item.OrderLines;
             changed.Status = 'Done';
             changed.IDStatus = 114;
             this.setOrderValue(changed, true, true);

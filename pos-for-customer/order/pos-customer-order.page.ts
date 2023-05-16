@@ -108,7 +108,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
             switch (data.Code) {
                 case 'app:POSOrderPaymentUpdate':
-                    this.refresh();
+                    this.updatePayment(data);
                     break;
             }
         });
@@ -215,8 +215,16 @@ export class POSCustomerOrderPage extends PageBase {
         this.preLoadData('force');
     }
 
-    async addToCart(item, idUoM, quantity = 1, IsUpdate = false) {
+    async addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
         this.AllowSendOrder = true;
+
+        if (this.ipWhitelist.indexOf(this.myIP) == -1) {
+            this.pageConfig.canEdit = false;
+            this.isWifiSecuredModalOpen = true;
+
+            return;
+        }
+
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -244,7 +252,14 @@ export class POSCustomerOrderPage extends PageBase {
         let uom = item.UoMs.find(d => d.Id == idUoM);
         let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
 
-        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        let line;
+        if (quantity == 1) {
+            line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        }
+        else {
+            line = this.item.OrderLines[idx]; //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        }
+
         if (!line) {
             line = {
                 IDOrder: this.item.Id,
@@ -275,7 +290,7 @@ export class POSCustomerOrderPage extends PageBase {
             this.item.OrderLines.push(line);
 
             this.addOrderLine(line);
-            this.setOrderValue({ OrderLines: [line] });
+            this.setOrderValue({ OrderLines: [line], Status: 'New'});
             if (this.id == 0) {
                 this.env.setStorage("OrderLines" + this.idTable, this.item.OrderLines);
             }
@@ -286,7 +301,7 @@ export class POSCustomerOrderPage extends PageBase {
             }
             else if ((line.Quantity + quantity) > 0) {
                 line.Quantity += quantity;
-                this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New'});
                 if (this.id == 0) {
                     this.env.setStorage("OrderLines" + this.idTable, this.item.OrderLines);
                 }
@@ -498,8 +513,9 @@ export class POSCustomerOrderPage extends PageBase {
                 line.Status = 'New';
             }
             else {
-                line.Status = 'Waiting';
+                line.Status = 'Serving';
             }
+            debugger
 
             line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
 
@@ -526,6 +542,14 @@ export class POSCustomerOrderPage extends PageBase {
             for (let i of this.item.OrderLines) {
                 this.addOrderLine(i);
             }
+        }
+    }
+    
+    private updatePayment(data) {
+        let paymentInfo = JSON.parse(data['Value']);
+        if (this.item.Id == paymentInfo.IDSaleOrder) {
+            this.refresh();
+            this.env.setStorage("Order", { Id: this.item.Id, IDTable: this.idTable, Status: this.item.Status });
         }
     }
 
@@ -768,7 +792,7 @@ export class POSCustomerOrderPage extends PageBase {
             this.AllowSendOrder = false;
         }
         else{
-            this.env.showTranslateMessage('Xin lỗi quý khách bạn này chưa được kích hoạt gọi món', 'warning');
+            this.env.showTranslateMessage('Xin lỗi quý khách bàn này chưa được kích hoạt gọi món', 'warning');
             return false;
         }
     }

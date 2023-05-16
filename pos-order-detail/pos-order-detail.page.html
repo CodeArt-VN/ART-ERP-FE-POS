@@ -31,16 +31,16 @@
 								</div>
 
 								<div class="od-quantity">
-									<ion-button title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity));">
+									<ion-button title='Xóa bỏ sản phẩm này' fill="clear" [disabled]="submitAttempt || line._Locked " color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx);">
 										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1); line._isShowFoC = false;">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1, idx); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
 									<!-- <ion-button fill="outline" class="ion-float-right qty-btn qty-box" size="small" >
 										{{line.Quantity}}
 									</ion-button> -->
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1); line._isShowFoC = false;">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1, idx); line._isShowFoC = false;">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
 
@@ -292,12 +292,12 @@
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
 					<ion-col *ngIf="pageConfig.canEdit && pageConfig.IsAutoSave">
-						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
+						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0 ">
 							Chuyển BAR/KIT
 						</ion-button>
 					</ion-col>
 					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.IsAutoSave">
-						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
+						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt">
 							Lưu đơn
 						</ion-button>
 					</ion-col>
@@ -597,7 +597,7 @@
 	<!-- Kitchen Dishes Printing -->
 	<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
 		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}; let idx = index">
-			<div [id]="'bill-item-each-'+o.IDItem" class="bill" style="overflow: auto; width: 72mm;">
+			<div [id]="'bill-item-each-'+o.Id" class="bill" style="overflow: auto; width: 72mm;">
 				<div class="receipt giao-nhan" style="overflow: auto;">
 					<section class="sheet rpt p1">
 						<table>
