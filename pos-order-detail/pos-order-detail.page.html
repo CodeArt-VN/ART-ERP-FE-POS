@@ -1,5 +1,5 @@
 <ion-header>
-	<app-detail-toolbar [page]="this" (showNotify)="showNotify()">
+	<app-detail-toolbar [page]="this">
 		<ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
 			Bàn: <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
 		</ion-button>

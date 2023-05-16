@@ -55,8 +55,6 @@ export class POSOrderDetailPage extends PageBase {
         currentBranch: null,
         selectedTables: [],
     };
-    notifications:any = [];
-    synth = speechSynthesis;
     constructor(
         public pageProvider: SALE_OrderProvider,
         public programProvider: PR_ProgramProvider,
@@ -158,24 +156,36 @@ export class POSOrderDetailPage extends PageBase {
 
     ////EVENTS
     ngOnInit() {
-        this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
+        this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {         
 			switch (data.Code) {
-                case 'app:POSOrderPaymentUpdate':
-                    this.getPayments();
-                    this.notifyPayment(data);
-                    break;
 				case 'app:POSOrderFromCustomer':
                     this.notifyOrder(data.Data);				
 					break;
+                case 'app:POSOrderPaymentUpdate':
+                    this.notifyPayment(data);
+                    break;
             }
         });
+        
         super.ngOnInit();
     }
-
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrder?.unsubscribe();
+        this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
         super.ngOnDestroy();
     }
+    private notifyPayment(data){
+        const value = JSON.parse(data.Value); 
+        if(value.IDSaleOrder == this.item.Id){
+            this.refresh();
+        }   
+    }
+    private notifyOrder(data){  
+        if(data.id == this.item.Id){
+            this.refresh();
+        }          
+    }
+
+    
 
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
@@ -921,40 +931,6 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-    private notifyOrder(data){  
-        const value = JSON.parse(data.value);    
-        if(this.env.selectedBranch == value.IDBranch){
-            this.playAudio("order");
-            let message = "Khách bàn "+value.TableName+" Gọi món";
-            let url = "pos-order/"+data.id+"/"+value.IDTable;
-            this.pushNotification(null,value.IDBranch,"pos-order","Khách gọi món","pos-order",message,url);
-            this.countNotification();
-            if(this.id == data.id){
-                this.refresh();
-            }
-        }                
-    }
-    private notifyPayment(data){
-        const value = JSON.parse(data.Value);    
-        if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
-            this.playAudio("payment");
-            let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
-            let url = "pos-order/"+value.IDSaleOrder+"/"+value.IDTable;
-            this.pushNotification(null,value.IDBranch,"pos-order","Thanh toán","pos-order",message,url);
-            this.countNotification();
-        }
-    }
-    private playAudio(type){
-        let audio = new Audio();
-        if(type=="order"){
-            audio.src = "../../../assets/audio/audio-order.wav";
-        }
-        if(type=="payment"){
-            audio.src = "../../../assets/audio/audio-payment.wav";
-        }
-        audio.load();
-        audio.play();
-    }
     private getMenu(forceReload) {
         return new Promise((resolve, reject) => {
             this.env.getStorage('menuList' + this.env.selectedBranch).then(data => {
@@ -1910,36 +1886,6 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-    countNotification(){
-        this.pageConfig.countNotifications = this.notifications.length;
-    }
-    pushNotification(Id?:number,IDBranch?:string,Type?:string,Name?:string,Code?:string,Message?:string,Url?:string){
-        let notification = {
-            Id:Id,
-            IDBranch:IDBranch,
-            Type:Type,
-            Name:Name,
-            Code:Code,
-            Message:Message,
-            Url:Url,
-        }
-        this.notifications.unshift(notification); 
-    }
-    async showNotify(){
-        const modal = await this.modalController.create({
-            component: ModalNotifyComponent,
-            id: 'ModalNotify',
-            canDismiss: true,
-            backdropDismiss: true,
-            cssClass: 'modal-notify',
-            componentProps: {     
-                notifications:this.notifications       
-            }
-        });
-        
-        await modal.present();
-        const { data, role } = await modal.onWillDismiss();
-    }
 
 }
 

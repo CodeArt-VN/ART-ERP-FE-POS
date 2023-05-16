@@ -68,7 +68,7 @@
 								</ion-text>
 							</span>
 
-							<a routerDirection="back" *ngIf="!t._Orders || t._Orders?.length < 2" [routerLink]="['/'+pageConfig.pageName+'/'+((t._Orders && t._Orders[0]?.Id) || 0)+'/'+t.Id]">
+							<a routerDirection="forward" *ngIf="!t._Orders || t._Orders?.length < 2" [routerLink]="['/'+pageConfig.pageName+'/'+((t._Orders && t._Orders[0]?.Id) || 0)+'/'+t.Id]">
 								<span class="table-name">{{t.Name}}</span>
 								<span class="table-status" *ngIf="t._Orders?.length == 1">
 									<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name">
@@ -154,7 +154,7 @@
 				<section class="table">
 					<ion-virtual-scroll [items]="items" approxItemHeight="150px">
 						<ng-container *virtualItem="let i; let itemBounds = bounds; let j = index;">
-							<div class="row clickable" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}" (click)="nav('pos-order/'+i.Id+'/'+i.Tables[0],'back')">
+							<div class="row clickable" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}" (click)="nav('pos-order/'+i.Id+'/'+i.Tables[0],'forward')">
 
 								<div class="col-checkbox cell">
 									<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">

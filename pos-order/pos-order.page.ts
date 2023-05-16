@@ -26,7 +26,6 @@ export class POSOrderPage extends PageBase {
     segmentView = 'all';
     orderCounter = 0;
     numberOfGuestCounter = 0;
-    notifications:any = [];
     synth = speechSynthesis;
     constructor(
         public pageProvider: SALE_OrderProvider,
@@ -68,7 +67,9 @@ export class POSOrderPage extends PageBase {
         const value = JSON.parse(data.Value);    
         if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
             this.playAudio("Payment");
+            
             let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
+            this.env.showMessage(message,"warning");
             let url = "pos-order/"+value.IDSaleOrder+"/"+value.IDTable;
             this.pushNotification(null,value.IDBranch,value.IDSaleOrder,"Payment","Thanh toán","pos-order",message,url);            
         }
@@ -78,6 +79,8 @@ export class POSOrderPage extends PageBase {
         if(this.env.selectedBranch == value.IDBranch){
             this.playAudio("Order");
             let message = "Khách bàn "+value.TableName+" Gọi món";
+            this.env.showMessage(message,"warning");
+           
             let url = "pos-order/"+data.id+"/"+value.IDTable;
             this.pushNotification(null,value.IDBranch,data.id,"Order","Khách gọi món","pos-order",message,url);
         }                
@@ -151,9 +154,7 @@ export class POSOrderPage extends PageBase {
                 let url = "pos-order/"+o.Id+"/"+o.Tables[0];
                 this.pushNotification(null,o.IDBranch,o.Id,"Order","chưa gửi bếp","pos-order",message,url);
             }
-            
         })
-        this.countNotification();
     }
 
     checkTable(o, tid) {       
@@ -326,7 +327,7 @@ export class POSOrderPage extends PageBase {
                             }
                             this.loadData();
                             this.submitAttempt = false;
-                            this.nav('/pos-order', 'back');
+                            this.nav('/pos-order', 'forward');
                         }).catch(err => {
                             this.submitAttempt = false;
                         });
@@ -382,13 +383,6 @@ export class POSOrderPage extends PageBase {
         })
     }
     async showNotify(){
-        this.env.getStorage('NotificationsPayment').then((result:any)=>{
-            if(result){
-                result.forEach(n=>{
-                    this.notifications.unshift(n);
-                })
-            }
-        });
         const modal = await this.modalController.create({
             component: ModalNotifyComponent,
             id: 'ModalNotify',
@@ -396,23 +390,21 @@ export class POSOrderPage extends PageBase {
             backdropDismiss: true,
             cssClass: 'modal-notify',
             componentProps: {     
-                notifications:this.notifications       
+                       
             }
         });
         
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
     }
-    async countNotification(){
-        const countnotifypayment = await  this.env.getStorage('NotificationsPayment').then((result:any)=>{
+    countNotification(){
+        this.env.getStorage('Notifications').then((result:any)=>{
             if(result){
-                return result.length;
+                this.pageConfig.countNotifications = result.length;
             }else{
-                return 0;
+                this.pageConfig.countNotifications = 0;
             }
         });
-        
-        this.pageConfig.countNotifications = this.notifications.length + countnotifypayment;
     }
     pushNotification(Id,IDBranch,IDSaleOrder,Type,Name,Code,Message,Url){
         let notification = {
@@ -424,26 +416,23 @@ export class POSOrderPage extends PageBase {
             Code:Code,
             Message:Message,
             Url:Url,
+            Watched:false,
         }
-         
-        if(Type=="Payment"){
-            this.setStorageNotification(notification);
-        }
-        else{
-            this.notifications.unshift(notification);
-        }
-        this.countNotification();
+        this.setStorageNotification(notification);
+        
     }
     setStorageNotification(notification){
-        this.env.getStorage('NotificationsPayment').then((result:any)=>{
-            if(result){
-                result.unshift(notification);
+        this.env.getStorage('Notifications').then((Notifications:any)=>{
+            if(Notifications){
+                Notifications.unshift(notification);
+                this.env.setStorage('Notifications',Notifications);
             }
             else{
-                let NotificationsPayments = [];
-                NotificationsPayments.unshift(notification);
-                this.env.setStorage('NotificationsPayment',NotificationsPayments);
+                let Notifications = [];
+                Notifications.unshift(notification);
+                this.env.setStorage('Notifications',Notifications);
             }
+            this.countNotification();
         });
     }
 }
