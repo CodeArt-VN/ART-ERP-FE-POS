@@ -27,6 +27,7 @@ export class POSOrderPage extends PageBase {
     orderCounter = 0;
     numberOfGuestCounter = 0;
     synth = speechSynthesis;
+    notifications = [];
     constructor(
         public pageProvider: SALE_OrderProvider,
         public tableGroupProvider: POS_TableGroupProvider,
@@ -48,6 +49,7 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.canChangeTable = true;
         this.pageConfig.canImport = false;
         this.pageConfig.canExport = false;    
+        
     }
     ngOnInit() {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
@@ -58,6 +60,9 @@ export class POSOrderPage extends PageBase {
                 case 'app:POSOrderPaymentUpdate':
                     this.notifyPayment(data);
                     break;
+                case 'app:POSSupport':
+                        this.notifySupport(data.Data);
+                        break;
             }
         });
         
@@ -71,7 +76,8 @@ export class POSOrderPage extends PageBase {
             let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
             this.env.showMessage(message,"warning");
             let url = "pos-order/"+value.IDSaleOrder+"/"+value.IDTable;
-            this.pushNotification(null,value.IDBranch,value.IDSaleOrder,"Payment","Thanh toán","pos-order",message,url);            
+                      
+            this.setStorageNotification(null,value.IDBranch,value.IDSaleOrder,"Payment","Thanh toán","pos-order",message,url);
         }
     }
     private notifyOrder(data){  
@@ -80,12 +86,18 @@ export class POSOrderPage extends PageBase {
             this.playAudio("Order");
             let message = "Khách bàn "+value.TableName+" Gọi món";
             this.env.showMessage(message,"warning");
-           
             let url = "pos-order/"+data.id+"/"+value.IDTable;
-            this.pushNotification(null,value.IDBranch,data.id,"Order","Khách gọi món","pos-order",message,url);
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Order","Khách gọi món","pos-order",message,url);
         }                
     }
-
+    private notifySupport(data){
+        if(this.env.selectedBranch == data.name){
+            this.playAudio("Support");       
+            this.env.showMessage(data.value,"warning");
+            this.setStorageNotification(null,null,null,"Support","Yêu cầu phục vụ","pos-order",data.value,null);
+        }
+    }
     private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
@@ -93,6 +105,9 @@ export class POSOrderPage extends PageBase {
         }
         if(type=="Payment"){
             audio.src = "../../../assets/audio/audio-payment.wav";
+        }
+        if(type=="Support"){
+            audio.src = "../../../assets/audio/audio-support.wav";
         }
         audio.load();
         audio.play();
@@ -148,13 +163,20 @@ export class POSOrderPage extends PageBase {
         });
 
         super.loadedData(event);
-        this.items.forEach(o=>{
-            if(o.Status=='New'){
-                let message = "Đơn hàng "+o.Id+" có sản phẩm chưa gửi bếp";
-                let url = "pos-order/"+o.Id+"/"+o.Tables[0];
-                this.pushNotification(null,o.IDBranch,o.Id,"Order","chưa gửi bếp","pos-order",message,url);
+        this.env.getStorage('Notifications').then(result=>{
+            if(result?.length>0){
+                this.notifications = result;
             }
-        })
+            else{
+                if(this.items.filter(o=>o.Status=='New').length > 0){
+                    this.setNotifications(this.items.filter(o=>o.Status=='New'));
+                }
+            }
+            this.pageConfig.numberNotifications = this.notifications.length;
+        });
+        
+        
+        
     }
 
     checkTable(o, tid) {       
@@ -385,28 +407,28 @@ export class POSOrderPage extends PageBase {
     async showNotify(){
         const modal = await this.modalController.create({
             component: ModalNotifyComponent,
-            id: 'ModalNotify',
             canDismiss: true,
             backdropDismiss: true,
             cssClass: 'modal-notify',
             componentProps: {     
-                       
+                item: this.notifications,       
             }
         });
         
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
+        this.pageConfig.numberNotifications = this.notifications.length;
     }
-    countNotification(){
-        this.env.getStorage('Notifications').then((result:any)=>{
-            if(result){
-                this.pageConfig.countNotifications = result.length;
-            }else{
-                this.pageConfig.countNotifications = 0;
-            }
-        });
+    setNotifications(items){
+        if(items.length>0){
+            items.forEach(o=>{
+                let message = "Đơn hàng "+o.Id+" có sản phẩm chưa gửi bếp";
+                let url = "pos-order/"+o.Id+"/"+o.Tables[0];
+                this.setStorageNotification(null,o.IDBranch,o.Id,"Order","Đơn hàng","pos-order",message,url);
+            })
+        }
     }
-    pushNotification(Id,IDBranch,IDSaleOrder,Type,Name,Code,Message,Url){
+    async setStorageNotification(Id,IDBranch,IDSaleOrder,Type,Name,Code,Message,Url){
         let notification = {
             Id:Id,
             IDBranch:IDBranch,
@@ -418,21 +440,12 @@ export class POSOrderPage extends PageBase {
             Url:Url,
             Watched:false,
         }
-        this.setStorageNotification(notification);
-        
-    }
-    setStorageNotification(notification){
-        this.env.getStorage('Notifications').then((Notifications:any)=>{
-            if(Notifications){
-                Notifications.unshift(notification);
-                this.env.setStorage('Notifications',Notifications);
-            }
-            else{
-                let Notifications = [];
-                Notifications.unshift(notification);
-                this.env.setStorage('Notifications',Notifications);
-            }
-            this.countNotification();
+        const notifications = await this.env.getStorage('Notifications').then(result=>{
+            if(result){return result}else{return []}
         });
+        notifications.unshift(notification);
+        this.env.setStorage('Notifications',notifications);
+        this.notifications.unshift(notification);
+        this.pageConfig.numberNotifications = this.notifications.length;
     }
 }

@@ -808,5 +808,19 @@ export class POSCustomerOrderPage extends PageBase {
 
     isSuccessModalOpen = false;
  
+    callStaff(){
+        let ItemModel = {
+            ID: this.idTable,
+            Code: "POSSupport",
+            Name: this.Table.IDBranch,
+            Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu phục vụ"
+        }
+        this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result=>{
+            this.env.showMessage("Đã gọi phục vụ","success");
+        }).catch(err=>{
+            console.log(err);
+        });
+
+    }
 
 }

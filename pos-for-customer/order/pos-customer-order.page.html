@@ -25,6 +25,11 @@
 </ion-header>
 
 <ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
+	<ion-fab slot="fixed" vertical="bottom" horizontal="end">
+		<ion-fab-button (click)="callStaff()">
+			<ion-icon name="megaphone-outline" ></ion-icon>
+		</ion-fab-button>
+	</ion-fab>
 	<!-- list Item -->
 	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
