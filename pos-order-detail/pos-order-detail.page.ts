@@ -39,7 +39,8 @@ export class POSOrderDetailPage extends PageBase {
     dealList = [];
     paymentList = [];
     paymentType = [];
-    statusList; //Show on bill
+    soStatusList = []; //Show on bill
+    soDetailStatusList = [];
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
     checkDoneLineStatusList = ['Done', 'Cancelled', 'Returned'];
@@ -183,6 +184,7 @@ export class POSOrderDetailPage extends PageBase {
         let forceReload = event === 'force';
         Promise.all([
             this.env.getStatus('POSOrder'),
+            this.env.getStatus('POSOrderDetail'),
             this.getTableGroupFlat(forceReload),
             this.getMenu(forceReload),
             this.getDeal(),
@@ -190,17 +192,18 @@ export class POSOrderDetailPage extends PageBase {
             this.env.getType('PaymentType'),
             this.pageProvider.commonService.connect('GET', 'SYS/Config/ConfigByBranch', {Code: 'IsAutoSave', IDBranch: this.env.selectedBranch}).toPromise(),
         ]).then((values: any) => {
-            this.statusList = values[0];
-            this.tableList = values[1];
-            this.menuList = values[2];
-            this.dealList = values[3];
-            if (values[4]['data'].length) {
-                let dbp = JSON.parse(values[4]['data'][0].Value);
+            this.soStatusList = values[0];
+            this.soDetailStatusList = values[1];
+            this.tableList = values[2];
+            this.menuList = values[3];
+            this.dealList = values[4];
+            if (values[5]['data'].length) {
+                let dbp = JSON.parse(values[5]['data'][0].Value);
                 this.contactListSelected.push(dbp);
             }
-            this.paymentType = values[5];
-            if (values[6]['Value']) {
-                this.pageConfig.IsAutoSave = Boolean(JSON.parse(values[6]['Value']));
+            this.paymentType = values[6];
+            if (values[7]['Value']) {
+                this.pageConfig.IsAutoSave = Boolean(JSON.parse(values[7]['Value']));
             }
             super.preLoadData(event);
         }).catch(err => {
@@ -591,7 +594,7 @@ export class POSOrderDetailPage extends PageBase {
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
         if (this.submitAttempt) return;
         this.submitAttempt = true;
-        let times = 2; // Số lần in phiếu; Nếu là 2, in 2 lần;
+        let times = 1; // Số lần in phiếu; Nếu là 2, in 2 lần;
 
         this.printData.undeliveredItems = [];
 
@@ -903,6 +906,7 @@ export class POSOrderDetailPage extends PageBase {
             else {
                 line.Status = 'Serving';
             }
+            this.updateOrderLineStatus(line);
 
             line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
             if (this.pageConfig.canDeleteItems) {
@@ -931,6 +935,11 @@ export class POSOrderDetailPage extends PageBase {
                 this.addOrderLine(i);
             }
         }
+    }
+
+    private updateOrderLineStatus(line) {
+        line.StatusText = lib.getAttrib(line.Status, this.soDetailStatusList, 'Name', '--', 'Code');
+        line.StatusColor = lib.getAttrib(line.Status, this.soDetailStatusList, 'Color', '--', 'Code');
     }
 
     private notify(data) {
@@ -1114,7 +1123,7 @@ export class POSOrderDetailPage extends PageBase {
         groups.push(group);
     }
 
-    setOrderValue(data, instantly = false, doneOrder = false) {
+    setOrderValue(data, instantly = false, forceSave = false) {
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
@@ -1177,7 +1186,7 @@ export class POSOrderDetailPage extends PageBase {
             else
                 this.debounce(() => { this.saveChange() }, 1000);
         }   
-        if (doneOrder) {
+        if (forceSave) {
             this.saveChange();
         }
     }
@@ -1890,6 +1899,7 @@ export class POSOrderDetailPage extends PageBase {
                     if (e.Image) {
                         e.imgPath = environment.posImagesServer + e.Image;
                     }
+                    this.updateOrderLineStatus(e);
                 });
                 return this.QCCloseConnection();
             });

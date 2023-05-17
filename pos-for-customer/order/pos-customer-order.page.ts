@@ -28,7 +28,8 @@ export class POSCustomerOrderPage extends PageBase {
     IDBranch = null;
     Branch;
     dealList = [];
-    statusList; //Show on bill
+    soStatusList = []; //Show on bill
+    soDetailStatusList = [];
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
     printData = {
@@ -133,15 +134,16 @@ export class POSCustomerOrderPage extends PageBase {
         this.AllowSendOrder = false;
         Promise.all([
             this.env.getStatus('POSOrder'),
+            this.env.getStatus('POSOrderDetail'),
             this.getMenu(),
             this.getTable(),
             this.getDeal(),
-            this.pageProvider.commonService.connect('GET', ApiSetting.apiDomain("Account/MyIP"), null).toPromise(),
         ]).then((values: any) => {
-            this.statusList = values[0];
-            this.menuList = values[1];
-            this.Table = values[2];
-            this.dealList = values[3];
+            this.soStatusList = values[0]; // Không load dược do không có token;
+            this.soDetailStatusList = values[1]; // Không load dược do không có token;
+            this.menuList = values[2];
+            this.Table = values[3];
+            this.dealList = values[4];
             this.checkIPConfig(event);
         }).catch(err => {
             this.loadedData(event);
@@ -514,7 +516,6 @@ export class POSCustomerOrderPage extends PageBase {
             else {
                 line.Status = 'Serving';
             }
-            debugger
 
             line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
 
@@ -758,6 +759,26 @@ export class POSCustomerOrderPage extends PageBase {
         }
         this.loadInfoOrder();
         this.calcOrder();
+        this.checkAllowSendOrder();
+    }
+
+    checkAllowSendOrder() {
+        this.env.getStorage("OrderLines" + this.idTable).then(result => {
+            if (result?.length > 0) {
+                
+                for (let index = 0; index < this.item.OrderLines.length; index++) {
+                    let cacheLine = result[index];
+                    let orderLine = this.item.OrderLines[index];
+                    if (cacheLine && (cacheLine.Quantity == orderLine.Quantity)) {
+                        this.AllowSendOrder = false;
+                    }
+                    else {
+                        this.AllowSendOrder = true;
+                        return
+                    }
+                }
+            }
+        });
     }
 
     async saveChange() {
@@ -797,8 +818,9 @@ export class POSCustomerOrderPage extends PageBase {
         if(this.Table.IsAllowCustomerOrder == true){
             this.saveChange();
             this.AllowSendOrder = false;
+            this.env.setStorage("OrderLines" + this.idTable, this.item.OrderLines);
         }
-        else{
+        else {
             this.env.showTranslateMessage('Xin lỗi quý khách bàn này chưa được kích hoạt gọi món', 'warning');
             return false;
         }

@@ -157,6 +157,7 @@ export class POSOrderPage extends PageBase {
                             OrderDate: o.OrderDate,
                             NumberOfGuests: o.NumberOfGuests,
                             CalcTotalOriginal: o.CalcTotalOriginal,
+                            Debt: o.Debt,
                             Order: o
                         };
                         t._Orders.push(order);

@@ -32,6 +32,9 @@
 										<div class="od-price">
 											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 										</div>
+										<div>
+											<ion-text [color]="line?.StatusColor"><small>{{line?.StatusText}}</small></ion-text>
+										</div>
 									</div>
 								</div>
 
@@ -276,7 +279,7 @@
 						</div>
 
 						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Status" labelForId="Status" [multiple]="false" [clearable]="false" [items]="statusList" bindLabel="Name" bindValue="Code" placeholder="Trạng thái...">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Status" labelForId="Status" [multiple]="false" [clearable]="false" [items]="soStatusList" bindLabel="Name" bindValue="Code" placeholder="Trạng thái...">
 								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
 									<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
 								</ng-template>
@@ -303,7 +306,7 @@
 						</ion-button>
 					</ion-col>
 					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.IsAutoSave">
-						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
+						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt">
 							Lưu đơn
 						</ion-button>
 					</ion-col>
@@ -572,7 +575,7 @@
 														<td class="text-right bold"><span>Amount</span></td>
 													</tr>
 													<tr *ngFor="let p of paymentList">
-														<td class="title">{{p.IncomingPayment.TypeText}}<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span></td>
+														<td class="title">{{p.IncomingPayment.TypeText}}<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span> <span *ngIf="p.IncomingPayment.IsRefundTransaction"> | Refund</span></td>
 														<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>
 													</tr>
 													<tr *ngIf="item.Debt > 0">

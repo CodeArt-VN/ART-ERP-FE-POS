@@ -90,6 +90,13 @@ ion-content {
         //     color: var(--ion-color-success);
         // }
     }
+
+    &.done-payment {
+        a{
+            box-shadow: var(--ion-color-success) 0px 0px 3px 1px !important;
+            border: solid 1px var(--ion-color-success) !important;
+        }
+    }
 }
 
 .table{
