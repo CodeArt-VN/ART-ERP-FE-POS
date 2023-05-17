@@ -47,20 +47,23 @@
 										<div class="od-price">
 											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 										</div>
+										<div>
+											<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"><small>{{line?.StatusText}}</small></ion-text>
+										</div>
 									</div>
 								</div>
 
 								<div class="od-quantity">
-									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity));">
+									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity),true, idx);">
 										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true, idx)">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1,true)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1,true, idx)">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
-									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
+									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" [disabled]="submitAttempt || line._Locked " class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
 										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
 									</ion-button>
 									<span class="quantity">
@@ -208,12 +211,7 @@
 
 	<ion-modal [isOpen]="isWifiSecuredModalOpen">
 		<ng-template>
-			<ion-content [fullscreen]="true">
-				<ion-fab slot="fixed" vertical="top" horizontal="end">
-					<ion-fab-button (click)="isWifiSecuredModalOpen = false">
-						<ion-icon name="close"></ion-icon>
-					</ion-fab-button>
-				</ion-fab>
+			<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
 				<div class="ion-padding" class="customer-message">
 					<div class="logo-wrapper">
 						<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
@@ -224,8 +222,8 @@
 						</ion-text>
 
 						<p>
-							Xin quý khách kiểm tra lại kết nối <br>
-							Vui lòng kết nối wifi tòa nhà để đặt đơn trên thiết bị<br>
+							Xin quý khách vui lòng sử dụng <br>
+							wifi nhà hàng để đặt hàng<br>
 							<br>
 							<ion-note>
 								Trong trường hợp khẩn cấp, xin vui lòng gọi hotline<br>
@@ -236,6 +234,11 @@
 								</a>
 							</ion-note>
 						</p>
+						
+						<div class="ion-padding"></div>
+						<div class="ion-padding">
+							<ion-button expand="block" (click)="isWifiSecuredModalOpen = false">Đồng ý</ion-button>
+						</div>
 					</div>
 				</div>
 

@@ -51,7 +51,7 @@
 						</ion-col>
 					</ion-row>
 					<ion-row class="table-holder">
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': t._Orders?.length}" *ngFor="let t of g.TableList">
+						<ion-col class="shadow table-item" [ngClass]="{'in-serve': t._Orders?.length, 'done-payment': t._Orders?.[0]?.Debt == 0}" *ngFor="let t of g.TableList">
 							<!-- <span class="tag left" *ngIf="t._Orders">
 								<ion-text class="tag-content">
 									<ion-icon size="medium" color="primary" name="person"></ion-icon> <sup class="number-guest">{{t._Orders[0].NumberOfGuests}}</sup>
