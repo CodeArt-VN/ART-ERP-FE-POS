@@ -88,7 +88,7 @@ export class POSOrderPage extends PageBase {
             this.env.showMessage(message,"warning");
             let url = "pos-order/"+data.id+"/"+value.IDTable;
             
-            this.setStorageNotification(null,value.IDBranch,data.id,"Order","Khách gọi món","pos-order",message,url);
+            this.setStorageNotification(null,value.IDBranch,data.id,"Order","Đơn hàng","pos-order",message,url);
         }                
     }
     private notifySupport(data){
