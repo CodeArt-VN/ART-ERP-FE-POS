@@ -91,7 +91,7 @@
                         <ion-label slot="end" color="primary">{{DebtAmount | number: '1.0-0'}} đ</ion-label>
                     </ion-item>                 
                     <div *ngIf="DebtAmount > 0 && item.Status != 'Cancelled' && item.Status != 'Done'" class="c-control ion-text-center">                          
-                        <ion-button color="success" (click)="toPayment()" expand="block">Thanh toán</ion-button>                                                         
+                        <ion-button color="primary" (click)="toPayment()" expand="block">Thanh toán</ion-button>                                                         
                     </div>                                  
                 </ion-col>
             </ion-row>
