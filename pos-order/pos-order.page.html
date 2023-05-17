@@ -2,12 +2,17 @@
 	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowAdd]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (showNotify)="showNotify()" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (cancelOrder)="openCancellationReason()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
 		<span class="hide-small" title>{{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}</span>
 		<span class="hide-small ion-margin-start" title>Số khách: {{numberOfGuestCounter}}</span>
-
+		
 		<ion-button class="toggle" title="{{'erp.app.pages.pos.pos-order.show-feature' | translate}}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon slot="icon-only" [name]="pageConfig.isShowFeature? 'albums-outline':'albums-outline'">
 			</ion-icon>
 		</ion-button>
-
+		<ion-buttons slot="end">
+			<ion-button  class="ion-margin-end" [ngClass]="{'blink': notifications.length > 0}"  title="thông báo" (click)="showNotify()">
+				<ion-icon name="notifications-outline"></ion-icon> <sup *ngIf="notifications.length > 0"><ion-text >{{notifications.length}}</ion-text></sup>
+			</ion-button>
+		</ion-buttons>
+		
 
 	</app-list-toolbar>
 	<ion-toolbar style="position: absolute; z-index: 100;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" >

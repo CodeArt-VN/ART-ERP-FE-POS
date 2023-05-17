@@ -172,7 +172,6 @@ export class POSOrderPage extends PageBase {
                     this.setNotifications(this.items.filter(o=>o.Status=='New'));
                 }
             }
-            this.pageConfig.numberNotifications = this.notifications.length;
         });
         
         
@@ -418,7 +417,6 @@ export class POSOrderPage extends PageBase {
         
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
-        this.pageConfig.numberNotifications = this.notifications.length;
     }
     setNotifications(items){
         if(items.length>0){
@@ -447,6 +445,5 @@ export class POSOrderPage extends PageBase {
         notifications.unshift(notification);
         this.env.setStorage('Notifications',notifications);
         this.notifications.unshift(notification);
-        this.pageConfig.numberNotifications = this.notifications.length;
     }
 }
