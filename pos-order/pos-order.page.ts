@@ -101,13 +101,13 @@ export class POSOrderPage extends PageBase {
     private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
-            audio.src = "../../../assets/audio/audio-order.wav";
+            audio.src = "assets/audio/audio-order.wav";
         }
         if(type=="Payment"){
-            audio.src = "../../../assets/audio/audio-payment.wav";
+            audio.src = "assets/audio/audio-payment.wav";
         }
         if(type=="Support"){
-            audio.src = "../../../assets/audio/audio-support.wav";
+            audio.src = "assets/audio/audio-support.wav";
         }
         audio.load();
         audio.play();
