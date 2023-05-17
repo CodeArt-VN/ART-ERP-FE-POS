@@ -39,9 +39,11 @@ export class POSOrderDetailPage extends PageBase {
     dealList = [];
     paymentList = [];
     paymentType = [];
-    statusList; //Show on bill
+    soStatusList = []; //Show on bill
+    soDetailStatusList = [];
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
+    checkDoneLineStatusList = ['Done', 'Cancelled', 'Returned'];
     kitchenQuery = 'all';
     kitchenList = [];
     OrderAdditionTypeList = [];
@@ -182,6 +184,7 @@ export class POSOrderDetailPage extends PageBase {
         let forceReload = event === 'force';
         Promise.all([
             this.env.getStatus('POSOrder'),
+            this.env.getStatus('POSOrderDetail'),
             this.getTableGroupFlat(forceReload),
             this.getMenu(forceReload),
             this.getDeal(),
@@ -189,17 +192,18 @@ export class POSOrderDetailPage extends PageBase {
             this.env.getType('PaymentType'),
             this.pageProvider.commonService.connect('GET', 'SYS/Config/ConfigByBranch', {Code: 'IsAutoSave', IDBranch: this.env.selectedBranch}).toPromise(),
         ]).then((values: any) => {
-            this.statusList = values[0];
-            this.tableList = values[1];
-            this.menuList = values[2];
-            this.dealList = values[3];
-            if (values[4]['data'].length) {
-                let dbp = JSON.parse(values[4]['data'][0].Value);
+            this.soStatusList = values[0];
+            this.soDetailStatusList = values[1];
+            this.tableList = values[2];
+            this.menuList = values[3];
+            this.dealList = values[4];
+            if (values[5]['data'].length) {
+                let dbp = JSON.parse(values[5]['data'][0].Value);
                 this.contactListSelected.push(dbp);
             }
-            this.paymentType = values[5];
-            if (values[6]['Value']) {
-                this.pageConfig.IsAutoSave = Boolean(JSON.parse(values[6]['Value']));
+            this.paymentType = values[6];
+            if (values[7]['Value']) {
+                this.pageConfig.IsAutoSave = Boolean(JSON.parse(values[7]['Value']));
             }
             super.preLoadData(event);
         }).catch(err => {
@@ -241,7 +245,7 @@ export class POSOrderDetailPage extends PageBase {
         this.preLoadData('force');
     }
 
-    async addToCart(item, idUoM, quantity = 1) {
+    async addToCart(item, idUoM, quantity = 1, idx = -1) {
 
         if (this.submitAttempt) {
 
@@ -280,7 +284,14 @@ export class POSOrderDetailPage extends PageBase {
         let uom = item.UoMs.find(d => d.Id == idUoM);
         let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
 
-        let line = this.item.OrderLines.find(d => d.IDUoM == idUoM); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        let line;
+        if (quantity == 1) {
+            line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        }
+        else {
+            line = this.item.OrderLines[idx]; //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+        }
+
         if (!line) {
             line = {
                 IDOrder: this.item.Id,
@@ -334,7 +345,7 @@ export class POSOrderDetailPage extends PageBase {
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New'});
             }
             else {
-                if (this.item.Status == 'New') {
+                if (line.Status == 'New') {
                     this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm').then(_ => {
                         line.Quantity += quantity;
                         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
@@ -583,7 +594,7 @@ export class POSOrderDetailPage extends PageBase {
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
         if (this.submitAttempt) return;
         this.submitAttempt = true;
-        let times = 2; // Số lần in phiếu; Nếu là 2, in 2 lần;
+        let times = 1; // Số lần in phiếu; Nếu là 2, in 2 lần;
 
         this.printData.undeliveredItems = [];
 
@@ -594,6 +605,7 @@ export class POSOrderDetailPage extends PageBase {
                 e.Remark = e.Remark.toString();
             }
             if (e._undeliveredQuantity > 0) {
+                e.Status = 'Serving';
                 this.printData.undeliveredItems.push(e);
             }
         });
@@ -629,6 +641,7 @@ export class POSOrderDetailPage extends PageBase {
             e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
             e._IDKitchen = e._item?.Kitchen.Id;
             if (e._undeliveredQuantity > 0) {
+                e.Status = 'Serving';
                 this.printData.undeliveredItems.push(e);
             }
             if (e.Remark) {
@@ -663,8 +676,8 @@ export class POSOrderDetailPage extends PageBase {
 
                     await this.setKitchenID(kitchenPrinter.Id);
 
-                    let IDItem = ItemsForKitchen[index].IDItem;
-                    let object: any = document.getElementById('bill-item-each-' + IDItem);
+                    let LineID = ItemsForKitchen[index].Id;
+                    let object: any = document.getElementById('bill-item-each-' + LineID);
 
                     let printerInfo = kitchenPrinter['Printer'];
                     this.setupPrinting(printerInfo, object, false, times, true);
@@ -891,12 +904,14 @@ export class POSOrderDetailPage extends PageBase {
                 line.Status = 'New';
             }
             else {
-                line.Status = 'Waiting';
+                line.Status = 'Serving';
             }
+            this.updateOrderLineStatus(line);
 
             line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
-
-
+            if (this.pageConfig.canDeleteItems) {
+                line._Locked = false;
+            }
         }
 
         this.item.OriginalTotalDiscountPercent = ((this.item.OriginalTotalDiscount / this.item.OriginalTotalBeforeDiscount) * 100.0).toFixed(0);
@@ -920,6 +935,11 @@ export class POSOrderDetailPage extends PageBase {
                 this.addOrderLine(i);
             }
         }
+    }
+
+    private updateOrderLineStatus(line) {
+        line.StatusText = lib.getAttrib(line.Status, this.soDetailStatusList, 'Name', '--', 'Code');
+        line.StatusColor = lib.getAttrib(line.Status, this.soDetailStatusList, 'Color', '--', 'Code');
     }
 
     private notify(data) {
@@ -1103,7 +1123,7 @@ export class POSOrderDetailPage extends PageBase {
         groups.push(group);
     }
 
-    setOrderValue(data, instantly = false, doneOrder = false) {
+    setOrderValue(data, instantly = false, forceSave = false) {
         for (const c in data) {
             if (c == 'OrderLines' || c == 'OrderLines') {
                 let fa = <FormArray>this.formGroup.controls.OrderLines;
@@ -1166,7 +1186,7 @@ export class POSOrderDetailPage extends PageBase {
             else
                 this.debounce(() => { this.saveChange() }, 1000);
         }   
-        if (doneOrder) {
+        if (forceSave) {
             this.saveChange();
         }
     }
@@ -1335,12 +1355,16 @@ export class POSOrderDetailPage extends PageBase {
             this.env.showPrompt(message, null, 'Thông báo').then(_ => {
                 this.printData.undeliveredItems = []; //<-- clear;
                 this.item.OrderLines.forEach(line => {
+                    if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+                        line.Status = 'Done';
+                    }
                     if (line.Quantity > line.ShippedQuantity) {
                         line.ShippedQuantity = line.Quantity;
                         line.ReturnedQuantity = 0;
                         changed.OrderLines.push({ Id: line.Id, IDUoM: line.IDUoM, ShippedQuantity: line.ShippedQuantity, ReturnedQuantity: 0 });
                     }
                 });
+                changed.OrderLines = this.item.OrderLines;
                 changed.Status = 'Done';
                 changed.IDStatus = 114;
                 this.setOrderValue(changed, true, true);
@@ -1351,6 +1375,12 @@ export class POSOrderDetailPage extends PageBase {
         else if (this.item.Debt > 0) {
             let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
             this.env.showPrompt(message, null, 'Thông báo').then(_ => {
+                this.item.OrderLines.forEach(line => {
+                    if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+                        line.Status = 'Done';
+                    }
+                });
+                changed.OrderLines = this.item.OrderLines;
                 changed.Status = 'Done';
                 changed.IDStatus = 114;
                 this.setOrderValue(changed, true, true);
@@ -1360,6 +1390,12 @@ export class POSOrderDetailPage extends PageBase {
 
         }
         else {
+            this.item.OrderLines.forEach(line => {
+                if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+                    line.Status = 'Done';
+                }
+            });
+            changed.OrderLines = this.item.OrderLines;
             changed.Status = 'Done';
             changed.IDStatus = 114;
             this.setOrderValue(changed, true, true);
@@ -1863,6 +1899,7 @@ export class POSOrderDetailPage extends PageBase {
                     if (e.Image) {
                         e.imgPath = environment.posImagesServer + e.Image;
                     }
+                    this.updateOrderLineStatus(e);
                 });
                 return this.QCCloseConnection();
             });
