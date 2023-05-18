@@ -106,17 +106,13 @@ export class POSCustomerOrderPage extends PageBase {
 
     ////EVENTS
     ngOnInit() {
-        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
+        this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
             switch (data.Code) {
                 case 'app:POSOrderPaymentUpdate':
-                    this.updatePayment(data);
+                    this.notifyPayment(data);                 
                     break;
-            }
-        });
-        this.pageConfig.subscribePOSOrderCustomer = this.env.getEvents().subscribe((data) => {
-            switch (data.Code) {
                 case 'app:POSOrderFromStaff':
-                    this.notify(data.Data);
+                    this.notifyOrder(data.Data);
                     break;
             }
         });
@@ -124,8 +120,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe();
-        this.pageConfig?.subscribePOSOrderCustomer?.unsubscribe();
+        this.pageConfig?.subscribePOSOrder?.unsubscribe();
         super.ngOnDestroy();
     }
 
@@ -544,17 +539,16 @@ export class POSCustomerOrderPage extends PageBase {
             }
         }
     }
-    
-    private updatePayment(data) {
-        let paymentInfo = JSON.parse(data['Value']);
-        if (this.item.Id == paymentInfo.IDSaleOrder) {
+
+    private notifyOrder(data) {
+        if (this.item.Id == data.id) {
             this.refresh();
             this.env.setStorage("Order", { Id: this.item.Id, IDTable: this.idTable, Status: this.item.Status });
         }
     }
-
-    private notify(data) {
-        if (this.item.Id == data.id) {
+    private notifyPayment(data){
+        const value = JSON.parse(data.Value);  
+        if (this.item.Id == value.IDSaleOrder){
             this.refresh();
             this.env.setStorage("Order", { Id: this.item.Id, IDTable: this.idTable, Status: this.item.Status });
         }
@@ -782,6 +776,8 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     async saveChange() {
+        this.formGroup.controls.Status.patchValue("New");
+        this.formGroup.controls.Status.markAsDirty();
         let submitItem = this.getDirtyValues(this.formGroup);
         this.saveChange2();
     }
@@ -851,5 +847,19 @@ export class POSCustomerOrderPage extends PageBase {
 
     isSuccessModalOpen = false;
  
+    callStaff(){
+        let ItemModel = {
+            ID: this.idTable,
+            Code: "POSSupport",
+            Name: this.Table.IDBranch,
+            Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu phục vụ"
+        }
+        this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result=>{
+            this.env.showMessage("Đã gọi phục vụ","success");
+        }).catch(err=>{
+            console.log(err);
+        });
+
+    }
 
 }

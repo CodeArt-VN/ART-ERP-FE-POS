@@ -12,6 +12,7 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
+import { ModalNotifyComponent } from 'src/app/components/modal-notify/modal-notify.component';
 
 @Component({
     selector: 'app-pos-order',
@@ -25,7 +26,8 @@ export class POSOrderPage extends PageBase {
     segmentView = 'all';
     orderCounter = 0;
     numberOfGuestCounter = 0;
-    isShowNotify = false;
+    synth = speechSynthesis;
+    notifications = [];
     constructor(
         public pageProvider: SALE_OrderProvider,
         public tableGroupProvider: POS_TableGroupProvider,
@@ -46,55 +48,77 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.canSplit = true;
         this.pageConfig.canChangeTable = true;
         this.pageConfig.canImport = false;
-        this.pageConfig.canExport = false;     
+        this.pageConfig.canExport = false;    
         
     }
     ngOnInit() {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
 			switch (data.Code) {
 				case 'app:POSOrderFromCustomer':
-                    if(this.isShowNotify ==false){
-                        this.isShowNotify = true; 
-                        this.notify(data.Data);
-                    }					
+                    this.notifyOrder(data.Data);				
 					break;
+                case 'app:POSOrderPaymentUpdate':
+                    this.notifyPayment(data);
+                    break;
+                case 'app:POSSupport':
+                        this.notifySupport(data.Data);
+                        break;
             }
         });
-        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {            
-			switch (data.Code) {
-				case 'app:POSOrderPaymentUpdate':
-					this.notifyPayment(data);
-					break;
-            }
-        })
+        
         super.ngOnInit();
     }
     private notifyPayment(data){
-        const value = JSON.parse(data.Value);       
+        const value = JSON.parse(data.Value);    
         if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
-            this.env.showMessage("Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder,"warning");
+            this.playAudio("Payment");
+            
+            let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+value.IDSaleOrder+"/"+value.IDTable;
+                      
+            this.setStorageNotification(null,value.IDBranch,value.IDSaleOrder,"Payment","Thanh toán","pos-order",message,url);
         }
     }
-    private notify(data){  
+    private notifyOrder(data){  
         const value = JSON.parse(data.value);    
         if(this.env.selectedBranch == value.IDBranch){
-            this.env.showPrompt('Bạn có muốn xem không?', "Đơn hàng #"+data.id, "Khách bàn "+value.TableName+" Gọi món").then(_ => {   
-                this.isShowNotify = false;  
-                this.pageConfig?.subscribePOSOrder?.unsubscribe();     
-                this.nav("/pos-order/"+data.id+"/"+value.IDTable,"back");  
-
-            }).catch(_ => {
-                this.isShowNotify = false; 
-                this.refresh();
-             });
+            this.playAudio("Order");
+            let message = "Khách bàn "+value.TableName+" Gọi món";
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Order","Đơn hàng","pos-order",message,url);
         }                
     }
+    private notifySupport(data){
+        if(this.env.selectedBranch == data.name){
+            this.playAudio("Support");       
+            this.env.showMessage(data.value,"warning");
+            this.setStorageNotification(null,null,null,"Support","Yêu cầu phục vụ","pos-order",data.value,null);
+        }
+    }
+    private playAudio(type){
+        let audio = new Audio();
+        if(type=="Order"){
+            audio.src = "assets/audio/audio-order.wav";
+        }
+        if(type=="Payment"){
+            audio.src = "assets/audio/audio-payment.wav";
+        }
+        if(type=="Support"){
+            audio.src = "assets/audio/audio-support.wav";
+        }
+        audio.load();
+        audio.play();
+    }
+    
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe(); 
         this.pageConfig?.subscribePOSOrder?.unsubscribe();
         super.ngOnDestroy();
     }
     preLoadData(event?: any): void {
+        
         let forceReload = event === 'force';
         this.query.Type = 'POSOrder';
         this.query.Status = JSON.stringify(this.noLockStatusList);
@@ -118,10 +142,10 @@ export class POSOrderPage extends PageBase {
     }
 
     loadedData(event?: any): void {
+        
         this.orderCounter = 0;
         this.numberOfGuestCounter = 0;      
         this.checkTable(null, 0); //reset table status
-
         this.items.forEach(o => {
             o._Locked = this.noLockStatusList.indexOf(o.Status) == -1;
             o._Status = this.soStatusList.find(d => d.Code == o.Status);
@@ -139,6 +163,19 @@ export class POSOrderPage extends PageBase {
         });
 
         super.loadedData(event);
+        this.env.getStorage('Notifications').then(result=>{
+            if(result?.length>0){
+                this.notifications = result;
+            }
+            else{
+                if(this.items.filter(o=>o.Status=='New').length > 0){
+                    this.setNotifications(this.items.filter(o=>o.Status=='New'));
+                }
+            }
+        });
+        
+        
+        
     }
 
     checkTable(o, tid) {       
@@ -312,7 +349,7 @@ export class POSOrderPage extends PageBase {
                             }
                             this.loadData();
                             this.submitAttempt = false;
-                            this.nav('/pos-order', 'back');
+                            this.nav('/pos-order', 'forward');
                         }).catch(err => {
                             this.submitAttempt = false;
                         });
@@ -366,5 +403,47 @@ export class POSOrderPage extends PageBase {
                 reject(err);
             });;
         })
+    }
+    async showNotify(){
+        const modal = await this.modalController.create({
+            component: ModalNotifyComponent,
+            canDismiss: true,
+            backdropDismiss: true,
+            cssClass: 'modal-notify',
+            componentProps: {     
+                item: this.notifications,       
+            }
+        });
+        
+        await modal.present();
+        const { data, role } = await modal.onWillDismiss();
+    }
+    setNotifications(items){
+        if(items.length>0){
+            items.forEach(o=>{
+                let message = "Đơn hàng "+o.Id+" có sản phẩm chưa gửi bếp";
+                let url = "pos-order/"+o.Id+"/"+o.Tables[0];
+                this.setStorageNotification(null,o.IDBranch,o.Id,"Order","Đơn hàng","pos-order",message,url);
+            })
+        }
+    }
+    async setStorageNotification(Id,IDBranch,IDSaleOrder,Type,Name,Code,Message,Url){
+        let notification = {
+            Id:Id,
+            IDBranch:IDBranch,
+            IDSaleOrder:IDSaleOrder,
+            Type:Type,
+            Name:Name,
+            Code:Code,
+            Message:Message,
+            Url:Url,
+            Watched:false,
+        }
+        const notifications = await this.env.getStorage('Notifications').then(result=>{
+            if(result){return result}else{return []}
+        });
+        notifications.unshift(notification);
+        this.env.setStorage('Notifications',notifications);
+        this.notifications.unshift(notification);
     }
 }
