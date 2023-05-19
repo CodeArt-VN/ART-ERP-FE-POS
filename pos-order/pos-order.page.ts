@@ -12,7 +12,7 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
-import { ModalNotifyComponent } from 'src/app/components/modal-notify/modal-notify.component';
+import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 
 @Component({
     selector: 'app-pos-order',
@@ -407,7 +407,7 @@ export class POSOrderPage extends PageBase {
     }
     async showNotify(){
         const modal = await this.modalController.create({
-            component: ModalNotifyComponent,
+            component: POSNotifyModalPage,
             canDismiss: true,
             backdropDismiss: true,
             cssClass: 'modal-notify',

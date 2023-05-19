@@ -21,7 +21,6 @@ import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
-import { ModalNotifyComponent } from 'src/app/components/modal-notify/modal-notify.component';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -603,7 +602,7 @@ export class POSOrderDetailPage extends PageBase {
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
         if (this.submitAttempt) return;
         this.submitAttempt = true;
-        let times = 1; // Số lần in phiếu; Nếu là 2, in 2 lần;
+        let times = 2; // Số lần in phiếu; Nếu là 2, in 2 lần;
 
         this.printData.undeliveredItems = [];
 
@@ -734,12 +733,13 @@ export class POSOrderDetailPage extends PageBase {
                 this.item.Status = Status; // Sử dụng khi in kết bill ( Status = 'Done' )
             }
 
-            let object: any = document.getElementById('bill');
+            await this.setKitchenID('all');
 
-            await this.setKitchenID('all').then(async _ => {
-                let printerInfo = newTerminalList[index]['Printer'];
-                this.setupPrinting(printerInfo, object, receipt, times, false);
-            }); //Xem toàn bộ bill
+            let object: any = document.getElementById('bill'); //Xem toàn bộ bill
+
+            let printerInfo = newTerminalList[index]['Printer'];
+
+            this.setupPrinting(printerInfo, object, receipt, times, false);
         }
     }
 
@@ -912,9 +912,9 @@ export class POSOrderDetailPage extends PageBase {
                 this.printData.undeliveredItems.push(line);
                 line.Status = 'New';
             }
-            else {
-                line.Status = 'Serving';
-            }
+            // else {
+            //     line.Status = 'Serving';
+            // }
             this.updateOrderLineStatus(line);
 
             line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
