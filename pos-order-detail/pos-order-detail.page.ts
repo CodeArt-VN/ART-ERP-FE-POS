@@ -21,6 +21,7 @@ import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
+import { ModalNotifyComponent } from 'src/app/components/modal-notify/modal-notify.component';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -55,7 +56,7 @@ export class POSOrderDetailPage extends PageBase {
         printDate: null,
         currentBranch: null,
         selectedTables: [],
-    }
+    };
     constructor(
         public pageProvider: SALE_OrderProvider,
         public programProvider: PR_ProgramProvider,
@@ -157,28 +158,36 @@ export class POSOrderDetailPage extends PageBase {
 
     ////EVENTS
     ngOnInit() {
-        this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
-            switch (data.Code) {
+        this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {         
+			switch (data.Code) {
+				case 'app:POSOrderFromCustomer':
+                    this.notifyOrder(data.Data);				
+					break;
                 case 'app:POSOrderPaymentUpdate':
-                    this.getPayments();
+                    this.notifyPayment(data);
                     break;
             }
         });
-        this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
-            switch (data.Code) {
-                case 'app:POSOrderFromCustomer':
-                    this.notify(data.Data)
-                    break;
-            }
-        });
+        
         super.ngOnInit();
     }
-
     ngOnDestroy() {
-        this.pageConfig?.subscribePOSOrderPaymentUpdate?.unsubscribe();
         this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
         super.ngOnDestroy();
     }
+    private notifyPayment(data){
+        const value = JSON.parse(data.Value); 
+        if(value.IDSaleOrder == this.item.Id){
+            this.refresh();
+        }   
+    }
+    private notifyOrder(data){  
+        if(data.id == this.item.Id){
+            this.refresh();
+        }          
+    }
+
+    
 
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
@@ -943,12 +952,6 @@ export class POSOrderDetailPage extends PageBase {
         line.StatusColor = lib.getAttrib(line.Status, this.soDetailStatusList, 'Color', '--', 'Code');
     }
 
-    private notify(data) {
-        if (this.id == data.id) {
-            this.env.showMessage("Khách gọi món", "warning");
-            this.refresh();
-        }
-    }
 
     private getMenu(forceReload) {
         return new Promise((resolve, reject) => {
