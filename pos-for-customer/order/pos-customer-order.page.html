@@ -35,10 +35,35 @@
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
 			<!-- Dishes -->
+			<div class="box" *ngIf="item?.Status=='Done' || item?.Status=='Cancelled'">
+				<ion-item lines="none">
+					<ion-text slot="start" *ngIf="item?.Status=='Done'"><b>Đơn hàng đã hoàn tất</b></ion-text>
+					<ion-text slot="start" *ngIf="item?.Status=='Cancelled'"><b>Đơn hàng đã hủy</b></ion-text> 
+					<ion-icon slot="end" (click)="helpOrder(item.Status)" class="clickable" name="help-circle-outline"></ion-icon>                         
+				</ion-item>			
+				<div class="ion-padding">
+					<ion-button expand="block">
+						Quét Mã
+					</ion-button>
+				</div>
+			</div>
+			<div class="box" *ngIf="item?.Status=='Merged'">
+				<ion-item lines="none">
+					<ion-text slot="start" ><b>Đơn hàng đã gộp</b></ion-text>
+					<ion-icon slot="end" (click)="helpOrder(item.Status)" class="clickable" name="help-circle-outline"></ion-icon>                         
+				</ion-item>			
+				<div class="ion-padding">
+					<a [href]="'/#/pos-customer-order/'+item.IDParent+'/'+idTable" target="_blank">
+						<ion-button expand="block" color="primary">
+							Đến đơn gốc
+						</ion-button>
+					</a>
+				</div>
+			</div>
 			<div class="box" *ngIf="item?.Status=='Splitted'">
 				<ion-item lines="none" class="ion-margin-top" >
 					<ion-text slot="start"><b>Đơn hàng đã chia</b></ion-text>
-					<ion-icon slot="end" (click)="helpOrder()" class="clickable" name="help-circle-outline"></ion-icon>                        
+					<ion-icon slot="end" (click)="helpOrder(item.Status)" class="clickable" name="help-circle-outline"></ion-icon>                        
 				</ion-item>
 				<ion-item lines="full" *ngFor="let child of childrenOrders; let i = index">
 					<ion-text slot="end" class="clickable"  >
@@ -216,9 +241,11 @@
 			</ion-modal>
 
 
-			<ion-button *ngIf="item?.Id && item.Status != 'Cancelled'" class="ion-margin-top" expand="block" (click)="processPayments()">
-				<ion-text *ngIf="item.Debt > 0">Thanh toán</ion-text>
-				<ion-text *ngIf="item.Debt <= 0">Xem chi tiết</ion-text>
+			<ion-button *ngIf="item?.Id && item.Debt > 0 && item.Status != 'Cancelled' && item.Status != 'Splitted' && item.Status != 'Merged'" class="ion-margin-top" expand="block" (click)="processPayments()">
+				<ion-text>Thanh toán</ion-text>
+			</ion-button>
+			<ion-button *ngIf="item?.Id && (item.Status == 'Cancelled' || item.Status == 'Splitted' || item.Status == 'Merged')" class="ion-margin-top" expand="block" (click)="processPayments()">
+				<ion-text>Xem chi tiết</ion-text>
 			</ion-button>
 		</form>
 	</ion-fab>
@@ -315,7 +342,7 @@
 											</span>
 										</span>
 
-										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToCart(i, u.Id)">
+										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToCart(i, u.Id); addToStorage(i, u.Id, +1);">
 											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 										</ion-button>
 									</a>

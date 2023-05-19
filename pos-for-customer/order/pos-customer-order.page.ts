@@ -41,8 +41,10 @@ export class POSCustomerOrderPage extends PageBase {
     ipWhitelist = [];
     myIP = '';
     isWifiSecuredModalOpen = false;
+    OrderLines;
     childrenOrders;
     alertButtons = ['OK'];
+    IsMyHandle = false;
     constructor(
         public pageProvider: POS_ForCustomerProvider,
         public env: EnvService,
@@ -107,6 +109,9 @@ export class POSCustomerOrderPage extends PageBase {
                 case 'app:POSOrderFromStaff':
                     this.notifyOrder(data.Data);
                     break;
+                case 'app:POSOrderFromCustomer':
+                    this.notifyFromCustomer(data.Data);				
+					break;
             }
         });
         super.ngOnInit();
@@ -173,12 +178,12 @@ export class POSCustomerOrderPage extends PageBase {
 
     async loadedData(event?: any, ignoredFromGroup?: boolean): Promise<void> {
         super.loadedData(event, ignoredFromGroup);
+        //this.checkOrderOfTable(this.idTable);
         this.getBranch(this.Table.IDBranch);
-        let OrderLines = await  this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
+        this.OrderLines = await  this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
             return result;
         });
         if (!this.item?.Id) {
-
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
             Object.assign(this.item, this.formGroup.getRawValue());
             this.env.getStorage("OrderLines" + this.idTable).then(result => {
@@ -196,29 +201,19 @@ export class POSCustomerOrderPage extends PageBase {
             });
         }
         else {
-            if(this.item.Status == "Splitted"){
-                this.getChildrenOrder(this.item.Id);
-            }
-            if(this.idTable != this.item.Tables[0]){
-                this.env.setStorage("OrderLines" + this.idTable, []);
-                this.env.setStorage("OrderLines" + this.item.Tables[0], OrderLines);
-                this.idTable = this.item.Tables[0];
-                
-                let newURL = '#/pos-customer-order/' + this.item.Id + '/' + this.item.Tables[0];
-                history.pushState({}, null, newURL);
-            }
+            this.notifyFromStaff();           
             this.patchOrderValue();
         }
         this.loadOrder();
         this.loadInfoOrder();
-        if(OrderLines?.length>0){
+        if(this.OrderLines?.length>0){
             this.AllowSendOrder = true;
-            OrderLines.forEach(line=>{
+            this.OrderLines.forEach(line=>{
                 this.addToCart(line.Item,line.IDUoM,+line.Quantity,true);
             });
         }
     }
-
+    
     refresh(event?: any): void {
         this.preLoadData('force');
     }
@@ -578,13 +573,116 @@ export class POSCustomerOrderPage extends PageBase {
             this.refresh();
         }
     }
+    private notifyFromCustomer(data) {
+        const value = JSON.parse(data.value);    
+        // if(this.env.selectedBranch == value.IDBranch){
+        //     this.playAudio("Order");
+        //     let message = "Khách bàn "+value.TableName+" Gọi món";
+        //     this.env.showMessage(message,"warning");
+        //     let url = "pos-order/"+data.id+"/"+value.IDTable;
+            
+        //     this.setStorageNotification(null,value.IDBranch,data.id,"Order","Đơn hàng","pos-order",message,url);
+        //     this.refresh();
+        // }     
+        if(this.idTable == value.IDTable){
+            if(!this.IsMyHandle){
+                this.env.showAlert("Ai đó đã đặt món trên bàn này!","Vào đơn hàng",'Thông báo');
+                this.id = data.id;
+                let newURL = '#/pos-customer-order/' + this.id + '/' + value.IDTable;
+                history.pushState({}, null, newURL);
+                this.IsMyHandle = false;
+                this.refresh();
+            }
+           
+            // if(this.id == 0){
+                
+            //     //window.location.reload();
+            // }
+            
+            
+        }
+        
+        
+    }
     private notifyPayment(data){
         const value = JSON.parse(data.Value);  
         if (this.item.Id == value.IDSaleOrder){
-            this.refresh(); 
+            let type;
+            switch (value.Type) {
+                case 'Card':
+                    type = "Cà thẻ";                 
+                    break;
+                case 'Transfer':
+                    type = "Chuyển khoản";
+                    break;
+                case 'Cash':
+                    type = "Tiền mặt";
+                    break;
+                case 'ZalopayApp':
+                    type = "Ví ZaloPay";
+                    break;
+                case 'CC':
+                    type = "Thẻ Visa, Master, JCB (qua Cổng ZaloPay)";
+                    break;
+                case 'ATM':
+                    type = "Thẻ ATM (qua Cổng ZaloPay)";
+                    break;
+            }
+            this.env.showAlert("<h2>"+lib.currencyFormat(value.Amount)+"</h2>",type,'Thanh Toán Thành công');
+            this.playAudio("Payment");
+            this.refresh();
         }
     }
-
+    private playAudio(type){
+        let audio = new Audio();
+        if(type=="Order"){
+            audio.src = "assets/audio/audio-order.wav";
+        }
+        if(type=="Payment"){
+            audio.src = "assets/audio/audio-payment.wav";
+        }
+        audio.load();
+        audio.play();
+    }
+    private notifyFromStaff(){
+        if(this.item.Status == "Splitted"){
+            this.env.showAlert("Đơn hàng này đã được chia!",null,'Thông báo');
+            this.getChildrenOrder(this.item.Id);
+        }
+        if(this.item.Status =='Merged'){
+            this.env.showAlert("Đơn hàng này đã được gộp!",null,'Thông báo');
+        }
+        if(this.item.Status =='Done'){
+            this.env.showAlert("Đơn hàng này đã hoàn tất!",null,'Thông báo');
+            this.playAudio("Order");
+        }
+        if(this.item.Status =='Cancelled'){
+            this.env.showAlert("Đơn hàng này đã hủy!",null,'Thông báo');
+        }
+        if(this.item.Status == "Confirmed"){
+            this.env.showAlert("Đơn hàng đã được xác nhận!",null,'Thông báo');   
+            this.playAudio("Order");      
+        }
+        // if(this.item.Status == "Scheduled"){
+        //     this.env.showAlert("Món bạn vừa đặt đã được chuyển Bar/Bếp",null,'Thông báo'); 
+        //     this.playAudio("Order");        
+        // }
+        if(this.item.Status == "Picking"){
+            this.env.showAlert("Món đã được chuẩn bị",null,'Thông báo');                    
+        }
+        if(this.item.Status == "Delivered"){
+            this.env.showAlert("Chúc quý khách ngon miệng",null,'Thông báo');      
+        }
+        if(this.idTable != this.item.Tables[0]){
+            this.env.showAlert("Đơn hàng của bạn đã được chuyển bàn",null,'Thông báo chuyển bàn');
+            this.env.setStorage("OrderLines" + this.idTable, []);
+            this.env.setStorage("OrderLines" + this.item.Tables[0], this.OrderLines);
+            this.idTable = this.item.Tables[0];
+            
+            let newURL = '#/pos-customer-order/' + this.item.Id + '/' + this.item.Tables[0];
+            history.pushState({}, null, newURL);
+        }
+    }
     private getMenu() {
         let apiPath = {
             method: "GET",
@@ -841,21 +939,17 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     sendOrder() {
-        if(this.Table.IsAllowCustomerOrder == true){
+        if(this.Table.IsAllowCustomerOrder == true){        
             if(this.id == 0){
-                let apiPath = { method: "GET",url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/OrderOfTable/") + id }};
-                this.commonService.connect(apiPath.method, apiPath.url(this.idTable), this.query).toPromise().then(result=>{
-                    if(result){  
-                        this.id = result
-                        let newURL = '#/pos-customer-order/' + result + '/' + this.idTable;
-                        history.pushState({}, null, newURL); 
-                        this.refresh();            
-                        //this.navCtrl.navigateForward('/pos-customer-order/'+result+'/'+ this.idTable);
-                    }
-                    else{
-                        this.saveOrder();
-                    }
-                }).catch(err => {});
+                this.checkOrderOfTable(this.idTable);
+                if(this.id !=0){
+                    let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
+                    history.pushState({}, null, newURL); 
+                    this.refresh();
+                }
+                else{
+                    this.saveOrder();
+                }
             }
             else{
                 this.saveOrder();
@@ -873,8 +967,6 @@ export class POSCustomerOrderPage extends PageBase {
         this.env.setStorage("OrderLines" + this.idTable, []);
     }
 
-
-
     loadInfoOrder() {
         for (let line of this.item.OrderLines) {
             for (let m of this.menuList)
@@ -890,12 +982,8 @@ export class POSCustomerOrderPage extends PageBase {
 
     }
 
-
-
-
-
     isSuccessModalOpen = false;
- 
+
     callStaff(){
         let ItemModel = {
             ID: this.idTable,
@@ -910,14 +998,42 @@ export class POSCustomerOrderPage extends PageBase {
         });
 
     }
-    async helpOrder() {
+
+    async helpOrder(status) {
+        let subHeader;
+        let message;
+        if(status == 'Done'){
+            subHeader = 'Đơn hàng đã hoàn tất';
+            message = 'Không thể thao tác trên đơn hàng này. Vui lòng quét lại mã để đặt món';
+        }
+        if(status == 'Splitted'){
+            subHeader = 'Đơn hàng đã chia';
+            message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
+        }
+        if(status == 'Cancelled'){
+            subHeader = 'Đơn hàng đã hủy';
+            message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
+        }
+        if(status == 'Merged'){
+            subHeader = 'Đơn hàng đã gộp';
+            message = 'Không thể thao tác trên đơn hàng này. Vui lòng đi đến đơn gốc để tiếp tục đặt hàng';
+        }
         const alert = await this.alertCtrl.create({
             header: 'Thông báo',
-            subHeader: 'Đơn hàng đã chia',
-            message: 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn',
+            subHeader: subHeader,
+            message: message,
             buttons: ['OK'],
-          });
+        });
       
-          await alert.present();
+        await alert.present();
+    }
+
+    async checkOrderOfTable(IDTable){
+        let apiPath = { method: "GET",url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/OrderOfTable/") + id }};
+        await this.commonService.connect(apiPath.method, apiPath.url(IDTable), this.query).toPromise().then(result=>{
+            if(result){  
+                this.id = result;
+            }
+        }).catch(err => {});
     }
 }
