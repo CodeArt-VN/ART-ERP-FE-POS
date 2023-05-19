@@ -89,6 +89,7 @@ export class POSOrderPage extends PageBase {
             let url = "pos-order/"+data.id+"/"+value.IDTable;
             
             this.setStorageNotification(null,value.IDBranch,data.id,"Order","Đơn hàng","pos-order",message,url);
+            this.refresh();
         }                
     }
     private notifySupport(data){
@@ -411,12 +412,15 @@ export class POSOrderPage extends PageBase {
             backdropDismiss: true,
             cssClass: 'modal-notify',
             componentProps: {     
-                item: this.notifications,       
+                notifications: this.notifications,       
             }
         });
         
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
+        if(data){
+            this.notifications = data;
+        }
     }
     setNotifications(items){
         if(items.length>0){

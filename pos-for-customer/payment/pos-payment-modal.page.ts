@@ -135,7 +135,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
             IDStaff: 0,
             IDCustomer: this.item.IDContact,
             IDSaleOrder: this.item.Id,
-            DebtAmount: this.DebtAmount,
+            DebtAmount: Math.ceil(this.DebtAmount),
             IsActiveInputAmount : false,
             IsActiveTypeCash: false,
             Timestamp:Date.now()
