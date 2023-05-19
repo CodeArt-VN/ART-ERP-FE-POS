@@ -41,8 +41,9 @@ export class POSCustomerOrderPage extends PageBase {
     ipWhitelist = [];
     myIP = '';
     isWifiSecuredModalOpen = false;
-    OrderLines;
+    OrderLines = [];
     childrenOrders;
+    parentOrder;
     alertButtons = ['OK'];
     IsMyHandle = false;
     constructor(
@@ -180,25 +181,15 @@ export class POSCustomerOrderPage extends PageBase {
         super.loadedData(event, ignoredFromGroup);
         //this.checkOrderOfTable(this.idTable);
         this.getBranch(this.Table.IDBranch);
-        this.OrderLines = await  this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
-            return result;
+        await  this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
+            if(result){
+                this.OrderLines = result;
+            }
         });
         if (!this.item?.Id) {
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
             Object.assign(this.item, this.formGroup.getRawValue());
-            this.env.getStorage("OrderLines" + this.idTable).then(result => {
-                if (result?.length > 0) {
-                    this.item.OrderLines = result;
-                    this.patchOrderValue();
-                    this.loadOrder();
-                    this.loadInfoOrder();
-                    this.setOrderValue(this.item);
-                }
-                else {
-                    this.setOrderValue(this.item);
-                    this.AllowSendOrder = false;
-                }
-            });
+            this.setOrderValue(this.item);
         }
         else {
             this.notifyFromStaff();           
@@ -217,36 +208,36 @@ export class POSCustomerOrderPage extends PageBase {
     refresh(event?: any): void {
         this.preLoadData('force');
     }
-    getChildrenOrder(IDParent){
-        this.commonService.connect('GET', 'POS/ForCustomer/ChildrenOrder/'+IDParent, null).toPromise().then(result=>{
+    async getChildrenOrder(IDParent){
+        await this.commonService.connect('GET', 'POS/ForCustomer/ChildrenOrder/'+IDParent, null).toPromise().then(result=>{
            this.childrenOrders = result;
-        }).catch(err=>{
-            console.log(err);
-        });
+        }).catch(err=>{});
+    }
+    async getParentOrder(IDParent){
+        await this.commonService.connect('GET', 'POS/ForCustomer/ParentOrder/'+IDParent, null).toPromise().then(result=>{
+           this.parentOrder = result;
+           console.log(this.parentOrder);
+        }).catch(err=>{});
     }
     async addToStorage(item, idUoM, quantity = 1){
-        let OrderLines = await this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
-            return result;
-        });
         let line = {
             Item:item,
             IDUoM:idUoM,
             Quantity:quantity,
         }
-        if(OrderLines?.length>0){
-            let index = OrderLines.indexOf(x=>x.IDUoM == idUoM);
-            if(index == -1){
-                OrderLines.push(line);
-            }
-            else{
-                OrderLines[index].Quantity +=1;
+        let index = this.OrderLines.map(x=>x.IDUoM).indexOf(idUoM);
+        if(index==-1 && quantity){
+            if(quantity==1){
+                this.OrderLines.push(line);
             }
         }
         else{
-            OrderLines = [];
-            OrderLines.push(line);
-        }
-        this.env.setStorage("OrderLines" + this.idTable, OrderLines);
+            this.OrderLines[index].Quantity += quantity;
+            if(this.OrderLines[index].Quantity==0){
+                this.OrderLines.splice(index,1);
+            }
+        }    
+        this.env.setStorage("OrderLines" + this.idTable, this.OrderLines);
     }
 
     addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
@@ -586,20 +577,13 @@ export class POSCustomerOrderPage extends PageBase {
         // }     
         if(this.idTable == value.IDTable){
             if(!this.IsMyHandle){
-                this.env.showAlert("Ai đó đã đặt món trên bàn này!","Vào đơn hàng",'Thông báo');
+                this.env.showAlert("Có một khách hàng nào đó đã gọi món trên bàn này. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng ",'Thông báo');
                 this.id = data.id;
                 let newURL = '#/pos-customer-order/' + this.id + '/' + value.IDTable;
                 history.pushState({}, null, newURL);
-                this.IsMyHandle = false;
                 this.refresh();
             }
-           
-            // if(this.id == 0){
-                
-            //     //window.location.reload();
-            // }
-            
-            
+            this.IsMyHandle = false;
         }
         
         
@@ -608,6 +592,22 @@ export class POSCustomerOrderPage extends PageBase {
         const value = JSON.parse(data.Value);  
         if (this.item.Id == value.IDSaleOrder){
             let type;
+            let status;
+            let header = "Thanh toán";
+            if(value.IsRefundTransaction == true){
+                header = "Hoàn tiền";
+            }
+            switch (value.Status) {
+                case 'Success':
+                    status = "Thành công";                 
+                    break;
+                case 'Processing':
+                    status = "Đang xử lý";
+                    break;
+                case 'Fail':
+                    status = "Thất bại";
+                    break;
+            }
             switch (value.Type) {
                 case 'Card':
                     type = "Cà thẻ";                 
@@ -628,7 +628,7 @@ export class POSCustomerOrderPage extends PageBase {
                     type = "Thẻ ATM (qua Cổng ZaloPay)";
                     break;
             }
-            this.env.showAlert("<h2>"+lib.currencyFormat(value.Amount)+"</h2>",type,'Thanh Toán Thành công');
+            this.env.showAlert("<h2>"+lib.currencyFormat(value.Amount)+"</h2>",type +" | "+status,header);
             this.playAudio("Payment");
             this.refresh();
         }
@@ -644,13 +644,14 @@ export class POSCustomerOrderPage extends PageBase {
         audio.load();
         audio.play();
     }
-    private notifyFromStaff(){
+    async notifyFromStaff(){
         if(this.item.Status == "Splitted"){
             this.env.showAlert("Đơn hàng này đã được chia!",null,'Thông báo');
-            this.getChildrenOrder(this.item.Id);
+            await this.getChildrenOrder(this.item.Id);
         }
         if(this.item.Status =='Merged'){
             this.env.showAlert("Đơn hàng này đã được gộp!",null,'Thông báo');
+            await this.getParentOrder(this.item.IDParent);
         }
         if(this.item.Status =='Done'){
             this.env.showAlert("Đơn hàng này đã hoàn tất!",null,'Thông báo');
@@ -674,14 +675,20 @@ export class POSCustomerOrderPage extends PageBase {
             this.env.showAlert("Chúc quý khách ngon miệng",null,'Thông báo');      
         }
         if(this.idTable != this.item.Tables[0]){
-            this.env.showAlert("Đơn hàng của bạn đã được chuyển bàn",null,'Thông báo chuyển bàn');
+            await this.reloadTable(this.item.Tables[0]);
+            this.env.showAlert("Đơn hàng của bạn đã được chuyển bàn "+this.Table.Name,null,'Thông báo chuyển bàn');
             this.env.setStorage("OrderLines" + this.idTable, []);
             this.env.setStorage("OrderLines" + this.item.Tables[0], this.OrderLines);
             this.idTable = this.item.Tables[0];
-            
             let newURL = '#/pos-customer-order/' + this.item.Id + '/' + this.item.Tables[0];
             history.pushState({}, null, newURL);
+            
         }
+    }
+    async reloadTable(IDTable){
+        await this.commonService.connect('GET', 'POS/ForCustomer/Table/'+IDTable, this.query).toPromise().then((result: any) => {
+            this.Table = result;
+        });
     }
     private getMenu() {
         let apiPath = {
@@ -917,9 +924,16 @@ export class POSCustomerOrderPage extends PageBase {
                 form.controls.Id.setValue(savedItem.Id);
 
             if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
+                let order = {
+                    Id:savedItem.Id,
+                    IDTable:this.idTable,
+                    TableName:this.Table.Name,
+                }
+                this.addOrderToStorage(order);
                 this.id = savedItem.Id;
                 let newURL = '#/pos-customer-order/' + savedItem.Id + '/' + this.idTable;
                 history.pushState({}, null, newURL);
+
             }
 
             this.item = savedItem;
@@ -938,14 +952,17 @@ export class POSCustomerOrderPage extends PageBase {
         
     }
 
-    sendOrder() {
-        if(this.Table.IsAllowCustomerOrder == true){        
+    async sendOrder() {
+        if(this.Table.IsAllowCustomerOrder == true){   
+            this.checkOrderOfTable(this.idTable);     
             if(this.id == 0){
-                this.checkOrderOfTable(this.idTable);
+                await this.checkOrderOfTable(this.idTable);
                 if(this.id !=0){
                     let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
                     history.pushState({}, null, newURL); 
+                    this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng và cập nhật",'Thông báo');               
                     this.refresh();
+                    
                 }
                 else{
                     this.saveOrder();
@@ -964,6 +981,7 @@ export class POSCustomerOrderPage extends PageBase {
     saveOrder(){
         this.saveChange();
         this.AllowSendOrder = false;
+        this.IsMyHandle = true;
         this.env.setStorage("OrderLines" + this.idTable, []);
     }
 
@@ -1018,14 +1036,7 @@ export class POSCustomerOrderPage extends PageBase {
             subHeader = 'Đơn hàng đã gộp';
             message = 'Không thể thao tác trên đơn hàng này. Vui lòng đi đến đơn gốc để tiếp tục đặt hàng';
         }
-        const alert = await this.alertCtrl.create({
-            header: 'Thông báo',
-            subHeader: subHeader,
-            message: message,
-            buttons: ['OK'],
-        });
-      
-        await alert.present();
+        this.env.showAlert(message,subHeader,'Thông báo'); 
     }
 
     async checkOrderOfTable(IDTable){
@@ -1035,5 +1046,23 @@ export class POSCustomerOrderPage extends PageBase {
                 this.id = result;
             }
         }).catch(err => {});
+    }
+    goToOrder(IDSaleOrder,IDTable){
+        this.id = IDSaleOrder;
+        let newURL = '#/pos-customer-order/' + IDSaleOrder + '/' + IDTable;
+        history.pushState({}, null, newURL);               
+        this.refresh();
+    }
+    async addOrderToStorage(order){
+        let Orders = [];
+        await this.env.getStorage('Orders').then(result=>{
+            if(result){
+                Orders = result;
+                Orders.push(order); 
+            }else{
+                Orders.push(order);
+            }  
+        });
+        this.env.setStorage('Orders', Orders);
     }
 }

@@ -36,43 +36,48 @@
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
 			<!-- Dishes -->
 			<div class="box" *ngIf="item?.Status=='Done' || item?.Status=='Cancelled'">
-				<ion-item lines="none">
-					<ion-text slot="start" *ngIf="item?.Status=='Done'"><b>Đơn hàng đã hoàn tất</b></ion-text>
-					<ion-text slot="start" *ngIf="item?.Status=='Cancelled'"><b>Đơn hàng đã hủy</b></ion-text> 
-					<ion-icon slot="end" (click)="helpOrder(item.Status)" class="clickable" name="help-circle-outline"></ion-icon>                         
-				</ion-item>			
-				<div class="ion-padding">
-					<ion-button expand="block">
-						Quét Mã
-					</ion-button>
-				</div>
+				<ion-row>
+					<ion-col size="12" class="ion-text-center">
+						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
+							<ion-text *ngIf="item?.Status=='Done'">Đơn hàng đã hoàn tất ?</ion-text>
+							<ion-text *ngIf="item?.Status=='Cancelled'">Đơn hàng đã hủy ?</ion-text>
+						</ion-button>
+					</ion-col>
+					<ion-col size="12" class="ion-text-center">
+						<ion-button title="Quét mã QR">
+							<ion-icon size="large" name="camera-outline"></ion-icon>
+						</ion-button>
+					</ion-col>
+				</ion-row>
 			</div>
 			<div class="box" *ngIf="item?.Status=='Merged'">
-				<ion-item lines="none">
-					<ion-text slot="start" ><b>Đơn hàng đã gộp</b></ion-text>
-					<ion-icon slot="end" (click)="helpOrder(item.Status)" class="clickable" name="help-circle-outline"></ion-icon>                         
-				</ion-item>			
-				<div class="ion-padding">
-					<a [href]="'/#/pos-customer-order/'+item.IDParent+'/'+idTable" target="_blank">
-						<ion-button expand="block" color="primary">
-							Đến đơn gốc
+				<ion-row style="padding: 10px;">
+					<ion-col size="12" class="ion-text-center">
+						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
+							<ion-text>Đơn hàng đã gộp ?</ion-text>
 						</ion-button>
-					</a>
-				</div>
+					</ion-col>
+					<ion-col size="12">
+						<ion-button (click)="goToOrder(parentOrder.IDSaleOrder,parentOrder.IDTable)" expand="block" fill="outline" color="primary">
+							Bàn {{parentOrder.TableName}}
+						</ion-button>
+					</ion-col>
+				</ion-row>			
 			</div>
 			<div class="box" *ngIf="item?.Status=='Splitted'">
-				<ion-item lines="none" class="ion-margin-top" >
-					<ion-text slot="start"><b>Đơn hàng đã chia</b></ion-text>
-					<ion-icon slot="end" (click)="helpOrder(item.Status)" class="clickable" name="help-circle-outline"></ion-icon>                        
-				</ion-item>
-				<ion-item lines="full" *ngFor="let child of childrenOrders; let i = index">
-					<ion-text slot="end" class="clickable"  >
-						<ion-button  color="primary" fill="outline">
-							<a [href]="'/#/pos-customer-order/'+child.IDSaleOrder+'/'+child.IDTable" target="_blank">Bàn {{child.TableName}}</a>
+				<ion-row style="padding: 10px;">
+					<ion-col size="12" class="ion-text-center">
+						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
+							<ion-text>Đơn hàng đã chia ?</ion-text>
 						</ion-button>
-					</ion-text>
-					<ion-text slot="start" color="primary">Đơn hàng #{{child.IDSaleOrder}}</ion-text>
-				</ion-item>
+					</ion-col>
+					<ion-col size="6" *ngFor="let child of childrenOrders; let i = index">
+						<ion-button (click)="goToOrder(child.IDSaleOrder,child.IDTable)" expand="block" fill="outline" color="primary" >
+							Bàn {{child.TableName}}
+						</ion-button>
+					</ion-col>
+				</ion-row>
+				
 			</div>
 			<div class="box" *ngIf="item?.OrderLines?.length">
 				<div style="padding: 0px 16px !important;">
