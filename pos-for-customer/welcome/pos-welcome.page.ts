@@ -40,18 +40,30 @@ export class POSWelcomePage extends PageBase {
 
     dummyRemark = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500"
 
+    Note = {
+        Note1: `DÀNH CHO KHÁCH HÀNG`,
+        Note2: `- Khách hàng đặt món, thanh toán và dùng món tại quầy/ tại bàn, nếu có vấn đề gì cần hổ trợ, vui lòng liên hệ thu ngân hoặc gọi số hotline 090 133 5553`,
+        Note3: `- Khách hàng nhận hàng tại quầy hoặc tại bàn.`,
+        Note4: `CN Công ty CP IN Hospitality`,
+        Note5: `Số điện thoại: 090 133 5553. Email: cskh@gemcafe.com.vn`,
+    };
+
     SlidingCard = [
         {
+            Logo: '',
             Splash: '',
             Header: 'Welcome!',
-            Remark: "Chào mừng bạn đã đến với ứng dụng đặt món tại bàn."
+            Remark: "Chào mừng bạn đã đến với ứng dụng đặt món tại bàn.",
+            Note: this.Note
         },
         {
+            Logo: '',
             Splash: 'assets/intro-screen/intro-2.jpg',
             Header: 'Gọi món dễ dàng',
             Remark: 'Chỉ với vài thao tác đơn giản, nhà hàng đã sẵn sàng để phục vụ món cho bạn.'
         },
         {
+            Logo: '',
             Splash: 'assets/intro-screen/intro-4.webp',
             Header: 'Luôn luôn sẵn sàng',
             Remark: 'Không phải chờ đợi được phục vụ, bạn luôn chủ động trong việc gọi món cho mình.'
@@ -237,7 +249,9 @@ export class POSWelcomePage extends PageBase {
             this.env.branchList.push(this.currentBranch);
             this.env.selectedBranch = this.currentBranch.Id;
 
-            this.SlidingCard[0].Splash = this.currentBranch?.LogoURL;
+            this.SlidingCard.forEach(s => {
+                s.Logo = this.currentBranch?.LogoURL;
+            });
         });
         // this.pageProvider.read({ Id: this.idTable }).then((result: any) => {
         //     if (result) {
