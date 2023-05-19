@@ -7,7 +7,10 @@
 		<ion-slides pager="true" #slides [options]="slideOptsDefault" (ionSlidesDidLoad)="getSliders(slides)">
 			<ion-slide *ngFor="let i of SlidingCard">
 				<div class="slide-view">
-					<div class="splash">
+					<div class="logo" *ngIf="i.Logo">
+						<img [src]="i.Logo" #img>
+					</div>
+					<div class="splash" *ngIf="i.Splash">
 						<img [src]="i.Splash" #img>
 					</div>
 					<div class="content">
@@ -16,6 +19,14 @@
 						</div>
 						<div class="remark">
 							{{i.Remark}}
+						</div>
+						<div class="note" *ngIf="i.Note">
+							<div>{{i.Note.Note1}}</div>
+							<div>{{i.Note.Note2}}</div>
+							<div>{{i.Note.Note3}}</div>
+							<div>&#8205;</div>
+							<div>{{i.Note.Note4}}</div>
+							<div>{{i.Note.Note5}}</div>
 						</div>
 					</div>
 				</div>

@@ -508,9 +508,9 @@ export class POSCustomerOrderPage extends PageBase {
                 this.printData.undeliveredItems.push(line);
                 line.Status = 'New';
             }
-            else {
-                line.Status = 'Serving';
-            }
+            // else {
+            //     line.Status = 'Serving';
+            // }
 
             line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
 
