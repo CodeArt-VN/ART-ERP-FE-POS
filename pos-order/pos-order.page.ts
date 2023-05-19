@@ -412,7 +412,7 @@ export class POSOrderPage extends PageBase {
             backdropDismiss: true,
             cssClass: 'modal-notify',
             componentProps: {     
-                notifications: this.notifications,       
+                item: this.notifications,       
             }
         });
         
