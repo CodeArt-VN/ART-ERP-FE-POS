@@ -187,6 +187,13 @@ export class POSCustomerOrderPage extends PageBase {
             }
         });
         if (!this.item?.Id) {
+            await this.checkOrderOfTable(this.idTable);
+            if(this.id !=0){
+                let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
+                history.pushState({}, null, newURL); 
+                this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng và cập nhật",'Thông báo');               
+                this.refresh();
+            }     
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
