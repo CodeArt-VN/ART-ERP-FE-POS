@@ -98,7 +98,7 @@ export class POSChangeTableModalPage extends PageBase {
     }
 
     loadedData(event) {
-        this.items.forEach(tb => {
+        this.orders.forEach(tb => {
             this.occupiedTableList.push((tb.Tables).toString());
         });
         this.occupiedTable = this.occupiedTableList.toString();
@@ -124,7 +124,7 @@ export class POSChangeTableModalPage extends PageBase {
         }
 
         super.loadedData(event);
-        console.log(this.items);
+        console.log(this.orders);
     }
 
     contactList$
@@ -207,9 +207,9 @@ export class POSChangeTableModalPage extends PageBase {
                                 let bindOrder;
                                 this.item.Ids = [];
                                 this.item.Ids.push(this.selectedOrder.Id);
-                                this.items.forEach(e => {
+                                this.orders.forEach(e => {
                                     let temp = [];                                    
-                                    if(this.checkBillStatus.indexOf(e._Status.Status) == -1) { 
+                                    if(this.checkBillStatus.indexOf(e._Status.Code) == -1) { 
                                         temp.push(e);
                                     }
 

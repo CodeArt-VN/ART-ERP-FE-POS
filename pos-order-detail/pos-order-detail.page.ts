@@ -594,7 +594,7 @@ export class POSOrderDetailPage extends PageBase {
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
         if (this.submitAttempt) return;
         this.submitAttempt = true;
-        let times = 1; // Số lần in phiếu; Nếu là 2, in 2 lần;
+        let times = 2; // Số lần in phiếu; Nếu là 2, in 2 lần;
 
         this.printData.undeliveredItems = [];
 
@@ -725,12 +725,13 @@ export class POSOrderDetailPage extends PageBase {
                 this.item.Status = Status; // Sử dụng khi in kết bill ( Status = 'Done' )
             }
 
-            let object: any = document.getElementById('bill');
+            await this.setKitchenID('all');
 
-            await this.setKitchenID('all').then(async _ => {
-                let printerInfo = newTerminalList[index]['Printer'];
-                this.setupPrinting(printerInfo, object, receipt, times, false);
-            }); //Xem toàn bộ bill
+            let object: any = document.getElementById('bill'); //Xem toàn bộ bill
+
+            let printerInfo = newTerminalList[index]['Printer'];
+
+            this.setupPrinting(printerInfo, object, receipt, times, false);
         }
     }
 
