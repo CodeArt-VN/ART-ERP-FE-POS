@@ -174,6 +174,10 @@ export class POSCustomerOrderPage extends PageBase {
                     this.isWifiSecuredModalOpen = true;
                 }
             }
+            else {
+                this.pageConfig.canEdit = true;
+                this.isWifiSecuredModalOpen = false;
+            }
             super.preLoadData(event);
         });
     }
@@ -215,12 +219,19 @@ export class POSCustomerOrderPage extends PageBase {
     async addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
         this.AllowSendOrder = true;
 
-        if (this.ipWhitelist.indexOf(this.myIP) == -1) {
-            this.pageConfig.canEdit = false;
-            this.isWifiSecuredModalOpen = true;
-
-            return;
+        if (this.pageConfig.IsUseIPWhitelist) {
+            if (this.ipWhitelist.indexOf(this.myIP) == -1) {
+                this.pageConfig.canEdit = false;
+                this.isWifiSecuredModalOpen = true;
+    
+                return;
+            }
         }
+        else {
+            this.pageConfig.canEdit = true;
+            this.isWifiSecuredModalOpen = false;
+        }
+
 
         if (this.submitAttempt) {
 
@@ -318,6 +329,7 @@ export class POSCustomerOrderPage extends PageBase {
 
     async openQuickMemo(line) {
         if (this.submitAttempt) return;
+        if (line.Status != 'New') return;
 
         const modal = await this.modalController.create({
             component: POSCustomerMemoModalPage,
