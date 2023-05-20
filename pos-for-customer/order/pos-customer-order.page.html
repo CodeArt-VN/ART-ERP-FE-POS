@@ -251,6 +251,7 @@
 				<ion-text *ngIf="item.Debt <= 0">Xem chi tiết</ion-text>
 			</ion-button>
 		</form>
+		<div style="margin-top: 80px;"></div>
 	</ion-fab>
 
 	<ion-modal [isOpen]="isWifiSecuredModalOpen">
@@ -360,4 +361,6 @@
 		</ion-grid>
 		<app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 	</div>
+
+	<div style="margin-top: 60px;"></div>
 </ion-content>
