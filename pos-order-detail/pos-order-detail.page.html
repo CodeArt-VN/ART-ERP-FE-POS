@@ -68,7 +68,7 @@
 								</div>
 
 								<div class="od-remark clickable" (click)="openQuickMemo(line)">
-									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>
+									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="(line._isShowNote || line.Remark != null)" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>
 								</div>
 								<div class="c-control ion-margin-top" *ngIf="line._isShowFoC">
 									<span disabled class="c-input ion-margin-bottom"><span class="ion-float-left">Tổng tiền SP</span> <span class="ion-float-right">{{line.CalcTotalOriginal | number: '1.0-0'}} đ</span> </span>

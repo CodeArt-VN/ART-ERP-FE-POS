@@ -378,6 +378,7 @@ export class POSOrderDetailPage extends PageBase {
 
     async openQuickMemo(line) {
         if (this.submitAttempt) return;
+        if (line.Status != 'New') return;
 
         const modal = await this.modalController.create({
             component: POSMemoModalPage,
