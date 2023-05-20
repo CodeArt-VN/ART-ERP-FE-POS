@@ -1,5 +1,5 @@
 <ion-header>
-	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowAdd]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (showNotify)="showNotify()" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (cancelOrder)="openCancellationReason()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
+	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowRefresh]="false" [ShowAdd]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (showNotify)="showNotify()" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (cancelOrder)="openCancellationReason()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
 		<span class="hide-small" title>{{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}</span>
 		<span class="hide-small ion-margin-start" title>Số khách: {{numberOfGuestCounter}}</span>
 		
@@ -11,6 +11,9 @@
 			<ion-button  class="ion-margin-end" [ngClass]="{'blink': notifications.length > 0}"  title="thông báo" (click)="showNotify()">
 				<ion-icon name="notifications-outline"></ion-icon> <sup *ngIf="notifications.length > 0"><ion-text >{{notifications.length}}</ion-text></sup>
 			</ion-button>
+			<ion-button title="{{'erp.app.components.detail-toolbar.refresh' | translate}}" color="primary" (click)="refresh(true)">
+                <ion-icon slot="icon-only" name="reload-outline"></ion-icon>
+            </ion-button>
 		</ion-buttons>
 		
 

@@ -61,8 +61,8 @@ export class POSOrderPage extends PageBase {
                     this.notifyPayment(data);
                     break;
                 case 'app:POSSupport':
-                        this.notifySupport(data.Data);
-                        break;
+                    this.notifySupport(data.Data);
+                    break;
             }
         });
         
@@ -81,12 +81,13 @@ export class POSOrderPage extends PageBase {
         }
     }
     private notifyOrder(data){  
-        const value = JSON.parse(data.value);    
+        const value = JSON.parse(data.value);  
+        console.log(value);  
         if(this.env.selectedBranch == value.IDBranch){
             this.playAudio("Order");
-            let message = "Khách bàn "+value.TableName+" Gọi món";
+            let message = "Khách bàn "+value.Tables[0].TableName+" Gọi món";
             this.env.showMessage(message,"warning");
-            let url = "pos-order/"+data.id+"/"+value.IDTable;
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
             
             this.setStorageNotification(null,value.IDBranch,data.id,"Order","Đơn hàng","pos-order",message,url);
             this.refresh();

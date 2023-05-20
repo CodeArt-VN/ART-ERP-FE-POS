@@ -110,7 +110,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
             });
         });    
         this.PaidAmounted = PaidAmounted - RefundAmount;
-        this.DebtAmount = (this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman)  - this.PaidAmounted;         
+        this.DebtAmount = Math.round((this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman)  - this.PaidAmounted);         
     }
     getStatus(i,id){
         this.IncomingPaymentProvider.getAnItem(id).then(data=>{                   
@@ -135,7 +135,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
             IDStaff: 0,
             IDCustomer: this.item.IDContact,
             IDSaleOrder: this.item.Id,
-            DebtAmount: Math.ceil(this.DebtAmount),
+            DebtAmount: Math.round(this.DebtAmount),
             IsActiveInputAmount : false,
             IsActiveTypeCash: false,
             Timestamp:Date.now()

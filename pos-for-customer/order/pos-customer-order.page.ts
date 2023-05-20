@@ -226,7 +226,7 @@ export class POSCustomerOrderPage extends PageBase {
            console.log(this.parentOrder);
         }).catch(err=>{});
     }
-    async addToStorage(item, idUoM, quantity = 1){
+    async addToStorage(item, idUoM, quantity = 1,IsDelete = false){
         let line = {
             Item:item,
             IDUoM:idUoM,
@@ -239,10 +239,15 @@ export class POSCustomerOrderPage extends PageBase {
             }
         }
         else{
-            this.OrderLines[index].Quantity += quantity;
-            if(this.OrderLines[index].Quantity==0){
+            if(IsDelete == true){
                 this.OrderLines.splice(index,1);
             }
+            else{
+                this.OrderLines[index].Quantity += quantity;
+                if(this.OrderLines[index].Quantity==0){
+                    this.OrderLines.splice(index,1);
+                }
+            }     
         }    
         this.env.setStorage("OrderLines" + this.idTable, this.OrderLines);
     }
@@ -284,7 +289,7 @@ export class POSCustomerOrderPage extends PageBase {
         let price = uom.PriceList.find(d => d.Type == 'SalePriceList');
 
         let line;
-        if (quantity == 1) {
+        if (quantity >= 1) {
             line = this.item.OrderLines.find(d => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
         }
         else {
@@ -304,7 +309,7 @@ export class POSCustomerOrderPage extends PageBase {
                 IDUoM: idUoM,
                 UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
                 UoMName: uom.Name,
-                Quantity: 1,
+                Quantity: quantity,
                 IDBaseUoM: idUoM,
                 UoMSwap: 1,
                 UoMSwapAlter: 1,
@@ -390,6 +395,22 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     async processPayments() {
+        if(this.OrderLines.length>0 || this.AllowSendOrder == true){
+            this.env.showPrompt('Cập nhật đơn hàng và tiến hành thanh toán!',null, 'Thông báo','Cập nhật','không')
+            .then(_ => {
+                this.sendOrder();
+                this.openModalPayments();
+            }).catch(_ => {
+                
+            });
+        }
+        else{
+            this.openModalPayments();
+        }
+       
+    }
+
+    async openModalPayments(){
         const modal = await this.modalController.create({
             component: POSForCustomerPaymentModalPage,
             swipeToClose: true,
@@ -548,7 +569,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.item.CalcOriginalTotalAdditionsPercent = ((this.item.CalcOriginalTotalAdditions / this.item.OriginalTotalAfterTax) * 100.0).toFixed(0);
         this.item.AdditionsAmountPercent = ((this.item.AdditionsAmount / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
         this.item.OriginalDiscountFromSalesmanPercent = ((this.item.OriginalDiscountFromSalesman / this.item.CalcTotalOriginal) * 100.0).toFixed(0);
-        this.item.Debt = (this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman) - this.item.Received;
+        this.item.Debt = Math.round((this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman) - this.item.Received);
     }
 
     //patch value to form
@@ -573,15 +594,6 @@ export class POSCustomerOrderPage extends PageBase {
     }
     private notifyFromCustomer(data) {
         const value = JSON.parse(data.value);    
-        // if(this.env.selectedBranch == value.IDBranch){
-        //     this.playAudio("Order");
-        //     let message = "Khách bàn "+value.TableName+" Gọi món";
-        //     this.env.showMessage(message,"warning");
-        //     let url = "pos-order/"+data.id+"/"+value.IDTable;
-            
-        //     this.setStorageNotification(null,value.IDBranch,data.id,"Order","Đơn hàng","pos-order",message,url);
-        //     this.refresh();
-        // }     
         if(this.idTable == value.IDTable){
             if(!this.IsMyHandle){
                 this.env.showAlert("Có một khách hàng nào đó đã gọi món trên bàn này. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng ",'Thông báo');
@@ -673,7 +685,7 @@ export class POSCustomerOrderPage extends PageBase {
         }
         // if(this.item.Status == "Scheduled"){
         //     this.env.showAlert("Món bạn vừa đặt đã được chuyển Bar/Bếp",null,'Thông báo'); 
-        //     this.playAudio("Order");        
+        //     //this.playAudio("Order");        
         // }
         if(this.item.Status == "Picking"){
             this.env.showAlert("Món đã được chuẩn bị",null,'Thông báo');                    
@@ -989,6 +1001,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.saveChange();
         this.AllowSendOrder = false;
         this.IsMyHandle = true;
+        this.OrderLines = [];
         this.env.setStorage("OrderLines" + this.idTable, []);
     }
 

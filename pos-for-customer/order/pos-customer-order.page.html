@@ -98,7 +98,7 @@
 								</div>
 
 								<div class="od-quantity">
-									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity),true, idx);">
+									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity),true, idx); addToStorage(line._item, line.IDUoM, +1,true);">
 										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 									</ion-button>
 									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true, idx);addToStorage(line._item, line.IDUoM, +1);">

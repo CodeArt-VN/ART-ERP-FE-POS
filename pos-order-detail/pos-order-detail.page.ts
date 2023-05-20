@@ -928,7 +928,7 @@ export class POSOrderDetailPage extends PageBase {
         this.item.CalcOriginalTotalAdditionsPercent = ((this.item.CalcOriginalTotalAdditions / this.item.OriginalTotalAfterTax) * 100.0).toFixed(0);
         this.item.AdditionsAmountPercent = ((this.item.AdditionsAmount / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
         this.item.OriginalDiscountFromSalesmanPercent = ((this.item.OriginalDiscountFromSalesman / this.item.CalcTotalOriginal) * 100.0).toFixed(0);
-        this.item.Debt = Math.ceil((this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman) - this.item.Received);
+        this.item.Debt = Math.round((this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman) - this.item.Received);
     }
 
     //patch value to form
@@ -1316,7 +1316,7 @@ export class POSOrderDetailPage extends PageBase {
                     let RefundAmount = this.paymentList?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
                     
                     this.item.Received = PaidAmounted - RefundAmount;                 
-                    this.item.Debt = Math.ceil((this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received);
+                    this.item.Debt = Math.round((this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received);
                     if (this.item.Debt > 0) {
                         this.item.IsDebt = true;
                     }
@@ -1337,7 +1337,7 @@ export class POSOrderDetailPage extends PageBase {
             IDStaff: this.env.user.StaffID,
             IDCustomer: this.item.IDContact,
             IDSaleOrder: this.item.Id,
-            DebtAmount: Math.ceil(this.item.Debt),
+            DebtAmount: Math.round(this.item.Debt),
             IsActiveInputAmount: true,
             IsActiveTypeCash: true,
             Timestamp: Date.now()
