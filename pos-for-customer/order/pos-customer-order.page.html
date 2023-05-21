@@ -123,7 +123,7 @@
 									</span>
 								</div>
 								<div class="od-remark clickable" (click)="openQuickMemo(line)">
-									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="line._isShowNote" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>
+									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="(line._isShowNote || line.Remark != null)" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>
 								</div>
 							</div>
 						</ng-container>
