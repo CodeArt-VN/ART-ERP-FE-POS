@@ -46,6 +46,7 @@ export class POSCustomerOrderPage extends PageBase {
     parentOrder;
     alertButtons = ['OK'];
     IsMyHandle = false;
+    OrdersOfTable;
     constructor(
         public pageProvider: POS_ForCustomerProvider,
         public env: EnvService,
@@ -179,7 +180,7 @@ export class POSCustomerOrderPage extends PageBase {
 
     async loadedData(event?: any, ignoredFromGroup?: boolean): Promise<void> {
         super.loadedData(event, ignoredFromGroup);
-        //this.checkOrderOfTable(this.idTable);
+        await this.getOrdersOfTable(this.idTable);
         this.getBranch(this.Table.IDBranch);
         await  this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
             if(result){
@@ -587,18 +588,27 @@ export class POSCustomerOrderPage extends PageBase {
         }
     }
 
-    private notifyOrder(data) {
+    async notifyOrder(data) {
+        const value = JSON.parse(data.value);
         if (this.item.Id == data.id) {
             this.refresh();
+        }else{
+            let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
+            if(index != -1){
+                await this.getOrdersOfTable(this.idTable);
+                this.env.showAlert("Có đơn hàng mới trên bàn này","Kiểm tra đơn hàng ",'Thông báo');
+
+            }
         }
     }
     private notifyFromCustomer(data) {
-        const value = JSON.parse(data.value);    
-        if(this.idTable == value.IDTable){
+        const value = JSON.parse(data.value);   
+        let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
+        if(index != -1){
             if(!this.IsMyHandle){
                 this.env.showAlert("Có một khách hàng nào đó đã gọi món trên bàn này. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng ",'Thông báo');
                 this.id = data.id;
-                let newURL = '#/pos-customer-order/' + this.id + '/' + value.IDTable;
+                let newURL = '#/pos-customer-order/' + this.id + '/' + value.Tables[0].IDTable;
                 history.pushState({}, null, newURL);
                 this.refresh();
             }
@@ -972,8 +982,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     async sendOrder() {
-        if(this.Table.IsAllowCustomerOrder == true){   
-            this.checkOrderOfTable(this.idTable);     
+        if(this.Table.IsAllowCustomerOrder == true){       
             if(this.id == 0){
                 await this.checkOrderOfTable(this.idTable);
                 if(this.id !=0){
@@ -1064,6 +1073,13 @@ export class POSCustomerOrderPage extends PageBase {
         await this.commonService.connect(apiPath.method, apiPath.url(IDTable), this.query).toPromise().then(result=>{
             if(result){  
                 this.id = result;
+            }
+        }).catch(err => {});
+    }
+    async getOrdersOfTable(IDTable){
+        await this.commonService.connect('GET', 'POS/ForCustomer/OrdersOfTable/'+IDTable, null).toPromise().then(result=>{
+            if(result){  
+                this.OrdersOfTable = result;
             }
         }).catch(err => {});
     }
