@@ -98,13 +98,13 @@
 								</div>
 
 								<div class="od-quantity">
-									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity),true, idx); addToStorage(line._item, line.IDUoM, +1,true);">
+									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -(line.Quantity),true, idx);">
 										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true, idx);addToStorage(line._item, line.IDUoM, +1);">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, +1,false, idx);">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1,true, idx);addToStorage(line._item, line.IDUoM, -1)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -1,false, idx)">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
 									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" [disabled]="submitAttempt || line._Locked " class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
@@ -369,7 +369,7 @@
 											</span>
 										</span>
 
-										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToCart(i, u.Id); addToStorage(i, u.Id, +1);">
+										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToStorage(i, u.Id);">
 											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 										</ion-button>
 									</a>

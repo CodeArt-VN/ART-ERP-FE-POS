@@ -240,13 +240,9 @@ export class POSOrderDetailPage extends PageBase {
         this.loadOrder();
         this.contactSearch();
 
-        this.QZsetCertificate().then(() => {
-            this.QZsignMessage().then(() => {
-                this.defaultPrinter = []
-                this.printerTerminalProvider.read({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).then(async (results: any) => {
-                    this.defaultPrinter.push(results['data']?.[0]?.['Printer'])
-                });
-            });
+        this.defaultPrinter = []
+        this.printerTerminalProvider.read({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).then(async (results: any) => {
+            this.defaultPrinter.push(results['data']?.[0]?.['Printer'])
         });
     }
 
@@ -782,8 +778,12 @@ export class POSOrderDetailPage extends PageBase {
         printerCodeList.push(printerCode);
         base64dataList.push(data);
 
-        this.sendQZTray(printerHost, printerCodeList, base64dataList, receipt, times, sendEachItem).catch(err => {
-            this.submitAttempt = false;
+        this.QZsetCertificate().then(() => {
+            this.QZsignMessage().then(() => {
+                this.sendQZTray(printerHost, printerCodeList, base64dataList, receipt, times, sendEachItem).catch(err => {
+                    this.submitAttempt = false;
+                });
+            });
         });
     }
 
