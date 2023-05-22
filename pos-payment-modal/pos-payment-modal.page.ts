@@ -74,6 +74,11 @@ export class POSPaymentModalPage extends PageBase {
     }
     loadedData(event) {
         super.loadedData(event);
+        this.items.forEach((p,index)=>{
+            if(p.IncomingPayment.Status == 'Processing'){
+                this.getStatus(index,p.IncomingPayment.Id);
+            }
+        })
         this.calcPayment();
     }
     private convertUrl(str) {
