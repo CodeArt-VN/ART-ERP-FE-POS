@@ -56,6 +56,7 @@ export class POSOrderDetailPage extends PageBase {
         currentBranch: null,
         selectedTables: [],
     };
+    Discount;
     constructor(
         public pageProvider: SALE_OrderProvider,
         public programProvider: PR_ProgramProvider,
@@ -458,19 +459,24 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     async processDiscounts() {
+        this.Discount = {
+            Amount:this.item.OriginalTotalDiscount,
+            Percent:this.item.OriginalTotalDiscount *100 / this.item.OriginalTotalBeforeDiscount,
+        }
         const modal = await this.modalController.create({
             component: POSDiscountModalPage,
             canDismiss: true,
             backdropDismiss: true,
             cssClass: 'modal-change-table',
             componentProps: {
-                item: this.item,
+                Discount: this.Discount,
+                item:this.item
             }
         });
         await modal.present();
         const { data, role } = await modal.onWillDismiss();
         if (role == 'confirm') {
-            this.refresh();
+            this.applyDiscount();
         }
     }
 
@@ -871,6 +877,9 @@ export class POSOrderDetailPage extends PageBase {
             line.OriginalDiscountByGroup = 0;
             line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
             line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
+            if(this.Discount?.Percent>0){            
+                line.OriginalDiscountByOrder = this.Discount?.Percent * line.OriginalTotalBeforeDiscount /100;
+            }
             this.item.OriginalDiscountByOrder += line.OriginalDiscountByOrder;
             line.OriginalTotalDiscount = line.OriginalDiscountByLine + line.OriginalDiscountByOrder;
             this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;
@@ -1925,6 +1934,15 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
+    applyDiscount(){
+        this.pageProvider.commonService.connect('POST', 'SALE/Order/UpdatePosOrderDiscount/', {Id:this.item.Id,Percent:this.Discount.Percent}).toPromise()
+        .then(result=>{
+            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');
+            this.refresh();
+        }).catch(err=>{
+            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save','danger');
+        })  
+    }
 
 }
 
