@@ -253,14 +253,14 @@
 		</form>
 		<div style="margin-top: 80px;"></div>
 	</ion-fab>
-	<!-- <ng-container *ngIf="OrdersOfTable?.length>0">
+	<ng-container *ngIf="OrdersOfTable?.length>1">
 		<ion-fab slot="fixed" vertical="bottom" horizontal="start">
 			<ion-fab-button id="open-modal-list-order">
 				<ion-icon name="bag-handle-outline"></ion-icon> 
 			</ion-fab-button>
 		</ion-fab>
 		<ion-modal trigger="open-modal-list-order" [initialBreakpoint]="0.5"
-		[breakpoints]="[0, 0.5, 0.75]"
+		[breakpoints]="[0, 0.5, 0.75,1]"
 		handleBehavior="cycle">
 			<ng-template>
 				<div class="box">
@@ -274,7 +274,7 @@
 				</div>
 			</ng-template>
 		</ion-modal>
-	</ng-container> -->
+	</ng-container>
 	
 
 	<ion-modal [isOpen]="isWifiSecuredModalOpen">
