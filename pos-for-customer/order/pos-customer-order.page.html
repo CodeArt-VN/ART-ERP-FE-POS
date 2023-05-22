@@ -35,6 +35,50 @@
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
 			<!-- Dishes -->
+			<div class="box" *ngIf="item?.Status=='Done' || item?.Status=='Cancelled'">
+				<ion-row>
+					<ion-col size="12" class="ion-text-center">
+						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
+							<ion-text *ngIf="item?.Status=='Done'">Đơn hàng đã hoàn tất ?</ion-text>
+							<ion-text *ngIf="item?.Status=='Cancelled'">Đơn hàng đã hủy ?</ion-text>
+						</ion-button>
+					</ion-col>
+					<ion-col size="12" class="ion-text-center">
+						<ion-button title="Quét mã QR">
+							<ion-icon size="large" name="camera-outline"></ion-icon>
+						</ion-button>
+					</ion-col>
+				</ion-row>
+			</div>
+			<div class="box" *ngIf="item?.Status=='Merged'">
+				<ion-row style="padding: 10px;">
+					<ion-col size="12" class="ion-text-center">
+						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
+							<ion-text>Đơn hàng đã gộp ?</ion-text>
+						</ion-button>
+					</ion-col>
+					<ion-col size="12">
+						<ion-button (click)="goToOrder(parentOrder.IDSaleOrder,parentOrder.IDTable)" expand="block" fill="outline" color="primary">
+							Bàn {{parentOrder.TableName}}
+						</ion-button>
+					</ion-col>
+				</ion-row>			
+			</div>
+			<div class="box" *ngIf="item?.Status=='Splitted'">
+				<ion-row style="padding: 10px;">
+					<ion-col size="12" class="ion-text-center">
+						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
+							<ion-text>Đơn hàng đã chia ?</ion-text>
+						</ion-button>
+					</ion-col>
+					<ion-col size="6" *ngFor="let child of childrenOrders; let i = index">
+						<ion-button (click)="goToOrder(child.IDSaleOrder,child.IDTable)" expand="block" fill="outline" color="primary" >
+							Bàn {{child.TableName}}
+						</ion-button>
+					</ion-col>
+				</ion-row>
+				
+			</div>
 			<div class="box" *ngIf="item?.OrderLines?.length">
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
@@ -54,13 +98,13 @@
 								</div>
 
 								<div class="od-quantity">
-									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity),true, idx);">
+									<ion-button *ngIf="!line._Locked" title='Xóa bỏ sản phẩm này' fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity),true, idx); addToStorage(line._item, line.IDUoM, +1,true);">
 										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true, idx)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1,true, idx);addToStorage(line._item, line.IDUoM, +1);">
 										<ion-icon slot="icon-only" name="add"></ion-icon>
 									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1,true, idx)">
+									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1,true, idx);addToStorage(line._item, line.IDUoM, -1)">
 										<ion-icon slot="icon-only" name="remove"></ion-icon>
 									</ion-button>
 									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" [disabled]="submitAttempt || line._Locked " class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
@@ -202,12 +246,36 @@
 			</ion-modal>
 
 
-			<ion-button *ngIf="item.Status != 'Cancelled'" class="ion-margin-top" expand="block" (click)="processPayments()">
-				<ion-text *ngIf="item.Debt > 0">Thanh toán</ion-text>
+			<ion-button *ngIf="item.Status != 'Cancelled' && item?.Id != 0" class="ion-margin-top" expand="block" (click)="processPayments()">
+				<ion-text *ngIf="item.Debt > 0 ">Thanh toán</ion-text>
 				<ion-text *ngIf="item.Debt <= 0">Xem chi tiết</ion-text>
 			</ion-button>
 		</form>
+		<div style="margin-top: 80px;"></div>
 	</ion-fab>
+	<ng-container *ngIf="OrdersOfTable?.length>1">
+		<ion-fab slot="fixed" vertical="bottom" horizontal="start">
+			<ion-fab-button id="open-modal-list-order">
+				<ion-icon name="bag-handle-outline"></ion-icon> 
+			</ion-fab-button>
+		</ion-fab>
+		<ion-modal trigger="open-modal-list-order" [initialBreakpoint]="0.5"
+		[breakpoints]="[0, 0.5, 0.75,1]"
+		handleBehavior="cycle">
+			<ng-template>
+				<div class="box">
+					<div class="ion-padding">
+						<div class="ion-margin-bottom ion-text-center"><ion-text><b>{{OrdersOfTable.length}} đơn hàng</b></ion-text></div>
+						<ion-item lines="full" *ngFor="let order of OrdersOfTable" (click)="goToOrder(order.Id,idTable); closeModal()">
+							<ion-text slot="start">Đơn hàng #{{order.Id}}</ion-text>
+							<ion-text slot="end">{{order.Amount | number: '1.0-0'}} đ</ion-text>
+						</ion-item>	
+					</div>
+				</div>
+			</ng-template>
+		</ion-modal>
+	</ng-container>
+	
 
 	<ion-modal [isOpen]="isWifiSecuredModalOpen">
 		<ng-template>
@@ -301,7 +369,7 @@
 											</span>
 										</span>
 
-										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToCart(i, u.Id)">
+										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToCart(i, u.Id); addToStorage(i, u.Id, +1);">
 											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 										</ion-button>
 									</a>
@@ -316,4 +384,6 @@
 		</ion-grid>
 		<app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 	</div>
+
+	<div style="margin-top: 60px;"></div>
 </ion-content>
