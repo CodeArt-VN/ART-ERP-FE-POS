@@ -147,36 +147,15 @@ export class POSCustomerOrderPage extends PageBase {
 
     async checkIPConfig(event) {
         Promise.all([
-            this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/ConfigByBranch', {Code: 'IsUseIPWhitelist', IDBranch: this.Table.IDBranch}).toPromise(),
-            this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/ConfigByBranch', {Code: 'IPWhitelistInput', IDBranch: this.Table.IDBranch}).toPromise(),
-            this.pageProvider.commonService.connect('GET', ApiSetting.apiDomain("Account/MyIP"), null).toPromise()
+            this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/CheckIPCustomer', {IDBranch: this.Table.IDBranch}).toPromise(),
         ]).then((values: any) => {
-            if (values[0]['Value']) {
-                this.pageConfig.IsUseIPWhitelist = Boolean(JSON.parse(values[0]['Value']));
-            }
-            if (this.pageConfig.IsUseIPWhitelist) {
-                this.ipWhitelist = JSON.parse(values[1]['Value']);
-                this.myIP = values[2];
-                if (this.ipWhitelist) {
-                    if (this.ipWhitelist.indexOf(this.myIP) > -1) {
-                        this.pageConfig.canEdit = true;
-                        this.isWifiSecuredModalOpen = false;
-                    }
-                    else {
-                        // this.env.showTranslateMessage('Vui lòng kết nối wifi tòa nhà để đặt món!', 'warning');
-                        this.pageConfig.canEdit = false;
-                        this.isWifiSecuredModalOpen = true;
-                    }
-                }
-                else {
-                    // this.env.showTranslateMessage('Vui lòng kiểm tra danh sách IP Whitelist!', 'warning');
-                    this.pageConfig.canEdit = false;
-                    this.isWifiSecuredModalOpen = true;
-                }
-            }
-            else {
+            if (values[0]['canEdit']) {
                 this.pageConfig.canEdit = true;
                 this.isWifiSecuredModalOpen = false;
+            }
+            else {
+                this.pageConfig.canEdit = false;
+                this.isWifiSecuredModalOpen = true;
             }
             super.preLoadData(event);
         });
@@ -231,17 +210,15 @@ export class POSCustomerOrderPage extends PageBase {
            console.log(this.parentOrder);
         }).catch(err=>{});
     }
-    async addToStorage(item, idUoM, quantity = 1,IsDelete = false){
+    async addToStorage(item, idUoM, quantity = 1,IsDelete = false,idx = -1){
         let line = {
             Item:item,
             IDUoM:idUoM,
             Quantity:quantity,
         }
         let index = this.OrderLines.map(x=>x.IDUoM).indexOf(idUoM);
-        if(index==-1 && quantity){
-            if(quantity==1){
-                this.OrderLines.push(line);
-            }
+        if(index==-1){
+            this.OrderLines.push(line);
         }
         else{
             if(IsDelete == true){
@@ -254,7 +231,10 @@ export class POSCustomerOrderPage extends PageBase {
                 }
             }     
         }    
-        this.env.setStorage("OrderLines" + this.idTable, this.OrderLines);
+        this.env.setStorage("OrderLines" + this.idTable, this.OrderLines).then(_ => {
+
+            this.addToCart(item, idUoM, quantity, null, idx);
+        })
     }
 
     addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
@@ -933,14 +913,14 @@ export class POSCustomerOrderPage extends PageBase {
         this.checkAllowSendOrder();
     }
 
-    checkAllowSendOrder() {
-        this.env.getStorage("OrderLines" + this.idTable).then(result => {
+    async checkAllowSendOrder() {
+        await this.env.getStorage("OrderLines" + this.idTable).then(result => {
             if (result?.length > 0) {
                 
                 for (let index = 0; index < this.item.OrderLines.length; index++) {
-                    let cacheLine = result[index];
                     let orderLine = this.item.OrderLines[index];
-                    if (cacheLine && (cacheLine.Quantity == orderLine.Quantity)) {
+                    let cacheLine = result.find(od => od.Item.Id == orderLine.IDItem);
+                    if (cacheLine && (cacheLine.Item.BookedQuantity == orderLine.Quantity)) {
                         this.AllowSendOrder = false;
                     }
                     else {
@@ -948,6 +928,9 @@ export class POSCustomerOrderPage extends PageBase {
                         return
                     }
                 }
+            }
+            else {
+                this.AllowSendOrder = false;
             }
         });
     }
