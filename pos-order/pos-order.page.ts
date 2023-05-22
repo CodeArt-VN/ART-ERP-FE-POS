@@ -94,6 +94,7 @@ export class POSOrderPage extends PageBase {
         }                
     }
     private notifySupport(data){
+        debugger
         if(this.env.selectedBranch == data.name){
             this.playAudio("Support");       
             this.env.showMessage(data.value,"warning");
