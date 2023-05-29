@@ -575,8 +575,14 @@
 														<td class="text-right bold"><span>Amount</span></td>
 													</tr>
 													<tr *ngFor="let p of paymentList">
-														<td class="title">{{p.IncomingPayment.TypeText}}<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span> <span *ngIf="p.IncomingPayment.IsRefundTransaction"> | Refund</span></td>
-														<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>
+														<ng-container *ngIf="p.IncomingPayment.Status == 'Success'">
+															<td class="title">
+																{{p.IncomingPayment.TypeText}}
+																<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span> 
+																<span *ngIf="p.IncomingPayment.IsRefundTransaction"> | Refund</span>
+															</td>
+															<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>
+														</ng-container>
 													</tr>
 													<tr *ngIf="item.Debt > 0">
 														<td class="title">Debt:</td>

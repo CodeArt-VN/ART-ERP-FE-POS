@@ -80,8 +80,6 @@ export class POSCustomerOrderPage extends PageBase {
             IDOwner: [-1],
             IDContact: [-1],
             IDAddress: [-1],
-            IDType: [293],
-            IDStatus: [101],
             Type: ['POSOrder'],
             SubType: ['TableService'],
             Status: new FormControl({ value: 'New', disabled: true }),

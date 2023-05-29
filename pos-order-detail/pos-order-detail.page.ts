@@ -96,10 +96,8 @@ export class POSOrderDetailPage extends PageBase {
             IDBranch: [this.env.selectedBranch],
             IDOwner: [this.env.user.StaffID],
             //OrderDate: [new Date()],
-            IDContact: [922],
-            IDAddress: [902],
-            IDType: [293],
-            IDStatus: [101],
+            IDContact: [null],
+            IDAddress: [null],
             Type: ['POSOrder'],
             SubType: ['TableService'],
             Status: new FormControl({ value: 'New', disabled: true }),
@@ -205,9 +203,12 @@ export class POSOrderDetailPage extends PageBase {
             this.tableList = values[2];
             this.menuList = values[3];
             this.dealList = values[4];
-            if (values[5]['data'].length) {
-                let dbp = JSON.parse(values[5]['data'][0].Value);
-                this.contactListSelected.push(dbp);
+            let DefaultDPList = values[5]['data'];
+            if (DefaultDPList.length) {
+                for (let index = 0; index < DefaultDPList.length; index++) {
+                    let dbp = JSON.parse(DefaultDPList[index].Value);
+                    this.contactListSelected.push(dbp);
+                }
             }
             this.paymentType = values[6];
             if (values[7]['Value']) {
@@ -238,10 +239,11 @@ export class POSOrderDetailPage extends PageBase {
         }
         this.loadOrder();
         this.contactSearch();
+        this.cdr.detectChanges();
 
-        this.defaultPrinter = []
         this.printerTerminalProvider.read({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).then(async (results: any) => {
-            this.defaultPrinter.push(results['data']?.[0]?.['Printer'])
+            this.defaultPrinter.push(results['data']?.[0]?.['Printer']);
+            this.defaultPrinter = [...new Map(this.defaultPrinter.map((item: any) => [item?.['Id'], item])).values()];
         });
     }
 
@@ -597,6 +599,7 @@ export class POSOrderDetailPage extends PageBase {
 
     async sendKitchen() {
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
+        // console.log(lib.dateFormat(new Date(), "hh:MM:ss") + '  ' + new Date().getMilliseconds()); // For Testing
         if (this.submitAttempt) return;
         this.submitAttempt = true;
         let times = 2; // Số lần in phiếu; Nếu là 2, in 2 lần;
@@ -630,7 +633,7 @@ export class POSOrderDetailPage extends PageBase {
             let object: any = document.getElementById('bill');
 
             let printerInfo = newKitchenList[index]['Printer'];
-            this.setupPrinting(printerInfo, object, false, times, false);
+            this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
         }
     }
 
@@ -685,7 +688,7 @@ export class POSOrderDetailPage extends PageBase {
                     let object: any = document.getElementById('bill-item-each-' + LineID);
 
                     let printerInfo = kitchenPrinter['Printer'];
-                    this.setupPrinting(printerInfo, object, false, times, true);
+                    this.setupPrinting(printerInfo, object, false, times, true, ItemsForKitchen.length);
                 }
             }
         }
@@ -740,9 +743,9 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-    setupPrinting(printer, object, receipt, times, sendEachItem = false) {
-        let printerCodeList = [];
-        let base64dataList = [];
+    printerCodeList = [];
+    base64dataList = [];
+    setupPrinting(printer, object, receipt, times, sendEachItem = false, printerListLength = 1) {
         let printerInfo = printer;
         let printerCode = printerInfo.Code;
         let printerHost = printerInfo.Host;
@@ -769,15 +772,21 @@ export class POSOrderDetailPage extends PageBase {
             `
             }];
 
-        printerCodeList.push(printerCode);
-        base64dataList.push(data);
-
-        this.QZsetCertificate().then(() => {
-            this.QZsignMessage().then(() => {
-                this.sendQZTray(printerHost, printerCodeList, base64dataList, receipt, times, sendEachItem).catch(err => {
-                    this.submitAttempt = false;
+        Promise.all([
+            printerCode,
+            data
+        ]).then(data => {
+            this.printerCodeList.push(data[0]);
+            this.base64dataList.push(data[1]);
+            if (this.printerCodeList.length == printerListLength && this.base64dataList.length == printerListLength) {
+                this.QZsetCertificate().then(() => {
+                     this.QZsignMessage().then(() => {
+                         this.sendQZTray(printerHost, this.printerCodeList, this.base64dataList, receipt, times, sendEachItem).catch(err => {
+                            this.submitAttempt = false;
+                        });
+                    });
                 });
-            });
+            }
         });
     }
 
@@ -1204,6 +1213,9 @@ export class POSOrderDetailPage extends PageBase {
         if (savedItem) {
             if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id)
                 form.controls.Id.setValue(savedItem.Id);
+
+            if (form.controls.IDContact.value != savedItem.IDContact)
+                this.changedIDAddress(savedItem._Customer);
 
             if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
                 this.id = savedItem.Id;
@@ -1715,20 +1727,25 @@ export class POSOrderDetailPage extends PageBase {
                 this.QZFindPrinter(null, ConnectOption, printInfo).then(async (printersDB: any) => {
                     if (printerCodeList.length != 0 && printersDB) {
                         printerCodeList.forEach(p => {
-                            if (printersDB.indexOf(p) > -1) { // Use this when fixed Printer
+
+                            // ------PRODUCTION-----
+                            if (printersDB.indexOf(p) > -1) {
                                 let config = qz.configs.create(p);
                                 for (let idx = 0; idx < times; idx++) {
                                     actualPrinters.push(config);
                                 }
                             }
                             else {
-                                // let config = qz.configs.create("PDF");
-                                // actualPrinters.push(config);
-                                this.env.showTranslateMessage("Printer " + p + " Not Found! Using PDF Printing Instead!", "warning");
+                                this.env.showTranslateMessage("Printer " + p + " Not Found! Check Printers Info Database!", "warning");
                             }
+                            // ----------------------
 
-                            // let config = qz.configs.create("Microsoft Print to PDF"); // USE For test
-                            // actualPrinters.push(config);
+                            // // ------TEST----
+                            // for (let idx = 0; idx < times; idx++) {
+                            //     let config = qz.configs.create("Microsoft Print to PDF"); // USE For test
+                            //     actualPrinters.push(config);
+                            // }
+                            // // ---------------
                         });
                         base64dataList.forEach(d => {
                             for (let idx = 0; idx < times; idx++) {
@@ -1844,12 +1861,12 @@ export class POSOrderDetailPage extends PageBase {
 
     async ConnectionPrompt(options, printInfo) {
         this.env.showPrompt('Bạn có muốn tiếp tục in?', options.host, 'Có lỗi khi gọi đến server').then(_ => {
-            this.QCCloseConnection().then(() => {
+            this.QZCloseConnection().then(() => {
                 this.sendQZTray(printInfo.printerHost, printInfo.printerCodeList, printInfo.base64dataList, printInfo.receipt, printInfo.times, printInfo.sendEachItem);
             });
         }).catch(_ => {
             this.submitAttempt = false;
-            this.QCCloseConnection();
+            this.QZCloseConnection();
         });
     }
 
@@ -1905,19 +1922,22 @@ export class POSOrderDetailPage extends PageBase {
                     }
                     this.updateOrderLineStatus(e);
                 });
-                return this.QCCloseConnection();
+                // console.log(lib.dateFormat(new Date(), "hh:MM:ss") + '  ' + new Date().getMilliseconds()); // For Testing
+                return this.QZCloseConnection();
             });
         }
 
         this.env.showTranslateMessage('Gửi đơn thành công!', 'success');
         this.submitAttempt = false;
         this.printData.undeliveredItems = []; //<-- clear;
+        this.printerCodeList = [];
+        this.base64dataList = [];
         if (!receipt && !sendEachItem) {
             return this.sendKitchenEachItem();
         }
     }
 
-    async QCCloseConnection() {
+    async QZCloseConnection() {
         let checkCon = qz.websocket.isActive();
         if (checkCon) {
             this.submitAttempt = false;
