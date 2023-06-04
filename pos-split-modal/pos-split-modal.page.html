@@ -35,7 +35,7 @@
 							{{'erp.app.pages.sale.sale-order.split.idcontact' | translate}} #{{idx+1}}
 						</label>
 
-						<ng-select [(ngModel)]="o.IDContact" appendTo="#pos-split-page" class="c-input" #IDContact0 labelForId="IDContact0" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-idcontact' | translate}}">
+						<ng-select [(ngModel)]="o.IDContact" appendTo="#pos-split-page" class="c-input" #IDContact0 labelForId="IDContact0" [clearable]="false" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-idcontact' | translate}}">
 							<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
 								<div *ngIf="i">
 									<div>
@@ -54,7 +54,7 @@
 							{{'erp.app.pages.pos.pos-order.split.idtable' | translate}} #{{idx+1}}
 						</label>
 
-						<ng-select [(ngModel)]="o.IDTable" appendTo="#pos-split-page" class="c-input" #IDTable0 labelForId="IDtable0" [items]="tables" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.split.placeholder-idtable' | translate}}">
+						<ng-select [(ngModel)]="o.IDTable" appendTo="#pos-split-page" class="c-input" #IDTable0 labelForId="IDtable0" [clearable]="false" [items]="tables" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.split.placeholder-idtable' | translate}}">
 							<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
 								<div *ngIf="i">
 									<div>
@@ -75,7 +75,7 @@
 							{{'erp.app.pages.sale.sale-order.split.idcontact' | translate}} #{{idx+1}}
 						</label>
 
-						<ng-select [(ngModel)]="o.IDContact" appendTo="#pos-split-page" class="c-input" (change)="changedIDContact($event, o)" #IDContact labelForId="IDContact" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-idcontact' | translate}}">
+						<ng-select [(ngModel)]="o.IDContact" appendTo="#pos-split-page" class="c-input" (change)="changedIDContact($event, o)" #IDContact labelForId="IDContact" [clearable]="false" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.split.placeholder-idcontact' | translate}}">
 							<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
 								<div *ngIf="i">
 									<div>
@@ -99,7 +99,7 @@
 							{{'erp.app.pages.pos.pos-order.split.idtable' | translate}} #{{idx+1}}
 						</label>
 
-						<ng-select [(ngModel)]="o.IDTable" appendTo="#pos-split-page" class="c-input" (change)="changedIDTable($event, o)" #IDTable labelForId="IDtable" [items]="tables" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.split.placeholder-idtable' | translate}}">
+						<ng-select [(ngModel)]="o.IDTable" appendTo="#pos-split-page" class="c-input" (change)="changedIDTable($event, o)" #IDTable labelForId="IDtable" [clearable]="false" [items]="tables" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.split.placeholder-idtable' | translate}}">
 							<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
 								<div *ngIf="i">
 									<div>
@@ -167,7 +167,7 @@
 				</div>
 
 				<div class="table-contain">
-					<ion-button (click)="splitSaleOrder()" [disabled]="!isCanSplit || submitAttempt" style="max-width: 300px" class="ion-margin ion-float-right" size="block">
+					<ion-button (click)="splitSaleOrder()" [disabled]="!isCanSplit || submitAttempt || this.item.SplitedOrders.length < 2" style="max-width: 300px" class="ion-margin ion-float-right" size="block">
 						{{'erp.app.pages.sale.sale-order.split.split-sale-order' | translate}}
 					</ion-button>
 				</div>
