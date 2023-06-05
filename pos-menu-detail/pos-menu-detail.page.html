@@ -104,6 +104,7 @@
                                         <div class="col-id cell">STT</div>
                                         <div class="col-name cell">Tên sản phẩm</div>
                                         <div class="col-uom cell">Đơn vị</div>
+                                        <div class="col-uom cell" *ngIf="pageConfig.canEdit">Khóa món</div>
                                         <!-- <div class="col-image cell">URL Hình ảnh</div> -->
                                         <div class="col-kit cell">Bếp</div>
                                         <!-- <div class="col-status cell">Ngưng bán</div> -->
@@ -159,6 +160,9 @@
                                                             </ng-select>
 
                                                             
+                                                        </div>
+                                                        <div class="col-uom cell">
+                                                            <ion-toggle formControlName="IsDisabled" color="primary" (ionChange)="DisabledLine(formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], $event)"></ion-toggle>
                                                         </div>
 
                                                         <!-- <div class="col-image cell">

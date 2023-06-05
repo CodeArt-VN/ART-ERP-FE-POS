@@ -20,6 +20,7 @@ import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { PrintingService } from 'src/app/services/printing.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -77,6 +78,7 @@ export class POSOrderDetailPage extends PageBase {
         public cdr: ChangeDetectorRef,
         public loadingController: LoadingController,
         public commonService: CommonService,
+        public translate: TranslateService
     ) {
         super();
         this.pageConfig.isDetailPage = true;

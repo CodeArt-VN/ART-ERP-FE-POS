@@ -189,6 +189,7 @@ export class POSMenuDetailPage extends PageBase {
             IDUoM: new FormControl({ value: line.SalesUoM, required: false, disabled: false }),
             UoMPrice: [line.UoMPrice],
             Image: new FormControl({ value: data?.Image ? data.Image : '', disabled: false }),
+            IsDisabled: [data.IsDisabled],
             // Quantity: [line.Quantity],
             // Remark: [line.Remark],
             Sort: [data ? data.Sort : null],
@@ -422,6 +423,23 @@ export class POSMenuDetailPage extends PageBase {
                 this.env.showTranslateMessage(err ,'danger');
                 this.submitAttempt = false;
             });
+        });
+    }
+
+    DisabledLine(item, e) {
+        let data = this.menuDetailList.find(d => d.IDItem == item.Id);
+
+        let savingItem = {
+            Id: data.Id,
+        };
+
+        this.submitAttempt = true;
+        this.menuDetailProvider.disable(savingItem, e.detail.checked).then((savedData)  => {
+            this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete' ,'success');
+            this.submitAttempt = false;
+        }).catch(err => {
+            this.env.showTranslateMessage(err ,'danger');
+            this.submitAttempt = false;
         });
     }
 
