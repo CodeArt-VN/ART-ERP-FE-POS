@@ -1756,6 +1756,16 @@ export class POSOrderDetailPage extends PageBase {
         this.printData.undeliveredItems = []; //<-- clear;
     }
 
+    applyDiscount(){
+        this.pageProvider.commonService.connect('POST', 'SALE/Order/UpdatePosOrderDiscount/', {Id:this.item.Id,Percent:this.Discount.Percent}).toPromise()
+        .then(result=>{
+            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');
+            this.refresh();
+        }).catch(err=>{
+            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save','danger');
+        })  
+    }
+
 }
 
 

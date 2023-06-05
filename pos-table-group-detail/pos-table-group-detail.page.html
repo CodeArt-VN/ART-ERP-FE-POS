@@ -1,6 +1,13 @@
 <ion-header>
     <ion-toolbar>
-        <ion-title>{{item.Name??"Thêm Nhóm Bàn"}}</ion-title>
+        <ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
+            <ion-segment-button value="s1">
+                <ion-label>Thông tin chung</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="s2">
+                <ion-label>Nhân sự</ion-label>
+            </ion-segment-button>
+        </ion-segment>
 
         <ion-buttons slot="primary">
             <ion-button title="{{'erp.app.pages.admin.form.close-modal' | translate}}" color="secondary" (click)="closeModal()">
@@ -9,32 +16,61 @@
         </ion-buttons>
 
     </ion-toolbar>
-</ion-header> -->
+</ion-header>
 <ion-content appScrollbarTheme class="ion-padding" fullscreen>
-    <form [formGroup]="formGroup">
+    <div id="table-group-detail" style="position: absolute;"></div>
+    <div *ngIf="segmentView == 's1'">
+        <form [formGroup]="formGroup">
+            <ion-grid fixed>
+                <ion-row class="hr-group">                
+                    <ion-col size="12" size-sm size-xl="12">
+                        <div class="c-control" *ngIf="item.Id">
+                            <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-table-detail.id' | translate}}</label>
+                            <input class="c-input" id="Id" formControlName="Id" type="number">
+                        </div>
+                        <div class="c-control">
+                            <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-table-detail.code' | translate}}
+                                <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                            </label>
+                            <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
+                        </div>
+                        <div class="c-control">
+                            <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-table-detail.name' | translate}}
+                                <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                            </label>
+                            <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
+                        </div>                   
+    
+                    </ion-col>
+                </ion-row>            
+            </ion-grid>
+        </form>
+    </div>
+
+    <div *ngIf="segmentView == 's2' && item.Id">
         <ion-grid fixed>
             <ion-row class="hr-group">                
                 <ion-col size="12" size-sm size-xl="12">
-                    <div class="c-control" *ngIf="item.Id">
-                        <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-table-detail.id' | translate}}</label>
-                        <input class="c-input" id="Id" formControlName="Id" type="number">
-                    </div>
                     <div class="c-control">
-                        <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-table-detail.code' | translate}}
-                            <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
+                        <label class="c-label" for="IDStaff">
+                            Nhân sự
                         </label>
-                        <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
-                    </div>
-                    <div class="c-control">
-                        <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-table-detail.name' | translate}}
-                            <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                        </label>
-                        <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
-                    </div>                   
 
+                        <ng-select [(ngModel)]="item.IDStaff" appendTo="#table-group-detail" class="c-input" (change)="changedIDStaff($event)" #IDStaff labelForId="IDStaff" [multiple]="true" [closeOnSelect]="false" [items]="staffList$ | async" [typeahead]="staffListInput$" [loading]='staffListLoading' [virtualScroll]="true" bindLabel="FullName" bindValue="Id" placeholder="Tìm kiếm nhân viên">
+                            <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                                <div *ngIf="i">
+                                    <div>
+                                        <span>{{i.FullName}}</span>
+                                        <span *ngIf="i.PhoneNumber"> | <small> <b >{{i.PhoneNumber}}</b></small></span>
+                                    </div>
+                                    <small>#<b><span class="important" >{{i.Id}} - {{i.Code}}</span></b> </small>
+                                </div>
+                            </ng-template>
+                        </ng-select>
+                    </div>
                 </ion-col>
             </ion-row>            
         </ion-grid>
-    </form>
+    </div>
 
 </ion-content>
