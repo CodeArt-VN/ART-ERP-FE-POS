@@ -277,6 +277,40 @@
 	</ng-container>
 	
 
+	<ion-modal [isOpen]="isLanguageModalOpen">
+		<ng-template>
+			<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
+				<div class="ion-padding" class="customer-message">
+					<div class="logo-wrapper">
+						<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
+					</div>
+					<div>
+						<ion-text color="warning">
+							<h1>{{'erp.app.pages.pos.pos-customer-order.choose-language' | translate}}</h1>
+						</ion-text>
+
+						<div class="flag-container">
+							<div class="flag-wrapper" [ngClass]="{'selectedLang': translate.currentLang == 'en-US'}" (click)="changeLanguage('en-US')">
+								<img class="country-logo" src="assets/pos-icons/en-US.png" (error)="img.src = 'assets/pos-icons/en-US.png'" #img title="en-US">
+							</div>
+	
+							<div class="flag-wrapper" [ngClass]="{'selectedLang': translate.currentLang == 'vi-VN'}" (click)="changeLanguage('vi-VN')">
+								<img class="country-logo" src="assets/pos-icons/vi-VN.png" (error)="img.src = 'assets/pos-icons/vi-VN.png'" #img title="vi-VN">
+							</div>
+						</div>
+
+
+						<div class="ion-padding"></div>
+						<div class="ion-padding">
+							<ion-button expand="block" (click)="isLanguageModalOpen = false">{{'erp.app.pages.pos.pos-customer-order.agree' | translate}}</ion-button>
+						</div>
+					</div>
+				</div>
+
+			</ion-content>
+		</ng-template>
+	</ion-modal>
+
 	<ion-modal [isOpen]="isWifiSecuredModalOpen">
 		<ng-template>
 			<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
@@ -351,7 +385,8 @@
 							<div class="card" [id]="'item'+i.Id">
 
 								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
-								<span class="table-name clickable">{{i.Name}}</span>
+								<span *ngIf="translate.currentLang == 'vi-VN'" class="table-name clickable">{{i.Name}}</span>
+								<span *ngIf="translate.currentLang != 'vi-VN'" class="table-name clickable">{{i.ForeignName}}</span>
 								<ng-container *ngFor="let u of i.UoMs">
 
 

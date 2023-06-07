@@ -11,6 +11,7 @@ import { environment } from 'src/environments/environment';
 import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
 import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
 import { POSForCustomerPaymentModalPage } from '../payment/pos-payment-modal.page';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-pos-customer-order',
@@ -41,6 +42,7 @@ export class POSCustomerOrderPage extends PageBase {
     ipWhitelist = [];
     myIP = '';
     isWifiSecuredModalOpen = false;
+    isLanguageModalOpen = false;
     OrderLines = [];
     childrenOrders;
     parentOrder;
@@ -59,6 +61,7 @@ export class POSCustomerOrderPage extends PageBase {
         public cdr: ChangeDetectorRef,
         public loadingController: LoadingController,
         public commonService: CommonService,
+        public translate: TranslateService
     ) {
         super();
         this.pageConfig.isDetailPage = true;
@@ -66,6 +69,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.pageConfig.canEdit = true;
         this.idTable = this.route.snapshot?.paramMap?.get('table');
         this.idTable = typeof (this.idTable) == 'string' ? parseInt(this.idTable) : this.idTable;
+        this.isLanguageModalOpen = true;
         this.formGroup = formBuilder.group({
             Id: new FormControl({ value: 0, disabled: true }),
             Code: [],
@@ -124,6 +128,9 @@ export class POSCustomerOrderPage extends PageBase {
 
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
+        this.translate;
+        console.log(this.translate);
+        debugger
         this.AllowSendOrder = false;
         Promise.all([
             this.env.getStatus('POSOrder'),
@@ -1094,4 +1101,20 @@ export class POSCustomerOrderPage extends PageBase {
         });
         this.env.setStorage('Orders', Orders);
     }
+
+    changeLanguage(lang = null) {
+		if (lang) {
+			this.translate.use(lang);
+		}
+		else {
+			if (this.translate.currentLang != 'vi-VN') {
+				this.translate.use('vi-VN');
+			}
+			else {
+				this.translate.use('en-US')
+			}
+
+			this.env.setStorage('lang', this.translate.currentLang);
+		}
+	}
 }
