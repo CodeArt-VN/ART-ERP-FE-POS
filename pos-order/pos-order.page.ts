@@ -44,7 +44,7 @@ export class POSOrderPage extends PageBase {
     ) {
         super();
         this.pageConfig.isShowFeature = true;
-        this.pageConfig.canMerge = true;
+        this.pageConfig.canMerge = false;
         this.pageConfig.canSplit = true;
         this.pageConfig.canChangeTable = true;
         this.pageConfig.canImport = false;
