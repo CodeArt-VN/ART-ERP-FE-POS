@@ -3,7 +3,7 @@ import { NavController, LoadingController, AlertController, ModalController, Pop
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { CRM_ContactProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, POS_TerminalProvider, PR_ProgramProvider, SALE_OrderDeductionProvider, SALE_OrderProvider, SYS_ConfigProvider, SYS_PrinterProvider, } from 'src/app/services/static/services.service';
+import { CRM_ContactProvider, HRM_StaffProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, POS_TerminalProvider, PR_ProgramProvider, SALE_OrderDeductionProvider, SALE_OrderProvider, SYS_ConfigProvider, SYS_PrinterProvider, } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
@@ -56,6 +56,7 @@ export class POSOrderDetailPage extends PageBase {
         selectedTables: [],
     };
     Discount;
+    Staff;
     constructor(
         public pageProvider: SALE_OrderProvider,
         public programProvider: PR_ProgramProvider,
@@ -64,6 +65,7 @@ export class POSOrderDetailPage extends PageBase {
         public tableGroupProvider: POS_TableGroupProvider,
         public tableProvider: POS_TableProvider,
         public contactProvider: CRM_ContactProvider,
+        public staffProvider: HRM_StaffProvider,
         public sysConfigProvider: SYS_ConfigProvider,
         public printerProvider: SYS_PrinterProvider,
         public printerTerminalProvider: POS_TerminalProvider,
@@ -237,6 +239,9 @@ export class POSOrderDetailPage extends PageBase {
             this.patchOrderValue();
             this.getPayments();
             this.getPromotionProgram();
+            if(this.item._Customer.IsStaff == true){
+                this.getStaffInfo(this.item._Customer.Code);
+            }
         }
         this.loadOrder();
         this.contactSearch();
@@ -1334,11 +1339,15 @@ export class POSOrderDetailPage extends PageBase {
 
     changedIDAddress(address) {
         if (address) {
+            this.Staff = null;
             this.setOrderValue({
                 IDContact: address.Id,
                 IDAddress: address.IDAddress
             }, true);
             this.item._Customer = address;
+            if(this.item._Customer.IsStaff == true){
+                this.getStaffInfo(this.item._Customer.Code);
+            }
         }
     }
 
@@ -1346,7 +1355,19 @@ export class POSOrderDetailPage extends PageBase {
         Object.assign(this.item, this.formGroup.value);
         this.saveChange();
     }
-
+    getStaffInfo(Code){
+        if(Code != null){
+            this.staffProvider.read({Code_eq:Code,IDBranch:this.env.branchList.map(b=>b.Id).toString()}).then((result:any)=>{
+                if(result['count']>0){
+                    this.Staff = result['data'][0];
+                    this.Staff.DepartmentName = this.env.branchList.find(b=>b.Id ==this.Staff.IDDepartment).Name;
+                    this.Staff.JobTitleName = this.env.jobTitleList.find(b=>b.Id ==this.Staff.IDJobTitle).Name;
+                    this.Staff.avatarURL = environment.staffAvatarsServer + this.item._Customer.Code + '.jpg?t=' + new Date().getTime();
+                }
+            })
+        }
+        
+    }
     discountFromSalesman(line, form) {
         let OriginalDiscountFromSalesman = form.controls.OriginalDiscountFromSalesman.value;
         if (OriginalDiscountFromSalesman == "") {

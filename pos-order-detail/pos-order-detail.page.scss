@@ -852,3 +852,13 @@
 		font-size: smaller !important;
 	}
 }
+.staff-info{
+	border: 1px solid var(--ion-color-light);
+	padding-top: 3px;
+	padding-bottom: 3px;
+	margin-bottom: 7px;
+	border-radius: 5px;
+}
+ion-img {
+    object-fit:cover;
+}
