@@ -37,9 +37,41 @@
 		<ion-row class="sticky-btn">
 			<ion-col>
 				<div class="c-control ion-text-center">
-					<ion-button expand="block" (click)="closeWelcome()">Tôi đã hiểu</ion-button>
+					<ion-button expand="block" (click)="closeWelcome()">{{'erp.app.pages.pos.pos-customer-welcome.understand' | translate}}</ion-button>
 				</div>
 			</ion-col>
 		</ion-row>
 	</div>
+
+	<ion-modal [isOpen]="isLanguageModalOpen">
+		<ng-template>
+			<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
+				<div class="ion-padding" class="customer-message">
+					<div class="logo-wrapper">
+						<img class="branch-logo" src="{{currentBranch?.LogoURL}}" title="{{currentBranch?.ShortName}}">
+					</div>
+					<div>
+						<ion-text color="warning">
+							<h1>{{'erp.app.pages.pos.pos-customer-order.choose-language' | translate}}</h1>
+						</ion-text>
+
+						<div class="flag-container">
+							<div class="flag-wrapper" [ngClass]="{'selectedLang': translate.currentLang == 'en-US'}" (click)="changeLanguage('en-US')">
+								ENG
+							</div>
+	
+							<div class="flag-wrapper" [ngClass]="{'selectedLang': translate.currentLang == 'vi-VN'}" (click)="changeLanguage('vi-VN')">
+								VIE
+							</div>
+						</div>
+
+						<div class="ion-padding">
+							<ion-button expand="block" (click)="isLanguageModalOpen = false">{{'erp.app.pages.pos.pos-customer-order.agree' | translate}}</ion-button>
+						</div>
+					</div>
+				</div>
+
+			</ion-content>
+		</ng-template>
+	</ion-modal>
 </ion-content>

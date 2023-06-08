@@ -3,11 +3,11 @@
 		<ion-buttons slot="start" *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">
 			<ion-button (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 				<ion-icon slot="start" name="chevron-back-outline"></ion-icon>
-				Trở lại
+				{{'erp.app.pages.pos.pos-customer-order.back' | translate}}
 			</ion-button>
 		</ion-buttons>
 
-		<ion-title *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">Giỏ hàng</ion-title>
+		<ion-title *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">{{'erp.app.pages.pos.pos-customer-order.cart' | translate}}</ion-title>
 		<ion-buttons slot="end" class="full-width">
 			<ion-searchbar [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}" slot="start" class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
 			<ion-button (click)="refresh()">
@@ -87,12 +87,18 @@
 								<div style="display: flex;">
 									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 									<div class="od-info" *ngIf="line._item">
-										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
+										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> 
+											<ng-container *ngIf="translate.currentLang == 'vi-VN'"> {{line._item.Name}}</ng-container>
+											<ng-container *ngIf="translate.currentLang != 'vi-VN'"> {{line._item.ForeignName}}</ng-container>
+										</div>
 										<div class="od-price">
 											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 										</div>
 										<div>
-											<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"><small>{{line?.StatusText}}</small></ion-text>
+											<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor">
+												<small *ngIf="translate.currentLang == 'vi-VN'">{{line?.StatusText}}</small>
+												<small *ngIf="translate.currentLang != 'vi-VN'">{{line?.StatusForeignText}}</small>
+											</ion-text>
 										</div>
 									</div>
 								</div>
@@ -123,7 +129,7 @@
 									</span>
 								</div>
 								<div class="od-remark clickable" (click)="openQuickMemo(line)">
-									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="(line._isShowNote || line.Remark != null)" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>
+									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="(line._isShowNote || line.Remark != null)" spellcheck="false" placeholder="{{'erp.app.pages.pos.pos-customer-payment.item-remark' | translate}}"></textarea>
 								</div>
 							</div>
 						</ng-container>
@@ -133,47 +139,47 @@
 			<div class="box ion-padding">
 				<div class="box-content">
 					<div class="check-out">
-						<label class="c-label">Bàn
+						<label class="c-label">{{'erp.app.pages.pos.pos-customer-order.table' | translate}}
 							<b class="c-value">
 								{{Table.Name}}
 							</b>
 						</label>
-						<label class="c-label">Tiền hàng
+						<label class="c-label">{{'erp.app.pages.pos.pos-customer-order.total-before-discount' | translate}}
 							<span class="c-value">
 								{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}
 							</span>
 						</label>
-						<label class="c-label" *ngIf="item.OriginalTotalDiscount>0">Chiết khấu
+						<label class="c-label" *ngIf="item.OriginalTotalDiscount>0">{{'erp.app.pages.pos.pos-customer-order.discount' | translate}}
 							<span class="c-value">
 								{{item.OriginalTotalDiscount | number: '1.0-0'}}
 							</span>
 						</label>
 
-						<label class="c-label" *ngIf="item.AdditionsAmount">Service charge
+						<label class="c-label" *ngIf="item.AdditionsAmount">{{'erp.app.pages.pos.pos-customer-order.service-charge' | translate}}
 							<span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
 						</label>
 
-						<label class="c-label">VAT
+						<label class="c-label">{{'erp.app.pages.pos.pos-customer-order.tax' | translate}}
 							<span class="c-value">{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
 						</label>
 
-						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">Chiết khấu NVBH
+						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">{{'erp.app.pages.pos.pos-customer-order.discount-from-salesman' | translate}}
 							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 						</label>
 
-						<label class="c-label total">Tổng tiền
+						<label class="c-label total">{{'erp.app.pages.pos.pos-customer-order.total-after-tax' | translate}}
 							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
 								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
 							</ion-text>
 						</label>
 
-						<label class="c-label" *ngIf="item.Received">Đã thanh toán
+						<label class="c-label" *ngIf="item.Received">{{'erp.app.pages.pos.pos-customer-order.received' | translate}}
 							<ion-text class="c-value" color="dark">
 								{{item.Received | number: '1.0-0'}}
 							</ion-text>
 						</label>
 
-						<label class="c-label" *ngIf="item.Received">Còn lại
+						<label class="c-label" *ngIf="item.Received">{{'erp.app.pages.pos.pos-customer-order.debt' | translate}}
 							<ion-text class="c-value" color="dark">
 								{{item.Debt | number: '1.0-0'}}
 							</ion-text>
@@ -200,8 +206,8 @@
 			</div> -->
 
 			<ion-button class="linear-blue-btn" *ngIf="pageConfig.canEdit" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
-				<ion-text *ngIf="id==0">Đặt hàng</ion-text>
-				<ion-text *ngIf="id!=0">Cập nhật</ion-text>
+				<ion-text *ngIf="id==0">{{'erp.app.pages.pos.pos-customer-order.place-order' | translate}}</ion-text>
+				<ion-text *ngIf="id!=0">{{'erp.app.pages.pos.pos-customer-order.update-order' | translate}}</ion-text>
 			</ion-button>
 
 			<ion-modal [isOpen]="isSuccessModalOpen">
@@ -218,15 +224,16 @@
 							</div>
 							<div>
 								<ion-text color="success">
-									<h1>{{ this.id ? 'ĐÃ CẬP NHẬT ĐƠN HÀNG' : 'ĐÃ TIẾP NHẬN ĐƠN HÀNG' }}</h1>
+									<h1 *ngIf="id">{{'erp.app.pages.pos.pos-customer-order.order-updated' | translate}}</h1>
+									<h1 *ngIf="!id">{{'erp.app.pages.pos.pos-customer-order.order-placed' | translate}}</h1>
 								</ion-text>
 
 								<p>
-									Cảm ơn Quý khách đã đặt hàng. <br>
-									Bộ phận phụ trách sẽ phục vụ Quý khách trong thời gian sớm nhất. <br>
+									{{'erp.app.pages.pos.pos-customer-order.thanks-for-order' | translate}} <br>
+									{{'erp.app.pages.pos.pos-customer-order.serve-as-soon-as' | translate}} <br>
 									<br>
 									<ion-note>
-										Trong trường hợp khẩn cấp, xin vui lòng gọi hotline<br>
+										{{'erp.app.pages.pos.pos-customer-order.contact-emergency' | translate}}<br>
 										<a [href]="'tel:'+Branch?.Phone">
 											<ion-text color="danger">
 												<b>{{ Branch?.Phone }}</b>
@@ -237,7 +244,7 @@
 							</div>
 							<div class="ion-padding"></div>
 							<div class="ion-padding">
-								<ion-button expand="block" (click)="closeSuccessModal()">Trở lại</ion-button>
+								<ion-button expand="block" (click)="closeSuccessModal()">{{'erp.app.pages.pos.pos-customer-order.back' | translate}}</ion-button>
 							</div>
 						</div>
 
@@ -247,8 +254,8 @@
 
 
 			<ion-button *ngIf="item.Status != 'Cancelled' && item?.Id != 0" class="ion-margin-top" expand="block" (click)="processPayments()">
-				<ion-text *ngIf="item.Debt > 0 ">Thanh toán</ion-text>
-				<ion-text *ngIf="item.Debt <= 0">Xem chi tiết</ion-text>
+				<ion-text *ngIf="item.Debt > 0 ">{{'erp.app.pages.pos.pos-customer-order.pay-for-order' | translate}}</ion-text>
+				<ion-text *ngIf="item.Debt <= 0">{{'erp.app.pages.pos.pos-customer-order.view-details' | translate}}</ion-text>
 			</ion-button>
 		</form>
 		<div style="margin-top: 80px;"></div>
@@ -265,9 +272,9 @@
 			<ng-template>
 				<div class="box">
 					<div class="ion-padding">
-						<div class="ion-margin-bottom ion-text-center"><ion-text><b>{{OrdersOfTable.length}} đơn hàng</b></ion-text></div>
+						<div class="ion-margin-bottom ion-text-center"><ion-text><b>{{OrdersOfTable.length}} {{'erp.app.pages.pos.pos-customer-order.order' | translate}}</b></ion-text></div>
 						<ion-item lines="full" *ngFor="let order of OrdersOfTable" (click)="goToOrder(order.Id,idTable); closeModal()">
-							<ion-text slot="start">Đơn hàng #{{order.Id}}</ion-text>
+							<ion-text slot="start">{{'erp.app.pages.pos.pos-customer-order.order-no' | translate}} #{{order.Id}}</ion-text>
 							<ion-text slot="end">{{order.Amount | number: '1.0-0'}} đ</ion-text>
 						</ion-item>	
 					</div>
@@ -291,16 +298,14 @@
 
 						<div class="flag-container">
 							<div class="flag-wrapper" [ngClass]="{'selectedLang': translate.currentLang == 'en-US'}" (click)="changeLanguage('en-US')">
-								<img class="country-logo" src="assets/pos-icons/en-US.png" (error)="img.src = 'assets/pos-icons/en-US.png'" #img title="en-US">
+								ENG
 							</div>
 	
 							<div class="flag-wrapper" [ngClass]="{'selectedLang': translate.currentLang == 'vi-VN'}" (click)="changeLanguage('vi-VN')">
-								<img class="country-logo" src="assets/pos-icons/vi-VN.png" (error)="img.src = 'assets/pos-icons/vi-VN.png'" #img title="vi-VN">
+								VIE
 							</div>
 						</div>
 
-
-						<div class="ion-padding"></div>
 						<div class="ion-padding">
 							<ion-button expand="block" (click)="isLanguageModalOpen = false">{{'erp.app.pages.pos.pos-customer-order.agree' | translate}}</ion-button>
 						</div>
@@ -320,15 +325,14 @@
 					</div>
 					<div>
 						<ion-text color="warning">
-							<h1>KIỂM TRA KẾT NỐI MẠNG</h1>
+							<h1>{{'erp.app.pages.pos.pos-customer-order.check-wifi-title' | translate}}</h1>
 						</ion-text>
 
 						<p>
-							Xin quý khách vui lòng sử dụng <br>
-							wifi nhà hàng để đặt hàng<br>
+							{{'erp.app.pages.pos.pos-customer-order.check-wifi-content' | translate}}<br>
 							<br>
 							<ion-note>
-								Trong trường hợp khẩn cấp, xin vui lòng gọi hotline<br>
+								{{'erp.app.pages.pos.pos-customer-order.contact-emergency' | translate}}<br>
 								<a [href]="'tel:'+Branch?.Phone">
 									<ion-text color="danger">
 										<b>{{ Branch?.Phone }}</b>
@@ -339,7 +343,7 @@
 						
 						<div class="ion-padding"></div>
 						<div class="ion-padding">
-							<ion-button expand="block" (click)="isWifiSecuredModalOpen = false">Đồng ý</ion-button>
+							<ion-button expand="block" (click)="isWifiSecuredModalOpen = false">{{'erp.app.pages.pos.pos-customer-order.agree' | translate}}</ion-button>
 						</div>
 					</div>
 				</div>
@@ -353,7 +357,7 @@
 		<div class="menu-group-list">
 			<div class="menu-group" (click)="segmentChanged('all')">
 				<ion-img #img [src]="AllSegmentImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView=='all'}"></ion-img>
-				<ion-label>tất cả</ion-label>
+				<ion-label>{{'erp.app.pages.pos.pos-customer-order.menu-all' | translate}}</ion-label>
 			</div>
 			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
 				<ion-img [src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>

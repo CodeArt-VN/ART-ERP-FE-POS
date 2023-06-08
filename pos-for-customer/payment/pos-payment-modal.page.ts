@@ -9,6 +9,7 @@ import { lib } from 'src/app/services/static/global-functions';
 import { CommonService } from 'src/app/services/core/common.service';
 import { environment } from 'src/environments/environment';
 import { ApiSetting } from 'src/app/services/static/api-setting';
+import { TranslateService } from '@ngx-translate/core';
 
 
 @Component({
@@ -26,6 +27,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
     constructor(          
         public IncomingPaymentProvider: BANK_IncomingPaymentProvider,
         public commonService: CommonService,
+        public translate: TranslateService,
 
         public env: EnvService,
         public navCtrl: NavController,

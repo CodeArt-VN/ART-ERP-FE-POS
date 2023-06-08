@@ -844,11 +844,11 @@ ion-buttons {
 	text-align: center;
 	display: flex;
 	flex-direction: column;
-	margin-top: 50px;
+	margin-top: 30px;
 
 	.logo-wrapper {
 		width: 250px;
-		margin: 0 auto 50px;
+		margin: 0 auto 30px;
 	}
 
 	.flag-container {
@@ -861,6 +861,9 @@ ion-buttons {
 			width: 150px;
 			height: 90px;
 			filter: brightness(50%);
+			display: flex;
+			align-items: center;
+			justify-content: center;
 		}
 
 		.selectedLang {

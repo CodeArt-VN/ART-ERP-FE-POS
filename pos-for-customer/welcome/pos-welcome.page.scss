@@ -23,7 +23,7 @@ ion-toolbar{display: none !important}
 }
 
 .branch-logo{
-    transform: scale(0.6);
+    // transform: scale(0.6);
     position: absolute;
     width: 130px;
     left: 50%;
@@ -108,4 +108,37 @@ ion-slides {
         }
 
     }
+}
+
+.customer-message {
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	margin-top: 50px;
+
+	.logo-wrapper {
+		width: 250px;
+		margin: 0 auto 30px;
+	}
+
+	.flag-container {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-evenly;
+		margin: 20px auto;
+
+		.flag-wrapper {
+			width: 150px;
+			height: 90px;
+			filter: brightness(50%);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.selectedLang {
+			border: 3px solid var(--ion-color-primary);
+			filter: brightness(100%);
+		}
+	}
 }

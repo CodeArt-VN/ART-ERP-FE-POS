@@ -7,6 +7,7 @@ import { POS_TableProvider, BRA_BranchProvider, SALE_OrderProvider } from 'src/a
 import { Location } from '@angular/common';
 import { CommonService } from 'src/app/services/core/common.service';
 import { ApiSetting } from 'src/app/services/static/api-setting';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-pos-welcome',
@@ -17,6 +18,7 @@ export class POSWelcomePage extends PageBase {
     idTable = this.route.snapshot.paramMap.get('id');
     currentBranch: any;
     Table;
+    isLanguageModalOpen = false;
     constructor(
         //public pageProvider: POS_TableProvider,
        
@@ -28,9 +30,11 @@ export class POSWelcomePage extends PageBase {
         public navCtrl: NavController,
         public location: Location,
         public route: ActivatedRoute,
-        public commonService: CommonService
+        public commonService: CommonService,
+        public translate: TranslateService
     ) {
         super();
+        this.isLanguageModalOpen = true;
     }
 
     dummyRemark = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500"
@@ -326,6 +330,51 @@ export class POSWelcomePage extends PageBase {
                     reject(err);
                 });
         });
+    }
+
+    changeLanguage(lang = null) {
+		if (lang) {
+			this.translate.use(lang);
+		}
+		else {
+			if (this.translate.currentLang != 'vi-VN') {
+				this.translate.use('vi-VN');
+			}
+			else {
+				this.translate.use('en-US')
+			}
+
+			this.env.setStorage('lang', this.translate.currentLang);
+		}
+        this.prepareSlides();
+	}
+
+    prepareSlides() {
+        Promise.all([
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.for-customer').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.note2').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.note3').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.note4').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.note5').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.header1').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.remark1').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.header2').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.remark2').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.header3').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-welcome.remark3').toPromise(),
+        ]).then(trans => {
+            this.Note.Note1 = trans[0];
+            this.Note.Note2 = trans[1];
+            this.Note.Note3 = trans[2];
+            this.Note.Note4 = trans[3];
+            this.Note.Note5 = trans[4];
+            this.SlidingCard[0].Header = trans[5];
+            this.SlidingCard[0].Remark = trans[6];
+            this.SlidingCard[1].Header = trans[7];
+            this.SlidingCard[1].Remark = trans[8];
+            this.SlidingCard[2].Header = trans[9];
+            this.SlidingCard[2].Remark = trans[10];
+        })
     }
 }
 

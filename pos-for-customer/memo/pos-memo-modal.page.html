@@ -2,7 +2,7 @@
 	<ion-toolbar class="no-padding">
 		<ion-buttons slot="start" class="ion-hide-sm-down_">
 			<ion-button color="dark">
-				Ghi chú
+				{{'erp.app.pages.pos.pos-customer-memo.remark' | translate}}
 			</ion-button>
 		</ion-buttons>
 		<ion-buttons slot="primary">
@@ -21,7 +21,7 @@
 		<ion-list>
 			<ion-item [color]="selectedGroupType == 'All'? 'primary': '' " button detail="true" lines="full" class="clickable" (click)="loadGroupType('All')">
 				<ion-label class="ion-text-wrap">
-					Tất cả
+					{{'erp.app.pages.pos.pos-customer-memo.all' | translate}}
 				</ion-label>
 			</ion-item>
 			<ion-item [hidden]="(g == null) || (g == '')" [color]="g == selectedGroupType? 'primary': '' " button detail="true" lines="full" class="clickable" *ngFor="let g of GroupType" (click)="loadGroupType(g)">
@@ -44,17 +44,17 @@
 		</ion-grid>
 		<div class="sticky-btn">
 			<div class="c-control" style="margin-bottom: 0px !important;">
-				<label class="c-label" for="Remark">Ghi chú
+				<label class="c-label" for="Remark">{{'erp.app.pages.pos.pos-customer-memo.remark' | translate}}
 					<ion-button color="danger" *ngIf="!item._Locked " class="ion-float-right" size="small" (click)="Remark = null;">
 						<ion-icon slot="start" name="remove-circle-outline"></ion-icon>
-						Xóa tất cả
+						{{'erp.app.pages.pos.pos-customer-memo.clear-all' | translate}}
 					</ion-button>
 				</label>
-				<textarea rows="3" class="c-input remark" id="Remark" [disabled]="item._Locked" [(ngModel)]="Remark" spellcheck="false" placeholder="Thêm ghi chú cho món" type="textarea">
+				<textarea rows="3" class="c-input remark" id="Remark" [disabled]="item._Locked" [(ngModel)]="Remark" spellcheck="false" placeholder="{{'erp.app.pages.pos.pos-customer-payment.item-remark' | translate}}" type="textarea">
                     </textarea>
 			</div>
 			<div *ngIf="!item._Locked">
-				<ion-button expand="block" [disabled]="submitAttempt" (click)="dismiss(true)">Áp dụng ghi chú</ion-button>
+				<ion-button expand="block" [disabled]="submitAttempt" (click)="dismiss(true)">{{'erp.app.pages.pos.pos-customer-memo.apply-remark' | translate}}</ion-button>
 			</div>
 		</div>
 	</div>

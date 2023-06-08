@@ -69,7 +69,6 @@ export class POSCustomerOrderPage extends PageBase {
         this.pageConfig.canEdit = true;
         this.idTable = this.route.snapshot?.paramMap?.get('table');
         this.idTable = typeof (this.idTable) == 'string' ? parseInt(this.idTable) : this.idTable;
-        this.isLanguageModalOpen = true;
         this.formGroup = formBuilder.group({
             Id: new FormControl({ value: 0, disabled: true }),
             Code: [],
@@ -128,9 +127,6 @@ export class POSCustomerOrderPage extends PageBase {
 
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
-        this.translate;
-        console.log(this.translate);
-        debugger
         this.AllowSendOrder = false;
         Promise.all([
             this.env.getStatus('POSOrder'),
@@ -394,13 +390,20 @@ export class POSCustomerOrderPage extends PageBase {
 
     async processPayments() {
         if(this.OrderLines.length>0 || this.AllowSendOrder == true){
-            this.env.showPrompt('Cập nhật đơn hàng và tiến hành thanh toán!',null, 'Thông báo','Cập nhật','không')
-            .then(_ => {
-                this.sendOrder();
-                this.openModalPayments();
-            }).catch(_ => {
-                
-            });
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-memo.update-order-then-proceed-payment').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-memo.notification').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-memo.update').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-memo.no').toPromise()
+            ]).then(trans => {
+                this.env.showPrompt(trans[0],null, trans[1],trans[2],trans[3])
+                .then(_ => {
+                    this.sendOrder();
+                    this.openModalPayments();
+                }).catch(_ => {
+                    
+                });
+            })
         }
         else{
             this.openModalPayments();

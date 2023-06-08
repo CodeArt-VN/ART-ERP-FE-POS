@@ -1,6 +1,6 @@
 <ion-header>
     <ion-toolbar> 
-        <ion-title>Đơn hàng #{{item.Id}}</ion-title>
+        <ion-title>{{'erp.app.pages.pos.pos-customer-order.order-no' | translate}} #{{item.Id}}</ion-title>
         <ion-buttons slot="primary">
             <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="primary" (click)="refresh()">
                 <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
@@ -17,22 +17,22 @@
         <ion-grid fixed style="max-width: 670px;">
             <ion-row>
                 <ion-col size="12" class="ion-text-center">
-                    <ion-text >Tổng Tiền Phải Thanh Toán</ion-text>
+                    <ion-text >{{'erp.app.pages.pos.pos-customer-payment.total-payment' | translate}}</ion-text>
                     <ion-text color="primary"><b><h5>{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}} đ</h5></b></ion-text>
                 </ion-col>
 
                 <ion-col size="12" *ngIf="items.length>0">
                     <div class="c-control">
-                        <div class="c-label header-title-payment ion-text-center"><ion-text color="primary">Các lần thanh toán</ion-text></div>
+                        <div class="c-label header-title-payment ion-text-center"><ion-text color="primary">{{'erp.app.pages.pos.pos-customer-payment.payment-transactions' | translate}}</ion-text></div>
                         <div class="table-contain">
                             <section class="table">
                                 <header class="bold">   
                                                                                             
-                                    <div class="col-type cell">Hình thức</div>                              
-                                    <div class="col-status cell">Trạng thái</div>                                  
-                                    <div class="col-money cell" style="padding-right: 0px;">Số tiền</div> 
-                                    <div class="col-money cell" style="padding-right: 0px;">Hoàn lại</div>
-                                    <div class="col-remark cell" style="padding-right: 0px;">Ghi chú</div>                                                                      
+                                    <div class="col-type cell">{{'erp.app.pages.pos.pos-customer-payment.payment-type' | translate}}</div>                              
+                                    <div class="col-status cell">{{'erp.app.pages.pos.pos-customer-payment.payment-status' | translate}}</div>                                  
+                                    <div class="col-money cell" style="padding-right: 0px;">{{'erp.app.pages.pos.pos-customer-payment.payment-amount' | translate}}</div> 
+                                    <div class="col-money cell" style="padding-right: 0px;">{{'erp.app.pages.pos.pos-customer-payment.payment-refund' | translate}}</div>
+                                    <div class="col-remark cell" style="padding-right: 0px;">{{'erp.app.pages.pos.pos-customer-payment.payment-remark' | translate}}</div>                                                                      
                                 </header>
                                 <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of payments, let idx = index;">
                                                                      
@@ -83,15 +83,15 @@
                 <ion-col size="12">
                       
                     <ion-item lines="none" class="item-row">  
-                        <ion-text slot="start">Đã thanh toán</ion-text>                                                                                                                                 
+                        <ion-text slot="start">{{'erp.app.pages.pos.pos-customer-order.received' | translate}}</ion-text>                                                                                                                                 
                         <ion-label slot="end" color="primary">{{PaidAmounted | number: '1.0-0'}} đ</ion-label>
                     </ion-item>
                     <ion-item *ngIf="DebtAmount > 0" lines="none" class="item-row">  
-                        <ion-text slot="start">Còn lại</ion-text>                                                                                                                                 
+                        <ion-text slot="start">{{'erp.app.pages.pos.pos-customer-order.debt' | translate}}</ion-text>                                                                                                                                 
                         <ion-label slot="end" color="primary">{{DebtAmount | number: '1.0-0'}} đ</ion-label>
                     </ion-item>                 
                     <div *ngIf="DebtAmount > 0 &&  item.Status != 'Splitted' && item.Status != 'Merged' && item.Status != 'Cancelled' && item.Status != 'Done'" class="c-control ion-text-center">                          
-                        <ion-button color="primary" (click)="toPayment()" expand="block">Thanh toán</ion-button>                                                         
+                        <ion-button color="primary" (click)="toPayment()" expand="block">{{'erp.app.pages.pos.pos-customer-order.pay-for-order' | translate}}</ion-button>                                                         
                     </div>                                  
                 </ion-col>
             </ion-row>
