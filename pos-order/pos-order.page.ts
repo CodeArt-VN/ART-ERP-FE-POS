@@ -26,7 +26,6 @@ export class POSOrderPage extends PageBase {
     segmentView = 'all';
     orderCounter = 0;
     numberOfGuestCounter = 0;
-    synth = speechSynthesis;
     notifications = [];
     constructor(
         public pageProvider: SALE_OrderProvider,
