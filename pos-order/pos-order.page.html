@@ -18,7 +18,7 @@
 		
 
 	</app-list-toolbar>
-	<ion-toolbar style="position: absolute; z-index: 100;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" >
+	<ion-toolbar style="position: absolute; z-index: 100; padding-top: 0px !important;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" >
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 			<ion-segment-button value="all">
 				<ion-label>{{'erp.app.pages.pos.pos-order.all' | translate}}</ion-label>
