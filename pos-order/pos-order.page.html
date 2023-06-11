@@ -18,7 +18,7 @@
 		
 
 	</app-list-toolbar>
-	<ion-toolbar style="position: absolute; z-index: 100;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" >
+	<ion-toolbar style="position: absolute; z-index: 100; padding-top: 0px !important;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" >
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 			<ion-segment-button value="all">
 				<ion-label>{{'erp.app.pages.pos.pos-order.all' | translate}}</ion-label>
@@ -31,7 +31,7 @@
 		</ion-segment>
 	</ion-toolbar>
 	<div class="so-rows">
-		<ion-toolbar class="no-padding ">
+		<ion-toolbar style="padding-top: 0px !important;" class="no-padding" >
 			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'erp.app.pages.pos.pos-order.search-placeholder' | translate}}"></ion-searchbar>
 
 			<ion-buttons slot="primary">

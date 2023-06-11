@@ -164,7 +164,7 @@ export class POSCustomerOrderPage extends PageBase {
 
     async loadedData(event?: any, ignoredFromGroup?: boolean): Promise<void> {
         super.loadedData(event, ignoredFromGroup);
-        await this.getOrdersOfTable(this.idTable);
+        //await this.getOrdersOfTable(this.idTable);
         this.getBranch(this.Table.IDBranch);
         await  this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
             if(result){
@@ -592,14 +592,15 @@ export class POSCustomerOrderPage extends PageBase {
         const value = JSON.parse(data.value);
         if (this.item.Id == data.id) {
             this.refresh();
-        }else{
-            let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
-            if(index != -1){
-                await this.getOrdersOfTable(this.idTable);
-                this.env.showAlert("Có đơn hàng mới trên bàn này","Kiểm tra đơn hàng ",'Thông báo');
-
-            }
         }
+        // else{
+        //     let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
+        //     if(index != -1){
+        //         await this.getOrdersOfTable(this.idTable);
+        //         this.env.showAlert("Có đơn hàng mới trên bàn này","Kiểm tra đơn hàng ",'Thông báo');
+
+        //     }
+        // }
     }
     private notifyFromCustomer(data) {
         const value = JSON.parse(data.value);   

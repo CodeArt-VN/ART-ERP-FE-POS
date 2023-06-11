@@ -57,7 +57,7 @@
 
 
 									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="line._isShowNote =! line._isShowNote; line._isShowFoC = false">
-										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
+										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"></ion-icon>
 									</ion-button>
 									<span class="quantity">
 										<small>x</small>
@@ -232,6 +232,25 @@
 									{{'erp.app.pages.pos.pos-order.add-contact' | translate}}
 								</ion-button>
 							</div>
+							<ion-item *ngIf="Staff" lines="none" class="staff-info">
+								<ion-avatar class="clickable" id="open-modal-staff-info" slot="start">
+								  <img alt="Silhouette of mountains" [src]="Staff.avatarURL" />
+								</ion-avatar>
+								<ion-text>
+									<ion-label> <small>{{Staff.DepartmentName}}</small> </ion-label>
+									<ion-label> <small>{{Staff.JobTitleName}}</small> </ion-label>
+								</ion-text>	
+								<ion-modal trigger="open-modal-staff-info">
+									<ng-template>
+										<ion-content>
+											<ion-button fill="clear" style="position: absolute; right:0" color="secondary" (click)="closeModal()">
+												<ion-icon slot="icon-only" name="close"></ion-icon>
+											</ion-button>
+											<ion-img width="100%"  alt="Silhouette of mountains" [src]="Staff.avatarURL"></ion-img>
+										</ion-content>
+									</ng-template>
+								</ion-modal>							
+							</ion-item>							
 							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'erp.app.pages.pos.pos-order.idaddress-placeholder' | translate}}">
 								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
 									{{i.Name}}

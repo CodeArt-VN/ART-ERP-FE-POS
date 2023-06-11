@@ -26,7 +26,7 @@
 
 <ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
 	<ion-fab slot="fixed" vertical="bottom" horizontal="end">
-		<ion-fab-button (click)="callStaff()">
+		<ion-fab-button (click)="callStaff()" class="linear-blue-btn">
 			<ion-icon name="megaphone-outline" ></ion-icon>
 		</ion-fab-button>
 	</ion-fab>
@@ -260,7 +260,7 @@
 		</form>
 		<div style="margin-top: 80px;"></div>
 	</ion-fab>
-	<ng-container *ngIf="OrdersOfTable?.length>1">
+	<!-- <ng-container *ngIf="OrdersOfTable?.length>1">
 		<ion-fab slot="fixed" vertical="bottom" horizontal="start">
 			<ion-fab-button id="open-modal-list-order">
 				<ion-icon name="bag-handle-outline"></ion-icon> 
@@ -281,7 +281,7 @@
 				</div>
 			</ng-template>
 		</ion-modal>
-	</ng-container>
+	</ng-container> -->
 	
 
 	<ion-modal [isOpen]="isLanguageModalOpen">
