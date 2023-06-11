@@ -212,6 +212,12 @@ export class POSCustomerOrderPage extends PageBase {
         }).catch(err=>{});
     }
     async addToStorage(item, idUoM, quantity = 1,IsDelete = false,idx = -1){
+
+        if (item.IsDisabled) {
+            this.env.showTranslateMessage('Sản phẩm không khả dụng, không thể thêm hoặc giảm món.', 'warning');
+            return;
+        }
+
         let line = {
             Item:item,
             IDUoM:idUoM,

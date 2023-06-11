@@ -274,11 +274,15 @@ export class POSOrderDetailPage extends PageBase {
             return;
         }
 
+        if (item.IsDisabled) {
+            this.env.showTranslateMessage('Sản phẩm không khả dụng, không thể thêm hoặc giảm món.', 'warning');
+            return;
+        }
+
         if (!this.pageConfig.canAdd) {
             this.env.showTranslateMessage('Bạn không có quyền thêm sản phẩm!', 'warning');
             return;
         }
-
 
         if (!this.pageConfig.canEdit) {
             this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');

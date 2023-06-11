@@ -862,3 +862,7 @@
 ion-img {
     object-fit:cover;
 }
+
+.dim-image {
+	filter: brightness(60%);
+}

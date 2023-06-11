@@ -388,7 +388,7 @@
 							</span> -->
 							<div class="card" [id]="'item'+i.Id">
 
-								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
+								<ion-img class="item-image clickable" [ngClass]="{'dim-image': i.IsDisabled}" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
 								<span *ngIf="translate.currentLang == 'vi-VN'" class="table-name clickable">{{i.Name}}</span>
 								<span *ngIf="translate.currentLang != 'vi-VN'" class="table-name clickable">{{i.ForeignName}}</span>
 								<ng-container *ngFor="let u of i.UoMs">
@@ -408,8 +408,9 @@
 											</span>
 										</span>
 
-										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToStorage(i, u.Id);">
-											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+										<ion-button [disabled]="i.IsDisabled" [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToStorage(i, u.Id);">
+											<ion-icon *ngIf="!i.IsDisabled" slot="icon-only" name="cart-outline"></ion-icon>
+											<ion-icon *ngIf="i.IsDisabled" slot="icon-only" name="lock-closed-outline"></ion-icon>
 										</ion-button>
 									</a>
 								</ng-container>
