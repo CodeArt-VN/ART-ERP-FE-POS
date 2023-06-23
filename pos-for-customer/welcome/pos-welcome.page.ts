@@ -277,7 +277,8 @@ export class POSWelcomePage extends PageBase {
 
         setInterval(() => {
             this.slidesElement.slideNext()
-        }, 8000);
+        }, 10000);
+        this.changeLanguage();
         // debugger
     }
 

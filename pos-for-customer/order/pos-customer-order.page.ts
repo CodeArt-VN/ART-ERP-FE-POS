@@ -175,9 +175,15 @@ export class POSCustomerOrderPage extends PageBase {
             await this.checkOrderOfTable(this.idTable);
             if(this.id !=0){
                 let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
-                history.pushState({}, null, newURL); 
-                this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng và cập nhật",'Thông báo');               
-                this.refresh();
+                history.pushState({}, null, newURL);
+                Promise.all([
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.check-preorder').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.check-order-update').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+                ]).then(trans => {
+                    this.env.showAlert(trans[0],trans[1],trans[2]);               
+                    this.refresh();
+                });
             }     
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
             Object.assign(this.item, this.formGroup.getRawValue());
@@ -214,7 +220,7 @@ export class POSCustomerOrderPage extends PageBase {
     async addToStorage(item, idUoM, quantity = 1,IsDelete = false,idx = -1){
 
         if (item.IsDisabled) {
-            this.env.showTranslateMessage('Sản phẩm không khả dụng, không thể thêm hoặc giảm món.', 'warning');
+            this.env.showTranslateMessage('erp.app.pages.pos.pos-customer-order.product-not-available', 'warning');
             return;
         }
 
@@ -275,13 +281,15 @@ export class POSCustomerOrderPage extends PageBase {
         }
 
         if (!this.pageConfig.canEdit) {
-            this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+            this.env.showTranslateMessage('erp.app.pages.pos.pos-customer-order.order-locked', 'warning');
             return;
         }
 
         if (!item.UoMs.length) {
-            this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
-            return;
+            this.translate.get('erp.app.pages.pos.pos-customer-order.item-has-no-uom').toPromise().then(trans => {
+                this.env.showAlert(trans);
+                return;
+            });
         }
 
         let uom = item.UoMs.find(d => d.Id == idUoM);
@@ -329,18 +337,29 @@ export class POSCustomerOrderPage extends PageBase {
         }
         else {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
-                this.env.showAlert("Vui lòng liên hệ nhân viên để được hỗ trợ ", item.Name + " đã chuyển bếp " + line.ShippedQuantity + " " + line.UoMName, "Thông báo");
+                Promise.all([
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.contact-staff-support').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.sent-kitchen').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+                ]).then(trans => { // Sản phẩm đã chuyển bếp, liên hệ nhân viên
+                    this.env.showAlert(trans[0], item.Name + " " + trans[1] + " " + line.ShippedQuantity + " " + line.UoMName, trans[2]);
+                });
             }
             else if ((line.Quantity + quantity) > 0) {
                 line.Quantity += quantity;
                 this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New'});
             }
             else {
-                this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm').then(_ => {
-                    line.Quantity += quantity;
-                    this.loadInfoOrder();
-                    this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
-                }).catch(_ => { });
+                Promise.all([
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.confirm-to-remove').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.remove-product').toPromise(),
+                ]).then(trans => {
+                    this.env.showPrompt(trans[0], item.Name, trans[1]).then(_ => { // Xóa sản phẩm
+                        line.Quantity += quantity;
+                        this.loadInfoOrder();
+                        this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                    }).catch(_ => { });
+                });
             }
 
         }
@@ -613,55 +632,83 @@ export class POSCustomerOrderPage extends PageBase {
         let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
         if(index != -1){
             if(!this.IsMyHandle){
-                this.env.showAlert("Có một khách hàng nào đó đã gọi món trên bàn này. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng ",'Thông báo');
-                this.id = data.id;
-                let newURL = '#/pos-customer-order/' + this.id + '/' + value.Tables[0].IDTable;
-                history.pushState({}, null, newURL);
-                this.refresh();
+                Promise.all([
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.check-for-new-order').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.check-order').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+                ]).then(trans => {
+                    this.env.showAlert(trans[0],trans[1],trans[2]);
+                    this.id = data.id;
+                    let newURL = '#/pos-customer-order/' + this.id + '/' + value.Tables[0].IDTable;
+                    history.pushState({}, null, newURL);
+                    this.refresh();
+                });
             }
             this.IsMyHandle = false;
         }
-        
-        
     }
+
     private notifyPayment(data){
         const value = JSON.parse(data.Value);  
         if (this.item.Id == value.IDSaleOrder){
             let type;
             let status;
-            let header = "Thanh toán";
+            let header = "";
+            this.translate.get('erp.app.pages.pos.pos-customer-order.payment').toPromise().then(trans => {
+                header = trans;
+            });
             if(value.IsRefundTransaction == true){
-                header = "Hoàn tiền";
+                this.translate.get('erp.app.pages.pos.pos-customer-order.refund').toPromise().then(trans => {
+                    header = trans;
+                });
             }
             switch (value.Status) {
                 case 'Success':
-                    status = "Thành công";                 
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.success').toPromise().then(trans => {
+                        status = trans;
+                    });
                     break;
                 case 'Processing':
-                    status = "Đang xử lý";
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.processing').toPromise().then(trans => {
+                        status = trans;
+                    });
                     break;
                 case 'Fail':
-                    status = "Thất bại";
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.fail').toPromise().then(trans => {
+                        status = trans;
+                    });
                     break;
             }
             switch (value.Type) {
                 case 'Card':
-                    type = "Cà thẻ";                 
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.card').toPromise().then(trans => {
+                        type = trans;
+                    });
                     break;
                 case 'Transfer':
-                    type = "Chuyển khoản";
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.transfer').toPromise().then(trans => {
+                        type = trans;
+                    });
                     break;
                 case 'Cash':
-                    type = "Tiền mặt";
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.cash').toPromise().then(trans => {
+                        type = trans;
+                    });
                     break;
                 case 'ZalopayApp':
-                    type = "Ví ZaloPay";
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.zalopay-app').toPromise().then(trans => {
+                        type = trans;
+                    });
                     break;
                 case 'CC':
-                    type = "Thẻ Visa, Master, JCB (qua Cổng ZaloPay)";
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.cc').toPromise().then(trans => {
+                        type = trans;
+                    });
                     break;
                 case 'ATM':
-                    type = "Thẻ ATM (qua Cổng ZaloPay)";
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.atm').toPromise().then(trans => {
+                        type = trans;
+                    });
                     break;
             }
             this.env.showAlert("<h2>"+lib.currencyFormat(value.Amount)+"</h2>",type +" | "+status,header);
@@ -682,43 +729,89 @@ export class POSCustomerOrderPage extends PageBase {
     }
     async notifyFromStaff(){
         if(this.item.Status == "Splitted"){
-            this.env.showAlert("Đơn hàng này đã được chia!",null,'Thông báo');
-            await this.getChildrenOrder(this.item.Id);
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-splitted').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+                await this.getChildrenOrder(this.item.Id);
+            });
         }
         if(this.item.Status =='Merged'){
-            this.env.showAlert("Đơn hàng này đã được gộp!",null,'Thông báo');
-            await this.getParentOrder(this.item.IDParent);
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-merged').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+                await this.getParentOrder(this.item.IDParent);
+            });
         }
         if(this.item.Status =='Done'){
-            this.env.showAlert("Đơn hàng này đã hoàn tất!",null,'Thông báo');
-            this.playAudio("Order");
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-done').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+                this.playAudio("Order");
+            });
         }
         if(this.item.Status =='Cancelled'){
-            this.env.showAlert("Đơn hàng này đã hủy!",null,'Thông báo');
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-cancelled').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+                this.playAudio("Order");
+            });
         }
         if(this.item.Status == "Confirmed"){
-            this.env.showAlert("Đơn hàng đã được xác nhận!",null,'Thông báo');   
-            this.playAudio("Order");      
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-confirmed').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+                this.playAudio("Order");
+            });
         }
         // if(this.item.Status == "Scheduled"){
-        //     this.env.showAlert("Món bạn vừa đặt đã được chuyển Bar/Bếp",null,'Thông báo'); 
-        //     //this.playAudio("Order");        
+        //     Promise.all([
+        //         this.translate.get('erp.app.pages.pos.pos-customer-order.order-scheduled').toPromise(),
+        //         this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+        //     ]).then(async trans => {
+        //         this.env.showAlert(trans[0], null, trans[1]);
+        //         this.playAudio("Order");
+        //     });
         // }
         if(this.item.Status == "Picking"){
-            this.env.showAlert("Món đã được chuẩn bị",null,'Thông báo');                    
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-picking').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+            });                
         }
         if(this.item.Status == "Delivered"){
-            this.env.showAlert("Chúc quý khách ngon miệng",null,'Thông báo');      
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-delivered').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+            });
         }
         if(this.idTable != this.item.Tables[0]){
             await this.reloadTable(this.item.Tables[0]);
-            this.env.showAlert("Đơn hàng của bạn đã được chuyển bàn "+this.Table.Name,null,'Thông báo chuyển bàn');
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.order-table-changed-to').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+            ]).then(async trans => {
+                this.env.showAlert(trans[0], null, trans[1]);
+                this.env.showAlert(trans[0] +this.Table.Name, null, trans[0]);
+            });
             this.env.setStorage("OrderLines" + this.idTable, []);
             this.env.setStorage("OrderLines" + this.item.Tables[0], this.OrderLines);
             this.idTable = this.item.Tables[0];
             let newURL = '#/pos-customer-order/' + this.item.Id + '/' + this.item.Tables[0];
             history.pushState({}, null, newURL);
-            
         }
     }
     async reloadTable(IDTable){
@@ -998,9 +1091,14 @@ export class POSCustomerOrderPage extends PageBase {
                 if(this.id !=0){
                     let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
                     history.pushState({}, null, newURL); 
-                    this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng và cập nhật",'Thông báo');               
-                    this.refresh();
-                    
+                    Promise.all([
+                        this.translate.get('erp.app.pages.pos.pos-customer-order.check-preorder').toPromise(),
+                        this.translate.get('erp.app.pages.pos.pos-customer-order.check-order-update').toPromise(),
+                        this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
+                    ]).then(trans => {
+                        this.env.showAlert(trans[0],trans[1],trans[2]);               
+                        this.refresh();
+                    });
                 }
                 else{
                     this.saveOrder();
@@ -1011,7 +1109,7 @@ export class POSCustomerOrderPage extends PageBase {
             }
         }
         else {
-            this.env.showTranslateMessage('Xin lỗi quý khách bàn này chưa được kích hoạt gọi món', 'warning');
+            this.env.showTranslateMessage('erp.app.pages.pos.pos-customer-order.self-service-unavailable', 'warning');
             return false;
         }
     }
@@ -1048,34 +1146,61 @@ export class POSCustomerOrderPage extends PageBase {
             Name: this.Table.IDBranch,
             Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu phục vụ"
         }
-        this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result=>{
-            this.env.showMessage("Đã gọi phục vụ","success");
-        }).catch(err=>{
-            console.log(err);
+        Promise.all([
+            this.translate.get('erp.app.pages.pos.pos-customer-order.customer-at-table').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.request-for-service').toPromise(),
+        ]).then(trans => {
+            ItemModel.Remark = trans[0] + this.Table.Name + trans[1]
+            this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result=>{
+                this.env.showTranslateMessage('erp.app.pages.pos.pos-customer-order.called-for-service',"success");
+            }).catch(err=>{
+                console.log(err);
+            });
         });
-
     }
 
     async helpOrder(status) {
         let subHeader;
         let message;
         if(status == 'Done'){
-            subHeader = 'Đơn hàng đã hoàn tất';
-            message = 'Không thể thao tác trên đơn hàng này. Vui lòng quét lại mã để đặt món';
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-done-subhead').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-done-message').toPromise(),
+            ]).then(trans => {
+                subHeader = trans[0];
+                message = trans[1];
+            });
         }
         if(status == 'Splitted'){
-            subHeader = 'Đơn hàng đã chia';
-            message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-splitted-subhead').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-splitted-message').toPromise(),
+            ]).then(trans => {
+                subHeader = trans[0];
+                message = trans[1];
+            });
         }
         if(status == 'Cancelled'){
-            subHeader = 'Đơn hàng đã hủy';
-            message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-cancelled-subhead').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-cancelled-message').toPromise(),
+            ]).then(trans => {
+                subHeader = trans[0];
+                message = trans[1];
+            });
         }
         if(status == 'Merged'){
-            subHeader = 'Đơn hàng đã gộp';
-            message = 'Không thể thao tác trên đơn hàng này. Vui lòng đi đến đơn gốc để tiếp tục đặt hàng';
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-merged-subhead').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.help-order-merged-message').toPromise(),
+            ]).then(trans => {
+                subHeader = trans[0];
+                message = trans[1];
+            });
         }
-        this.env.showAlert(message,subHeader,'Thông báo'); 
+        this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise().then(trans => {
+            this.env.showAlert(message, subHeader, trans);
+        });
     }
 
     async checkOrderOfTable(IDTable){

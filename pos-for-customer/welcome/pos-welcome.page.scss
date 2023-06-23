@@ -23,13 +23,7 @@ ion-toolbar{display: none !important}
 }
 
 .branch-logo{
-    // transform: scale(0.6);
-    position: absolute;
-    width: 130px;
-    left: 50%;
-    margin-left: -60px;
-    z-index: 12;
-    top: 30px;
+    width: 150px;
 }
 
 ion-slides {
@@ -84,7 +78,10 @@ ion-slides {
                     padding: 10px 15px;
                     text-align: center;
                     position: absolute;
-                    bottom: 25px;
+                    bottom: 10px;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 100%;
                 }
             }
         }
@@ -93,8 +90,7 @@ ion-slides {
 
 @media screen and (max-width: calc(375px)) {
     .branch-logo{
-        width: 90px;
-        margin-left: -40px;
+        width: 120px;
     }
     ion-slides {
         .logo {
