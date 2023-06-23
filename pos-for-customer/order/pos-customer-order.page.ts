@@ -361,7 +361,6 @@ export class POSCustomerOrderPage extends PageBase {
                     }).catch(_ => { });
                 });
             }
-
         }
     }
 
@@ -654,66 +653,66 @@ export class POSCustomerOrderPage extends PageBase {
             let type;
             let status;
             let header = "";
-            this.translate.get('erp.app.pages.pos.pos-customer-order.payment').toPromise().then(trans => {
-                header = trans;
-            });
-            if(value.IsRefundTransaction == true){
-                this.translate.get('erp.app.pages.pos.pos-customer-order.refund').toPromise().then(trans => {
-                    header = trans;
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-customer-order.payment').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-customer-order.refund').toPromise()
+            ]).then((trans:any) => {
+                if(value.IsRefundTransaction != true){
+                    header = trans[0];
+                }
+                else {
+                    header = trans[1];
+                }
+
+                Promise.all([
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.success').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.processing').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.fail').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.card').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.transfer').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.cash').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.zalopay-app').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.cc').toPromise(),
+                    this.translate.get('erp.app.pages.pos.pos-customer-order.atm').toPromise()
+                ]).then((trans:any) => {
+                    switch (value.Status) {
+                        case 'Success':
+                            status = trans[0];
+                            break;
+                        case 'Processing':
+                            status = trans[1];
+                            break;
+                        case 'Fail':
+                            status = trans[2];
+                            break;
+                    };
+
+                    switch (value.Type) {
+                        case 'Card':
+                            type = trans[3];
+                            break;
+                        case 'Transfer':
+                            type = trans[4];
+                            break;
+                        case 'Cash':
+                            type = trans[5];
+                            break;
+                        case 'ZalopayApp':
+                            type = trans[6];
+                            break;
+                        case 'CC':
+                            type = trans[7];
+                            break;
+                        case 'ATM':
+                            type = trans[8];
+                            break;
+                    };
+
+                    this.env.showAlert("<h2>"+lib.currencyFormat(value.Amount)+"</h2>",type +" | "+status,header);
+                    this.playAudio("Payment");
+                    this.refresh();
                 });
-            }
-            switch (value.Status) {
-                case 'Success':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.success').toPromise().then(trans => {
-                        status = trans;
-                    });
-                    break;
-                case 'Processing':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.processing').toPromise().then(trans => {
-                        status = trans;
-                    });
-                    break;
-                case 'Fail':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.fail').toPromise().then(trans => {
-                        status = trans;
-                    });
-                    break;
-            }
-            switch (value.Type) {
-                case 'Card':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.card').toPromise().then(trans => {
-                        type = trans;
-                    });
-                    break;
-                case 'Transfer':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.transfer').toPromise().then(trans => {
-                        type = trans;
-                    });
-                    break;
-                case 'Cash':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.cash').toPromise().then(trans => {
-                        type = trans;
-                    });
-                    break;
-                case 'ZalopayApp':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.zalopay-app').toPromise().then(trans => {
-                        type = trans;
-                    });
-                    break;
-                case 'CC':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.cc').toPromise().then(trans => {
-                        type = trans;
-                    });
-                    break;
-                case 'ATM':
-                    this.translate.get('erp.app.pages.pos.pos-customer-order.atm').toPromise().then(trans => {
-                        type = trans;
-                    });
-                    break;
-            }
-            this.env.showAlert("<h2>"+lib.currencyFormat(value.Amount)+"</h2>",type +" | "+status,header);
-            this.playAudio("Payment");
-            this.refresh();
+            });
         }
     }
     private playAudio(type){
@@ -804,8 +803,7 @@ export class POSCustomerOrderPage extends PageBase {
                 this.translate.get('erp.app.pages.pos.pos-customer-order.order-table-changed-to').toPromise(),
                 this.translate.get('erp.app.pages.pos.pos-customer-order.notification').toPromise(),
             ]).then(async trans => {
-                this.env.showAlert(trans[0], null, trans[1]);
-                this.env.showAlert(trans[0] +this.Table.Name, null, trans[0]);
+                this.env.showAlert(trans[0] +this.Table.Name, null, trans[1]);
             });
             this.env.setStorage("OrderLines" + this.idTable, []);
             this.env.setStorage("OrderLines" + this.item.Tables[0], this.OrderLines);

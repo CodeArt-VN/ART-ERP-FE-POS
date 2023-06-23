@@ -119,13 +119,13 @@ export class POSForCustomerPaymentModalPage extends PageBase {
             this.items[i].IncomingPayment.Status= data['Status'];
             switch (data['Status']) {
 				case 'Success':
-					this.env.showTranslateMessage('Thanh toán thành công', 'success');
+					this.env.showTranslateMessage('erp.app.pages.pos.pos-payment-modal.payment-success', 'success');
 					break;
                 case 'Fail':
-					this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
+					this.env.showTranslateMessage('erp.app.pages.pos.pos-payment-modal.payment-fail', 'danger');
 					break;
                 default:
-					this.env.showTranslateMessage('Đang chờ khách hàng thanh toán', 'warning');
+					this.env.showTranslateMessage('erp.app.pages.pos.pos-payment-modal.payment-pending', 'warning');
 					break;
             }
             this.calcPayment();
@@ -174,68 +174,90 @@ export class POSForCustomerPaymentModalPage extends PageBase {
     }
     doneOrder(){
         if(this.DebtAmount > 0) {
-            this.alertCtrl.create({
-                header: 'Thông báo',             
-                message: 'Bạn có chắc chắn kết thúc đơn? Đơn sẽ được ghi nhận là thanh toán sau.',
-                buttons: [
-                    {
-                        text: 'Không',
-                        role: 'cancel',
-                        handler: () => {                      
+            Promise.all([
+                this.translate.get('erp.app.pages.pos.pos-payment-modal.notification').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-payment-modal.confirm-done-message').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-payment-modal.no').toPromise(),
+                this.translate.get('erp.app.pages.pos.pos-payment-modal.yes').toPromise()
+            ]).then((trans: any) => {
+                this.alertCtrl.create({
+                    header: trans[0],             
+                    message: trans[1],
+                    buttons: [
+                        {
+                            text: trans[2],
+                            role: 'cancel',
+                            handler: () => {                      
+                            }
+                        },
+                        {
+                            text: trans[3],
+                            cssClass: 'success-btn',
+                            handler: () => {
+                                return this.modalController.dismiss(this.DebtAmount,'Done');
+                            }
                         }
-                    },
-                    {
-                        text: 'Đồng ý',
-                        cssClass: 'success-btn',
-                        handler: () => {
-                            return this.modalController.dismiss(this.DebtAmount,'Done');
-                        }
-                    }
-                ]
-            }).then(alert => {
-                alert.present();
-            })
+                    ]
+                }).then(alert => {
+                    alert.present();
+                })
+            });
         }
         else{
             return this.modalController.dismiss(this.DebtAmount,'Done');
         }
         
     }
-    getTypeText(code):  string{
-        switch (code) {
-            case 'ZalopayApp':
-                code = "Ví zalo pay"
-                break;
-            case 'ATM':
-                code = "Thẻ ATM"
-                break;
-            case 'CC':
-                code = "Thẻ Visa,Master"
-                break;
-            case 'Card':
-                code = "Cà thẻ"
-                break;
-            case 'Transfer':
-                code = "Chuyển khoản"
-                break;
-            default:
-                code = "Tiền mặt"
-                break;
-        }
-        return code;
+    getTypeText(code) {
+        Promise.all([
+            this.translate.get('erp.app.pages.pos.pos-customer-order.card').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.transfer').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.cash').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.zalopay-app').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.cc').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.atm').toPromise()
+        ]).then((trans:any) => {
+            switch (code) {
+                case 'Card':
+                    code = trans[0];
+                    break;
+                case 'Transfer':
+                    code = trans[1];
+                    break;
+                case 'Cash':
+                    code = trans[2];
+                    break;
+                case 'ZalopayApp':
+                    code = trans[3];
+                    break;
+                case 'CC':
+                    code = trans[4];
+                    break;
+                case 'ATM':
+                    code = trans[5];
+                    break;
+            }
+            return code;
+        });
     }
-    getStatusText(code):  string{
-        switch (code) {
-            case 'Success':
-                code = "Thành công"
-                break;
-            case 'Processing':
-                code = "Đang xử lý"
-                break;
-            default:
-                code = "Thất bại"
-                break;
-        }
-        return code;
+    getStatusText(code) {
+        Promise.all([
+            this.translate.get('erp.app.pages.pos.pos-customer-order.success').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.processing').toPromise(),
+            this.translate.get('erp.app.pages.pos.pos-customer-order.fail').toPromise(),
+        ]).then((trans:any) => {
+            switch (code) {
+                case 'Success':
+                    code = trans[0];
+                    break;
+                case 'Processing':
+                    code = trans[1];
+                    break;
+                default:
+                    code = trans[2];
+                    break;
+            }
+            return code;
+        });
     }
 }
