@@ -6,9 +6,6 @@ import { IonicModule } from '@ionic/angular';
 import { ShareModule } from 'src/app/share.module';
 import { POSOrderDetailPage } from './pos-order-detail.page';
 import { FileUploadModule } from 'ng2-file-upload';
-import { NgSelectModule } from '@ng-select/ng-select';
-import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
-import { NgxMaskModule } from 'ngx-mask';
 import { PipesModule } from 'src/app/pipes/pipes.module';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
@@ -27,11 +24,8 @@ const routes: Routes = [
     IonicModule,
     ReactiveFormsModule,
     FileUploadModule,
-    NgSelectModule,
-    NgOptionHighlightModule,
     ShareModule,
     PipesModule,
-    NgxMaskModule.forRoot(),
     RouterModule.forChild(routes)
   ],
   declarations: [POSOrderDetailPage,POSVoucherModalPage,POSContactModalPage,POSInvoiceModalPage]

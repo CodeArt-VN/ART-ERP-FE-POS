@@ -6,9 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { POSOrderPage } from './pos-order.page';
 import { ShareModule } from 'src/app/share.module';
 import { PipesModule } from 'src/app/pipes/pipes.module';
-import { NgxMaskModule } from 'ngx-mask';
-import { NgSelectModule } from '@ng-select/ng-select';
-import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
 
 @NgModule({
   imports: [
@@ -17,9 +14,6 @@ import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
     FormsModule,
     ShareModule,
     PipesModule,
-    NgSelectModule,
-    NgOptionHighlightModule,
-    NgxMaskModule.forRoot(),
     RouterModule.forChild([{ path: '', component: POSOrderPage }]),
   ],
   declarations: [POSOrderPage]
