@@ -28,8 +28,7 @@ export class POSCustomerOrderPage extends PageBase {
     IDBranch = null;
     Branch;
     dealList = [];
-    soStatusList = []; //Show on bill
-    soDetailStatusList = [];
+
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
     printData = {
@@ -104,14 +103,14 @@ export class POSCustomerOrderPage extends PageBase {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
             switch (data.Code) {
                 case 'app:POSOrderPaymentUpdate':
-                    this.notifyPayment(data);                 
+                    this.notifyPayment(data);
                     break;
                 case 'app:POSOrderFromStaff':
                     this.notifyOrder(data.Data);
                     break;
                 case 'app:POSOrderFromCustomer':
-                    this.notifyFromCustomer(data.Data);				
-					break;
+                    this.notifyFromCustomer(data.Data);
+                    break;
             }
         });
         super.ngOnInit();
@@ -126,17 +125,14 @@ export class POSCustomerOrderPage extends PageBase {
         let forceReload = event === 'force';
         this.AllowSendOrder = false;
         Promise.all([
-            this.env.getStatus('POSOrder'),
-            this.env.getStatus('POSOrderDetail'),
             this.getMenu(),
             this.getTable(),
             this.getDeal(),
         ]).then((values: any) => {
-            this.soStatusList = values[0]; // Không load dược do không có token;
-            this.soDetailStatusList = values[1]; // Không load dược do không có token;
-            this.menuList = values[2];
-            this.Table = values[3];
-            this.dealList = values[4];
+
+            this.menuList = values[0];
+            this.Table = values[1];
+            this.dealList = values[2];
             this.checkIPConfig(event);
         }).catch(err => {
             this.loadedData(event);
@@ -144,10 +140,9 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     async checkIPConfig(event) {
-        Promise.all([
-            this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/CheckIPCustomer', {IDBranch: this.Table.IDBranch}).toPromise(),
-        ]).then((values: any) => {
-            if (values[0]['canEdit']) {
+
+        this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/CheckIPCustomer', { IDBranch: this.Table.IDBranch }).toPromise().then((resp: any) => {
+            if (resp['canEdit']) {
                 this.pageConfig.canEdit = true;
                 this.isWifiSecuredModalOpen = false;
             }
@@ -163,86 +158,96 @@ export class POSCustomerOrderPage extends PageBase {
         super.loadedData(event, ignoredFromGroup);
         //await this.getOrdersOfTable(this.idTable);
         this.getBranch(this.Table.IDBranch);
-        await  this.env.getStorage("OrderLines" + this.idTable).then((result:any)=>{
-            if(result){
+        await this.env.getStorage("OrderLines" + this.idTable).then((result: any) => {
+            if (result) {
                 this.OrderLines = result;
             }
         });
         if (!this.item?.Id) {
             await this.checkOrderOfTable(this.idTable);
-            if(this.id !=0){
+            if (this.id != 0) {
                 let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
-                history.pushState({}, null, newURL); 
-                this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng và cập nhật",'Thông báo');               
+                history.pushState({}, null, newURL);
+                this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ", "Kiểm tra đơn hàng và cập nhật", 'Thông báo');
                 this.refresh();
-            }     
+            }
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
         }
         else {
-            this.notifyFromStaff();           
+            this.notifyFromStaff();
             this.patchOrderValue();
         }
         this.loadOrder();
         this.loadInfoOrder();
-        if(this.OrderLines?.length>0){
+        if (this.OrderLines?.length > 0) {
             this.AllowSendOrder = true;
-            this.OrderLines.forEach(line=>{
-                this.addToCart(line.Item,line.IDUoM,+line.Quantity,true);
+            this.OrderLines.forEach(line => {
+                this.addToCart(line.Item, line.IDUoM, +line.Quantity, true);
             });
         }
     }
-    
+
     refresh(event?: any): void {
         this.preLoadData('force');
     }
-    async getChildrenOrder(IDParent){
-        await this.commonService.connect('GET', 'POS/ForCustomer/ChildrenOrder/'+IDParent, null).toPromise().then(result=>{
-           this.childrenOrders = result;
-        }).catch(err=>{});
+    async getChildrenOrder(IDParent) {
+        await this.commonService.connect('GET', 'POS/ForCustomer/ChildrenOrder/' + IDParent, null).toPromise().then(result => {
+            this.childrenOrders = result;
+        }).catch(err => { });
     }
-    async getParentOrder(IDParent){
-        await this.commonService.connect('GET', 'POS/ForCustomer/ParentOrder/'+IDParent, null).toPromise().then(result=>{
-           this.parentOrder = result;
-           console.log(this.parentOrder);
-        }).catch(err=>{});
+    async getParentOrder(IDParent) {
+        await this.commonService.connect('GET', 'POS/ForCustomer/ParentOrder/' + IDParent, null).toPromise().then(result => {
+            this.parentOrder = result;
+            console.log(this.parentOrder);
+        }).catch(err => { });
     }
-    async addToStorage(item, idUoM, quantity = 1,IsDelete = false,idx = -1){
-        let line = {
-            Item:item,
-            IDUoM:idUoM,
-            Quantity:quantity,
+    async addToStorage(item, idUoM, quantity = 1, IsDelete = false, idx = -1) {
+        if (!this.pageConfig.canEdit) {
+            this.isWifiSecuredModalOpen = true;
+            return;
         }
-        let index = this.OrderLines.map(x=>x.IDUoM).indexOf(idUoM);
-        if(index==-1){
+
+        let line = {
+            Item: item,
+            IDUoM: idUoM,
+            Quantity: quantity,
+        }
+        let index = this.OrderLines.map(x => x.IDUoM).indexOf(idUoM);
+        if (index == -1) {
             this.OrderLines.push(line);
         }
-        else{
-            if(IsDelete == true){
-                this.OrderLines.splice(index,1);
+        else {
+            if (IsDelete == true) {
+                this.OrderLines.splice(index, 1);
             }
-            else{
+            else {
                 this.OrderLines[index].Quantity += quantity;
-                if(this.OrderLines[index].Quantity==0){
-                    this.OrderLines.splice(index,1);
+                if (this.OrderLines[index].Quantity == 0) {
+                    this.OrderLines.splice(index, 1);
                 }
-            }     
-        }    
+            }
+        }
         this.env.setStorage("OrderLines" + this.idTable, this.OrderLines).then(_ => {
-
             this.addToCart(item, idUoM, quantity, null, idx);
         })
     }
 
     addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
+
+        if (!this.pageConfig.canEdit) {
+            this.isWifiSecuredModalOpen = true;
+            return;
+        }
+        
         this.AllowSendOrder = true;
 
         if (this.pageConfig.IsUseIPWhitelist) {
             if (this.ipWhitelist.indexOf(this.myIP) == -1) {
                 this.pageConfig.canEdit = false;
                 this.isWifiSecuredModalOpen = true;
-    
+
                 return;
             }
         }
@@ -316,7 +321,7 @@ export class POSCustomerOrderPage extends PageBase {
             this.item.OrderLines.push(line);
 
             this.addOrderLine(line);
-            this.setOrderValue({ OrderLines: [line], Status: 'New'});
+            this.setOrderValue({ OrderLines: [line], Status: 'New' });
         }
         else {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
@@ -324,7 +329,7 @@ export class POSCustomerOrderPage extends PageBase {
             }
             else if ((line.Quantity + quantity) > 0) {
                 line.Quantity += quantity;
-                this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New'});
+                this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New' });
             }
             else {
                 this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm').then(_ => {
@@ -386,22 +391,22 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     async processPayments() {
-        if(this.OrderLines.length>0 || this.AllowSendOrder == true){
-            this.env.showPrompt('Cập nhật đơn hàng và tiến hành thanh toán!',null, 'Thông báo','Cập nhật','không')
-            .then(_ => {
-                this.sendOrder();
-                this.openModalPayments();
-            }).catch(_ => {
-                
-            });
+        if (this.OrderLines.length > 0 || this.AllowSendOrder == true) {
+            this.env.showPrompt('Cập nhật đơn hàng và tiến hành thanh toán!', null, 'Thông báo', 'Cập nhật', 'không')
+                .then(_ => {
+                    this.sendOrder();
+                    this.openModalPayments();
+                }).catch(_ => {
+
+                });
         }
-        else{
+        else {
             this.openModalPayments();
         }
-       
+
     }
 
-    async openModalPayments(){
+    async openModalPayments() {
         const modal = await this.modalController.create({
             component: POSForCustomerPaymentModalPage,
             swipeToClose: true,
@@ -593,11 +598,11 @@ export class POSCustomerOrderPage extends PageBase {
         // }
     }
     private notifyFromCustomer(data) {
-        const value = JSON.parse(data.value);   
-        let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
-        if(index != -1){
-            if(!this.IsMyHandle){
-                this.env.showAlert("Có một khách hàng nào đó đã gọi món trên bàn này. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng ",'Thông báo');
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+        if (index != -1) {
+            if (!this.IsMyHandle) {
+                this.env.showAlert("Có một khách hàng nào đó đã gọi món trên bàn này. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ", "Kiểm tra đơn hàng ", 'Thông báo');
                 this.id = data.id;
                 let newURL = '#/pos-customer-order/' + this.id + '/' + value.Tables[0].IDTable;
                 history.pushState({}, null, newURL);
@@ -605,21 +610,21 @@ export class POSCustomerOrderPage extends PageBase {
             }
             this.IsMyHandle = false;
         }
-        
-        
+
+
     }
-    private notifyPayment(data){
-        const value = JSON.parse(data.Value);  
-        if (this.item.Id == value.IDSaleOrder){
+    private notifyPayment(data) {
+        const value = JSON.parse(data.Value);
+        if (this.item.Id == value.IDSaleOrder) {
             let type;
             let status;
             let header = "Thanh toán";
-            if(value.IsRefundTransaction == true){
+            if (value.IsRefundTransaction == true) {
                 header = "Hoàn tiền";
             }
             switch (value.Status) {
                 case 'Success':
-                    status = "Thành công";                 
+                    status = "Thành công";
                     break;
                 case 'Processing':
                     status = "Đang xử lý";
@@ -630,7 +635,7 @@ export class POSCustomerOrderPage extends PageBase {
             }
             switch (value.Type) {
                 case 'Card':
-                    type = "Cà thẻ";                 
+                    type = "Cà thẻ";
                     break;
                 case 'Transfer':
                     type = "Chuyển khoản";
@@ -648,65 +653,65 @@ export class POSCustomerOrderPage extends PageBase {
                     type = "Thẻ ATM (qua Cổng ZaloPay)";
                     break;
             }
-            this.env.showAlert("<h2>"+lib.currencyFormat(value.Amount)+"</h2>",type +" | "+status,header);
+            this.env.showAlert("<h2>" + lib.currencyFormat(value.Amount) + "</h2>", type + " | " + status, header);
             this.playAudio("Payment");
             this.refresh();
         }
     }
-    private playAudio(type){
+    private playAudio(type) {
         let audio = new Audio();
-        if(type=="Order"){
+        if (type == "Order") {
             audio.src = "assets/audio/audio-order.wav";
         }
-        if(type=="Payment"){
+        if (type == "Payment") {
             audio.src = "assets/audio/audio-payment.wav";
         }
         audio.load();
         audio.play();
     }
-    async notifyFromStaff(){
-        if(this.item.Status == "Splitted"){
-            this.env.showAlert("Đơn hàng này đã được chia!",null,'Thông báo');
+    async notifyFromStaff() {
+        if (this.item.Status == "Splitted") {
+            this.env.showAlert("Đơn hàng này đã được chia!", null, 'Thông báo');
             await this.getChildrenOrder(this.item.Id);
         }
-        if(this.item.Status =='Merged'){
-            this.env.showAlert("Đơn hàng này đã được gộp!",null,'Thông báo');
+        if (this.item.Status == 'Merged') {
+            this.env.showAlert("Đơn hàng này đã được gộp!", null, 'Thông báo');
             await this.getParentOrder(this.item.IDParent);
         }
-        if(this.item.Status =='Done'){
-            this.env.showAlert("Đơn hàng này đã hoàn tất!",null,'Thông báo');
+        if (this.item.Status == 'Done') {
+            this.env.showAlert("Đơn hàng này đã hoàn tất!", null, 'Thông báo');
             this.playAudio("Order");
         }
-        if(this.item.Status =='Cancelled'){
-            this.env.showAlert("Đơn hàng này đã hủy!",null,'Thông báo');
+        if (this.item.Status == 'Cancelled') {
+            this.env.showAlert("Đơn hàng này đã hủy!", null, 'Thông báo');
         }
-        if(this.item.Status == "Confirmed"){
-            this.env.showAlert("Đơn hàng đã được xác nhận!",null,'Thông báo');   
-            this.playAudio("Order");      
+        if (this.item.Status == "Confirmed") {
+            this.env.showAlert("Đơn hàng đã được xác nhận!", null, 'Thông báo');
+            this.playAudio("Order");
         }
         // if(this.item.Status == "Scheduled"){
         //     this.env.showAlert("Món bạn vừa đặt đã được chuyển Bar/Bếp",null,'Thông báo'); 
         //     //this.playAudio("Order");        
         // }
-        if(this.item.Status == "Picking"){
-            this.env.showAlert("Món đã được chuẩn bị",null,'Thông báo');                    
+        if (this.item.Status == "Picking") {
+            this.env.showAlert("Món đã được chuẩn bị", null, 'Thông báo');
         }
-        if(this.item.Status == "Delivered"){
-            this.env.showAlert("Chúc quý khách ngon miệng",null,'Thông báo');      
+        if (this.item.Status == "Delivered") {
+            this.env.showAlert("Chúc quý khách ngon miệng", null, 'Thông báo');
         }
-        if(this.idTable != this.item.Tables[0]){
+        if (this.idTable != this.item.Tables[0]) {
             await this.reloadTable(this.item.Tables[0]);
-            this.env.showAlert("Đơn hàng của bạn đã được chuyển bàn "+this.Table.Name,null,'Thông báo chuyển bàn');
+            this.env.showAlert("Đơn hàng của bạn đã được chuyển bàn " + this.Table.Name, null, 'Thông báo chuyển bàn');
             this.env.setStorage("OrderLines" + this.idTable, []);
             this.env.setStorage("OrderLines" + this.item.Tables[0], this.OrderLines);
             this.idTable = this.item.Tables[0];
             let newURL = '#/pos-customer-order/' + this.item.Id + '/' + this.item.Tables[0];
             history.pushState({}, null, newURL);
-            
+
         }
     }
-    async reloadTable(IDTable){
-        await this.commonService.connect('GET', 'POS/ForCustomer/Table/'+IDTable, this.query).toPromise().then((result: any) => {
+    async reloadTable(IDTable) {
+        await this.commonService.connect('GET', 'POS/ForCustomer/Table/' + IDTable, this.query).toPromise().then((result: any) => {
             this.Table = result;
         });
     }
@@ -719,16 +724,16 @@ export class POSCustomerOrderPage extends PageBase {
             this.commonService.connect(apiPath.method, apiPath.url(), this.query).toPromise()
                 .then((resp: any) => {
                     let menuList = resp;
-                        menuList.forEach((m: any) => {
-                            m.menuImage = environment.posImagesServer + (m.Image ? m.Image : 'assets/pos-icons/POS-Item-demo.png');
-                            m.Items.sort((a, b) => a['Sort'] - b['Sort']);
-                            m.Items.forEach(i => {
-                                i.imgPath = environment.posImagesServer + (i.Image ? i.Image : 'assets/pos-icons/POS-Item-demo.png');
-                            });
+                    menuList.forEach((m: any) => {
+                        m.menuImage = environment.posImagesServer + (m.Image ? m.Image : 'assets/pos-icons/POS-Item-demo.png');
+                        m.Items.sort((a, b) => a['Sort'] - b['Sort']);
+                        m.Items.forEach(i => {
+                            i.imgPath = environment.posImagesServer + (i.Image ? i.Image : 'assets/pos-icons/POS-Item-demo.png');
                         });
-                        resolve(menuList);
+                    });
+                    resolve(menuList);
 
-                    
+
                 })
                 .catch(err => {
                     reject(err);
@@ -915,7 +920,7 @@ export class POSCustomerOrderPage extends PageBase {
     async checkAllowSendOrder() {
         await this.env.getStorage("OrderLines" + this.idTable).then(result => {
             if (result?.length > 0) {
-                
+
                 for (let index = 0; index < this.item.OrderLines.length; index++) {
                     let orderLine = this.item.OrderLines[index];
                     let cacheLine = result.find(od => od.Item.Id == orderLine.IDItem);
@@ -948,9 +953,9 @@ export class POSCustomerOrderPage extends PageBase {
 
             if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
                 let order = {
-                    Id:savedItem.Id,
-                    IDTable:this.idTable,
-                    TableName:this.Table.Name,
+                    Id: savedItem.Id,
+                    IDTable: this.idTable,
+                    TableName: this.Table.Name,
                 }
                 this.addOrderToStorage(order);
                 this.id = savedItem.Id;
@@ -967,30 +972,30 @@ export class POSCustomerOrderPage extends PageBase {
         this.submitAttempt = false;
     }
 
-    closeSuccessModal(){
-        this.isSuccessModalOpen = false; 
+    closeSuccessModal() {
+        this.isSuccessModalOpen = false;
         setTimeout(() => {
             this.pageConfig.isShowFeature = false;
         }, 1);
-        
+
     }
 
     async sendOrder() {
-        if(this.Table.IsAllowCustomerOrder == true){       
-            if(this.id == 0){
+        if (this.Table.IsAllowCustomerOrder == true) {
+            if (this.id == 0) {
                 await this.checkOrderOfTable(this.idTable);
-                if(this.id !=0){
+                if (this.id != 0) {
                     let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
-                    history.pushState({}, null, newURL); 
-                    this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ","Kiểm tra đơn hàng và cập nhật",'Thông báo');               
+                    history.pushState({}, null, newURL);
+                    this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ", "Kiểm tra đơn hàng và cập nhật", 'Thông báo');
                     this.refresh();
-                    
+
                 }
-                else{
+                else {
                     this.saveOrder();
                 }
             }
-            else{
+            else {
                 this.saveOrder();
             }
         }
@@ -1000,7 +1005,7 @@ export class POSCustomerOrderPage extends PageBase {
         }
     }
 
-    saveOrder(){
+    saveOrder() {
         this.saveChange();
         this.AllowSendOrder = false;
         this.IsMyHandle = true;
@@ -1025,16 +1030,16 @@ export class POSCustomerOrderPage extends PageBase {
 
     isSuccessModalOpen = false;
 
-    callStaff(){
+    callStaff() {
         let ItemModel = {
             ID: this.idTable,
             Code: "POSSupport",
             Name: this.Table.IDBranch,
             Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu phục vụ"
         }
-        this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result=>{
-            this.env.showMessage("Đã gọi phục vụ","success");
-        }).catch(err=>{
+        this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result => {
+            this.env.showMessage("Đã gọi phục vụ", "success");
+        }).catch(err => {
             console.log(err);
         });
 
@@ -1043,55 +1048,55 @@ export class POSCustomerOrderPage extends PageBase {
     async helpOrder(status) {
         let subHeader;
         let message;
-        if(status == 'Done'){
+        if (status == 'Done') {
             subHeader = 'Đơn hàng đã hoàn tất';
             message = 'Không thể thao tác trên đơn hàng này. Vui lòng quét lại mã để đặt món';
         }
-        if(status == 'Splitted'){
+        if (status == 'Splitted') {
             subHeader = 'Đơn hàng đã chia';
             message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
         }
-        if(status == 'Cancelled'){
+        if (status == 'Cancelled') {
             subHeader = 'Đơn hàng đã hủy';
             message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
         }
-        if(status == 'Merged'){
+        if (status == 'Merged') {
             subHeader = 'Đơn hàng đã gộp';
             message = 'Không thể thao tác trên đơn hàng này. Vui lòng đi đến đơn gốc để tiếp tục đặt hàng';
         }
-        this.env.showAlert(message,subHeader,'Thông báo'); 
+        this.env.showAlert(message, subHeader, 'Thông báo');
     }
 
-    async checkOrderOfTable(IDTable){
-        let apiPath = { method: "GET",url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/OrderOfTable/") + id }};
-        await this.commonService.connect(apiPath.method, apiPath.url(IDTable), this.query).toPromise().then(result=>{
-            if(result){  
+    async checkOrderOfTable(IDTable) {
+        let apiPath = { method: "GET", url: function (id) { return ApiSetting.apiDomain("POS/ForCustomer/OrderOfTable/") + id } };
+        await this.commonService.connect(apiPath.method, apiPath.url(IDTable), this.query).toPromise().then(result => {
+            if (result) {
                 this.id = result;
             }
-        }).catch(err => {});
+        }).catch(err => { });
     }
-    async getOrdersOfTable(IDTable){
-        await this.commonService.connect('GET', 'POS/ForCustomer/OrdersOfTable/'+IDTable, null).toPromise().then(result=>{
-            if(result){  
+    async getOrdersOfTable(IDTable) {
+        await this.commonService.connect('GET', 'POS/ForCustomer/OrdersOfTable/' + IDTable, null).toPromise().then(result => {
+            if (result) {
                 this.OrdersOfTable = result;
             }
-        }).catch(err => {});
+        }).catch(err => { });
     }
-    goToOrder(IDSaleOrder,IDTable){
+    goToOrder(IDSaleOrder, IDTable) {
         this.id = IDSaleOrder;
         let newURL = '#/pos-customer-order/' + IDSaleOrder + '/' + IDTable;
-        history.pushState({}, null, newURL);               
+        history.pushState({}, null, newURL);
         this.refresh();
     }
-    async addOrderToStorage(order){
+    async addOrderToStorage(order) {
         let Orders = [];
-        await this.env.getStorage('Orders').then(result=>{
-            if(result){
+        await this.env.getStorage('Orders').then(result => {
+            if (result) {
                 Orders = result;
-                Orders.push(order); 
-            }else{
                 Orders.push(order);
-            }  
+            } else {
+                Orders.push(order);
+            }
         });
         this.env.setStorage('Orders', Orders);
     }

@@ -879,6 +879,11 @@ export class POSOrderDetailPage extends PageBase {
 
     //Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về. 
     private calcOrder() {
+        this.Discount = {
+            Amount:this.item.OriginalTotalDiscount,
+            Percent:this.item.OriginalTotalDiscount *100 / this.item.OriginalTotalBeforeDiscount,
+        }
+        
         this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
 
         this.item.OriginalTotalBeforeDiscount = 0;

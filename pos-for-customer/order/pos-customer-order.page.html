@@ -35,7 +35,7 @@
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
 			<!-- Dishes -->
-			<div class="box" *ngIf="item?.Status=='Done' || item?.Status=='Cancelled'">
+			<!-- <div class="box" *ngIf="item?.Status=='Done' || item?.Status=='Cancelled'">
 				<ion-row>
 					<ion-col size="12" class="ion-text-center">
 						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
@@ -78,7 +78,7 @@
 					</ion-col>
 				</ion-row>
 				
-			</div>
+			</div> -->
 			<div class="box" *ngIf="item?.OrderLines?.length">
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
@@ -277,7 +277,7 @@
 	</ng-container> -->
 	
 
-	<ion-modal [isOpen]="isWifiSecuredModalOpen">
+	<ion-modal [isOpen]="isWifiSecuredModalOpen" (willDismiss)="isWifiSecuredModalOpen = false">
 		<ng-template>
 			<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
 				<div class="ion-padding" class="customer-message">
