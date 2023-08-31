@@ -64,9 +64,8 @@
 		<app-page-message [itemsLength]="items.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 		<div *ngIf="items.length && pageConfig.showSpinner==false">
 			<section class="table">
-				<ion-virtual-scroll [items]="items" approxItemHeight="72px">
-					<ng-container *virtualItem="let i; let itemBounds = bounds; let j = index;">
-						<div (click)="nav('pos-work-order/'+i.Id,'forward')" class="row clickable" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}">
+				
+						<div *ngFor="let i of items; let j = index;" (click)="nav('pos-work-order/'+i.Id,'forward')" class="row clickable" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}">
 							<div class="col-checkbox cell">
 								<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
 							</div>
@@ -90,8 +89,6 @@
 								{{i.TotalAfterTax | currency: 'VND':'':'1.0-0':''}}
 							</div>
 						</div>
-					</ng-container>
-				</ion-virtual-scroll>
 			</section>
 		</div>
 		<ion-infinite-scroll color="primary" threshold="20%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">

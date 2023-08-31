@@ -647,9 +647,7 @@ export class POSCustomerOrderPage extends PageBase {
 
     async addContact() {
         const modal = await this.modalController.create({
-            component: SaleOrderMobileAddContactModalPage,
-            swipeToClose: true,
-            cssClass: 'my-custom-class',
+            component: SaleOrderMobileAddContactModalPage,            cssClass: 'my-custom-class',
             componentProps: {
                 'firstName': 'Douglas',
                 'lastName': 'Adams',
@@ -711,7 +709,6 @@ export class POSCustomerOrderPage extends PageBase {
 
         const modal = await this.modalController.create({
             component: POSCustomerOrderModalPage,
-            swipeToClose: false,
             backdropDismiss: false,
             cssClass: 'modal-customer-order-item',
             componentProps: {
@@ -1261,7 +1258,6 @@ export class POSCustomerOrderPage extends PageBase {
     async processDiscounts() {
         const modal = await this.modalController.create({
             component: POSDiscountModalPage,
-            swipeToClose: false,
             backdropDismiss: false,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -1300,7 +1296,6 @@ export class POSCustomerOrderPage extends PageBase {
     async processPayments() {
         const modal = await this.modalController.create({
             component: POSPaymentModalPage,
-            swipeToClose: false,
             backdropDismiss: false,
             cssClass: 'modal-change-table',
             componentProps: {

@@ -1,27 +1,27 @@
 <ion-header>
-	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-order.page-title' | translate}} || {{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}" [ShowRefresh]="false" [ShowAdd]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (showNotify)="showNotify()" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (cancelOrder)="openCancellationReason()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
-		<span class="hide-small" title>{{'erp.app.pages.pos.pos-order.order-quantity' | translate}}: {{orderCounter}}</span>
+	<app-list-toolbar pageTitle="{{'POS' | translate}} || {{'Order Qty' | translate}}: {{orderCounter}}" [ShowRefresh]="false" [ShowAdd]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false" [ShowSearch]="false" [ShowFeature]="false" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (showNotify)="showNotify()" (add)="add()" (refresh)="refresh(true)" (changeTable)="changeTable($event)" (splitOrder)="splitPOSBill()" (cancelOrder)="openCancellationReason()" (help)="help()" (unselect)="unselect()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)">
+		<span class="hide-small" title>{{'Order Qty' | translate}}: {{orderCounter}}</span>
 		<span class="hide-small ion-margin-start" title>Số khách: {{numberOfGuestCounter}}</span>
-		
-		<ion-button class="toggle" title="{{'erp.app.pages.pos.pos-order.show-feature' | translate}}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+
+		<ion-button class="toggle" title="{{'View order' | translate}}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon slot="icon-only" [name]="pageConfig.isShowFeature? 'albums-outline':'albums-outline'">
 			</ion-icon>
 		</ion-button>
 		<ion-buttons slot="end">
-			<ion-button  class="ion-margin-end" [ngClass]="{'blink': notifications.length > 0}"  title="thông báo" (click)="showNotify()">
-				<ion-icon name="notifications-outline"></ion-icon> <sup *ngIf="notifications.length > 0"><ion-text >{{notifications.length}}</ion-text></sup>
+			<ion-button class="ion-margin-end" [ngClass]="{'blink': notifications.length > 0}" title="thông báo" (click)="showNotify()">
+				<ion-icon name="notifications-outline"></ion-icon> <sup *ngIf="notifications.length > 0"><ion-text>{{notifications.length}}</ion-text></sup>
 			</ion-button>
-			<ion-button title="{{'erp.app.components.detail-toolbar.refresh' | translate}}" color="primary" (click)="refresh(true)">
-                <ion-icon slot="icon-only" name="reload-outline"></ion-icon>
-            </ion-button>
+			<ion-button title="{{'Refresh' | translate}}" color="primary" (click)="refresh(true)">
+				<ion-icon slot="icon-only" name="reload-outline"></ion-icon>
+			</ion-button>
 		</ion-buttons>
-		
+
 
 	</app-list-toolbar>
-	<ion-toolbar style="position: absolute; z-index: 100; padding-top: 0px !important;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list" >
+	<ion-toolbar style="position: absolute; z-index: 100; padding-top: 0px !important;" *ngIf="pageConfig.isShowFeature" class="no-padding table-list">
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 			<ion-segment-button value="all">
-				<ion-label>{{'erp.app.pages.pos.pos-order.all' | translate}}</ion-label>
+				<ion-label>{{'All' | translate}}</ion-label>
 			</ion-segment-button>
 
 			<ion-segment-button *ngFor="let g of tableGroupList" [value]="g.Id">
@@ -31,8 +31,8 @@
 		</ion-segment>
 	</ion-toolbar>
 	<div class="so-rows">
-		<ion-toolbar style="padding-top: 0px !important;" class="no-padding" >
-			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'erp.app.pages.pos.pos-order.search-placeholder' | translate}}"></ion-searchbar>
+		<ion-toolbar style="padding-top: 0px !important;" class="no-padding">
+			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'Search order ID' | translate}}"></ion-searchbar>
 
 			<ion-buttons slot="primary">
 				<ion-button (click)="filter()" title="Ản/Hiện đơn đã xong">
@@ -102,7 +102,7 @@
 											</ion-item>
 
 											<ng-container *ngFor="let od of t._Orders">
-												<ion-item >
+												<ion-item>
 													<ion-icon color="primary" slot="icon-only" name="ellipsis-vertical" slot="end" [id]="'nested-trigger-'+od.Id"></ion-icon>
 													<ion-label>
 														<a routerDirection="forward" [routerLink]="['/'+pageConfig.pageName+'/'+od.Id+'/'+t.Id]" (click)="$event.stopPropagation(); this.popoverCtrl.dismiss();">
@@ -160,58 +160,51 @@
 			<app-page-message [itemsLength]="items.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 			<div *ngIf="items.length && pageConfig.showSpinner==false">
 				<section class="table">
-					<ion-virtual-scroll [items]="items" approxItemHeight="150px">
-						<ng-container *virtualItem="let i; let itemBounds = bounds; let j = index;">
-							<div class="row clickable" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}" (click)="nav('pos-order/'+i.Id+'/'+i.Tables[0],'forward')">
+					<div *ngFor="let i of items; let j = index;" class="row clickable" [ngClass]="{odd: j % 2 != 0}" [ngClass]="{selected: i.checked}" (click)="nav('pos-order/'+i.Id+'/'+i.Tables[0],'forward')">
+						<div class="col-checkbox cell">
+							<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
+						</div>
+						<div class="col-id cell">
+							<b><span *ngFor="let t of i._Tables">{{t.Name}}&nbsp;</span></b>
+						</div>
+						<div class="col-guest cell">
+							<ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
+						</div>
+						<div class="col-code cell">
+							<span>#{{i.Id}}</span>
+						</div>
 
-								<div class="col-checkbox cell">
-									<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
-								</div>
-								<div class="col-id cell">
-									<b><span *ngFor="let t of i._Tables">{{t.Name}}&nbsp;</span></b>
-								</div>
-								<div class="col-guest cell">
-									<ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
-								</div>
-								<div class="col-code cell">
-									<span>#{{i.Id}}</span>
-								</div>
-								<!-- <div class="col-status cell">
-									<span class="bar-holder">
-										<ion-text class="bar-title" [color]="i._Status.Color">{{i._Status.Name}}</ion-text>
-										<span class="bar" [ngClass]="{active: s.Code==i.Status}" [ngStyle]="{'background-color': 'var(--ion-color-'+s.Color+')'}" *ngFor="let s of soStatusList" [title]="s.Name"></span>
-									</span>
-								</div> -->
-								<div class="col-code cell" *ngIf="i._Status">
-									<span>
-										<ion-text [color]="i._Status.Color" [title]="i._Status.Name">
-											{{i._Status.Name}}
-										</ion-text>
-									</span>
-								</div>
-								<div class="col-date cell">
-									{{i.OrderDate | date: 'HH:mm dd/MM'}}
-								</div>
-								<div class="col-number cell">
-									{{i.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}}
-								</div>
-
-								<div class="col-button cell hide-small" *ngIf="!i._Locked">
-									<ion-button (click)="$event.stopPropagation(); changeTable(i)" size="small" color="warning">
-										{{'erp.app.pages.pos.pos-order.change.change-button' | translate}}
-									</ion-button>
-								</div>
-							</div>
-						</ng-container>
-					</ion-virtual-scroll>
+						<div class="col-code cell" *ngIf="i._Status">
+							<span>
+								<ion-text [color]="i._Status.Color" [title]="i._Status.Name">
+									{{i._Status.Name}}
+								</ion-text>
+							</span>
+						</div>
+						<div class="col-date cell">
+							{{i.OrderDate | date: 'HH:mm dd/MM'}}
+						</div>
+						<div class="col-number cell">
+							<ion-text [color]="i._Status.Color">
+								{{i.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}}	
+							</ion-text>
+						</div>
+						<div class="col-button cell hide-small" *ngIf="!i._Locked">
+							
+							<ion-button (click)="$event.stopPropagation(); changeTable(i)" size="small" fill="outline" color="warning">
+								{{'Change table' | translate}}
+							</ion-button>
+						</div>
+					</div>
 				</section>
 			</div>
+			<ion-infinite-scroll color="primary" threshold="50%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
+				<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
+			</ion-infinite-scroll>
 		</div>
 	</ng-container>
 
-	<ion-infinite-scroll color="primary" threshold="20%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
-		<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
-	</ion-infinite-scroll>
+	
 
 
 

@@ -4,9 +4,9 @@
 			Bàn: <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
 		</ion-button>
 
-		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-order.menu-placeholder' | translate}}"></ion-searchbar>
+		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
 
-		<ion-button class="cart" title="{{'erp.app.pages.pos.pos-order.cart-placeholder' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+		<ion-button class="cart" title="{{'Cart' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
 		</ion-button>
@@ -18,7 +18,7 @@
 	<!-- list Item -->
 	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
-		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
+		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 180px);">
 			<!-- Dishes -->
 			<div class="box" *ngIf="item?.OrderLines?.length">
 				<div style="padding: 0px 16px !important;">
@@ -30,7 +30,7 @@
 									<div class="od-info" *ngIf="line._item">
 										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
 										<div class="od-price">
-											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'erp.app.pages.pos.pos-order.vat' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
+											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 										</div>
 										<div>
 											<ion-text [color]="line?.StatusColor"><small>{{line?.StatusText}}</small></ion-text>
@@ -56,7 +56,7 @@
 
 
 
-									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="line._isShowNote =! line._isShowNote; line._isShowFoC = false">
+									<ion-button title='Thêm ghi chú món ăn' fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="openQuickMemo(line)">
 										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"></ion-icon>
 									</ion-button>
 									<span class="quantity">
@@ -67,8 +67,9 @@
 									</span>
 								</div>
 
-								<div class="od-remark clickable" (click)="openQuickMemo(line)">
-									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="(line._isShowNote || line.Remark != null)" spellcheck="false" placeholder="Thêm ghi chú cho món"></textarea>
+								<div class="od-remark " style="position: relative;" *ngIf="(line._isShowNote || line.Remark != null)">
+									<div class="clickable fullfill" (click)="openQuickMemo(line)"></div>
+									<textarea cols="30" rows="10" formControlName="Remark" spellcheck="false" placeholder="{{'Memo...'|translate}}"></textarea>
 								</div>
 								<div class="c-control ion-margin-top" *ngIf="line._isShowFoC">
 									<span disabled class="c-input ion-margin-bottom"><span class="ion-float-left">Tổng tiền SP</span> <span class="ion-float-right">{{line.CalcTotalOriginal | number: '1.0-0'}} đ</span> </span>
@@ -226,7 +227,7 @@
 							<div class="text-right">
 								<ion-button expand="block" [disabled]="submitAttempt" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" style="margin-top: 5px; margin-bottom: 9px;" size="small" (click)="addContact()">
 									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-									{{'erp.app.pages.pos.pos-order.add-contact' | translate}}
+									{{'Create new customer' | translate}}
 								</ion-button>
 							</div>
 							<ion-item *ngIf="Staff" lines="none" class="staff-info">
@@ -248,7 +249,7 @@
 									</ng-template>
 								</ion-modal>
 							</ion-item>
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'erp.app.pages.pos.pos-order.idaddress-placeholder' | translate}}">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'Search for name, code or phone number' | translate}}">
 								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
 									{{i.Name}}
 									<small *ngIf="a">
@@ -272,7 +273,7 @@
 											<span *ngIf="a.Province">, {{a.Province}}</span>
 											<br *ngIf="a.AddressLine2 || a.Contact">
 											<span *ngIf="a.AddressLine2">{{a.AddressLine2}}</span>
-											<span *ngIf="a.Contact"> | {{'erp.app.pages.pos.pos-order.contact' | translate}}: {{a.Contact}}</span>
+											<span *ngIf="a.Contact"> | {{'Contact' | translate}}: {{a.Contact}}</span>
 											<span *ngIf="a.Phone1"> - {{a.Phone1}}</span>
 											<span *ngIf="a.Phone2"> - {{a.Phone2}}</span>
 										</small>
@@ -285,7 +286,7 @@
 							<input #numberOfGuestsInput style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="NumberOfGuests" (change)="saveChange();" placeholder="Số khách" />
 						</div>
 						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Tables" (change)="changeTable();" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.table-placeholder' | translate}}">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Tables" (change)="changeTable();" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'Select Table' | translate}}">
 								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
 									<div *ngIf="i">
 										<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
@@ -304,7 +305,7 @@
 						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
 							<label for=""></label>
 							<ion-button size="small" color="danger" expand="block" fill="outline" (click)="openCancellationReason();" [disabled]="submitAttempt || !pageConfig.canCancelOrder">
-								{{'erp.app.pages.pos.pos-order.cancel' | translate}}
+								{{'Cancel' | translate}}
 							</ion-button>
 						</div>
 
@@ -316,12 +317,12 @@
 		<div class="functions-list">
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col *ngIf="pageConfig.canEdit && pageConfig.IsAutoSave">
+					<ion-col *ngIf="pageConfig.canEdit && pageConfig.systemConfig.IsAutoSave">
 						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
 							Chuyển BAR/KIT
 						</ion-button>
 					</ion-col>
-					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.IsAutoSave">
+					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.systemConfig.IsAutoSave">
 						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt">
 							Lưu đơn
 						</ion-button>
@@ -335,14 +336,14 @@
 				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
 					<ion-col size="12">
 						<ion-button *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
-							<ion-text>Thanh toán {{item.Debt | number: '1.0-0'}} </ion-text>
+							<ion-text>{{'Bill please'}} {{item.Debt | number: '1.0-0'}} </ion-text>
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
+				<ion-row *ngIf="item && pageConfig.canEdit && !pageConfig.systemConfig.POSSettleAtCheckout" style="flex-wrap: nowrap;">
 					<ion-col>
 						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
-							<ion-text>Hoàn tất</ion-text>
+							<ion-text>{{'Settle bill' | translate}}</ion-text>
 						</ion-button>
 					</ion-col>
 				</ion-row>
@@ -446,7 +447,7 @@
 
 										<ng-container *ngIf="pageConfig.canEdit">
 											<span class="brand">[ ORDER ]</span>
-											<span>({{'erp.app.pages.pos.pos-order.bill-no' | translate}}: {{id}})</span>
+											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="!pageConfig.canEdit">
 											<span class="brand">[ RECEIPT ]</span>
@@ -457,21 +458,21 @@
 									<div class="table-info">
 										<table>
 											<tr>
-												<td class="title">{{'erp.app.pages.pos.pos-order.table' | translate}}</td>
+												<td class="title">{{'Table' | translate}}</td>
 												<td><span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span></td>
 											</tr>
 											<tr>
-												<td class="title">{{'erp.app.pages.pos.pos-order.date' | translate}}</td>
+												<td class="title">{{'Date' | translate}}</td>
 												<td>{{item.OrderDate | date: 'HH:mm dd/MM'}}</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
-												<td class="title">{{'erp.app.pages.pos.pos-order.customer' | translate}}</td>
+												<td class="title">{{'Customer' | translate}}</td>
 												<td>{{item._Customer?.Name}}
 
 												</td>
 											</tr>
 											<tr *ngIf="kitchenQuery!='all'">
-												<td class="title">{{'erp.app.pages.pos.pos-order.send-to' | translate}}</td>
+												<td class="title">{{'Send To' | translate}}</td>
 												<td><span *ngFor="let k of kitchenList | filter:{Id:kitchenQuery}">{{k.Name}}</span></td>
 											</tr>
 										</table>
@@ -479,11 +480,11 @@
 									<div class="items" *ngIf="kitchenQuery=='all'">
 										<table>
 											<tr class="bold small">
-												<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
+												<td>{{'Item' | translate}}</td>
 												<td>Price</td>
 												<td>Qty</td>
 												<td class="text-right">Discount</td>
-												<td class="text-right">{{'erp.app.pages.pos.pos-order.amount' | translate}}</td>
+												<td class="text-right">{{'Amount' | translate}}</td>
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
 												<tr class="small">
@@ -504,8 +505,8 @@
 									<div class="items" *ngIf="kitchenQuery!='all'">
 										<table>
 											<tr class="bold">
-												<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
-												<td class="total">{{'erp.app.pages.pos.pos-order.quantity' | translate}}</td>
+												<td>{{'Item' | translate}}</td>
+												<td class="total">{{'Qty' | translate}}</td>
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery} ; let idx = index ">
 												<ng-container *ngIf="o._undeliveredQuantity > 0">
@@ -527,91 +528,107 @@
 									<div style="border-bottom: none;" class="table-info" *ngIf="kitchenQuery!='all'">
 										<table>
 											<tr>
-												<td class="title">{{'erp.app.pages.pos.pos-order.print-date' | translate}}</td>
+												<td class="title">{{'PrintDate' | translate}}</td>
 												<td class="text-right"><span>{{printData.printDate}}</span></td>
 											</tr>
 										</table>
 									</div>
 
+
 									<ng-container *ngIf="kitchenQuery=='all'">
+
+										<!-- Total & Discount -->
 										<div class="table-info-top">
 											<table>
 												<tr>
-													<td class="title">TOTAL</td>
+													<td class="title">{{'Total' | translate }}</td>
 													<td class="text-right"><span>{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title">Discount [ {{item.OriginalTotalDiscountPercent}}% ]</td>
+													<td class="title">{{'Discount' | translate }} [ {{item.OriginalTotalDiscountPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 											</table>
 										</div>
+
+										<!-- Service charge -->
 										<div class="table-info-top">
 											<table>
 												<tr>
-													<td class="title">Discounted Amount</td>
+													<td class="title">{{'Discounted amount' | translate}}</td>
 													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title">Service Charge [ {{item.AdditionsAmountPercent}}% ]</td>
+													<td class="title">{{'Service charge' | translate}} [ {{item.AdditionsAmountPercent}}% ]</td>
 													<td class="text-right"><span>{{item.AdditionsAmount | number: '1.0-0'}}</span></td>
 												</tr>
 											</table>
 										</div>
+
+										<!-- VAT -->
 										<div class="table-info-top">
 											<table>
 												<tr>
-													<td class="title">Base VAT Amount</td>
+													<td class="title">{{'Base VAT amount' | translate}}</td>
 													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount + item.AdditionsAmount | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title">{{'erp.app.pages.pos.pos-order.tax' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
+													<td class="title">{{'VAT' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span></td>
 												</tr>
 											</table>
 										</div>
 
+										<!-- Total -->
 										<div class="table-info-top">
 											<table>
 												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
-													<td class="title">{{'erp.app.pages.pos.pos-order.total-discount-from-saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
+													<td class="title">{{'Discount from saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
 													<td class="text-right"><span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
 												<tr>
-													<td class="title bold">{{'erp.app.pages.pos.pos-order.total-after-tax' | translate}}</td>
+													<td class="title bold">{{'Total affter tax' | translate}}</td>
 													<td class="text-right bold"><span>{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
 												</tr>
 											</table>
 										</div>
-										<ng-container *ngIf="item.Status == 'Done'">
-											<div class="table-info-top">
-												<table>
-													<tr>
-														<td class="title bold">Type</td>
-														<td class="text-right bold"><span>Amount</span></td>
-													</tr>
-													<tr *ngFor="let p of paymentList">
-														<ng-container *ngIf="p.IncomingPayment.Status == 'Success'">
-															<td class="title">
-																{{p.IncomingPayment.TypeText}}
-																<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span>
-																<span *ngIf="p.IncomingPayment.IsRefundTransaction"> | Refund</span>
-															</td>
-															<td class="text-right"><span>{{p.IncomingPayment.Amount | number: '1.0-0'}}</span></td>
-														</ng-container>
-													</tr>
-													<tr *ngIf="item.Debt > 0">
-														<td class="title">Debt:</td>
-														<td class="text-right"><span>{{item.Debt | number: '1.0-0'}}</span></td>
-													</tr>
-												</table>
-											</div>
-										</ng-container>
+
+										<!-- Amount paid -->
+										<div class="table-info-top">
+											<table>
+												<tr>
+													<td class="title bold">{{'Amount paid' | translate}}</td>
+													<td class="text-right bold"><span>{{item.Received | number: '1.0-0' }}</span></td>
+												</tr>
+												<tr *ngFor="let p of paymentList">
+													<ng-container *ngIf="p.IncomingPayment.Status == 'Success'">
+														<td class="title">
+															 - {{p.IncomingPayment.TypeText}}
+															<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span>
+															<span *ngIf="p.IncomingPayment.IsRefundTransaction"> | Refund</span>
+															<small *ngIf="p.IncomingPayment.Remark"> | {{p.IncomingPayment.Remark}}</small>
+														</td>
+														<td class="text-right"><span>{{p.Amount | number: '1.0-0'}}</span></td>
+													</ng-container>
+												</tr>
+											</table>
+										</div>
+
+										<!-- Amount Due -->
+										<div class="table-info-top">
+											<table>
+												<tr *ngIf="item.Debt > 0">
+													<td class="title bold">{{'Amount Due' | translate}}:</td>
+													<td class="text-right bold"><span>{{item.Debt | number: '1.0-0'}}</span></td>
+												</tr>
+											</table>
+										</div>
+
 										<div class="message">
-											<div><small>{{'erp.app.pages.pos.pos-order.bill-info' | translate}}</small></div>
-											<div><small>This bill is valid within day</small></div>
+											<div><small>{{"This bill's invoice can only be generated in the same day" | translate}}</small></div>
+											<div><small>{{'This bill is valid within day' | translate}}</small></div>
 											<div class="ion-text-uppercase">
-												{{'erp.app.pages.pos.pos-order.see-you' | translate}}
+												{{'Thank you! See you again!' | translate}}
 											</div>
 										</div>
 									</ng-container>
@@ -653,7 +670,7 @@
 												<table>
 													<tr>
 														<td class="title table-name-bill" colspan="2">
-															<ion-text class="bold ">{{'erp.app.pages.pos.pos-order.table' | translate}}: </ion-text>
+															<ion-text class="bold ">{{'Table' | translate}}: </ion-text>
 															<ng-container *ngFor="let t of printData.selectedTables">
 																<ion-text class="bold">{{t.Name}};</ion-text>
 															</ng-container>
@@ -662,8 +679,8 @@
 												</table>
 												<table>
 													<tr class="bold">
-														<td>{{'erp.app.pages.pos.pos-order.item' | translate}}</td>
-														<td class="total">{{'erp.app.pages.pos.pos-order.quantity' |
+														<td>{{'Item' | translate}}</td>
+														<td class="total">{{'Qty' |
 															translate}}</td>
 													</tr>
 													<ng-container>
@@ -685,7 +702,7 @@
 											<div style="border-bottom: none;" class="table-info" *ngIf="kitchenQuery!='all'">
 												<table>
 													<tr>
-														<td class="title">{{'erp.app.pages.pos.pos-order.print-date' |
+														<td class="title">{{'PrintDate' |
 															translate}}</td>
 														<td class="text-right"><span>{{printData.printDate}}</span></td>
 													</tr>

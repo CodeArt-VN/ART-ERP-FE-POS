@@ -154,6 +154,10 @@ export class POSOrderDetailPage extends PageBase {
 
 
         });
+
+
+        
+
     }
 
     ////EVENTS
@@ -187,9 +191,10 @@ export class POSOrderDetailPage extends PageBase {
         }          
     }
 
-    
-
     preLoadData(event?: any): void {
+        //'IsUseIPWhitelist','IPWhitelistInput', 'IsRequireOTP','POSLockSpamPhoneNumber',
+        let sysConfigQuery = ['IsAutoSave','SODefaultBusinessPartner','POSSettleAtCheckout','POSHideSendBarKitButton','POSEnableTemporaryPayment','POSAutoPrintBillAtSettle'];
+
         let forceReload = event === 'force';
         Promise.all([
             this.env.getStatus('POSOrder'),
@@ -197,26 +202,28 @@ export class POSOrderDetailPage extends PageBase {
             this.getTableGroupFlat(forceReload),
             this.getMenu(forceReload),
             this.getDeal(),
-            this.sysConfigProvider.read({ Code: 'SODefaultBusinessPartner' }),
+            this.sysConfigProvider.read({ Code_in: sysConfigQuery }),
             this.env.getType('PaymentType'),
-            this.pageProvider.commonService.connect('GET', 'SYS/Config/ConfigByBranch', {Code: 'IsAutoSave', IDBranch: this.env.selectedBranch}).toPromise(),
         ]).then((values: any) => {
+            this.pageConfig.systemConfig = {};
+            values[5]['data'].forEach(e=>{
+                if((e.Value == null || e.Value == 'null') && e._InheritedConfig){
+                    e.Value = e._InheritedConfig.Value;
+                }
+                this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
+            })
+
             this.soStatusList = values[0];
             this.soDetailStatusList = values[1];
             this.tableList = values[2];
             this.menuList = values[3];
             this.dealList = values[4];
-            let DefaultDPList = values[5]['data'];
-            if (DefaultDPList.length) {
-                for (let index = 0; index < DefaultDPList.length; index++) {
-                    let dbp = JSON.parse(DefaultDPList[index].Value);
-                    this.contactListSelected.push(dbp);
-                }
+            
+            if(this.pageConfig.systemConfig.SODefaultBusinessPartner){
+                this.contactListSelected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
             }
+            
             this.paymentType = values[6];
-            if (values[7]['Value']) {
-                this.pageConfig.IsAutoSave = Boolean(JSON.parse(values[7]['Value']));
-            }
             super.preLoadData(event);
         }).catch(err => {
             this.loadedData();
@@ -386,9 +393,7 @@ export class POSOrderDetailPage extends PageBase {
 
         const modal = await this.modalController.create({
             component: POSMemoModalPage,
-            id: 'POSMemoModalPage',
-            swipeToClose: true,
-            backdropDismiss: true,
+            id: 'POSMemoModalPage',            backdropDismiss: true,
             cssClass: 'modal-quick-memo',
             componentProps: {
                 item: JSON.parse(JSON.stringify(line))
@@ -557,9 +562,7 @@ export class POSOrderDetailPage extends PageBase {
 
         const modal = await this.modalController.create({
             component: POSCancelModalPage,
-            id: 'POSCancelModalPage',
-            swipeToClose: true,
-            backdropDismiss: true,
+            id: 'POSCancelModalPage',            backdropDismiss: true,
             cssClass: 'modal-cancellation-reason',
             componentProps: { item: {} }
         });
@@ -1212,7 +1215,7 @@ export class POSOrderDetailPage extends PageBase {
         this.calcOrder();
 
 
-        if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && this.pageConfig.IsAutoSave) {
+        if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && this.pageConfig.systemConfig.IsAutoSave) {
             if (instantly) 
                 this.saveChange();
             else
@@ -1248,7 +1251,7 @@ export class POSOrderDetailPage extends PageBase {
         this.loadedData();
 
         this.submitAttempt = false;
-        this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete', 'success');
+        this.env.showTranslateMessage('Saving completed!', 'success');
 
         if (savedItem.Status == "Done") {
             this.sendPrint(savedItem.Status, true);
@@ -1290,9 +1293,7 @@ export class POSOrderDetailPage extends PageBase {
 
     async addContact() {
         const modal = await this.modalController.create({
-            component: POSContactModalPage,
-            swipeToClose: true,
-            cssClass: 'my-custom-class',
+            component: POSContactModalPage,            cssClass: 'my-custom-class',
             componentProps: {
                 item: null
             }
@@ -1360,14 +1361,20 @@ export class POSOrderDetailPage extends PageBase {
                     this.paymentList.forEach(e => {
                         e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentType, 'Name', '--', 'Code');
                     });
-                    let PaidAmounted = this.paymentList?.filter(x => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
-                    let RefundAmount = this.paymentList?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.IncomingPayment.Amount).reduce((a, b) => (+a) + (+b), 0);
+                    let PaidAmounted = this.paymentList?.filter(x => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
+                    let RefundAmount = this.paymentList?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
                     
                     this.item.Received = PaidAmounted - RefundAmount;                 
                     this.item.Debt = Math.round((this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received);
                     if (this.item.Debt > 0) {
                         this.item.IsDebt = true;
                     }
+
+                    if (this.pageConfig.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done') {
+                        this.env.showTranslateMessage('The order has been paid, the system will automatically close this bill.');
+                        this.doneOrder();
+                    }
+
                 })
                 .catch(err => {
                     reject(err);
@@ -1701,12 +1708,12 @@ export class POSOrderDetailPage extends PageBase {
         new Promise((resolve, reject) => {
             this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), { IDProgram: p.Id, IDSaleOrder: this.item.Id }).toPromise()
                 .then((savedItem: any) => {
-                    this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete', 'success');
+                    this.env.showTranslateMessage('Saving completed!', 'success');
                     resolve(true);
                     this.refresh();
                 })
                 .catch(err => {
-                    this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save', 'danger');
+                    this.env.showTranslateMessage('Cannot save, please try again!', 'danger');
                     reject(err);
                 });
         });
@@ -1983,10 +1990,10 @@ export class POSOrderDetailPage extends PageBase {
 	 applyDiscount(){
         this.pageProvider.commonService.connect('POST', 'SALE/Order/UpdatePosOrderDiscount/', {Id:this.item.Id,Percent:this.Discount.Percent}).toPromise()
         .then(result=>{
-            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');
+            this.env.showTranslateMessage('Saving completed!','success');
             this.refresh();
         }).catch(err=>{
-            this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save','danger');
+            this.env.showTranslateMessage('Cannot save, please try again!','danger');
         })  
     }
 }

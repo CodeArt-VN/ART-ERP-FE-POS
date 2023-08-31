@@ -348,9 +348,7 @@ export class POSCustomerOrderPage extends PageBase {
 
         const modal = await this.modalController.create({
             component: POSCustomerMemoModalPage,
-            id: 'POSMemoModalPage',
-            swipeToClose: true,
-            backdropDismiss: true,
+            id: 'POSMemoModalPage',            backdropDismiss: true,
             cssClass: 'modal-quick-memo',
             componentProps: {
                 item: JSON.parse(JSON.stringify(line))
@@ -408,9 +406,7 @@ export class POSCustomerOrderPage extends PageBase {
 
     async openModalPayments() {
         const modal = await this.modalController.create({
-            component: POSForCustomerPaymentModalPage,
-            swipeToClose: true,
-            backdropDismiss: true,
+            component: POSForCustomerPaymentModalPage,            backdropDismiss: true,
             cssClass: 'modal-payments',
             componentProps: {
                 item: this.item,

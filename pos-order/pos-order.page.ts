@@ -45,10 +45,7 @@ export class POSOrderPage extends PageBase {
         this.pageConfig.isShowFeature = true;
         this.pageConfig.canMerge = true;
         this.pageConfig.canSplit = true;
-        this.pageConfig.canChangeTable = true;
-        this.pageConfig.canImport = false;
-        this.pageConfig.canExport = false;    
-        
+        this.pageConfig.canChangeTable = true; 
     }
     ngOnInit() {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
@@ -241,14 +238,13 @@ export class POSOrderPage extends PageBase {
         if (this.selectedItems.length > 0) {
             
             if (this.noLockStatusList.indexOf(this.selectedItems[0].Status) == -1) {
-                this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.can-not-split', 'warning');
+                this.env.showTranslateMessage('Your selected order cannot be split. Please choose draft, new, pending for approval or disaaproved order', 'warning');
                 return;
             }
         }
 
         const modal = await this.modalController.create({
             component: POSSplitModalPage,
-            swipeToClose: false,
             backdropDismiss: false,
             cssClass: 'modal90',
             componentProps: {
@@ -266,13 +262,13 @@ export class POSOrderPage extends PageBase {
     async mergePOSBills() {
         let itemsCanNotProcess = this.selectedItems.filter(i => this.noLockStatusList.indexOf(i.Status) ==-1 );
         if (itemsCanNotProcess.length) {
-            this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.can-not-merge', 'warning');
+            this.env.showTranslateMessage('Your selected invoices cannot be combined. Please select new or disapproved invoice', 'warning');
             return;
         }
 
         const modal = await this.modalController.create({
             component: POSMergeModalPage,
-            swipeToClose: false,
+            
             backdropDismiss: false,
             cssClass: 'modal-merge-orders',
             componentProps: {
@@ -294,13 +290,12 @@ export class POSOrderPage extends PageBase {
         }
         let itemsCanNotProcess = this.selectedItems.filter(i => this.noLockStatusList.indexOf(i.Status) ==-1 );
         if (itemsCanNotProcess.length) {
-            this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.can-not-merge', 'warning');
+            this.env.showTranslateMessage('Your selected invoices cannot be combined. Please select new or disapproved invoice', 'warning');
             return;
         }
 
         const modal = await this.modalController.create({
             component: POSChangeTableModalPage,
-            swipeToClose: false,
             backdropDismiss: false,
             cssClass: 'modal-change-table',
             componentProps: {
@@ -321,9 +316,7 @@ export class POSOrderPage extends PageBase {
 
         const modal = await this.modalController.create({
             component: POSCancelModalPage,
-            id: 'POSCancelModalPage',
-            swipeToClose: true,
-            backdropDismiss: true,
+            id: 'POSCancelModalPage',            backdropDismiss: true,
             cssClass: 'modal-cancellation-reason',
             componentProps: { item: {} }
         });
