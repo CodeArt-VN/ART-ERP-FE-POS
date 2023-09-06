@@ -1,11 +1,11 @@
 <ion-header>
 	<ion-toolbar>
-		<ion-title>{{'erp.app.pages.sale.sale-order-mobile-add-contact.page-title' | translate}}</ion-title>
+		<ion-title>{{'Add new customer' | translate}}</ion-title>
 		<ion-buttons slot="primary">
-			<ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="primary" (click)="reset()">
+			<ion-button title="{{'Close' | translate}}" color="primary" (click)="reset()">
                 <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
             </ion-button>
-			<ion-button title="{{'erp.app.pages.sale.sale-order-mobile-add-contact.close-modal' | translate}}" color="secondary" (click)="Apply()">
+			<ion-button title="{{'Close' | translate}}" color="secondary" (click)="Apply()">
 				<ion-icon slot="icon-only" name="close"></ion-icon>
 			</ion-button>
 		</ion-buttons>
@@ -17,24 +17,24 @@
 			<ion-row>
 				<ion-col>
 					<div class="c-control">
-						<label class="c-label" for="WorkPhone">Số điện thoại
+						<label class="c-label" for="WorkPhone">{{'Work phone number' | translate}}
 							<span *ngIf="!formGroup['controls'].WorkPhone.valid && !formGroup['controls'].WorkPhone.pending && (formGroup['controls'].WorkPhone.dirty || submitAttempt)" ion-text color="danger">(*)</span>
 						</label>
 						<input class="c-input"  id="WorkPhone" formControlName="WorkPhone" type="text">
 					</div>
 					<div class="c-control">
-						<label class="c-label" for="Name">Tên Khách hàng
+						<label class="c-label" for="Name">{{'Full name'| translate}}
 							<span *ngIf="!formGroup['controls'].Name.valid && !formGroup['controls'].Name.pending && (formGroup['controls'].Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
 						</label>
 						<input class="c-input" id="Name" formControlName="Name" type="text">
 					</div>
 					<div *ngIf="IsBtnNew" class="c-control ion-text-right">
 						<label class="c-label" for=""></label>
-						<ion-button expand="block" (click)="saveChange()">{{'erp.app.pages.sale.sale-order-mobile-add-contact.add-new' | translate}}</ion-button>
+						<ion-button expand="block" (click)="saveChange()">{{'Add customer' | translate}}</ion-button>
 					</div>
 					<div *ngIf="IsBtnApply" class="c-control ion-text-right">
 						<label class="c-label" for=""></label>
-						<ion-button expand="block" (click)="Apply(true)">Áp dụng</ion-button>
+						<ion-button expand="block" (click)="Apply(true)">{{'Apply' | translate}}</ion-button>
 					</div>
 				</ion-col>
 			</ion-row>

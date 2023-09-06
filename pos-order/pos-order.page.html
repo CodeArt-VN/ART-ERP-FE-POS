@@ -32,7 +32,7 @@
 	</ion-toolbar>
 	<div class="so-rows">
 		<ion-toolbar style="padding-top: 0px !important;" class="no-padding">
-			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'Search order ID' | translate}}"></ion-searchbar>
+			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'Type to search...' | translate}}"></ion-searchbar>
 
 			<ion-buttons slot="primary">
 				<ion-button (click)="filter()" title="Ản/Hiện đơn đã xong">
@@ -79,8 +79,11 @@
 							<a routerDirection="forward" *ngIf="!t._Orders || t._Orders?.length < 2" [routerLink]="['/'+pageConfig.pageName+'/'+((t._Orders && t._Orders[0]?.Id) || 0)+'/'+t.Id]">
 								<span class="table-name">{{t.Name}}</span>
 								<span class="table-status" *ngIf="t._Orders?.length == 1">
+									<!-- #{{t._Orders[0].Id}}  -->
+									<b>{{t._Orders[0].CalcTotalOriginal | number }}</b>
+
 									<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name">
-										#{{t._Orders[0].Id}} - {{t._Orders[0]._Status.Name}}
+										<br>{{t._Orders[0]._Status.Name}}
 									</ion-text>
 								</span>
 							</a>

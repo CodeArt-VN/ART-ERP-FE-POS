@@ -2,16 +2,16 @@
     <ion-toolbar>
         <ion-buttons slot="start" class="ion-hide-sm-down_">
             <ion-button color="dark" class="ion-hide-sm-down_">
-                {{'erp.app.pages.sale.sale-order.merge.merge' | translate}} {{selectedOrders.length}} {{'erp.app.pages.sale.sale-order.merge.order' | translate}}
+                {{'Merge' | translate}} {{selectedOrders.length}} {{'Order' | translate}}
             </ion-button>
         </ion-buttons>
 
         <ion-buttons slot="primary">
-            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.help' | translate}}" (click)="help()">
+            <ion-button title="{{'Help' | translate}}" (click)="help()">
                 <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
             </ion-button>
 
-            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="closeModalView()">
+            <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModalView()">
                 <ion-icon slot="icon-only" name="close"></ion-icon>
             </ion-button>
         </ion-buttons>
@@ -28,10 +28,10 @@
                 <ion-col size="12">
                     <div class="c-control">
                         <label class="c-label" for="IDContact">
-                            {{'erp.app.pages.sale.sale-order.merge.idcontact' | translate}}
+                            {{'Customer' | translate}}
                         </label>
 
-                        <ng-select [(ngModel)]="item.IDContact" appendTo="#order-detail-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.merge.placeholder-idcontact' | translate}}">
+                        <ng-select [(ngModel)]="item.IDContact" appendTo="#order-detail-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'Search for name, code or phone number' | translate}}">
                             <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
                                 <div *ngIf="i">
                                     <div>
@@ -46,18 +46,18 @@
 
                     <!-- <div class="c-control ">
                         <ion-button size="small" [disabled]="!pageConfig.canEdit" (click)="item.IsSampleOrder = !item.IsSampleOrder;" [fill]=" item.IsSampleOrder? 'solid' : 'outline' ">
-                            {{'erp.app.pages.sale.sale-order.merge.is-sample-order' | translate}}
+                            {{'Sample' | translate}}
                         </ion-button>
                         <ion-button size="small" [disabled]="!pageConfig.canEdit" (click)="item.IsUrgentOrders = !item.IsUrgentOrders;" [fill]=" item.IsUrgentOrders? 'solid' : 'outline' ">
-                            {{'erp.app.pages.sale.sale-order.merge.is-urgent-orders' | translate}}
+                            {{'Urgent order' | translate}}
                         </ion-button>
                         <ion-button size="small" [disabled]="!pageConfig.canEdit" (click)="item.IsWholeSale = !item.IsWholeSale;" [fill]=" item.IsWholeSale? 'solid' : 'outline' ">
-                            {{'erp.app.pages.sale.sale-order.merge.is-wholesale' | translate}}
+                            {{'wholesale customer' | translate}}
                         </ion-button>
                     </div> -->
 
                     <div class="c-control ion-text-right">
-                        <ion-button [disabled]="submitAttempt" (click)="mergeSaleOrders()">{{'erp.app.pages.sale.sale-order.merge.merge-sale-orders' | translate}}</ion-button>
+                        <ion-button [disabled]="submitAttempt" (click)="mergeSaleOrders()">{{'Merge order' | translate}}</ion-button>
                     </div>
 
                 </ion-col>

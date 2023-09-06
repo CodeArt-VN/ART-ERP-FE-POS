@@ -20,16 +20,10 @@ import { flattenDiagnosticMessageText } from 'typescript';
 export class POSPaymentModalPage extends PageBase {
     DebtAmount = 0;
     PaidAmounted = 0;
-    Amount = 0;
     statusList;
     typeList;
     payments;
-    printData = {
-        undeliveredItems: [], //To track undelivered items to the kitchen
-        printDate: null,
-        currentBranch: null,
-        selectedTables: [],
-    }
+   
 
     constructor(
         public pageProvider: BANK_IncomingPaymentDetailProvider,      
@@ -112,26 +106,26 @@ export class POSPaymentModalPage extends PageBase {
             if(data['IsRefundTransaction'] == true){
                 switch (data['Status']) {
                     case 'Success':
-                        this.env.showTranslateMessage('Hoàn tiền thành công', 'success');
+                        this.env.showTranslateMessage('Refund successful', 'success');
                         break;
                     case 'Fail':
-                        this.env.showTranslateMessage('Hoàn tiền thất bại', 'danger');
+                        this.env.showTranslateMessage('Refund failed', 'danger');
                         break;
                     default:
-                        this.env.showTranslateMessage('Hoàn tiền đang chờ xử lý', 'warning');
+                        this.env.showTranslateMessage('Refund pending', 'warning');
                         break;
                 }
             }
             else{
                 switch (data['Status']) {
                     case 'Success':
-                        this.env.showTranslateMessage('Thanh toán thành công', 'success');
+                        this.env.showTranslateMessage('Payment successful', 'success');
                         break;
                     case 'Fail':
-                        this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
+                        this.env.showTranslateMessage('Transaction failed', 'danger');
                         break;
                     default:
-                        this.env.showTranslateMessage('Đang chờ khách hàng thanh toán', 'warning');
+                        this.env.showTranslateMessage('Waiting for customers to pay', 'warning');
                         break;
                 }
             }
@@ -142,7 +136,7 @@ export class POSPaymentModalPage extends PageBase {
     }
     goToRefund(i){
         if(!this.pageConfig.canRefund){
-            this.env.showTranslateMessage('Bạn không có quyền hoàn tiền', 'danger');
+            this.env.showTranslateMessage('You have not been authorized to refund', 'danger');
             return false;
         }
         // if(i.IncomingPayment.Status != "Success"){
@@ -150,7 +144,7 @@ export class POSPaymentModalPage extends PageBase {
         //     return false;
         // }
         if(parseInt(i.IncomingPayment.TotalRefund) >= parseInt(i.IncomingPayment.Amount)){
-            this.env.showTranslateMessage('Không thể tiếp tục hoàn tiền trên giao dịch này', 'danger');
+            this.env.showTranslateMessage('Refunds cannot be continued on this transaction', 'danger');
             return false;
         }
         let RefundAmount =  i.IncomingPayment.Amount-i.IncomingPayment.TotalRefund;
@@ -211,25 +205,4 @@ export class POSPaymentModalPage extends PageBase {
             }                           
         })
     }
-
-    // doneOrder(){
-    //     this.item.OrderLines.forEach(e => {
-    //         e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
-    //         if (e._undeliveredQuantity > 0) {
-    //             this.printData.undeliveredItems.push(e);
-    //         }
-    //     });
-
-    //     if (this.printData.undeliveredItems.length > 0) {
-    //         this.env.showPrompt('Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục hoàn tất?', null, 'Thông báo').then(_ => {
-                
-    //             this.printData.undeliveredItems = []; //<-- clear;
-    //             return this.modalController.dismiss({SetShippedQuantity: true, SetDone: true}, 'confirm', 'POSPaymentModalPage');
-    //         }).catch(_ => { });
-    //     }
-    //     else {
-    //         return this.modalController.dismiss({SetShippedQuantity: false, SetDone: true}, 'confirm', 'POSPaymentModalPage');
-    //     }
-    // }
-
 }

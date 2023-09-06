@@ -248,45 +248,14 @@ export class POSWelcomePage extends PageBase {
                 s.Logo = this.currentBranch?.LogoURL;
             });
         });
-        // this.pageProvider.read({ Id: this.idTable }).then((result: any) => {
-        //     if (result) {
-        //         this.branchProvider.read({Id: result.data[0].IDBranch}).then((branch: any) =>{
-        //             this.currentBranch = branch.data[0];
-        //             this.env.branchList.push(this.currentBranch);
-        //             this.env.selectedBranch = this.currentBranch.Id;
-        //             // if (this.currentBranch.LogoURL) {
-        //             //     this.currentBranch.LogoURL = 'assets/logos/logo-the-log-hine-wine.png';
-        //             // }
+   
 
-        //             // this.getOrderList().then((data: any) => {
-        //             //     this.currentOrderList = data.data;
-
-        //             //     this.matchOrder = this.currentOrderList.filter(c => c.Tables == this.idTable);
-        //             // });
-
-        //         });
-
-        //     }
-        // })
-
-        this.slidesElement = slides;
-
-        setInterval(() => {
-            this.slidesElement.slideNext()
-        }, 8000);
-        // debugger
+       
+      
     }
 
-    // getOrderList() {
-    //     return new Promise((resolve, reject) => {
-    //         this.saleOrderProvider.read({ Keyword: '', Take: 5000, Skip: 0, Status: "New", Type: "POSOrder"}).then(data => {
-    //             resolve(data);
-    //         });
-    //     });
-    // }
+
     preLoadData(event?: any): void {
-        //let forceReload = event === 'force';{{currentBranch?.LogoURL}}
-        
         Promise.all([
             this.getTable(),
         ]).then((values: any) => {

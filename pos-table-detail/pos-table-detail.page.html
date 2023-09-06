@@ -4,7 +4,7 @@
         <ion-title>{{item.Name??"Thêm bàn"}}</ion-title>
 
         <ion-buttons slot="primary">
-            <ion-button title="{{'erp.app.pages.admin.form.close-modal' | translate}}" color="secondary" (click)="closeModal()">
+            <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModal()">
                 <ion-icon slot="icon-only" name="close"></ion-icon>
             </ion-button>
         </ion-buttons>
@@ -17,7 +17,7 @@
             <ion-row class="hr-group">                
                 <ion-col size="12" size-sm size-xl="12">
                     <div class="c-control" *ngIf="item.Id">
-                        <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-table-detail.id' | translate}}</label>
+                        <label class="c-label" for="Id">{{'Id' | translate}}</label>
                         <input class="c-input" id="Id" formControlName="Id" type="number">
                     </div>
                     <div class="c-control">
@@ -29,13 +29,13 @@
                         </select>
                     </div>
                     <div class="c-control">
-                        <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-table-detail.code' | translate}}
+                        <label class="c-label" for="Code">{{'Code' | translate}}
                             <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
                         </label>
                         <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
                     </div>
                     <div class="c-control">
-                        <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-table-detail.name' | translate}}
+                        <label class="c-label" for="Name">{{'Name' | translate}}
                             <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
                         </label>
                         <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">

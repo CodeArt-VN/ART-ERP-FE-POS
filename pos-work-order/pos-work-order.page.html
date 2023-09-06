@@ -1,9 +1,9 @@
 <ion-header>
-	<app-list-toolbar pageTitle="{{'erp.app.pages.pos.pos-work-order.page-title' | translate}}" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh()" (export)="export()" (import)="import($event)" (help)="help()" (unselect)="unselect()" (archiveItems)="archiveItems()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)"></app-list-toolbar>
+	<app-list-toolbar pageTitle="{{'POS' | translate}}" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" (add)="add()" (refresh)="refresh()" (export)="export()" (import)="import($event)" (help)="help()" (unselect)="unselect()" (archiveItems)="archiveItems()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)"></app-list-toolbar>
 	<ion-toolbar class="no-padding" color="primary" [ngClass]="{withFeature: pageConfig.isShowFeature}">
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 			<ion-segment-button value="all">
-				<ion-label>{{'erp.app.pages.pos.pos-work-order.all' | translate}}</ion-label>
+				<ion-label>{{'All' | translate}}</ion-label>
 			</ion-segment-button>
 
 			<ion-segment-button *ngFor="let g of tableGroupList" [value]="g.Id">
@@ -58,7 +58,7 @@
 <ion-content appScrollbarTheme [ngClass]="{withFeature: pageConfig.isShowFeature}" style="z-index: 11;">
 	<ion-fab *ngIf="pageConfig.isShowFeature" style="top: -45px;" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<ion-toolbar class="no-padding">
-			<ion-searchbar class="search-box" [(ngModel)]="query.Id" style="padding-bottom: 2px;height: 45px;" (ionChange)="search($event)" placeholder="{{'erp.app.pages.pos.pos-work-order.id-search-placeholder' | translate}}"></ion-searchbar>
+			<ion-searchbar class="search-box" [(ngModel)]="query.Id" style="padding-bottom: 2px;height: 45px;" (ionChange)="search($event)" placeholder="{{'Search order ID' | translate}}"></ion-searchbar>
 		</ion-toolbar>
 
 		<app-page-message [itemsLength]="items.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>

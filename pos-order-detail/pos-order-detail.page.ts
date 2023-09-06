@@ -217,6 +217,7 @@ export class POSOrderDetailPage extends PageBase {
             this.soDetailStatusList = values[1];
             this.tableList = values[2];
             this.menuList = values[3];
+            
             this.dealList = values[4];
             
             if(this.pageConfig.systemConfig.SODefaultBusinessPartner){
@@ -995,7 +996,6 @@ export class POSOrderDetailPage extends PageBase {
                         let menuList = resp['data'];
                         menuList.forEach((m: any) => {
                             m.menuImage = environment.posImagesServer + (m.Image ? m.Image : 'assets/pos-icons/POS-Item-demo.png');
-                            m.Items.sort((a, b) => a['Sort'] - b['Sort']);
                             m.Items.forEach(i => {
                                 i.imgPath = environment.posImagesServer + (i.Image ? i.Image : 'assets/pos-icons/POS-Item-demo.png');
                             });

@@ -4,8 +4,8 @@
 	<!-- <img class="branch-logo" src="{{currentBranch?.LogoURL}}" title="{{currentBranch?.ShortName}}"> -->
 	<div class="slide-holder">
 		<!-- Scanning Slides Tab -->
-		<!-- <ion-slides pager="true" #slides [options]="slideOptsDefault" (ionSlidesDidLoad)="getSliders(slides)">
-			<ion-slide *ngFor="let i of SlidingCard">
+		<swiper-container pager="true" #slides [options]="slideOptsDefault" (init)="getSliders(slides)">
+			<swiper-slide *ngFor="let i of SlidingCard">
 				<div class="slide-view">
 					<div class="logo" *ngIf="i.Logo">
 						<img [src]="i.Logo" #img>
@@ -30,9 +30,9 @@
 						</div>
 					</div>
 				</div>
-			</ion-slide>
+			</swiper-slide>
 
-		</ion-slides> -->
+		</swiper-container>
 
 		<ion-row class="sticky-btn">
 			<ion-col>

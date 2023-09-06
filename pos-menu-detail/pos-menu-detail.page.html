@@ -12,7 +12,7 @@
                         <ion-row>
                             <ion-col size="12" size-md="12" size-lg="12" size-xl="5">
                                 <div class="c-control">
-                                    <label class="c-label">{{'erp.app.pages.pos.pos-menu-detail.name' | translate}}
+                                    <label class="c-label">{{'Name' | translate}}
                                         <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
                                     </label>
                                     <input readonly class="c-input" [ngModel]="item.Name" type="text" placeholder="Tên gọi">
@@ -37,7 +37,7 @@
             <ion-toolbar color="primary">
                 <ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
                     <ion-segment-button value="s1">
-                        <ion-label>{{'erp.app.pages.pos.pos-menu-detail.detail' | translate}}</ion-label>
+                        <ion-label>{{'Detailed information' | translate}}</ion-label>
                     </ion-segment-button>
                     <ion-segment-button value="s2">
                         <ion-label>Sản phẩm</ion-label>
@@ -59,23 +59,23 @@
                                     </ion-col>
                                     <ion-col size="12" size-xl="8">
                                         <!-- <div class="c-control" *ngIf="item.Id">
-                                            <label class="c-label" for="Id">{{'erp.app.pages.pos.pos-menu-detail.id' | translate}}</label>
+                                            <label class="c-label" for="Id">{{'Id' | translate}}</label>
                                             <input class="c-input" id="Id" formControlName="Id" type="number">
                                         </div> -->
                                         <div class="c-control">
-                                            <label class="c-label" for="Code">{{'erp.app.pages.pos.pos-menu-detail.code' | translate}}
+                                            <label class="c-label" for="Code">{{'Code' | translate}}
                                                 <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
                                             </label>
                                             <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
                                         </div>
                                         <div class="c-control">
-                                            <label class="c-label" for="Name">{{'erp.app.pages.pos.pos-menu-detail.name' | translate}}
+                                            <label class="c-label" for="Name">{{'Name' | translate}}
                                                 <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
                                             </label>
                                             <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
                                         </div>
                                         <div class="c-control">
-                                            <label class="c-label" for="Sort">{{'erp.app.pages.pos.pos-menu-detail.sort' | translate}}
+                                            <label class="c-label" for="Sort">{{'Sort' | translate}}
                                                 <span *ngIf="!formGroup.controls.Sort.valid && !formGroup.controls.Sort.pending && (formGroup.controls.Sort.dirty || submitAttempt)" ion-text color="danger">(*)</span>
                                             </label>
                                             <input class="c-input" id="Sort" (change)="saveChange();" formControlName="Sort" type="number">
@@ -128,7 +128,7 @@
                                                                 [items]="g.controls._ItemDataSource.value | async"
                                                                 [typeahead]="g.controls._ItemSearchInput.value"
                                                                 [loading]="g.controls._ItemSearchLoading.value" [virtualScroll]="true"
-                                                                bindLabel="Name" placeholder="{{'erp.app.pages.product.bill-of-material.item-placeholder' | translate}}">
+                                                                bindLabel="Name" placeholder="{{'Search for name or product code' | translate}}">
                                                                 <ng-template ng-label-tmp let-i="item">
                                                                     <b *ngIf="i.Code" [title]="i.Id">
                                                                         {{i.Code}}
@@ -192,7 +192,7 @@
                                     </ion-reorder-group>
                                     <div class="row" *ngIf="pageConfig.canEdit">
                                         <div class="col-id cell" *ngIf="pageConfig.canEdit" (click)="addItemLine({_Item:null, IDMenu: item.Id, Id: 0, UoMs: [], Sort: null })">
-                                            <ion-icon class="min-btn" title="{{'erp.app.pages.product.bill-of-material.add-order-line' | translate}}" name="add-circle-outline"></ion-icon>
+                                            <ion-icon class="min-btn" title="{{'Add product' | translate}}" name="add-circle-outline"></ion-icon>
                                         </div>
                                         <div class="col-id cell" *ngIf="!pageConfig.canEdit"></div>
                                         <div class="col-remark cell">

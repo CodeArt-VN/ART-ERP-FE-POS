@@ -103,7 +103,7 @@ export class POSVoucherModalPage  extends PageBase {
       new Promise((resolve, reject) => {
           this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), {IDProgram:line.Id,IDSaleOrder:this.item.Id}).toPromise()
           .then((savedItem: any) => {
-              this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');   
+              this.env.showTranslateMessage('Saving completed!','success');   
               resolve(true);  
               this.modalController.dismiss(this.item);         
           })

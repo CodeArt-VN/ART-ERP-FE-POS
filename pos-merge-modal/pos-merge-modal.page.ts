@@ -112,7 +112,7 @@ export class POSMergeModalPage extends PageBase {
 
         return new Promise((resolve, reject) => {
             if (!this.item.Ids.length || !this.item.IDContact) {
-                this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.check-merge-invoice-select-customer','warning');
+                this.env.showTranslateMessage('Please check the invoice to combine and select customer','warning');
             }
             else if (this.submitAttempt == false) {
                 this.submitAttempt = true;
@@ -123,13 +123,13 @@ export class POSMergeModalPage extends PageBase {
                 }
                 this.pageProvider.commonService.connect(apiPath.method, apiPath.url(), this.item).toPromise()
                     .then((savedItem: any) => {
-                        this.env.showTranslateMessage('erp.app.pages.pos.pos-order.message.save-complete','success');
+                        this.env.showTranslateMessage('Saving completed!','success');
                         resolve(savedItem.Id);
                         this.submitAttempt = false;
                         this.closeModalView();
 
                     }).catch(err => {
-                        this.env.showTranslateMessage('erp.app.pages.pos.pos-order.merge.message.can-not-save','danger');
+                        this.env.showTranslateMessage('Cannot save, please try again!','danger');
                         this.cdr.detectChanges();
                         this.submitAttempt = false;
                         reject(err);

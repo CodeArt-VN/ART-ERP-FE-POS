@@ -304,7 +304,7 @@ export class POSMenuDetailPage extends PageBase {
                 
                 this.menuItemList.push(item);
             }
-            this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete','success');
+            this.env.showTranslateMessage('Saving completed!','success');
         });
 
     }
@@ -331,7 +331,7 @@ export class POSMenuDetailPage extends PageBase {
                     if (this.menuDetailList.findIndex(i => i.Id == savedData.Id) == -1) {
                         this.menuDetailList.push(savedData);
                     }
-                    this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete','success');
+                    this.env.showTranslateMessage('Saving completed!','success');
                 }).catch(err => {
                     this.env.showTranslateMessage(err, 'danger');
                 })
@@ -351,7 +351,7 @@ export class POSMenuDetailPage extends PageBase {
                     if (this.menuDetailList.findIndex(i => i.Id == savedData.Id) == -1) {
                         this.menuDetailList.push(savedData);
                     }
-                    this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete','success');
+                    this.env.showTranslateMessage('Saving completed!','success');
                 }).catch(err => {
                     this.env.showTranslateMessage(err, 'danger');
                 });
@@ -383,7 +383,7 @@ export class POSMenuDetailPage extends PageBase {
                         {
                             this.menuDetailProvider.delete(Ids).then(resp => {
                                 groups.removeAt(index);
-                                this.env.showTranslateMessage('erp.app.pages.product.bill-of-material.message.delete-complete','success');
+                                this.env.showTranslateMessage('Deleted!','success');
                             });
                         }
                     }
@@ -414,7 +414,7 @@ export class POSMenuDetailPage extends PageBase {
             this.menuDetailProvider.save(savingItem).then((savedData: any) => {
 
                 if (counter == max - 1) {
-                    this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete' ,'success');
+                    this.env.showTranslateMessage('Saving completed!' ,'success');
                     this.submitAttempt = false;
                 }
                 counter++;
@@ -432,7 +432,7 @@ export class POSMenuDetailPage extends PageBase {
     //         Image: i.Image,
     //     };
     //     this.menuDetailProvider.save(savingItem).then((savedData: any) => { 
-    //         this.env.showTranslateMessage('erp.app.app-component.page-bage.save-complete' ,'success');
+    //         this.env.showTranslateMessage('Saving completed!' ,'success');
     //         this.submitAttempt = false;
     //     }).catch(err => {
     //         this.env.showTranslateMessage(err ,'danger');

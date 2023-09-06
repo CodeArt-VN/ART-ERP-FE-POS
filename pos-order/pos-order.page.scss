@@ -62,7 +62,7 @@ ion-content {
     .table-status {
         position: absolute;
         text-align: center;
-        bottom: 8px;
+        bottom: 16px;
         width: 100%;
         font-size: 1rem;
         font-style: italic;
@@ -141,13 +141,12 @@ ion-content {
         }
         .col-guest {
             order: 1;
-            padding: 1px 7px !important;
+            padding: 1px 1px !important;
             border-radius: 3px;          
             color: var(--ion-color-primary);
             min-width: fit-content !important;
             max-width: fit-content !important;
             margin-bottom: 5px;
-            margin-right: 5px;
             font-size: 1.5rem;           
         }
         .col-code {

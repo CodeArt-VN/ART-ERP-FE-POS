@@ -2,16 +2,16 @@
     <ion-toolbar>
         <ion-buttons slot="start" class="ion-hide-sm-down_">
             <ion-button color="dark" class="ion-hide-sm-down_">
-                {{'erp.app.pages.pos.pos-order.change.page-title' | translate}}
+                {{'Change table' | translate}}
             </ion-button>
         </ion-buttons>
 
         <ion-buttons slot="primary">
-            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.help' | translate}}" (click)="help()">
+            <ion-button title="{{'Help' | translate}}" (click)="help()">
                 <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
             </ion-button>
 
-            <ion-button title="{{'erp.app.pages.sale.sale-order.merge.close-modal' | translate}}" color="secondary" (click)="closeModalView();">
+            <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModalView();">
                 <ion-icon slot="icon-only" name="close"></ion-icon>
             </ion-button>
         </ion-buttons>
@@ -28,10 +28,10 @@
                 <ion-col size="12">
                     <div class="c-control">
                         <label class="c-label" for="IDTableFrom">
-                            {{'erp.app.pages.pos.pos-order.change.current-table' | translate}}
+                            {{'From table' | translate}}
                         </label>
 
-                        <ng-select [(ngModel)]="item.IDTable" appendTo="#order-detail-page" class="c-input" (change)="changedIDTableFrom($event)"  #IDTableFrom labelForId="IDTableFrom" [items]="orderedTables" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.split.placeholder-idtable' | translate}}">
+                        <ng-select [(ngModel)]="item.IDTable" appendTo="#order-detail-page" class="c-input" (change)="changedIDTableFrom($event)"  #IDTableFrom labelForId="IDTableFrom" [items]="orderedTables" bindLabel="Name" bindValue="Id" placeholder="{{'Search by ID, Code, Name...' | translate}}">
                             <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
                                 <div *ngIf="i">
                                     <div>
@@ -45,10 +45,10 @@
 
                     <div class="c-control">
                         <label class="c-label" for="IDTableTo">
-                            {{'erp.app.pages.pos.pos-order.change.move-table-to' | translate}}
+                            {{'To table' | translate}}
                         </label>
 
-                        <ng-select [(ngModel)]="newTable.Id" appendTo="#order-detail-page" class="c-input" (change)="changedIDTableTo($event)" #IDTableTo labelForId="IDTableTo" [items]="tables" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.pos.pos-order.split.placeholder-idtable' | translate}}">
+                        <ng-select [(ngModel)]="newTable.Id" appendTo="#order-detail-page" class="c-input" (change)="changedIDTableTo($event)" #IDTableTo labelForId="IDTableTo" [items]="tables" bindLabel="Name" bindValue="Id" placeholder="{{'Search by ID, Code, Name...' | translate}}">
                             <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
                                 <div *ngIf="i">
                                     <div>
@@ -62,10 +62,10 @@
 
                     <div class="c-control" *ngIf="isMerging">
                         <label class="c-label" for="IDContact">
-                            {{'erp.app.pages.sale.sale-order.merge.idcontact' | translate}}
+                            {{'Customer' | translate}}
                         </label>
 
-                        <ng-select [(ngModel)]="item.IDContact" appendTo="#order-detail-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'erp.app.pages.sale.sale-order.merge.placeholder-idcontact' | translate}}">
+                        <ng-select [(ngModel)]="item.IDContact" appendTo="#order-detail-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'Search by name, code or phone...' | translate}}">
                             <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
                                 <div *ngIf="i">
                                     <div>

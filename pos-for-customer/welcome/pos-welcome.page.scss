@@ -32,11 +32,11 @@ ion-toolbar{display: none !important}
     top: 30px;
 }
 
-ion-slides {
+swiper-container {
 
     height: 90%;
 
-    ion-slide {
+    swiper-slide {
         min-width: 100%;
         background-color: white;
 
@@ -96,7 +96,7 @@ ion-slides {
         width: 90px;
         margin-left: -40px;
     }
-    ion-slides {
+    swiper-container {
         .logo {
             width: auto;
             height: 130px;

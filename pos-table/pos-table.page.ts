@@ -62,13 +62,13 @@ export class POSTablePage extends PageBase {
                 if (isgrouptable) {
 
                     this.tableGroupProvider.delete(item).then(() => {
-                        this.env.showTranslateMessage('erp.app.app-component.page-bage.delete-complete', 'success');
+                        this.env.showTranslateMessage('Deleted!', 'success');
                         this.env.publishEvent({ Code: this.pageConfig.pageName });
                         ltitem.removeChild(item)
                     }).catch(err => { })
                 } else {
                     this.pageProvider.delete(item).then(() => {
-                        this.env.showTranslateMessage('erp.app.app-component.page-bage.delete-complete', 'success');
+                        this.env.showTranslateMessage('Deleted!', 'success');
                         this.env.publishEvent({ Code: this.pageConfig.pageName });
                         ltitem.removeChild(item)
                     }).catch(err => { })
