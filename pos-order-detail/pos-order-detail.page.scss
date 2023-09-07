@@ -40,6 +40,10 @@
 	overflow: hidden;
 	overflow-x: scroll;
 
+	&::-webkit-scrollbar {
+		height: 6px;
+	}
+
 
 	.menu-group-list {
 		display: flex;
@@ -481,7 +485,7 @@
 
 		.price {
 			font-size: 1.4rem;
-			color: var(--ion-color-primary);
+			// color: var(--ion-color-primary);
 			display: flex;
 			flex-direction: row;
 			align-items: center;

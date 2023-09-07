@@ -87,7 +87,12 @@
 								<div style="display: flex;">
 									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 									<div class="od-info" *ngIf="line._item">
-										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small> {{line._item.Name}}</div>
+										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small>
+											<span *ngIf="env.language.isDefault">{{line._item.Name}}</span>
+											<span *ngIf="!env.language.isDefault">{{line._item.ForeignName}}</span>
+										</div>
+
+
 										<div class="od-price">
 											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 										</div>
@@ -335,7 +340,9 @@
 							<div class="card" [id]="'item'+i.Id">
 
 								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
-								<span class="table-name clickable">{{i.Name}}</span>
+								<span class="table-name clickable" *ngIf="env.language.isDefault">{{i.Name}}</span>
+								<span class="table-name clickable" *ngIf="!env.language.isDefault">{{i.ForeignName}}</span>
+
 								<ng-container *ngFor="let u of i.UoMs">
 
 

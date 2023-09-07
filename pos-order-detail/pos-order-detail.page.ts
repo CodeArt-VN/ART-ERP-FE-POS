@@ -156,44 +156,44 @@ export class POSOrderDetailPage extends PageBase {
         });
 
 
-        
+
 
     }
 
     ////EVENTS
     ngOnInit() {
-        this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {         
-			switch (data.Code) {
-				case 'app:POSOrderFromCustomer':
-                    this.notifyOrder(data.Data);				
-					break;
+        this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
+            switch (data.Code) {
+                case 'app:POSOrderFromCustomer':
+                    this.notifyOrder(data.Data);
+                    break;
                 case 'app:POSOrderPaymentUpdate':
                     this.notifyPayment(data);
                     break;
             }
         });
-        
+
         super.ngOnInit();
     }
     ngOnDestroy() {
         this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
         super.ngOnDestroy();
     }
-    private notifyPayment(data){
-        const value = JSON.parse(data.Value); 
-        if(value.IDSaleOrder == this.item.Id){
+    private notifyPayment(data) {
+        const value = JSON.parse(data.Value);
+        if (value.IDSaleOrder == this.item.Id) {
             this.refresh();
-        }   
+        }
     }
-    private notifyOrder(data){  
-        if(data.id == this.item.Id){
+    private notifyOrder(data) {
+        if (data.id == this.item.Id) {
             this.refresh();
-        }          
+        }
     }
 
     preLoadData(event?: any): void {
         //'IsUseIPWhitelist','IPWhitelistInput', 'IsRequireOTP','POSLockSpamPhoneNumber',
-        let sysConfigQuery = ['IsAutoSave','SODefaultBusinessPartner','POSSettleAtCheckout','POSHideSendBarKitButton','POSEnableTemporaryPayment','POSAutoPrintBillAtSettle'];
+        let sysConfigQuery = ['IsAutoSave', 'SODefaultBusinessPartner', 'POSSettleAtCheckout', 'POSHideSendBarKitButton', 'POSEnableTemporaryPayment', 'POSAutoPrintBillAtSettle'];
 
         let forceReload = event === 'force';
         Promise.all([
@@ -206,8 +206,8 @@ export class POSOrderDetailPage extends PageBase {
             this.env.getType('PaymentType'),
         ]).then((values: any) => {
             this.pageConfig.systemConfig = {};
-            values[5]['data'].forEach(e=>{
-                if((e.Value == null || e.Value == 'null') && e._InheritedConfig){
+            values[5]['data'].forEach(e => {
+                if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
                     e.Value = e._InheritedConfig.Value;
                 }
                 this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
@@ -217,13 +217,13 @@ export class POSOrderDetailPage extends PageBase {
             this.soDetailStatusList = values[1];
             this.tableList = values[2];
             this.menuList = values[3];
-            
+
             this.dealList = values[4];
-            
-            if(this.pageConfig.systemConfig.SODefaultBusinessPartner){
+
+            if (this.pageConfig.systemConfig.SODefaultBusinessPartner) {
                 this.contactListSelected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
             }
-            
+
             this.paymentType = values[6];
             super.preLoadData(event);
         }).catch(err => {
@@ -237,7 +237,7 @@ export class POSOrderDetailPage extends PageBase {
             this.env.showTranslateMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
             return;
         }
-        
+
         if (!this.item?.Id) {
 
             Object.assign(this.item, this.formGroup.getRawValue());
@@ -247,7 +247,7 @@ export class POSOrderDetailPage extends PageBase {
             this.patchOrderValue();
             this.getPayments();
             this.getPromotionProgram();
-            if(this.item._Customer.IsStaff == true){
+            if (this.item._Customer.IsStaff == true) {
                 this.getStaffInfo(this.item._Customer.Code);
             }
         }
@@ -264,6 +264,25 @@ export class POSOrderDetailPage extends PageBase {
     refresh(event?: any): void {
         this.preLoadData('force');
     }
+
+    segmentFilterDishes = 'New';
+    changeFilterDishes(event) {
+        this.segmentFilterDishes = event.detail.value;
+    }
+    filterDishes(segment) {
+        console.log(segment, this.segmentFilterDishes);
+        
+        if (this.segmentFilterDishes == 'New') 
+            return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value == 'New');
+        return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value != 'New');
+    }
+    countDishes(segment){
+        if (segment == 'New') 
+            return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value == 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
+
+        return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value != 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
+    }
+
 
     async addToCart(item, idUoM, quantity = 1, idx = -1) {
 
@@ -337,32 +356,34 @@ export class POSOrderDetailPage extends PageBase {
                 IDPromotion: null,
 
                 OriginalDiscountFromSalesman: 0,
+
+                CreatedDate: new Date()
             };
 
             this.item.OrderLines.push(line);
 
             this.addOrderLine(line);
-            this.setOrderValue({ OrderLines: [line], Status: 'New'});
+            this.setOrderValue({ OrderLines: [line], Status: 'New' });
         }
         else {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
                 if (this.pageConfig.canDeleteItems) {
                     this.env.showPrompt('Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?', item.Name, 'Xóa sản phẩm').then(_ => {
-    
+
                         line.Quantity += quantity;
                         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
                     }).catch(_ => { });
                 }
-                else{
+                else {
                     this.env.showMessage('Item đã chuyển Bar/Bếp');
                     return;
                 }
 
             }
-            
+
             else if ((line.Quantity + quantity) > 0) {
                 line.Quantity += quantity;
-                this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New'});
+                this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }], Status: 'New' });
             }
             else {
                 if (line.Status == 'New') {
@@ -371,7 +392,7 @@ export class POSOrderDetailPage extends PageBase {
                         this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
                     }).catch(_ => { });
                 }
-                else{
+                else {
                     if (this.pageConfig.canDeleteItems) {
                         this.env.showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm').then(_ => {
                             line.Quantity += quantity;
@@ -382,7 +403,7 @@ export class POSOrderDetailPage extends PageBase {
                         this.env.showMessage('Tài khoản chưa được cấp quyền xóa sản phẩm!', 'warning');
                     }
                 }
-                
+
             }
 
         }
@@ -394,7 +415,7 @@ export class POSOrderDetailPage extends PageBase {
 
         const modal = await this.modalController.create({
             component: POSMemoModalPage,
-            id: 'POSMemoModalPage',            backdropDismiss: true,
+            id: 'POSMemoModalPage', backdropDismiss: true,
             cssClass: 'modal-quick-memo',
             componentProps: {
                 item: JSON.parse(JSON.stringify(line))
@@ -469,8 +490,8 @@ export class POSOrderDetailPage extends PageBase {
 
     async processDiscounts() {
         this.Discount = {
-            Amount:this.item.OriginalTotalDiscount,
-            Percent:this.item.OriginalTotalDiscount *100 / this.item.OriginalTotalBeforeDiscount,
+            Amount: this.item.OriginalTotalDiscount,
+            Percent: this.item.OriginalTotalDiscount * 100 / this.item.OriginalTotalBeforeDiscount,
         }
         const modal = await this.modalController.create({
             component: POSDiscountModalPage,
@@ -479,7 +500,7 @@ export class POSOrderDetailPage extends PageBase {
             cssClass: 'modal-change-table',
             componentProps: {
                 Discount: this.Discount,
-                item:this.item
+                item: this.item
             }
         });
         await modal.present();
@@ -563,7 +584,7 @@ export class POSOrderDetailPage extends PageBase {
 
         const modal = await this.modalController.create({
             component: POSCancelModalPage,
-            id: 'POSCancelModalPage',            backdropDismiss: true,
+            id: 'POSCancelModalPage', backdropDismiss: true,
             cssClass: 'modal-cancellation-reason',
             componentProps: { item: {} }
         });
@@ -795,8 +816,8 @@ export class POSOrderDetailPage extends PageBase {
             this.base64dataList.push(data[1]);
             if (this.printerCodeList.length == printerListLength && this.base64dataList.length == printerListLength) {
                 this.QZsetCertificate().then(() => {
-                     this.QZsignMessage().then(() => {
-                         this.sendQZTray(printerHost, this.printerCodeList, this.base64dataList, receipt, times, sendEachItem).catch(err => {
+                    this.QZsignMessage().then(() => {
+                        this.sendQZTray(printerHost, this.printerCodeList, this.base64dataList, receipt, times, sendEachItem).catch(err => {
                             this.submitAttempt = false;
                         });
                     });
@@ -850,10 +871,10 @@ export class POSOrderDetailPage extends PageBase {
     //Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về. 
     private calcOrder() {
         this.Discount = {
-            Amount:this.item.OriginalTotalDiscount,
-            Percent:this.item.OriginalTotalDiscount *100 / this.item.OriginalTotalBeforeDiscount,
+            Amount: this.item.OriginalTotalDiscount,
+            Percent: this.item.OriginalTotalDiscount * 100 / this.item.OriginalTotalBeforeDiscount,
         }
-        
+
         this.item._TotalQuantity = this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
 
         this.item.OriginalTotalBeforeDiscount = 0;
@@ -881,7 +902,8 @@ export class POSOrderDetailPage extends PageBase {
             line._serviceCharge = 0;
             if (this.item.IDBranch == 174 //W-Cafe
                 || this.item.IDBranch == 17 //The Log
-                || (this.item.IDBranch == 416) //Gem Cafe && set menu  && line._item.IDMenu == 218
+                || this.item.IDBranch == 416 //Gem Cafe && set menu  && line._item.IDMenu == 218
+                || this.item.IDBranch == 864 //TEST
             ) {
                 line._serviceCharge = 5;
             }
@@ -900,8 +922,8 @@ export class POSOrderDetailPage extends PageBase {
             line.OriginalDiscountByGroup = 0;
             line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
             line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
-            if(this.Discount?.Percent>0){            
-                line.OriginalDiscountByOrder = this.Discount?.Percent * line.OriginalTotalBeforeDiscount /100;
+            if (this.Discount?.Percent > 0) {
+                line.OriginalDiscountByOrder = this.Discount?.Percent * line.OriginalTotalBeforeDiscount / 100;
             }
             this.item.OriginalDiscountByOrder += line.OriginalDiscountByOrder;
             line.OriginalTotalDiscount = line.OriginalDiscountByLine + line.OriginalDiscountByOrder;
@@ -1109,7 +1131,7 @@ export class POSOrderDetailPage extends PageBase {
 
             OriginalDiscountFromSalesman: [line.OriginalDiscountFromSalesman],
 
-
+            CreatedDate: new FormControl({ value: line.CreatedDate, disabled: true }),
 
             // OriginalTotalBeforeDiscount
             // OriginalPromotion
@@ -1195,7 +1217,7 @@ export class POSOrderDetailPage extends PageBase {
                     let numberOfGuests = this.formGroup.get('NumberOfGuests');
                     numberOfGuests.setValue(this.item.OrderLines?.map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0));
                     numberOfGuests.markAsDirty();
-                    
+
                     const parentElement = this.numberOfGuestsInput?.nativeElement?.parentElement;
                     if (parentElement) {
                         parentElement.classList.add('shake');
@@ -1216,11 +1238,11 @@ export class POSOrderDetailPage extends PageBase {
 
 
         if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && this.pageConfig.systemConfig.IsAutoSave) {
-            if (instantly) 
+            if (instantly)
                 this.saveChange();
             else
                 this.debounce(() => { this.saveChange() }, 1000);
-        }   
+        }
         if (forceSave) {
             this.saveChange();
         }
@@ -1258,7 +1280,7 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-    getPromotionProgram(){
+    getPromotionProgram() {
         this.programProvider.commonService.connect('GET', 'PR/Program/AppliedProgramInSaleOrder', { IDSO: this.id }).toPromise().then((data: any) => {
             this.promotionAppliedPrograms = data;
         }).catch(err => {
@@ -1293,7 +1315,7 @@ export class POSOrderDetailPage extends PageBase {
 
     async addContact() {
         const modal = await this.modalController.create({
-            component: POSContactModalPage,            cssClass: 'my-custom-class',
+            component: POSContactModalPage, cssClass: 'my-custom-class',
             componentProps: {
                 item: null
             }
@@ -1317,7 +1339,7 @@ export class POSOrderDetailPage extends PageBase {
                 IDAddress: address.IDAddress
             }, true);
             this.item._Customer = address;
-            if(this.item._Customer.IsStaff == true){
+            if (this.item._Customer.IsStaff == true) {
                 this.getStaffInfo(this.item._Customer.Code);
             }
         }
@@ -1327,18 +1349,18 @@ export class POSOrderDetailPage extends PageBase {
         Object.assign(this.item, this.formGroup.value);
         this.saveChange();
     }
-    getStaffInfo(Code){
-        if(Code != null){
-            this.staffProvider.read({Code_eq:Code,IDBranch:this.env.branchList.map(b=>b.Id).toString()}).then((result:any)=>{
-                if(result['count']>0){
+    getStaffInfo(Code) {
+        if (Code != null) {
+            this.staffProvider.read({ Code_eq: Code, IDBranch: this.env.branchList.map(b => b.Id).toString() }).then((result: any) => {
+                if (result['count'] > 0) {
                     this.Staff = result['data'][0];
-                    this.Staff.DepartmentName = this.env.branchList.find(b=>b.Id ==this.Staff.IDDepartment).Name;
-                    this.Staff.JobTitleName = this.env.jobTitleList.find(b=>b.Id ==this.Staff.IDJobTitle).Name;
+                    this.Staff.DepartmentName = this.env.branchList.find(b => b.Id == this.Staff.IDDepartment).Name;
+                    this.Staff.JobTitleName = this.env.jobTitleList.find(b => b.Id == this.Staff.IDJobTitle).Name;
                     this.Staff.avatarURL = environment.staffAvatarsServer + this.item._Customer.Code + '.jpg?t=' + new Date().getTime();
                 }
             })
         }
-        
+
     }
     discountFromSalesman(line, form) {
         let OriginalDiscountFromSalesman = form.controls.OriginalDiscountFromSalesman.value;
@@ -1363,9 +1385,9 @@ export class POSOrderDetailPage extends PageBase {
                     });
                     let PaidAmounted = this.paymentList?.filter(x => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
                     let RefundAmount = this.paymentList?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
-                    
-                    this.item.Received = PaidAmounted - RefundAmount;                 
-                    this.item.Debt = Math.round((this.item.CalcTotalOriginal-this.item.OriginalDiscountFromSalesman) - this.item.Received);
+
+                    this.item.Received = PaidAmounted - RefundAmount;
+                    this.item.Debt = Math.round((this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman) - this.item.Received);
                     if (this.item.Debt > 0) {
                         this.item.IsDebt = true;
                     }
@@ -1954,7 +1976,7 @@ export class POSOrderDetailPage extends PageBase {
                 e.ReturnedQuantity = e.Quantity - e.ShippedQuantity;
             });
             this.item.Status = 'Scheduled';
-            this.pageProvider.save(this.item).then((data:any) => {
+            this.pageProvider.save(this.item).then((data: any) => {
 
                 this.item.Status = data.Status;
                 this.formGroup?.controls['Status'].setValue(this.item.Status);
@@ -1987,14 +2009,14 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
-	 applyDiscount(){
-        this.pageProvider.commonService.connect('POST', 'SALE/Order/UpdatePosOrderDiscount/', {Id:this.item.Id,Percent:this.Discount.Percent}).toPromise()
-        .then(result=>{
-            this.env.showTranslateMessage('Saving completed!','success');
-            this.refresh();
-        }).catch(err=>{
-            this.env.showTranslateMessage('Cannot save, please try again!','danger');
-        })  
+    applyDiscount() {
+        this.pageProvider.commonService.connect('POST', 'SALE/Order/UpdatePosOrderDiscount/', { Id: this.item.Id, Percent: this.Discount.Percent }).toPromise()
+            .then(result => {
+                this.env.showTranslateMessage('Saving completed!', 'success');
+                this.refresh();
+            }).catch(err => {
+                this.env.showTranslateMessage('Cannot save, please try again!', 'danger');
+            })
     }
 }
 

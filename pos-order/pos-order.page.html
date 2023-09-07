@@ -168,7 +168,7 @@
 							<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
 						</div>
 						<div class="col-id cell">
-							<b><span *ngFor="let t of i._Tables">{{t.Name}}&nbsp;</span></b>
+							<b><span *ngFor="let t of i._Tables">{{t.Name}}</span></b>
 						</div>
 						<div class="col-guest cell">
 							<ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
