@@ -80,57 +80,76 @@
 				
 			</div> -->
 			<div class="box" *ngIf="item?.OrderLines?.length">
+
+				<ion-toolbar style="border-bottom: solid 0.55px var(--menu-right-border-color);">
+					<ion-segment scrollable="true" (ionChange)="changeFilterDishes($event)" [value]="segmentFilterDishes">
+						<ion-segment-button value="New">
+							<ion-label>
+								{{'New dishes' | translate}}
+								<ion-badge color="warning" style="vertical-align:top;" item-right *ngIf="countDishes('New') > 0">{{countDishes('New')}}</ion-badge>
+							</ion-label>
+						</ion-segment-button>
+						<ion-segment-button value="NotNew">
+							<ion-label>
+								{{'Ordered' | translate}}
+								<ion-badge color="success" style="vertical-align:top;" item-right *ngIf="countDishes('NotNew') > 0">{{countDishes('NotNew')}}</ion-badge>
+							</ion-label>
+						</ion-segment-button>
+					</ion-segment>
+				</ion-toolbar>
+
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
 						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
-							<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
-								<div style="display: flex;">
-									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
-									<div class="od-info" *ngIf="line._item">
-										<div class="od-name"><small class="od-id">#{{line._item.Id}}</small>
-											<span *ngIf="env.language.isDefault">{{line._item.Name}}</span>
-											<span *ngIf="!env.language.isDefault">{{line._item.ForeignName}}</span>
-										</div>
+							<ng-container *ngIf="(segmentFilterDishes == 'New' && g.controls.Status.value == 'New') || (segmentFilterDishes != 'New' && g.controls.Status.value != 'New')">
+								<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
+									<div style="display: flex;">
+										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
+										<div class="od-info" *ngIf="line._item">
+											<div class="od-name"><small class="od-id">#{{line._item.Id}}</small>
+												<span [appTranslateResource]="line._item"></span>
+											</div>
 
 
-										<div class="od-price">
-											<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
-										</div>
-										<div>
-											<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"><small>{{line?.StatusText}}</small></ion-text>
+											<div class="od-price">
+												<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
+											</div>
+											<div>
+												<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"><small>{{line?.StatusText}}</small></ion-text>
+											</div>
 										</div>
 									</div>
-								</div>
 
-								<div class="od-quantity">
-									<ion-button *ngIf="!line._Locked" title="{{'Delete' | translate}}" fill="clear" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -(line.Quantity),true, idx);">
-										<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, +1,false, idx);">
-										<ion-icon slot="icon-only" name="add"></ion-icon>
-									</ion-button>
-									<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -1,false, idx)">
-										<ion-icon slot="icon-only" name="remove"></ion-icon>
-									</ion-button>
-									<ion-button title="{{'Memo...' | translate}}" fill="clear" color="warning" [disabled]="submitAttempt || line._Locked " class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
-										<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
-									</ion-button>
-									<span class="quantity">
-										<small>x</small>
-										<ion-text color="dark">
-											{{line.Quantity}}
-										</ion-text>
-										<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
-										<!-- <span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
-											<ion-icon color="primary" name="arrow-redo"></ion-icon>
-											<sup>{{line.ShippedQuantity}} </sup>
-										</span> -->
-									</span>
+									<div class="od-quantity">
+										<ion-button title="{{'Delete' | translate}}" fill="clear" *ngIf="!line._Locked" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -(line.Quantity),true, idx);">
+											<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+										</ion-button>
+										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, +1,false, idx);">
+											<ion-icon slot="icon-only" name="add"></ion-icon>
+										</ion-button>
+										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -1,false, idx)">
+											<ion-icon slot="icon-only" name="remove"></ion-icon>
+										</ion-button>
+										<ion-button title="{{'Memo...' | translate}}" fill="clear" color="warning" [disabled]="submitAttempt || line._Locked " class="ion-float-right" size="small" (click)="line._isShowNote = !line._isShowNote">
+											<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'clipboard':'clipboard-outline'"></ion-icon>
+										</ion-button>
+										<span class="quantity">
+											<small>x</small>
+											<ion-text color="dark">
+												{{line.Quantity}}
+											</ion-text>
+											<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
+											<!-- <span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
+												<ion-icon color="primary" name="arrow-redo"></ion-icon>
+												<sup>{{line.ShippedQuantity}} </sup>
+											</span> -->
+										</span>
+									</div>
+									<div class="od-remark clickable" (click)="openQuickMemo(line)">
+										<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="(line._isShowNote || line.Remark != null)" spellcheck="false" placeholder="{{'Memo...'|translate}}"></textarea>
+									</div>
 								</div>
-								<div class="od-remark clickable" (click)="openQuickMemo(line)">
-									<textarea class="clickable" cols="30" rows="10" formControlName="Remark" *ngIf="(line._isShowNote || line.Remark != null)" spellcheck="false" placeholder="{{'Memo...'|translate}}"></textarea>
-								</div>
-							</div>
+							</ng-container>
 						</ng-container>
 					</div>
 				</div>
@@ -332,20 +351,19 @@
 						</ion-col>
 
 						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
-							<!-- <span class="tag right" *ngIf="i.BookedQuantity">
+							<span class="tag right" *ngIf="i.IsDisabled">
 								<ion-text class="tag-content" color="danger">
-									{{i.BookedQuantity}}
+									{{'Out of stock' | translate}}
 								</ion-text>
-							</span> -->
+							</span>
 							<div class="card" [id]="'item'+i.Id">
 
 								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
-								<span class="table-name clickable" *ngIf="env.language.isDefault">{{i.Name}}</span>
-								<span class="table-name clickable" *ngIf="!env.language.isDefault">{{i.ForeignName}}</span>
+								<span class="table-name clickable">
+									<span [appTranslateResource]="i"></span>
+								</span>
 
 								<ng-container *ngFor="let u of i.UoMs">
-
-
 									<a *ngIf="u.PriceList.length" class="price clickable">
 										<span class="price-list" *ngFor="let p of u.PriceList">
 											<span *ngIf="!p.NewPrice">
@@ -360,7 +378,7 @@
 											</span>
 										</span>
 
-										<ion-button [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToStorage(i, u.Id);">
+										<ion-button [disabled]="i.IsDisabled" [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToStorage(i, u.Id);">
 											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 										</ion-button>
 									</a>

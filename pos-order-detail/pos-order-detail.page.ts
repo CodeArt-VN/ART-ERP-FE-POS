@@ -269,13 +269,7 @@ export class POSOrderDetailPage extends PageBase {
     changeFilterDishes(event) {
         this.segmentFilterDishes = event.detail.value;
     }
-    filterDishes(segment) {
-        console.log(segment, this.segmentFilterDishes);
-        
-        if (this.segmentFilterDishes == 'New') 
-            return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value == 'New');
-        return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value != 'New');
-    }
+   
     countDishes(segment){
         if (segment == 'New') 
             return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value == 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
@@ -283,9 +277,10 @@ export class POSOrderDetailPage extends PageBase {
         return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value != 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
     }
 
-
     async addToCart(item, idUoM, quantity = 1, idx = -1) {
-
+        if (item.IsDisabled){
+            return;
+        }
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);

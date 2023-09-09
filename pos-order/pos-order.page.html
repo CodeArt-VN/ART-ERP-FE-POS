@@ -61,15 +61,43 @@
 					<ion-row class="table-holder">
 						<ion-col class="shadow table-item" [ngClass]="{'in-serve': t._Orders?.length, 'done-payment': t._Orders?.[0]?.Debt == 0}" *ngFor="let t of g.TableList">
 							<!-- <span class="tag left" *ngIf="t._Orders">
-								<ion-text class="tag-content">
-									<ion-icon size="medium" color="primary" name="person"></ion-icon> <sup class="number-guest">{{t._Orders[0].NumberOfGuests}}</sup>
+								<ion-text class="tag-content" color="primary">
+									<ion-icon size="medium" color="primary" name="people"></ion-icon> <sup class="number-guest">{{t._Orders[0]?.NumberOfGuests}}</sup>
 								</ion-text>
 							</span> -->
-							<span class="tag right" *ngIf="t._Orders?.length == 1">
+							<span class="tag left" *ngIf="t._Orders?.length == 1">
 								<ion-text class="tag-content" [color]="t._Orders[0]._Status.Color">
 									{{t._Orders[0].OrderDate | date: 'HH:mm'}}
 								</ion-text>
 							</span>
+
+							<span class="tag right clickable more-btn" *ngIf="t._Orders?.length == 1" [id]="'order-trigger-'+t.Id">
+								<ion-icon name="ellipsis-vertical"></ion-icon>
+							</span>
+
+							<ng-container *ngFor="let od of t._Orders">
+								<ion-popover [trigger]="'order-trigger-'+t.Id" [dismissOnSelect]="true" side="end">
+									<ng-template>
+										<ion-content>
+											<ion-list>
+												<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();">
+													Chuyển bàn
+													<ion-icon color="warning" slot="icon-only" name="git-compare" slot="start"></ion-icon>
+												</ion-item>
+												<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();">
+													Chia đơn
+													<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
+												</ion-item>
+												<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); openCancellationReason(); this.popoverCtrl.dismiss();">
+													Hủy đơn
+													<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
+												</ion-item>
+											</ion-list>
+										</ion-content>
+									</ng-template>
+								</ion-popover>
+							</ng-container>
+
 							<span class="tag right" *ngIf="t._Orders?.length > 1">
 								<ion-text class="tag-content" color="danger">
 									{{t._Orders?.length}}
@@ -156,8 +184,6 @@
 	</ion-fab>
 
 	<!-- POS Order List -->
-
-
 	<ng-container>
 		<div class="so-rows">
 			<app-page-message [itemsLength]="items.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
@@ -171,7 +197,7 @@
 							<b><span *ngFor="let t of i._Tables">{{t.Name}}</span></b>
 						</div>
 						<div class="col-guest cell">
-							<ion-icon name="person"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
+							<ion-icon name="people"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
 						</div>
 						<div class="col-code cell">
 							<span>#{{i.Id}}</span>

@@ -55,6 +55,10 @@ ion-buttons {
 	overflow: hidden;
 	overflow-x: scroll;
 
+	&::-webkit-scrollbar {
+		height: 6px;
+	}
+
 
 	.menu-group-list {
 		display: flex;

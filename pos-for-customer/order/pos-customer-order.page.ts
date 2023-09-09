@@ -192,46 +192,17 @@ export class POSCustomerOrderPage extends PageBase {
     refresh(event?: any): void {
         this.preLoadData('force');
     }
-    async getChildrenOrder(IDParent) {
-        await this.commonService.connect('GET', 'POS/ForCustomer/ChildrenOrder/' + IDParent, null).toPromise().then(result => {
-            this.childrenOrders = result;
-        }).catch(err => { });
-    }
-    async getParentOrder(IDParent) {
-        await this.commonService.connect('GET', 'POS/ForCustomer/ParentOrder/' + IDParent, null).toPromise().then(result => {
-            this.parentOrder = result;
-            console.log(this.parentOrder);
-        }).catch(err => { });
-    }
-    async addToStorage(item, idUoM, quantity = 1, IsDelete = false, idx = -1) {
-        if (!this.pageConfig.canEdit) {
-            this.isWifiSecuredModalOpen = true;
-            return;
-        }
 
-        let line = {
-            Item: item,
-            IDUoM: idUoM,
-            Quantity: quantity,
-        }
-        let index = this.OrderLines.map(x => x.IDUoM).indexOf(idUoM);
-        if (index == -1) {
-            this.OrderLines.push(line);
-        }
-        else {
-            if (IsDelete == true) {
-                this.OrderLines.splice(index, 1);
-            }
-            else {
-                this.OrderLines[index].Quantity += quantity;
-                if (this.OrderLines[index].Quantity == 0) {
-                    this.OrderLines.splice(index, 1);
-                }
-            }
-        }
-        this.env.setStorage("OrderLines" + this.idTable, this.OrderLines).then(_ => {
-            this.addToCart(item, idUoM, quantity, null, idx);
-        })
+    segmentFilterDishes = 'New';
+    changeFilterDishes(event) {
+        this.segmentFilterDishes = event.detail.value;
+    }
+   
+    countDishes(segment){
+        if (segment == 'New') 
+            return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value == 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
+
+        return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value != 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
     }
 
     addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
@@ -256,7 +227,9 @@ export class POSCustomerOrderPage extends PageBase {
             this.isWifiSecuredModalOpen = false;
         }
 
-
+        if (item.IsDisabled){
+            return;
+        }
         if (this.submitAttempt) {
 
             let element = document.getElementById('item' + item.Id);
@@ -1096,4 +1069,47 @@ export class POSCustomerOrderPage extends PageBase {
         });
         this.env.setStorage('Orders', Orders);
     }
+
+    async getChildrenOrder(IDParent) {
+        await this.commonService.connect('GET', 'POS/ForCustomer/ChildrenOrder/' + IDParent, null).toPromise().then(result => {
+            this.childrenOrders = result;
+        }).catch(err => { });
+    }
+    async getParentOrder(IDParent) {
+        await this.commonService.connect('GET', 'POS/ForCustomer/ParentOrder/' + IDParent, null).toPromise().then(result => {
+            this.parentOrder = result;
+            console.log(this.parentOrder);
+        }).catch(err => { });
+    }
+    async addToStorage(item, idUoM, quantity = 1, IsDelete = false, idx = -1) {
+        if (!this.pageConfig.canEdit) {
+            this.isWifiSecuredModalOpen = true;
+            return;
+        }
+
+        let line = {
+            Item: item,
+            IDUoM: idUoM,
+            Quantity: quantity,
+        }
+        let index = this.OrderLines.map(x => x.IDUoM).indexOf(idUoM);
+        if (index == -1) {
+            this.OrderLines.push(line);
+        }
+        else {
+            if (IsDelete == true) {
+                this.OrderLines.splice(index, 1);
+            }
+            else {
+                this.OrderLines[index].Quantity += quantity;
+                if (this.OrderLines[index].Quantity == 0) {
+                    this.OrderLines.splice(index, 1);
+                }
+            }
+        }
+        this.env.setStorage("OrderLines" + this.idTable, this.OrderLines).then(_ => {
+            this.addToCart(item, idUoM, quantity, null, idx);
+        })
+    }
+
 }
