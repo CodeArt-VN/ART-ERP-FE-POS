@@ -77,7 +77,7 @@ export class POSMenuDetailPage extends PageBase {
         this.menuItemList = [];
         Promise.all([
             this.kitchenProvider.read({ Skip: 0, Take: 5000}),
-            this.menuDetailProvider.read({IDMenu: this.id, IsDeleted: false})
+            this.menuDetailProvider.read({IDMenu: this.id, IsDisable: ''})
         ]).then(values => {
             this.kitchenList = values[0]['data'];
             this.menuDetailList = values[1]['data'];
@@ -86,7 +86,7 @@ export class POSMenuDetailPage extends PageBase {
             this.menuDetailList.forEach(e => {
 
                 Promise.all([
-                    this.itemProvider.search({Id: e.IDItem, IsDeleted: false, AllUoM: true}).toPromise()
+                    this.itemProvider.search({Id: e.IDItem, AllUoM: true}).toPromise()
                 ]).then(values => { 
                     
                     let data = values[0][0];
@@ -192,6 +192,7 @@ export class POSMenuDetailPage extends PageBase {
             // Quantity: [line.Quantity],
             // Remark: [line.Remark],
             Sort: [data ? data.Sort : null],
+            IsDisabled: [data?.IsDisabled],
         });
 
         groups.push(group);
@@ -358,7 +359,16 @@ export class POSMenuDetailPage extends PageBase {
             }
         }
     }
+    lock(index){
+        let groups = <FormArray>this.formGroup.controls.Lines;
+        let isDisable = !groups.controls[index]['controls'].IsDisabled.value;
+        groups.controls[index]['controls'].IsDisabled.setValue(isDisable);
 
+        this.menuDetailProvider.disable([{ Id: groups.controls[index]['controls'].Id.value }], isDisable).then(resp=>{
+            console.log(resp);
+            this.env.showTranslateMessage('Saved change!', 'success');
+        });
+    }
     removeItemLine(index, permanentlyRemove = true) {
         
         this.alertCtrl.create({

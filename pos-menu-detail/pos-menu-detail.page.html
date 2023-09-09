@@ -106,7 +106,7 @@
                                         <div class="col-uom cell">Đơn vị</div>
                                         <!-- <div class="col-image cell">URL Hình ảnh</div> -->
                                         <div class="col-kit cell">Bếp</div>
-                                        <!-- <div class="col-status cell">Ngưng bán</div> -->
+                                        <div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
                                         <div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
                                     </header>
                                     <ion-reorder-group (ionItemReorder)="doReorder($event, formGroup.get('Lines')['controls'])" [disabled]="!pageConfig.canEdit">
@@ -161,27 +161,17 @@
                                                             
                                                         </div>
 
-                                                        <!-- <div class="col-image cell">
-                                                            <input class="c-input" id="Name" (change)="saveImageURL(g);" formControlName="Image" type="text">
-                                                        </div> -->
-
                                                         <div class="col-kit cell">
                                                             <ng-container *ngFor="let k of kitchenList">
                                                                 <ion-button [disabled]="!pageConfig.canEdit || submitAttempt" [fill]="k.Id == (formGroup['controls']['Lines']['controls'][idx]['value']['IDKitchen'])  ? 'solid' : 'outline'" expand="block" size="small" (click)="toogleKitchenSet(formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], k)">
-                                                                <!-- <ion-button [disabled]="!pageConfig.canEdit" [fill]="k.IsSelected ? 'solid' : 'outline'" expand="block" size="small" (click)="toogleKitchenSet(formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], k)"> -->
                                                                     {{k.Name}}
                                                                 </ion-button>
                                                             </ng-container>
                                                         </div>
 
-                                                        <!-- Ngưng bán -->
-                                                        <!-- <div class="col-status cell">
-                                                            <div class="col-checkbox cell">
-                                                                <input (click)="changeSelection(g, $event)" class="c-checkbox" type="checkbox">
-                                                            </div>
-                                                        </div> -->
-
-                                                        
+                                                        <div class="col-del cell" *ngIf="pageConfig.canEdit" (click)="lock(idx)">
+                                                            <ion-icon [color]="g.controls.IsDisabled.value ? 'danger':'success' " class="min-btn" [name]=" g.controls.IsDisabled.value ? 'bag-remove-outline':'bag-check-outline' "></ion-icon>
+                                                        </div>
                                                         <div class="col-del cell" *ngIf="pageConfig.canEdit" (click)="removeItemLine(idx, true)">
                                                             <ion-icon color="danger" class="min-btn" name="trash-outline"></ion-icon>
                                                         </div>
