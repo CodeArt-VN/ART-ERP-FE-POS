@@ -79,7 +79,7 @@
 
 			ion-label {
 				display: block;
-				/* font-size: 8px; */
+				font-size: 1rem;
 				font-weight: bold;
 				padding: 0px;
 				text-transform: uppercase;
@@ -691,7 +691,7 @@
 }
 
 .sheet {
-	font-family: Arial, 'Times New Roman', Times, serif
+	font-family: 'Times New Roman' !important;
 }
 
 @media print {
@@ -844,13 +844,8 @@
 	--background-focused: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
 }
 
-.page-footer-space {
-	margin-top: 10px;
-}
 
-.table-name-bill {
-	font-size: 16px;
-}
+
 
 .table-info-top {
 	td {
@@ -870,4 +865,12 @@
 }
 ion-img {
     object-fit:cover;
+}
+
+.sticky-menu{
+	position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--main-background-top);
+	box-shadow: 0px 2px 5px 0 rgba(0, 0, 0, 0.1);
 }

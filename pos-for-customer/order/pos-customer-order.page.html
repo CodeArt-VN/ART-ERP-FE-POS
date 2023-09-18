@@ -9,7 +9,7 @@
 
 		<ion-title *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">{{'Cart' | translate}}</ion-title>
 		<ion-buttons slot="end" class="full-width">
-			<ion-searchbar [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}" slot="start" class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
+			<ion-searchbar [debounce]="300" [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}" slot="start" class="search-box" (ionFocus)="segmentChanged('all')"  (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
 			<ion-button (click)="refresh()">
 				<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
 			</ion-button>
@@ -101,21 +101,19 @@
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
 						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
-							<ng-container *ngIf="(segmentFilterDishes == 'New' && g.controls.Status.value == 'New') || (segmentFilterDishes != 'New' && g.controls.Status.value != 'New')">
-								<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
+							<ng-container *ngIf="item.OrderLines[idx] as line" >
+								<div class="od" [formGroup]="g" *ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')" >
 									<div style="display: flex;">
 										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 										<div class="od-info" *ngIf="line._item">
 											<div class="od-name"><small class="od-id">#{{line._item.Id}}</small>
 												<span [appTranslateResource]="line._item"></span>
 											</div>
-
-
 											<div class="od-price">
 												<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
 											</div>
 											<div>
-												<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"><small>{{line?.StatusText}}</small></ion-text>
+												<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"><small>{{line?.StatusText  | translate}}</small></ion-text>
 											</div>
 										</div>
 									</div>
@@ -228,14 +226,14 @@
 							</div>
 							<div>
 								<ion-text color="success">
-									<h1>{{ this.id ? 'Order updated' : 'Order has been received' | translate}}</h1>
+									<h1>{{ 'T1756' | translate}}</h1>
 								</ion-text>
 
 								<p>
-									{{'Thank you for your order. The department in charge will serve you as soon as possible.' | translate}} <br>
+									{{'T1757' | translate}} <br>
 									<br>
 									<ion-note>
-										{{'In case of emergency, please call the hotline'| translate}}<br>
+										{{'T1758'| translate}}<br>
 										<a [href]="'tel:'+Branch?.Phone">
 											<ion-text color="danger">
 												<b>{{ Branch?.Phone }}</b>

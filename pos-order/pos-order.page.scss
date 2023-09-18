@@ -7,14 +7,16 @@ ion-content {
     --background: linear-gradient(180deg, var(--main-background-top), var(--main-background-bottom));
 }
 
+
+
 .table-holder {
     flex-wrap: wrap;
     // margin: -29px;
 }
 
 .table-item {
-    min-height: 100px;
-    min-width: 100px;
+    min-height: 110px;
+    min-width: 110px;
     
     margin: 8px;
     padding: 0;
@@ -143,7 +145,7 @@ ion-content {
             order: 1;
             padding: 1px 1px !important;
             border-radius: 3px;          
-            color: var(--ion-color-primary);
+            color: var(--ion-color-success);
             min-width: fit-content !important;
             max-width: fit-content !important;
             margin-bottom: 5px;

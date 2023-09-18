@@ -311,12 +311,17 @@ export class POSOrderPage extends PageBase {
 
     }
 
-    async openCancellationReason() {
+    async openCancellationReason(order = null) {
         if (this.submitAttempt) return;
+
+        if (order) {
+            this.selectedItems = [order];
+        }
 
         const modal = await this.modalController.create({
             component: POSCancelModalPage,
-            id: 'POSCancelModalPage',            backdropDismiss: true,
+            id: 'POSCancelModalPage',            
+            backdropDismiss: true,
             cssClass: 'modal-cancellation-reason',
             componentProps: { item: {} }
         });

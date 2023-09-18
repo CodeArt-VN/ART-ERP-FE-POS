@@ -4,7 +4,7 @@
 			{{'Table' | translate}}: <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
 		</ion-button>
 
-		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionChange)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
+		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
 
 		<ion-button class="cart" title="{{'Cart' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
@@ -42,12 +42,13 @@
 				<div style="padding: 0px 16px !important;">
 					<div class="box-content" formArrayName="OrderLines">
 						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
-							<ng-container *ngIf="(segmentFilterDishes == 'New' && g.controls.Status.value == 'New') || (segmentFilterDishes != 'New' && g.controls.Status.value != 'New')">
-								<div class="od" [formGroup]="g" *ngIf="item.OrderLines[idx] as line">
+							<ng-container *ngIf="item.OrderLines[idx] as line" >
+								<div class="od" [formGroup]="g" *ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')" >
 									<div style="display: flex;">
 										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 										<div class="od-info" *ngIf="line._item">
-											<div class="od-name"><small class="od-id">#{{line._item.Id}}</small>
+											<div class="od-name">
+												<small class="od-id">#{{line._item.Id}}</small>&nbsp;
 												<span [appTranslateResource]="line._item"></span>
 											</div>
 											<div class="od-price">
@@ -432,6 +433,11 @@
 	</div>
 
 	<!-- Bill Printing -->
+	<style>
+.page-footer-space {
+	margin-top: 10px;
+}
+	</style>
 	<div id="bill" class="bill" style="overflow: auto; width: 72mm;" *ngIf="item?.OrderLines?.length">
 		<div class="receipt giao-nhan" style="overflow: auto;">
 			<section class="sheet rpt p1">
@@ -490,8 +496,8 @@
 										<table>
 											<tr style="font-size: 10px; font-weight: bold;">
 												<td>{{'Item' | translate}}</td>
-												<td>{{'Price' | translate}}</td>
-												<td>{{'Quantity' | translate}}</td>
+												<td class="text-right">{{'Price' | translate}}</td>
+												<td class="text-right">{{'Quantity' | translate}}</td>
 												<td class="text-right">{{'Discount' | translate}}</td>
 												<td class="text-right">{{'Amount' | translate}}</td>
 											</tr>
@@ -612,12 +618,11 @@
 												</tr>
 												<tr *ngFor="let p of paymentList">
 													<ng-container *ngIf="p.IncomingPayment.Status == 'Success'">
-														<td class="title">
-															-
+														<td class="title" style="padding-left: 8px; text-indent: -8px;">
+															- 
 															<span *ngIf="p.IncomingPayment.IsRefundTransaction">{{'Refund' | translate}} | </span>
 															{{p.IncomingPayment.TypeText}}
-															<span *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</span>
-
+															<small *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</small>
 															<small *ngIf="p.IncomingPayment.Remark"> | {{p.IncomingPayment.Remark}}</small>
 														</td>
 														<td class="text-right"><span>{{p.Amount | number: '1.0-0'}}</span></td>
@@ -639,7 +644,7 @@
 										<div class="message">
 											<div><small>{{"This bill's invoice can only be generated in the same day" | translate}}</small></div>
 											<div><small>{{'This bill is valid within day' | translate}}</small></div>
-											<div class="ion-text-uppercase">
+											<div style="text-transform: uppercase;">
 												{{'Thank you! See you again!' | translate}}
 											</div>
 										</div>
@@ -651,7 +656,7 @@
 					<tfoot>
 						<tr>
 							<td>
-								<div class="page-footer-space">.</div>
+								<div class="page-footer-space"></div>
 							</td>
 						</tr>
 					</tfoot>
@@ -681,7 +686,7 @@
 											<div class="items">
 												<table>
 													<tr>
-														<td class="title table-name-bill" colspan="2">
+														<td class="title" colspan="2" style="font-size: 16px;">
 															<ion-text class="bold ">{{'Table' | translate}}: </ion-text>
 															<ng-container *ngFor="let t of printData.selectedTables">
 																<ion-text class="bold">{{t.Name}};</ion-text>

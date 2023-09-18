@@ -88,7 +88,7 @@
 													Chia đơn
 													<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
 												</ion-item>
-												<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); openCancellationReason(); this.popoverCtrl.dismiss();">
+												<ion-item *ngIf="pageConfig.canCancelOrder" [button]="true" [detail]="false" (click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();">
 													Hủy đơn
 													<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
 												</ion-item>
@@ -158,7 +158,7 @@
 																	Chia đơn
 																	<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
 																</ion-item>
-																<ion-item [button]="true" [detail]="false" (click)="$event.stopPropagation(); openCancellationReason(); this.popoverCtrl.dismiss();">
+																<ion-item *ngIf="pageConfig.canCancelOrder" [button]="true" [detail]="false" (click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();">
 																	Hủy đơn
 																	<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
 																</ion-item>
@@ -197,7 +197,7 @@
 							<b><span *ngFor="let t of i._Tables">{{t.Name}}</span></b>
 						</div>
 						<div class="col-guest cell">
-							<ion-icon name="people"></ion-icon> <sup>{{i.NumberOfGuests}}</sup>
+							<ion-icon [name]="i.NumberOfGuests > 1? 'people' : 'person'"></ion-icon> <sup *ngIf="i.NumberOfGuests > 1">{{i.NumberOfGuests}}</sup>
 						</div>
 						<div class="col-code cell">
 							<span>#{{i.Id}}</span>

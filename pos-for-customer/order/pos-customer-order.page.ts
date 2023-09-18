@@ -200,9 +200,9 @@ export class POSCustomerOrderPage extends PageBase {
    
     countDishes(segment){
         if (segment == 'New') 
-            return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value == 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
+            return this.item.OrderLines .filter(d => d.Status == 'New' || d.Status == 'Waiting').map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
 
-        return this.formGroup.get('OrderLines')['controls'].filter(d => d.controls.Status.value != 'New').map(x => x.controls.Quantity.value).reduce((a, b) => (+a) + (+b), 0);
+        return this.item.OrderLines .filter(d => !(d.Status == 'New' || d.Status == 'Waiting')).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
     }
 
     addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
@@ -640,22 +640,22 @@ export class POSCustomerOrderPage extends PageBase {
     }
     async notifyFromStaff() {
         if (this.item.Status == "Splitted") {
-            this.env.showAlert("Đơn hàng này đã được chia!", null, 'Thông báo');
+            this.env.showAlert("Đơn hàng này đã được chia!");
             await this.getChildrenOrder(this.item.Id);
         }
         if (this.item.Status == 'Merged') {
-            this.env.showAlert("Đơn hàng này đã được gộp!", null, 'Thông báo');
+            this.env.showAlert("Đơn hàng này đã được gộp!");
             await this.getParentOrder(this.item.IDParent);
         }
         if (this.item.Status == 'Done') {
-            this.env.showAlert("Đơn hàng này đã hoàn tất!", null, 'Thông báo');
+            this.env.showAlert("Đơn hàng này đã hoàn tất!");
             this.playAudio("Order");
         }
         if (this.item.Status == 'Cancelled') {
-            this.env.showAlert("Đơn hàng này đã hủy!", null, 'Thông báo');
+            this.env.showAlert("Đơn hàng này đã hủy!");
         }
         if (this.item.Status == "Confirmed") {
-            this.env.showAlert("Đơn hàng đã được xác nhận!", null, 'Thông báo');
+            this.env.showAlert("Đơn hàng đã được xác nhận!");
             this.playAudio("Order");
         }
         // if(this.item.Status == "Scheduled"){
@@ -663,10 +663,10 @@ export class POSCustomerOrderPage extends PageBase {
         //     //this.playAudio("Order");        
         // }
         if (this.item.Status == "Picking") {
-            this.env.showAlert("Món đã được chuẩn bị", null, 'Thông báo');
+            this.env.showAlert("Món đã được chuẩn bị");
         }
         if (this.item.Status == "Delivered") {
-            this.env.showAlert("Chúc quý khách ngon miệng", null, 'Thông báo');
+            this.env.showAlert("Chúc quý khách ngon miệng");
         }
         if (this.idTable != this.item.Tables[0]) {
             await this.reloadTable(this.item.Tables[0]);

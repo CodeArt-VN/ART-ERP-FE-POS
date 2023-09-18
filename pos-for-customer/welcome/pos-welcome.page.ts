@@ -3,7 +3,6 @@ import { NavController, ModalController, AlertController, LoadingController, Pop
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
-import { POS_TableProvider, BRA_BranchProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
 import { Location } from '@angular/common';
 import { CommonService } from 'src/app/services/core/common.service';
 import { ApiSetting } from 'src/app/services/static/api-setting';
@@ -33,14 +32,15 @@ export class POSWelcomePage extends PageBase {
         super();
     }
 
-    dummyRemark = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500"
 
     Note = {
-        Note1: `DÀNH CHO KHÁCH HÀNG`,
-        Note2: `- Khách hàng đặt món, thanh toán và dùng món tại quầy/ tại bàn, nếu có vấn đề gì cần hổ trợ, vui lòng liên hệ thu ngân hoặc gọi số hotline 090 133 5553`,
-        Note3: `- Khách hàng nhận hàng tại quầy hoặc tại bàn.`,
-        Note4: `CN Công ty CP IN Hospitality`,
-        Note5: `Số điện thoại: 090 133 5553. Email: cskh@gemcafe.com.vn`,
+        Note1: 'GUEST GUIDE',
+        Note2: '- Guest will be served at the table',
+        Note3: '- Guest  who buy take away will receive the goods at the counter or at the table',
+        Note31: '- Guest pay at the counter or at the table',
+        Note32: '- If you need assistance, please contact staff or call hotline 090 133 5553.',
+        Note4: 'Branch of Joint Stock Company IN Hospitality',
+        Note5: 'Phone number: 090 133 5553. Email: cskh@gemcafe.com.vn',
     };
 
     SlidingCard = [
@@ -48,7 +48,7 @@ export class POSWelcomePage extends PageBase {
             Logo: '',
             Splash: '',
             Header: 'Welcome!',
-            Remark: "Chào mừng bạn đã đến với ứng dụng đặt món tại bàn.",
+            Remark: "Welcome to the food ordering application at table",
             Note: this.Note
         },
         {
