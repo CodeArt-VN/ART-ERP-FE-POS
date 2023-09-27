@@ -252,10 +252,8 @@
 				</ng-template>
 			</ion-modal>
 
-
-			<ion-button *ngIf="item.Status != 'Cancelled' && item?.Id != 0" class="ion-margin-top" expand="block" (click)="processPayments()">
-				<ion-text *ngIf="item.Debt > 0 ">{{'Bill please' | translate}}</ion-text>
-				<ion-text *ngIf="item.Debt <= 0">{{'View details' | translate}}</ion-text>
+			<ion-button *ngIf="item.Debt > 0 && item.Status != 'Cancelled' && item?.Id != 0" [disabled]="submitAttempt || !item.Id" class="ion-margin-top" expand="block" (click)="goToPayment()">
+				<ion-text >{{'Bill please' | translate}}</ion-text>
 			</ion-button>
 		</form>
 		<div style="margin-top: 80px;"></div>
@@ -323,10 +321,10 @@
 	<!-- Menu Group -->
 	<div class="no-print menu-holder">
 		<div class="menu-group-list">
-			<div class="menu-group" (click)="segmentChanged('all')">
+			<!-- <div class="menu-group" (click)="segmentChanged('all')">
 				<ion-img #img [src]="AllSegmentImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView=='all'}"></ion-img>
 				<ion-label>{{'All' | translate}}</ion-label>
-			</div>
+			</div> -->
 			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
 				<ion-img [src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
 				<ion-label>{{g.Name}}</ion-label>

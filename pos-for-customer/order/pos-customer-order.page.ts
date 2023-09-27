@@ -377,6 +377,30 @@ export class POSCustomerOrderPage extends PageBase {
 
     }
 
+    goToPayment() {
+        let payment = {
+            IDBranch: this.item.IDBranch,
+            IDStaff: 0,
+            IDCustomer: this.item.IDContact,
+            IDSaleOrder: this.item.Id,
+            DebtAmount: Math.round(this.item.Debt),
+            IsActiveInputAmount : false,
+            IsActiveTypeCash: false,
+            ReturnUrl: window.location.href,
+            Lang: this.env.language.current,
+            Timestamp:Date.now()
+        };
+
+        let str = window.btoa(JSON.stringify(payment));
+        let code =  this.convertUrl(str);
+        let url = environment.appDomain + "Payment?Code="+code;
+        window.open(url, "_blank");
+    }
+
+    private convertUrl(str) {
+        return str.replace("=", "").replace("=", "").replace("+", "-").replace("_", "/")
+    }
+
     async openModalPayments() {
         const modal = await this.modalController.create({
             component: POSForCustomerPaymentModalPage,            backdropDismiss: true,
@@ -459,7 +483,8 @@ export class POSCustomerOrderPage extends PageBase {
             line._serviceCharge = 0;
             if (this.item.IDBranch == 174 //W-Cafe
                 || this.item.IDBranch == 17 //The Log
-                || (this.item.IDBranch == 416) //Gem Cafe && set menu  && line._item.IDMenu == 218
+                || this.item.IDBranch == 416 //Gem Cafe && set menu  && line._item.IDMenu == 218
+                || this.item.IDBranch == 864 //TEST
             ) {
                 line._serviceCharge = 5;
             }
@@ -1083,7 +1108,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
     async addToStorage(item, idUoM, quantity = 1, IsDelete = false, idx = -1) {
         if (!this.pageConfig.canEdit) {
-            this.isWifiSecuredModalOpen = true;
+            if (!this.id) this.isWifiSecuredModalOpen = true;
             return;
         }
 
