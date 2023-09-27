@@ -199,14 +199,15 @@
 
 					<div class="check-out">
 
+						
+
 						<label class="c-label" *ngFor="let p of paymentList">
 							<span>
-
 								<span *ngIf="p.IncomingPayment.IsRefundTransaction"><ion-text color="danger">{{'Refund' | translate}}</ion-text> | </span>
 								{{p.IncomingPayment.TypeText}} <small *ngIf="p.IncomingPayment.SubType">| {{p.IncomingPayment.SubType}}</small>
 								<small>
-									<ion-text [color]="p.IncomingPayment.IsRefundTransaction? 'danger' : p.IncomingPayment._Status?.Color">{{p.IncomingPayment._Status?.Name}}</ion-text>
 									| {{p.IncomingPayment?.CreatedDate | date: 'HH:mm dd/MM'}}
+									<ion-text [color]="p.IncomingPayment.IsRefundTransaction? 'danger' : p.IncomingPayment._Status?.Color">{{p.IncomingPayment._Status?.Name}}</ion-text>
 								</small>
 								<span *ngIf="p.IncomingPayment.Remark"><br><ion-note>{{p.IncomingPayment.Remark}}</ion-note></span>
 							</span>
@@ -216,8 +217,11 @@
 							</ion-text>
 						</label>
 
-						<label class="c-label total clickable" (click)="processPayments()">{{'Amount paid' | translate}}
-							<span class="c-value">{{item.Received | number: '1.0-0'}}</span>
+						<label class="c-label total clickable" (click)="processPayments()">
+							<span>
+								{{'Amount paid' | translate}} <ion-icon name="open-outline"></ion-icon>
+							</span>
+							<span class="c-value">{{item.Received | number: '1.0-0'}}</span> 
 						</label>
 					</div>
 				</div>
@@ -363,10 +367,10 @@
 	<!-- Menu Group -->
 	<div class="no-print menu-holder">
 		<div class="menu-group-list">
-			<div class="menu-group" (click)="segmentChanged('all')">
+			<!-- <div class="menu-group" (click)="segmentChanged('all')">
 				<ion-img #img [src]="AllSegmentImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView=='all'}"></ion-img>
 				<ion-label>{{'All' | translate}}</ion-label>
-			</div>
+			</div> -->
 			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
 				<ion-img #img [src]="g.menuImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
 				<ion-label>{{g.Name}}</ion-label>

@@ -38,7 +38,8 @@ export class POSOrderDetailPage extends PageBase {
     menuList = [];
     dealList = [];
     paymentList = [];
-    paymentType = [];
+    paymentTypeList = [];
+    paymentStatusList = [];
     soStatusList = []; //Show on bill
     soDetailStatusList = [];
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
@@ -204,6 +205,7 @@ export class POSOrderDetailPage extends PageBase {
             this.getDeal(),
             this.sysConfigProvider.read({ Code_in: sysConfigQuery }),
             this.env.getType('PaymentType'),
+            this.env.getStatus('PaymentStatus'),
         ]).then((values: any) => {
             this.pageConfig.systemConfig = {};
             values[5]['data'].forEach(e => {
@@ -224,7 +226,8 @@ export class POSOrderDetailPage extends PageBase {
                 this.contactListSelected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
             }
 
-            this.paymentType = values[6];
+            this.paymentTypeList = values[6];
+            this.paymentStatusList = values[7];
             super.preLoadData(event);
         }).catch(err => {
             this.loadedData();
@@ -269,16 +272,16 @@ export class POSOrderDetailPage extends PageBase {
     changeFilterDishes(event) {
         this.segmentFilterDishes = event.detail.value;
     }
-   
-    countDishes(segment){
-        if (segment == 'New') 
-            return this.item.OrderLines .filter(d => d.Status == 'New' || d.Status == 'Waiting').map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
 
-        return this.item.OrderLines .filter(d => !(d.Status == 'New' || d.Status == 'Waiting')).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+    countDishes(segment) {
+        if (segment == 'New')
+            return this.item.OrderLines.filter(d => d.Status == 'New' || d.Status == 'Waiting').map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
+
+        return this.item.OrderLines.filter(d => !(d.Status == 'New' || d.Status == 'Waiting')).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
     }
 
     async addToCart(item, idUoM, quantity = 1, idx = -1) {
-        if (item.IsDisabled){
+        if (item.IsDisabled) {
             return;
         }
         if (this.submitAttempt) {
@@ -481,6 +484,29 @@ export class POSOrderDetailPage extends PageBase {
 
             this.setOrderValue(changed, true);
         }
+    }
+
+    goToPayment() {
+        let payment = {
+            IDBranch: this.item.IDBranch,
+            IDStaff: this.env.user.StaffID,
+            IDCustomer: this.item.IDContact,
+            IDSaleOrder: this.item.Id,
+            DebtAmount: Math.round(this.item.Debt),
+            IsActiveInputAmount: true,
+            IsActiveTypeCash: true,
+            ReturnUrl: window.location.href,
+            Lang: this.env.language.current,
+            Timestamp: Date.now()
+        };
+        let str = window.btoa(JSON.stringify(payment));
+        let code = this.convertUrl(str);
+        let url = environment.appDomain + "Payment?Code=" + code;
+        window.open(url, "_blank");
+    }
+
+    private convertUrl(str) {
+        return str.replace("=", "").replace("=", "").replace("+", "-").replace("_", "/")
     }
 
     async processDiscounts() {
@@ -1374,9 +1400,12 @@ export class POSOrderDetailPage extends PageBase {
         return new Promise((resolve, reject) => {
             this.commonService.connect('GET', 'BANK/IncomingPaymentDetail', { IDSaleOrder: this.item.Id }).toPromise()
                 .then((result: any) => {
-                    this.paymentList = result.filter(p => p.IncomingPayment.Status == "Success" || p.IncomingPayment.Status == "Processing");
+                    this.paymentList = result;//.filter(p => p.IncomingPayment.Status == "Success" || p.IncomingPayment.Status == "Processing");
                     this.paymentList.forEach(e => {
-                        e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentType, 'Name', '--', 'Code');
+                        console.log(this.paymentStatusList);
+
+                        e.IncomingPayment._Status = this.paymentStatusList.find(s => s.Code == e.IncomingPayment.Status) || { Code: e.IncomingPayment.Status, Name: e.IncomingPayment.Status, Color: 'danger' };
+                        e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentTypeList, 'Name', '--', 'Code');
                     });
                     let PaidAmounted = this.paymentList?.filter(x => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
                     let RefundAmount = this.paymentList?.filter(x => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true).map(x => x.Amount).reduce((a, b) => (+a) + (+b), 0);
@@ -1397,27 +1426,6 @@ export class POSOrderDetailPage extends PageBase {
                     reject(err);
                 });
         });
-    }
-
-    private convertUrl(str) {
-        return str.replace("=", "").replace("=", "").replace("+", "-").replace("_", "/")
-    }
-
-    goToPayment() {
-        let payment = {
-            IDBranch: this.item.IDBranch,
-            IDStaff: this.env.user.StaffID,
-            IDCustomer: this.item.IDContact,
-            IDSaleOrder: this.item.Id,
-            DebtAmount: Math.round(this.item.Debt),
-            IsActiveInputAmount: true,
-            IsActiveTypeCash: true,
-            Timestamp: Date.now()
-        };
-        let str = window.btoa(JSON.stringify(payment));
-        let code = this.convertUrl(str);
-        let url = environment.appDomain + "Payment?Code=" + code;
-        window.open(url, "_blank");
     }
 
     doneOrder() {
@@ -1602,65 +1610,63 @@ export class POSOrderDetailPage extends PageBase {
         /// Authentication setup ///
         qz.security.setCertificatePromise(function (resolve, reject) {
             resolve(
-                "-----BEGIN CERTIFICATE-----\n" +
-                "MIIEJzCCAw+gAwIBAgIUP4UAUIrS+ZMLzXTc4ZGmFwtrtZwwDQYJKoZIhvcNAQEL\n" +
-                "BQAwgaIxCzAJBgNVBAYTAlZOMRQwEgYDVQQIDAtIbyBDaGkgTWluaDESMBAGA1UE\n" +
-                "BwwJUGh1IE5odWFuMRMwEQYDVQQKDApJbmhvbGRpbmdzMRYwFAYDVQQLDA1pbmhv\n" +
-                "bGRpbmdzLnZuMRkwFwYDVQQDDBBQT1MgUHJpbnQgQ2xpZW50MSEwHwYJKoZIhvcN\n" +
-                "AQkBFhJ0ZXN0QGluaG9sZGluZ3Mudm4wHhcNMjIwOTI1MTM1NTI3WhcNMjMwOTI1\n" +
-                "MTM1NTI3WjCBojELMAkGA1UEBhMCVk4xFDASBgNVBAgMC0hvIENoaSBNaW5oMRIw\n" +
-                "EAYDVQQHDAlQaHUgTmh1YW4xEzARBgNVBAoMCkluaG9sZGluZ3MxFjAUBgNVBAsM\n" +
-                "DWluaG9sZGluZ3Mudm4xGTAXBgNVBAMMEFBPUyBQcmludCBDbGllbnQxITAfBgkq\n" +
-                "hkiG9w0BCQEWEnRlc3RAaW5ob2xkaW5ncy52bjCCASIwDQYJKoZIhvcNAQEBBQAD\n" +
-                "ggEPADCCAQoCggEBAJBf111zS/Dr3uMyFapT7ke2gv1iBgvh7jUdYZBVtKLie3S0\n" +
-                "zkZ2wtNiixDT9eJ77B1itYidy5ytL2RBHXqDzWNpostQIf8eU8fD4jnYwTw35ngd\n" +
-                "6xEEqIBaM4EO4J4J7KAH4gsCM2h3nWCvj2J1doyuOHct1Z5vw9zgeYFFyBILbdqn\n" +
-                "USA9UfomJvyxJUpqEbshS74vk/Y2GkOGvysvmkhEQSo2QIbh2b4+TAcSeAKshmM+\n" +
-                "tUfS51+97BtdpHmm9HbtqKbfYByu6/Fs8yNeeeNS/XmiubHJCipBSoMZpN/60sfw\n" +
-                "kJ76P9R9Z0WY7aHZ0BvETxjY1anIWpISTehKH/UCAwEAAaNTMFEwHQYDVR0OBBYE\n" +
-                "FHoXLOUeEJNf0ZmULwH/17usIuFLMB8GA1UdIwQYMBaAFHoXLOUeEJNf0ZmULwH/\n" +
-                "17usIuFLMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAIDcSH81\n" +
-                "qVyxDJvZs8LfjbgsctIAjYhp/LgC+22JwfWykg5ZVJ5gFXnxdVgZlLywmAQUQRwb\n" +
-                "TCZtI9k4jDznqOIeh5j8ikiufQA/OSn6qjnhsQSsKiTi0XraHAzC2r+PSOHQ8eOL\n" +
-                "iNeguOD3K0DwlJo9rG55O3vNf9fxTxA0vGt90+ghrBeVU5xnE6v0FBlwA/zenZKn\n" +
-                "MQnaBcbRZZoZGNXmvRQTIj1ZRU3DoAVS2eynSn8+wV7K63Aaoxj2lGvabGY20UVr\n" +
-                "mWO/G3e2a+816GZtiPkn7dmLgy5+n5KysSemi8WaYeuG2A5GxElVAhiLu3Gydlur\n" +
-                "y9qArmIOTNgB+Ck=\n" +
-                "-----END CERTIFICATE-----\n"
+`-----BEGIN CERTIFICATE-----
+MIIDyjCCArKgAwIBAgIUNyDQWpqLjSk0Gmf3SLg67MuWdkkwDQYJKoZIhvcNAQEL
+BQAwazEWMBQGA1UEAwwNaW5ob2xkaW5ncy52bjELMAkGA1UEBhMCVk4xDDAKBgNV
+BAgMA0hDTTEMMAoGA1UEBwwDSENNMRMwEQYDVQQKDApJbmhvbGRpbmdzMRMwEQYD
+VQQLDApJbmhvbGRpbmdzMB4XDTIzMDkyNjA0MTYxM1oXDTMzMDkyMzA0MTYxM1ow
+azEWMBQGA1UEAwwNaW5ob2xkaW5ncy52bjELMAkGA1UEBhMCVk4xDDAKBgNVBAgM
+A0hDTTEMMAoGA1UEBwwDSENNMRMwEQYDVQQKDApJbmhvbGRpbmdzMRMwEQYDVQQL
+DApJbmhvbGRpbmdzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoFj3
+TUVwCHLXQ6Yux5YfJeXeDvuvq+agqXhJv7C31WLz5on6nf86Dyh+l5rPmNe1Xg1s
+8jZlmW8a+BZWZwEoao+XINa/KjBzHuVTBU8PDMioFcHeJxomW7kuAAaCXVG0FrrM
+aQE3zialGN1igdPscC0RHo8AcwJV4k+KnoQgbIatUFl/fFFD1LL5t7lTgO/u/uLS
+HxOBBqTWs7Pfti3o/nm7JzyZGZcGSIRt3+MEh0RgJDyxMSb6bXcSxmEAza7hDCrG
+grvpcKhF/NQKjKeP3L1OLIDZONMifkQLIq8zvZ9XVPhWIfmZLu81aTCwQeLlvNEu
+pWh0QO9mihhmUEudOwIDAQABo2YwZDAdBgNVHQ4EFgQUURovU+z5QvkVTkjZxgSY
+pnjO7xEwHwYDVR0jBBgwFoAUURovU+z5QvkVTkjZxgSYpnjO7xEwDgYDVR0PAQH/
+BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwDQYJKoZIhvcNAQELBQADggEBAHoK
+6OvwM2gQndUxm2nqNOMsjKFdu0HyLg/Wc75rAbc7Ga7uVACqypWHgjvtjcOAqrUt
+hslwf9Gib6h3a+o0Ywx3lLQbUuXpX1cKAqSLbkILw4SW2tOsTWOwkYDQ9ztqu1Tr
+0hpTOLWVe+RHbrx5P81noSfGprqQ6YTxEqC4tgclQt/MT8FFmZpHoTruEyoIU+Xv
+p2MLbl23oY2mUUrc0/+JMKDu4X3pVTYGx/Nb78W9vZeAj1RhMq3aFGr2ervESx9b
++aNn0Q3uhefUWOukJENQeMo/7so+vqD3V6WIJTEmb9Xk721Yz7fHISlajgBPjL67
+5ULUsV0wtlXgroVVEL8=
+-----END CERTIFICATE-----`
             );
         });
     }
 
     async QZsignMessage() {
-        var privateKey = "-----BEGIN PRIVATE KEY-----\n" +
-            "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQX9ddc0vw697j\n" +
-            "MhWqU+5HtoL9YgYL4e41HWGQVbSi4nt0tM5GdsLTYosQ0/Xie+wdYrWIncucrS9k\n" +
-            "QR16g81jaaLLUCH/HlPHw+I52ME8N+Z4HesRBKiAWjOBDuCeCeygB+ILAjNod51g\n" +
-            "r49idXaMrjh3LdWeb8Pc4HmBRcgSC23ap1EgPVH6Jib8sSVKahG7IUu+L5P2NhpD\n" +
-            "hr8rL5pIREEqNkCG4dm+PkwHEngCrIZjPrVH0udfvewbXaR5pvR27aim32Acruvx\n" +
-            "bPMjXnnjUv15ormxyQoqQUqDGaTf+tLH8JCe+j/UfWdFmO2h2dAbxE8Y2NWpyFqS\n" +
-            "Ek3oSh/1AgMBAAECggEAGb6lcloZfCQrcjsfpuhhkLMoh5N/vYWzyw/qsmi+Fd+q\n" +
-            "ISUOtXz+/9/OKZmKerEbaSANfAebY9x0G34LCipPqT8Qkw2+ijY3vWMeR69xwdG8\n" +
-            "DMZVAQtiGsU68vQatMPTSLQvKERjs2jFDRUxTd7hXXPByOrI8YA/nnb+48D0TNct\n" +
-            "RR4P7VBacMSrdjfwvqpaODrWPgoQoONoVU5uDsnWPWEaO/rAM4Io9ziPawrM4zuq\n" +
-            "gu4lFCT+87Sbbhm6mq8VKUQRAB9vnDKO1MXqW5eIGvMnO+o7Ow0OWylPk/bp+6sc\n" +
-            "BPQcC4ht4CjjfdXZ8/ZGyCgV4cXyycXa6qxwlIDDYQKBgQDJC4Z1d/TMXK6XjraG\n" +
-            "TCmlqWp2d1AopO1c7fNnBXZU8+ZHKWEOY/EX+GjOT7yUoAw9rFW0fISfddmOXb0m\n" +
-            "nDakpJ4mZ3/vgIK2lWMtGNFk1JtZMOBIvhYRrYJBXzUeWJ5LwxtpDeWHjRYn0TSC\n" +
-            "kmj1Z8KRdeaBXicRXOUbQFdqxQKBgQC31rCAzng3QYx0BGVjzUeOEJ4fyqDXlkk6\n" +
-            "RK45ugQfJ380dOObFKOd6nh0cqVJY1Y82bnJDIoBJKRBpGj6dIG4HhO+kkxEcgXJ\n" +
-            "DQe4+W8tQK2rr9ODce9VZ/nec3nYpq83jgvt+UaL0cwWSgIh4LM+sVvvsaYj4971\n" +
-            "A0omy5/zcQKBgEO9cGawLnmVWPaUDYgerYG2Hbsg5I9tUtUXEAZMXtys+ZBMrvks\n" +
-            "T5XmC1pIn5/sdXNqV85ijkU0bkN77jnONNMw7GDASukmAeUHXM1bKWKyCE37G/cm\n" +
-            "pUT7k4H3VGyPK3cXnGq/VfFgZnCwGuNL9bWKapKciThZwwwkosWV3l6JAoGAWfcu\n" +
-            "mVpxalkhqwUbuSOUiOmI+HXpEJfzbhh+SrHFoplpnvo1CIepKna8TABu8uMyKMVE\n" +
-            "Lid8weJ0n8sdtLOfZ8MQVoqx2C0Ut7cwuE0ZI0QruYFqOUFgpqMjnMFWN7gat01E\n" +
-            "eUksRPB+t8mwEXQtQ9j37O07KQUy7ySU/TdZJ4ECgYEAj8K18PVHKqVGrWL6/s+J\n" +
-            "TfrOPwZXa3Hr/P8Cc01wewKZA9RTisl2cMp3k0YwGiIs8Ki51en7F230iC3tg2Vo\n" +
-            "7xIo4TXmLNfXSq2L5RyMqDmMVmUMOwcEFs6rqXKc2xeMeY31995cfY+x7wkAdS8V\n" +
-            "E7blzos2DBPw7nGs7E2/YRE=\n" +
-            "-----END PRIVATE KEY-----\n" +
-            "";
+        var privateKey =
+`-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCgWPdNRXAIctdD
+pi7Hlh8l5d4O+6+r5qCpeEm/sLfVYvPmifqd/zoPKH6Xms+Y17VeDWzyNmWZbxr4
+FlZnAShqj5cg1r8qMHMe5VMFTw8MyKgVwd4nGiZbuS4ABoJdUbQWusxpATfOJqUY
+3WKB0+xwLREejwBzAlXiT4qehCBshq1QWX98UUPUsvm3uVOA7+7+4tIfE4EGpNaz
+s9+2Lej+ebsnPJkZlwZIhG3f4wSHRGAkPLExJvptdxLGYQDNruEMKsaCu+lwqEX8
+1AqMp4/cvU4sgNk40yJ+RAsirzO9n1dU+FYh+Zku7zVpMLBB4uW80S6laHRA72aK
+GGZQS507AgMBAAECggEANSHFsGEV4nbLRatHTPM9lv04O5bCex+MlRs6tL4F7DtB
+vl5yIPB1eJheejXeHDM98dBZDVlhCRp7wUEFmFQV5Fl4JnWCGqS7QL2UaOntfrru
+l2cKCcLsevA9gdymTe3I0s9K9HBm4XSEuFyDS6nBatpEFfAkofdgJgFdWXFGnS7s
+8RwGI6jF/zBB+BAwyfLJvKLf7gLz4p6FHlnK/a6T7cWSH3nqo95/WZGj5FRdk2n8
+VghKGYmGkdZKLK6jRngpeJwC3c6gcSa/dCahCYuYyxnFmiZawg90mAKjwaIv7kwJ
+i6Oj+tPZj6gWSLi75hF7OO4KDDOoRqfQu3emVI9jAQKBgQDLx/U1yYyckbngPuP9
+G/kFb6tFi5l36yuIJudgRTQD/c5gKnuL6gZ8ma0fEXLzEvMlDjCzBsMSZxuw6pe3
+2nujy5GdvppsOXDrNT/v4OCuWFlu9R/MHJ8RfCQOkS/zXX1hmuLQfW5Pde0WPYF8
++ktIjB2hFBe61zAPdbV0sAn1GwKBgQDJb8QRHfZhqZnhr1Fv7T67WupyBJDJ5vaB
+Fsjl9e6zNCTfemtlA1IRWEEaxan/idMkvB3QyCAY7mR7nekRP3SAV/giSNoqXlEL
+51X89jnQss6GwYqVVWwmC5yqO+Or4Z5OqdlbmWrvhceIjPmaLyZtxZlxD2KvM1SX
+H5rM4/MaYQKBgQComFWiW47vFo3PHpknlpYPTlVII3gkQ7fvXCh/eKHRT5IH8/3l
+Qwh82/PkSV5uBtaNaNEXvNd1iULauyws2yEB4fEmrkQ6l8d5gcPVJZseA1BywXC+
+QUvFfoyiVLJ0SXvrXeabkbrLGQi/JsHT8YyJiAsXcnUzisdjcwJeeSqz0wKBgCHm
+KjPLPAxhc2EUlPrmDRmQikXX2NnxgWhmAjcY9Su5Sb9GJc6hCW2b0ZEE1MAJXLwg
+4E+jbitj6wsWnwNlD2EN7NcwNW7N4ovDSahBc6dYgAMTjRPmhUW9zIalf4IMfQy1
+7rtIjUNz2wly2AqHhssQZuss8KmVVNX93po+fknhAoGAVXtryIo3lOUfzXsjUzHZ
+7RBxXLYZ5+hxpyivrDI11eFolaWJnp+bOWa2c4dOlb1NkTMzIPIFQS7FCMU1UKkX
+eXh8jdv+XZW7tXqxNxCFxKzfxMn9SaA14D4tKFAZzOG8USqInmZ7xJHXI2oGt9ob
+Zb2Mby/Ky+iBPuRtLuWciAI=
+-----END PRIVATE KEY-----`;
 
         qz.security.setSignatureAlgorithm("SHA512"); // Since 2.1
         qz.security.setSignaturePromise(function (toSign) {
