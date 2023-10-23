@@ -165,11 +165,20 @@ export class POSOrderDetailPage extends PageBase {
     ngOnInit() {
         this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
             switch (data.Code) {
+                case 'app:POSOrderPaymentUpdate':
+                    this.notifyPayment(data);
+                    break;
                 case 'app:POSOrderFromCustomer':
                     this.notifyOrder(data.Data);
                     break;
-                case 'app:POSOrderPaymentUpdate':
-                    this.notifyPayment(data);
+                case 'app:POSLockOrderFromStaff':
+                    this.notifyLockOrder(data.Data);
+                    break;
+                case 'app:POSLockOrderFromCustomer':
+                    this.notifyLockOrder(data.Data);
+                    break;
+                case 'app:POSUnlockOrder':
+                    this.notifyUnlockOrder(data.Data);
                     break;
             }
         });
@@ -182,19 +191,37 @@ export class POSOrderDetailPage extends PageBase {
     }
     private notifyPayment(data) {
         const value = JSON.parse(data.Value);
-        if (value.IDSaleOrder == this.item.Id) {
+        if (value.IDSaleOrder == this.item?.Id) {
             this.refresh();
         }
     }
     private notifyOrder(data) {
-        if (data.id == this.item.Id) {
+        if (data.id == this.item?.Id) {
+            this.refresh();
+        }
+    }
+    private notifyLockOrder(data) {
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+
+        if (index != -1) {
+            this.env.showTranslateMessage("Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.", 'warning');
+            this.refresh();
+        }
+    }
+    private notifyUnlockOrder(data) {
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+
+        if (index != -1) {
+            this.env.showTranslateMessage("Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.", 'warning');
             this.refresh();
         }
     }
 
     preLoadData(event?: any): void {
         //'IsUseIPWhitelist','IPWhitelistInput', 'IsRequireOTP','POSLockSpamPhoneNumber',
-        let sysConfigQuery = ['IsAutoSave', 'SODefaultBusinessPartner', 'POSSettleAtCheckout', 'POSHideSendBarKitButton', 'POSEnableTemporaryPayment', 'POSAutoPrintBillAtSettle'];
+        let sysConfigQuery = ['IsAutoSave', 'SODefaultBusinessPartner', 'POSSettleAtCheckout', 'POSHideSendBarKitButton', 'POSEnableTemporaryPayment', 'POSEnablePrintTemporaryBill', 'POSAutoPrintBillAtSettle'];
 
         let forceReload = event === 'force';
         Promise.all([
@@ -213,7 +240,7 @@ export class POSOrderDetailPage extends PageBase {
                     e.Value = e._InheritedConfig.Value;
                 }
                 this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
-            })
+            });
 
             this.soStatusList = values[0];
             this.soDetailStatusList = values[1];
@@ -796,8 +823,24 @@ export class POSOrderDetailPage extends PageBase {
 
             let printerInfo = newTerminalList[index]['Printer'];
 
-            this.setupPrinting(printerInfo, object, receipt, times, false);
+            this.setupPrinting(printerInfo, object, receipt, times, true);
         }
+    }
+
+    unlockOrder() {
+        this.formGroup?.enable();
+        this.formGroup.controls.Status.setValue("Scheduled");
+        this.formGroup.controls.Status.markAsDirty();
+        let submitItem = this.getDirtyValues(this.formGroup);
+        this.saveChange2();
+    }
+
+    lockOrder() {
+        this.formGroup?.enable();
+        this.formGroup.controls.Status.setValue("TemporaryBill");
+        this.formGroup.controls.Status.markAsDirty();
+        let submitItem = this.getDirtyValues(this.formGroup);
+        this.saveChange2();
     }
 
     printerCodeList = [];
@@ -874,13 +917,17 @@ export class POSOrderDetailPage extends PageBase {
         this.printData.undeliveredItems = [];
         this.printData.selectedTables = this.tableList.filter(d => this.item.Tables.indexOf(d.Id) > -1);
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
-
-        this.item._Locked = !this.pageConfig.canEdit ? false : this.noLockStatusList.indexOf(this.item.Status) == -1;
+        
+        this.item._Locked = this.noLockStatusList.indexOf(this.item.Status) == -1;
         this.printData.currentBranch = this.env.branchList.find(d => d.Id == this.item.IDBranch);
 
         if (this.item._Locked) {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
+        }
+        else {
+            this.pageConfig.canEdit = true;
+            this.formGroup?.enable();
         }
         if (this.item._Customer) {
             this.contactListSelected.push(this.item._Customer);
@@ -1298,6 +1345,9 @@ export class POSOrderDetailPage extends PageBase {
 
         if (savedItem.Status == "Done") {
             this.sendPrint(savedItem.Status, true);
+        }
+        if (savedItem.Status == "TemporaryBill" && this.pageConfig.systemConfig.POSEnableTemporaryPayment && this.pageConfig.systemConfig.POSEnablePrintTemporaryBill) {
+            this.sendPrint();
         }
     }
 
@@ -1751,6 +1801,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
                     }
                     this.updateOrderLineStatus(e);
                 });
+                this.refresh();
                 // console.log(lib.dateFormat(new Date(), "hh:MM:ss") + '  ' + new Date().getMilliseconds()); // For Testing
                 return this.QZCloseConnection();
             });

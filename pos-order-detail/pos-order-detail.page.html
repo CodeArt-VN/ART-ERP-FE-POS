@@ -309,7 +309,7 @@
 						</div>
 
 						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Status" labelForId="Status" [multiple]="false" [clearable]="false" [items]="soStatusList" bindLabel="Name" bindValue="Code" placeholder="Trạng thái...">
+							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Status" labelForId="Status" [multiple]="false" [clearable]="false" [items]="soStatusList" bindLabel="Name" bindValue="Code" placeholder="Tình trạng...">
 								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
 									<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
 								</ng-template>
@@ -335,21 +335,31 @@
 							{{'Send BAR/KIT' | translate}}
 						</ion-button>
 					</ion-col>
-					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.systemConfig.IsAutoSave">
+					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.systemConfig.IsAutoSave && item.Status != 'TemporaryBill'">
 						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt">
 							{{'Save' | translate}}
 						</ion-button>
 					</ion-col>
-					<ion-col>
+					<ion-col *ngIf="item.Status == 'TemporaryBill'">
+						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();" [disabled]="submitAttempt || !item.Id">
+							Hủy tạm tính
+						</ion-button>
+					</ion-col>
+					<ion-col *ngIf="item.Status != 'TemporaryBill' && pageConfig.systemConfig.POSEnableTemporaryPayment">
+						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitAttempt || !item.Id">
+							Tạm tính tiền
+						</ion-button>
+					</ion-col>
+					<ion-col *ngIf="item.Status == 'TemporaryBill' || !pageConfig.systemConfig.POSEnableTemporaryPayment">
 						<ion-button color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id">
-							{{'Print' | translate}}
+							In phiếu
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="item && pageConfig.canEdit" style="flex-wrap: nowrap;">
+				<ion-row *ngIf="( item && pageConfig.canEdit ) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap;">
 					<ion-col size="12">
 						<ion-button *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
-							<ion-text>{{'Bill please' | translate}} {{item.Debt | number: '1.0-0'}} </ion-text>
+							<ion-text>{{'Bill please' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>
 						</ion-button>
 					</ion-col>
 				</ion-row>
@@ -464,11 +474,15 @@
 										<span class="address">{{printData.currentBranch?.Address || ''}}</span>
 										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
 
-										<ng-container *ngIf="pageConfig.canEdit">
+										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
 											<span class="brand">[ ORDER ]</span>
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
-										<ng-container *ngIf="!pageConfig.canEdit">
+										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'TemporaryBill'">
+											<span class="brand">[ TEMPORARY BILL ]</span>
+											<span>({{'Bill No.' | translate}}: {{id}})</span>
+										</ng-container>
+										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
 											<span class="brand">[ RECEIPT ]</span>
 											<span>({{'Receipt No.' | translate}}: {{id}})</span>
 										</ng-container>

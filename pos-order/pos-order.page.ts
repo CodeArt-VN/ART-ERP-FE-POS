@@ -22,7 +22,7 @@ import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-m
 export class POSOrderPage extends PageBase {
     tableGroupList = [];
     soStatusList = [];
-    noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered',];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
+    noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
     segmentView = 'all';
     orderCounter = 0;
     numberOfGuestCounter = 0;
@@ -59,6 +59,15 @@ export class POSOrderPage extends PageBase {
                 case 'app:POSSupport':
                     this.notifySupport(data.Data);
                     break;
+                case 'app:POSCallToPay':
+                    this.notifyCallToPay(data.Data);
+                    break;
+                case 'app:POSLockOrder':
+                    this.notifyLockOrder(data.Data);
+                    break;
+                case 'app:POSUnlockOrder':
+                    this.notifyUnlockOrder(data.Data);
+                    break;
             }
         });
         
@@ -94,8 +103,53 @@ export class POSOrderPage extends PageBase {
             this.playAudio("Support");       
             this.env.showMessage(data.value,"warning");
             this.setStorageNotification(null,null,null,"Support","Yêu cầu phục vụ","pos-order",data.value,null);
+            this.refresh();
         }
     }
+
+    private notifyCallToPay(data){
+        // const value = JSON.parse(data.value);
+
+        if(this.env.selectedBranch == data.name){
+            this.playAudio("Support");       
+            this.env.showMessage(data.value,"warning");
+            // let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+
+            this.setStorageNotification(null,null,null,"Support","Yêu cầu tính tiền","pos-order",data.value,null);
+            this.refresh();
+        }
+    }
+
+    private notifyLockOrder(data){
+        const value = JSON.parse(data.value);  
+        console.log(value);  
+
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Support");
+            let message = "Khách bàn "+value.Tables[0].TableName+" đã khóa đơn";
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Khóa đơn hàng","pos-order",message,url);
+            this.refresh();
+        }     
+    }
+
+    private notifyUnlockOrder(data){
+        const value = JSON.parse(data.value);  
+        console.log(value);  
+
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Support");
+            let message = "Khách bàn "+value.Tables[0].TableName+" đã mở đơn";
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Mở khóa đơn hàng","pos-order",message,url);
+            this.refresh();
+        }     
+    }
+
     private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
