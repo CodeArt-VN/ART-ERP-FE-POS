@@ -327,7 +327,7 @@
 				<ion-text>Tiếp tục gọi món</ion-text>
 			</ion-button>
 
-			<ion-button *ngIf="item.Debt > 0 && item.Status != 'Cancelled' && item?.Id != 0" [disabled]="submitAttempt || !item.Id" class="ion-margin-top" expand="block" (click)="lockOrder();">
+			<ion-button *ngIf="item.Debt > 0 && item.Status != 'Cancelled' && item?.Id != 0" [disabled]="submitAttempt || !item.Id || AllowSendOrder || item.Debt <= 0" class="ion-margin-top" expand="block" (click)="lockOrder();">
 				<ion-text >{{'Bill please' | translate}}</ion-text>
 			</ion-button>
 		</form>

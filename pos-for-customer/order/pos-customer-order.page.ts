@@ -185,6 +185,7 @@ export class POSCustomerOrderPage extends PageBase {
             }
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
             Object.assign(this.item, this.formGroup.getRawValue());
+            this.item.OrderLines = [];
             this.setOrderValue(this.item);
         }
         else {
