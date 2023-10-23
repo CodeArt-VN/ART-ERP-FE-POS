@@ -28,6 +28,9 @@ export class POSCustomerOrderPage extends PageBase {
     IDBranch = null;
     Branch;
     dealList = [];
+    isSuccessModalOpen = false;
+    isStatusModalOpen = false;
+    isLockOrderFromStaff = false;
 
     noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
     noLockLineStatusList = ['New', 'Waiting'];
@@ -108,9 +111,18 @@ export class POSCustomerOrderPage extends PageBase {
                 case 'app:POSOrderFromStaff':
                     this.notifyOrder(data.Data);
                     break;
-                case 'app:POSOrderFromCustomer':
-                    this.notifyFromCustomer(data.Data);
+                case 'app:POSLockOrderFromStaff':
+                    this.notifyLockOrderFromStaff(data.Data);
                     break;
+                case 'app:POSLockOrderFromCustomer':
+                    this.notifyLockOrderFromCustomer(data.Data);
+                    break;
+                case 'app:POSUnlockOrder':
+                    this.notifyUnlockOrder(data.Data);
+                    break;
+                // case 'app:POSOrderFromCustomer':
+                //     this.notifyFromCustomer(data.Data);
+                //     break;
             }
         });
         super.ngOnInit();
@@ -208,7 +220,8 @@ export class POSCustomerOrderPage extends PageBase {
     addToCart(item, idUoM, quantity = 1, IsUpdate = false, idx = -1) {
 
         if (!this.pageConfig.canEdit) {
-            this.isWifiSecuredModalOpen = true;
+            this.env.showTranslateMessage('Đơn hàng đang tạm khóa, không thể thêm món!', 'warning');
+            // this.isWifiSecuredModalOpen = true;
             return;
         }
         
@@ -442,12 +455,16 @@ export class POSCustomerOrderPage extends PageBase {
         this.printData.undeliveredItems = [];
         this.printData.printDate = lib.dateFormat(new Date(), "hh:MM dd/mm/yyyy");
 
-        this.item._Locked = !this.pageConfig.canEdit ? false : this.noLockStatusList.indexOf(this.item.Status) == -1;
+        this.item._Locked = this.noLockStatusList.indexOf(this.item.Status) == -1;
         this.printData.currentBranch = this.env.branchList.find(d => d.Id == this.item.IDBranch);
 
         if (this.item._Locked) {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
+        }
+        else {
+            this.pageConfig.canEdit = true;
+            this.formGroup?.enable();
         }
         this.UpdatePrice();
         this.calcOrder();
@@ -582,12 +599,11 @@ export class POSCustomerOrderPage extends PageBase {
         if (this.item.Id == data.id) {
             this.refresh();
         }
-        // else{
+        // else {
         //     let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
         //     if(index != -1){
         //         await this.getOrdersOfTable(this.idTable);
         //         this.env.showAlert("Có đơn hàng mới trên bàn này","Kiểm tra đơn hàng ",'Thông báo');
-
         //     }
         // }
     }
@@ -604,9 +620,46 @@ export class POSCustomerOrderPage extends PageBase {
             }
             this.IsMyHandle = false;
         }
-
-
     }
+
+    private notifyLockOrderFromStaff(data) {
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+        if (index != -1) {
+            this.refresh();
+            setTimeout(() => {
+                this.isLockOrderFromStaff = true;
+                this.pageConfig.isShowFeature = true;
+                this.isStatusModalOpen = true;
+            }, 2500);
+        }
+    }
+
+    private notifyLockOrderFromCustomer(data) {
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+        if (index != -1) {
+            this.refresh();
+            setTimeout(() => {
+                this.isLockOrderFromStaff = false;
+                this.pageConfig.isShowFeature = true;
+                this.isStatusModalOpen = true;
+            }, 2500);
+        }
+    }
+
+    private notifyUnlockOrder(data) {
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+        if (index != -1) {
+            this.refresh();
+            setTimeout(() => {
+                this.pageConfig.isShowFeature = true;
+                this.isStatusModalOpen = true;
+            }, 2500);
+        }
+    }
+
     private notifyPayment(data) {
         const value = JSON.parse(data.Value);
         if (this.item.Id == value.IDSaleOrder) {
@@ -701,14 +754,15 @@ export class POSCustomerOrderPage extends PageBase {
             this.idTable = this.item.Tables[0];
             let newURL = '#/pos-customer-order/' + this.item.Id + '/' + this.item.Tables[0];
             history.pushState({}, null, newURL);
-
         }
     }
+
     async reloadTable(IDTable) {
         await this.commonService.connect('GET', 'POS/ForCustomer/Table/' + IDTable, this.query).toPromise().then((result: any) => {
             this.Table = result;
         });
     }
+
     private getMenu() {
         let apiPath = {
             method: "GET",
@@ -908,7 +962,11 @@ export class POSCustomerOrderPage extends PageBase {
         }
         this.loadInfoOrder();
         this.calcOrder();
-        this.checkAllowSendOrder();
+        this.checkAllowSendOrder().finally(() => {
+            if (!this.AllowSendOrder) {
+                this.checkFormGroupDirty();
+            }
+        });
     }
 
     async checkAllowSendOrder() {
@@ -931,6 +989,20 @@ export class POSCustomerOrderPage extends PageBase {
                 this.AllowSendOrder = false;
             }
         });
+    }
+
+    checkFormGroupDirty() {
+        let fa = <FormArray>this.formGroup.controls.OrderLines;
+        for (let idx = 0; idx < fa.controls.length; idx++) {
+            let cfg = <FormGroup>fa.controls[idx];
+            if (cfg.controls.Remark.dirty) {
+                this.AllowSendOrder = true;
+                return;
+            }
+            else {
+                this.AllowSendOrder = false;
+            }
+        }
     }
 
     async saveChange() {
@@ -959,7 +1031,9 @@ export class POSCustomerOrderPage extends PageBase {
             }
 
             this.item = savedItem;
-            this.isSuccessModalOpen = true;
+            if (this.item.Status == 'New') {
+                this.isSuccessModalOpen = true;
+            }
         }
         this.loadedData();
 
@@ -972,6 +1046,18 @@ export class POSCustomerOrderPage extends PageBase {
             this.pageConfig.isShowFeature = false;
         }, 1);
 
+    }
+
+    closeStatusModal() {
+        this.isStatusModalOpen = false;
+        setTimeout(() => {
+            this.pageConfig.isShowFeature = true;
+            if (this.item.Status == 'TemporaryBill') {
+                if (!this.isLockOrderFromStaff) {
+                    this.goToPayment();
+                }
+            };
+        }, 1);
     }
 
     async sendOrder() {
@@ -1005,6 +1091,7 @@ export class POSCustomerOrderPage extends PageBase {
         this.IsMyHandle = true;
         this.OrderLines = [];
         this.env.setStorage("OrderLines" + this.idTable, []);
+        // this.callOrder();
     }
 
     loadInfoOrder() {
@@ -1022,7 +1109,34 @@ export class POSCustomerOrderPage extends PageBase {
 
     }
 
-    isSuccessModalOpen = false;
+
+    callOrder() {
+        let ItemModel = {
+            ID: this.idTable,
+            Code: "POSOrderFromCustomer",
+            Name: this.Table.IDBranch,
+            Remark: "khách hàng bàn " + this.Table.Name + " đã gọi món"
+        }
+        this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result => {
+            this.env.showMessage("Đã gọi món", "success");
+        }).catch(err => {
+            console.log(err);
+        });
+    }
+
+    callToPay() {
+        let ItemModel = {
+            ID: this.idTable,
+            Code: "POSCallToPay",
+            Name: this.Table.IDBranch,
+            Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu tính tiền"
+        }
+        this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result => {
+            this.env.showMessage("Đã gọi tính tiền", "success");
+        }).catch(err => {
+            console.log(err);
+        });
+    }
 
     callStaff() {
         let ItemModel = {
@@ -1036,7 +1150,27 @@ export class POSCustomerOrderPage extends PageBase {
         }).catch(err => {
             console.log(err);
         });
+    }
 
+    unlockOrder() {
+        this.formGroup?.enable();
+        this.formGroup.controls.Status.setValue("Scheduled");
+        this.formGroup.controls.Status.markAsDirty();
+        let submitItem = this.getDirtyValues(this.formGroup);
+        this.saveChange2();
+    }
+
+    lockOrder() {
+        if (this.item.Status == "TemporaryBill") {
+            this.goToPayment();
+        }
+        else {
+            this.formGroup?.enable();
+            this.formGroup.controls.Status.setValue("TemporaryBill");
+            this.formGroup.controls.Status.markAsDirty();
+            let submitItem = this.getDirtyValues(this.formGroup);
+            this.saveChange2();
+        }
     }
 
     async helpOrder(status) {
@@ -1107,6 +1241,11 @@ export class POSCustomerOrderPage extends PageBase {
         }).catch(err => { });
     }
     async addToStorage(item, idUoM, quantity = 1, IsDelete = false, idx = -1) {
+        if (this.item.Status == 'TemporaryBill') {
+            this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+            return;
+        }
+
         if (!this.pageConfig.canEdit) {
             if (!this.id) this.isWifiSecuredModalOpen = true;
             return;

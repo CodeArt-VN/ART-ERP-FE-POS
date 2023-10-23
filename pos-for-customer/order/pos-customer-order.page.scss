@@ -855,3 +855,35 @@ ion-buttons {
 		margin: 0 auto 50px;
 	}
 }
+
+ion-fab-list {
+	align-items: flex-end;
+}
+
+.custom-fab {
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    position: relative;
+    right: 75px;
+	margin-top: 10px;
+	
+	.label-background {
+		height: 30px;
+		width: 70px;
+		display: flex;
+		align-items: center;
+		background: white;
+		border-radius: 5px;
+		margin-right: 5px;
+		box-shadow: 3px 3px 5px 0px #888888;
+		justify-content: center;
+	}
+}
+  ion-fab[horizontal="start"] .custom-fab {
+	flex-direction: row-reverse;
+}
+  .custom-fab ion-button {
+	--height: 25px;
+	text-transform: none;
+}

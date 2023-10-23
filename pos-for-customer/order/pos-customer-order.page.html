@@ -26,9 +26,28 @@
 
 <ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
 	<ion-fab slot="fixed" vertical="bottom" horizontal="end">
-		<ion-fab-button (click)="callStaff()" class="linear-blue-btn">
+		<ion-fab-button class="linear-blue-btn">
 			<ion-icon name="megaphone-outline" ></ion-icon>
 		</ion-fab-button>
+		<ion-fab-list side="top">
+			<div class="custom-fab">
+				<div class="label-background">
+					<ion-label>Call to pay</ion-label>
+				</div>
+				<ion-fab-button color="primary" (click)="callToPay();">
+					<ion-icon name="receipt-outline"></ion-icon>
+				</ion-fab-button>
+			</div>
+
+			<div class="custom-fab">
+				<div class="label-background">
+					<ion-label>Call staff</ion-label>
+				</div>
+				<ion-fab-button color="primary" (click)="callStaff();">
+					<ion-icon name="person-outline"></ion-icon>
+				</ion-fab-button>
+			</div>
+		</ion-fab-list>
 	</ion-fab>
 	<!-- list Item -->
 	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
@@ -209,7 +228,7 @@
 			</div>
 
 
-			<ion-button class="linear-blue-btn" *ngIf="pageConfig.canEdit" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
+			<ion-button class="linear-blue-btn" *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
 				<ion-text *ngIf="id==0">{{'Order' | translate}}</ion-text>
 				<ion-text *ngIf="id!=0">{{'Update' | translate}}</ion-text>
 			</ion-button>
@@ -246,7 +265,7 @@
 							</div>
 							<div class="ion-padding"></div>
 							<div class="ion-padding">
-								<ion-button expand="block" (click)="closeSuccessModal()">{{'Back' | translate}}</ion-button>
+								<ion-button expand="block" (click)="closeSuccessModal()">Đóng</ion-button>
 							</div>
 						</div>
 
@@ -254,7 +273,61 @@
 				</ng-template>
 			</ion-modal>
 
-			<ion-button *ngIf="item.Debt > 0 && item.Status != 'Cancelled' && item?.Id != 0" [disabled]="submitAttempt || !item.Id" class="ion-margin-top" expand="block" (click)="goToPayment()">
+			<ion-modal [isOpen]="isStatusModalOpen">
+				<ng-template>
+					<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
+						<ion-fab slot="fixed" vertical="top" horizontal="end">
+							<ion-fab-button (click)="closeStatusModal()">
+								<ion-icon name="close"></ion-icon>
+							</ion-fab-button>
+						</ion-fab>
+						<div class="ion-padding" class="customer-message">
+							<div class="logo-wrapper">
+								<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
+							</div>
+							<div>
+								<ion-text *ngIf="item.Status != 'TemporaryBill'" color="success">
+									<h1>Đã mở đơn</h1>
+								</ion-text>
+								<ion-text *ngIf="item.Status == 'TemporaryBill'" color="danger">
+									<h1>Đã khóa đơn</h1>
+								</ion-text>
+
+								<p>
+									<ion-text *ngIf="item.Status != 'TemporaryBill'">Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.</ion-text>
+									<ion-text *ngIf="item.Status == 'TemporaryBill'">Đơn hàng đã được tạm khóa cho việc thanh toán.<br><br>
+										Bấm nút <b>Tính tiền</b> hoặc <em><b>Quét mã QR</b></em> để thanh toán, <br>
+										Bấm nút <b>Tiếp tục gọi món</b> để mở lại đơn hàng.<br>
+									</ion-text>
+									<br>
+									<br>
+									<ion-note>
+										{{'T1758'| translate}}<br>
+										<a [href]="'tel:'+Branch?.Phone">
+											<ion-text color="danger">
+												<b>{{ Branch?.Phone }}</b>
+											</ion-text>
+										</a>
+									</ion-note>
+								</p>
+							</div>
+							<div class="ion-padding"></div>
+							<div class="ion-padding">
+								<ion-button expand="block" (click)="closeStatusModal();">
+									<ion-text>Đóng</ion-text>
+								</ion-button>
+							</div>
+						</div>
+
+					</ion-content>
+				</ng-template>
+			</ion-modal>
+
+			<ion-button *ngIf="item.Status == 'TemporaryBill'" [disabled]="submitAttempt || !item.Id" class="ion-margin-top" expand="block" (click)="unlockOrder()">
+				<ion-text>Tiếp tục gọi món</ion-text>
+			</ion-button>
+
+			<ion-button *ngIf="item.Debt > 0 && item.Status != 'Cancelled' && item?.Id != 0" [disabled]="submitAttempt || !item.Id" class="ion-margin-top" expand="block" (click)="lockOrder();">
 				<ion-text >{{'Bill please' | translate}}</ion-text>
 			</ion-button>
 		</form>
