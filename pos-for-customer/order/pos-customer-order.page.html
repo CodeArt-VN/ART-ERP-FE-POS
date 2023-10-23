@@ -147,7 +147,7 @@
 										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -1,false, idx)">
 											<ion-icon slot="icon-only" name="remove"></ion-icon>
 										</ion-button>
-										<ion-button title="{{'Memo...' | translate}}" fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="openQuickMemo(line)">
+										<ion-button title="{{'Memo...' | translate}}" fill="clear" [disabled]="submitAttempt || line._Locked " color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="openQuickMemo(line)">
 											<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"></ion-icon>
 										</ion-button>
 										<span class="quantity">

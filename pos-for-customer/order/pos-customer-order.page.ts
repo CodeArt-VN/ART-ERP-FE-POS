@@ -332,6 +332,10 @@ export class POSCustomerOrderPage extends PageBase {
     async openQuickMemo(line) {
         if (this.submitAttempt) return;
         if (line.Status != 'New') return;
+        if (this.item.Status == 'TemporaryBill') {
+            this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+            return;
+        }
 
         const modal = await this.modalController.create({
             component: POSCustomerMemoModalPage,
@@ -1154,11 +1158,14 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     unlockOrder() {
-        this.formGroup?.enable();
-        this.formGroup.controls.Status.setValue("Scheduled");
-        this.formGroup.controls.Status.markAsDirty();
-        let submitItem = this.getDirtyValues(this.formGroup);
-        this.saveChange2();
+        let postDTO = { Ids: [], Code: null };
+        postDTO.Ids.push(this.item.Id);
+        postDTO.Code = 'Scheduled';
+
+        this.pageProvider.commonService.connect("POST", "POS/ForCustomer/toggleBillStatus/", postDTO).toPromise()
+        .then((savedItem: any) => {
+            this.refresh();
+        });
     }
 
     lockOrder() {
@@ -1166,11 +1173,14 @@ export class POSCustomerOrderPage extends PageBase {
             this.goToPayment();
         }
         else {
-            this.formGroup?.enable();
-            this.formGroup.controls.Status.setValue("TemporaryBill");
-            this.formGroup.controls.Status.markAsDirty();
-            let submitItem = this.getDirtyValues(this.formGroup);
-            this.saveChange2();
+            let postDTO = { Ids: [], Code: null };
+            postDTO.Ids.push(this.item.Id);
+            postDTO.Code = 'TemporaryBill';
+    
+            this.pageProvider.commonService.connect("POST", "POS/ForCustomer/toggleBillStatus/", postDTO).toPromise()
+            .then((savedItem: any) => {
+                this.refresh();
+            });
         }
     }
 
