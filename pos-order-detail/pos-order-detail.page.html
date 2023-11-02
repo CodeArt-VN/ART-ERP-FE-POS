@@ -10,11 +10,15 @@
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
 		</ion-button>
+
+		<ion-button (click)="scanQRCode()">
+			<ion-icon slot="icon-only" name="qr-code-outline"></ion-icon>
+		</ion-button>
 	</app-detail-toolbar>
 
 </ion-header>
 
-<ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
+<ion-content *ngIf="!scanning" appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
 	<!-- feature box -->
 	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
@@ -759,4 +763,21 @@
 			</div>
 		</ng-container>
 	</ng-container>
+</ion-content>
+
+<ion-content *ngIf="scanning" no-scroll class="cameraFrame">
+	<div class="frame">
+		<div class="blink-line">
+		</div>
+	</div>
+	<ion-fab vertical="bottom" horizontal="center" slot="fixed">
+		<ion-fab-button id='closeCamera' color="secondary" (click)="closeCamera()">
+			<ion-icon name="close"></ion-icon>
+		</ion-fab-button>
+	</ion-fab>
+	<!-- <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+		<ion-fab-button color="warning" (click)="lightCamera()">
+			<ion-icon name="flashlight"></ion-icon>
+		</ion-fab-button>
+	</ion-fab> -->
 </ion-content>
