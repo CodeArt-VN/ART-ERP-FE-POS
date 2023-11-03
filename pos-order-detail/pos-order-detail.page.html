@@ -659,6 +659,12 @@
 											</table>
 										</div>
 
+										<div class="message" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
+											<div>Quét mã thanh toán</div>
+											<div><small>(ZaloPay | Ngân hàng | Ví điện tử)</small></div>
+											<div style="  display: block; margin-left: auto; margin-right: auto; width: 70%;"><img class="qrc" [src]="VietQRCode"></div>
+										</div>
+
 										<div class="message">
 											<div><small>{{"This bill's invoice can only be generated in the same day" | translate}}</small></div>
 											<div><small>{{'This bill is valid within day' | translate}}</small></div>

@@ -21,6 +21,7 @@ import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
+import QRCode from 'qrcode'
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -832,23 +833,26 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     unlockOrder() {
-        let postDTO = { Ids: [], Code: null };
-        postDTO.Ids.push(this.item.Id);
-        postDTO.Code = 'Scheduled';
+        let postDTO = { Id: this.item.Id, Code: 'Scheduled' };
 
         this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
             this.refresh();
         });
     }
-
+    
+    VietQRCode;
     lockOrder() {
-        let postDTO = { Ids: [], Code: null };
-        postDTO.Ids.push(this.item.Id);
-        postDTO.Code = 'TemporaryBill';
-
+        let postDTO = { Id: this.item.Id, Code: 'TemporaryBill' };
+        this.VietQRCode = null;
         this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
+            let that = this;
+            if (savedItem.Code != "" && savedItem.Code != null) {
+                QRCode.toDataURL(savedItem.Code, { errorCorrectionLevel: 'H', version: 10, width: 500, scale: 20, type: 'image/webp' }, function (err, url) {
+                    that.VietQRCode = url;
+                })
+            }
             this.refresh();
         });
     }
@@ -1462,7 +1466,7 @@ export class POSOrderDetailPage extends PageBase {
                 .then((result: any) => {
                     this.paymentList = result;//.filter(p => p.IncomingPayment.Status == "Success" || p.IncomingPayment.Status == "Processing");
                     this.paymentList.forEach(e => {
-                        console.log(this.paymentStatusList);
+                        // console.log(this.paymentStatusList);
 
                         e.IncomingPayment._Status = this.paymentStatusList.find(s => s.Code == e.IncomingPayment.Status) || { Code: e.IncomingPayment.Status, Name: e.IncomingPayment.Status, Color: 'danger' };
                         e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentTypeList, 'Name', '--', 'Code');

@@ -1158,11 +1158,9 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     unlockOrder() {
-        let postDTO = { Ids: [], Code: null };
-        postDTO.Ids.push(this.item.Id);
-        postDTO.Code = 'Scheduled';
+        let postDTO = { Id: this.item.Id, Code: 'Scheduled' };
 
-        this.pageProvider.commonService.connect("POST", "POS/ForCustomer/toggleBillStatus/", postDTO).toPromise()
+        this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
             this.refresh();
         });
@@ -1173,9 +1171,7 @@ export class POSCustomerOrderPage extends PageBase {
             this.goToPayment();
         }
         else {
-            let postDTO = { Ids: [], Code: null };
-            postDTO.Ids.push(this.item.Id);
-            postDTO.Code = 'TemporaryBill';
+            let postDTO = { Id: this.item.Id, Code: 'TemporaryBill' };
     
             this.pageProvider.commonService.connect("POST", "POS/ForCustomer/toggleBillStatus/", postDTO).toPromise()
             .then((savedItem: any) => {
