@@ -23,6 +23,9 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode'
 
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+import { Capacitor } from '@capacitor/core';
+
 @Component({
     selector: 'app-pos-order-detail',
     templateUrl: './pos-order-detail.page.html',
@@ -1847,6 +1850,146 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
             }).catch(err => {
                 this.env.showTranslateMessage('Cannot save, please try again!', 'danger');
             })
+    }
+    
+    scanning = false;
+    scanQRCode() {
+        if (!Capacitor.isPluginAvailable('BarcodeScanner') || Capacitor.platform == 'web'){
+            this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.mobile-only','warning');
+            return;
+        }
+        BarcodeScanner.prepare().then(() => {
+            BarcodeScanner.checkPermission({ force: true }).then(status => {
+                if (status.granted) {
+                    this.scanning = true;
+                    document.querySelector('ion-app').style.backgroundColor = "transparent";
+                    BarcodeScanner.startScan().then((result) => {
+                        console.log(result);
+                        let close: any = document.querySelector('#closeCamera');
+
+                        if (!result.hasContent) {
+                            close.click();
+                        }
+
+                        if (result.content.indexOf('VCARD;') != -1) {
+
+                            var tempString = result.content.substring(
+                                result.content.indexOf("VCARD;") + 6, 
+                                result.content.length
+                            );
+
+                            var StaffCode = tempString.split(";")[0];
+                            var QRGenTime = tempString.split(";")[1];
+
+                            let toDay = new Date();
+                            let fromTime = new Date ( toDay );
+                            let toTime = new Date ( toDay );
+                            fromTime.setMinutes( toDay.getMinutes() - 1 );
+                            toTime.setMinutes( toDay.getMinutes() + 1 );
+
+                            let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+                            let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+
+                            if ( currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo ) {
+                                setTimeout(() => {
+                                    if (close) {
+                                        close.click();
+                                    }
+                                    this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
+                                        let address = resp['data'][0];
+                                        address.IDAddress = address['Addresses'][0]['Id'];
+                                        address.Address = address['Addresses'][0];
+                            
+                                        this.env.showMessage('Quét thành công! Họ và Tên: ' + address['Name']);
+                                        
+                                        this.contactListSelected.push(address);
+                                        this.changedIDAddress(address);
+                                        this.contactSearch();
+                                        this.cdr.detectChanges();
+                                        this.saveChange();
+                                    });
+                                }, 0);
+                            }
+                            else {
+                                this.env.showMessage('Mã đã hết hạn, vui lòng lấy lại mã nhân viên mới! Thời gian tạo mã QR: ' + QRGenTime, 'danger');
+                                setTimeout(() => this.scanQRCode(), 0);
+                            }
+                        } else {
+                            this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.scanning-with-value','', result.content);
+                            setTimeout(() => this.scanQRCode(), 0);
+                        }
+                    })
+                }
+                else {
+                    this.alertCtrl.create({
+                        header: 'Quét QR code',
+                        //subHeader: '---',
+                        message: 'Bạn chưa cho phép sử dụng camera, Xin vui lòng cấp quyền cho ứng dụng.',
+                        buttons: [
+                            {
+                                text: 'Không',
+                                role: 'cancel',
+                                handler: () => {}
+                            },
+                            {
+                                text: 'Đồng ý',
+                                cssClass: 'danger-btn',
+                                handler: () => {
+                                    BarcodeScanner.openAppSettings();
+                                }
+                            }
+                        ]
+                    }).then(alert => {
+                        alert.present();
+                    })
+                }
+            })
+            .catch((e: any) => console.log('Error is', e));
+        })
+    }
+
+    closeCamera() {
+        if (!Capacitor.isPluginAvailable('BarcodeScanner') || Capacitor.platform == 'web'){
+            return;
+        }
+        this.scanning = false;
+        this.lighting = false;
+        this.useFrontCamera = false;
+        document.querySelector('ion-app').style.backgroundColor = "";
+        BarcodeScanner.showBackground();
+        BarcodeScanner.stopScan();
+    }
+
+    lighting = false;
+    lightCamera() {
+        // if (this.lighting) {
+        //     this.qrScanner.disableLight().then(() => {
+        //         this.lighting = false;
+        //     });
+        // }
+        // else {
+        //     this.qrScanner.enableLight().then(() => {
+        //         this.lighting = true;
+        //     });
+        // }
+    }
+
+    useFrontCamera = false;
+    reversalCamera() {
+        // if (this.useFrontCamera) {
+        //     this.qrScanner.useBackCamera().then(() => {
+        //         this.useFrontCamera = false;
+        //     });
+        // }
+        // else {
+        //     this.qrScanner.useFrontCamera().then(() => {
+        //         this.useFrontCamera = true;
+        //     });
+        // }
+    }
+
+    ionViewWillLeave() {
+        this.closeCamera();
     }
 }
 
