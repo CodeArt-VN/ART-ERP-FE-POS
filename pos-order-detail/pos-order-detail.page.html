@@ -479,15 +479,15 @@
 										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
 
 										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
-											<span class="brand">[ ORDER ]</span>
+											<span class="brand">ORDER</span>
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'TemporaryBill'">
-											<span class="brand">[ TEMPORARY BILL ]</span>
+											<span class="brand">TEMPORARY BILL</span>
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
-											<span class="brand">[ RECEIPT ]</span>
+											<span class="brand">RECEIPT</span>
 											<span>({{'Receipt No.' | translate}}: {{id}})</span>
 										</ng-container>
 
@@ -499,8 +499,18 @@
 												<td><span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span></td>
 											</tr>
 											<tr>
-												<td class="title">{{'Date' | translate}}</td>
-												<td>{{item.OrderDate | date: 'HH:mm dd/MM'}}</td>
+												<td class="title">Ngày mở</td>
+												<td>{{item.OrderDate | date: 'HH:mm dd/MM/yyyy'}}</td>
+											</tr>
+											<tr>
+												<td class="title">Ngày in</td>
+												<td>{{printData.printDate}}</td>
+											</tr>
+											<tr *ngIf="kitchenQuery=='all'">
+												<td class="title">Thu ngân</td>
+												<td>{{env.user.FullName}}
+
+												</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
 												<td class="title">{{'Customer' | translate}}</td>
@@ -663,10 +673,16 @@
 											</table>
 										</div>
 
+										<div class="message" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
+											<div>Quét mã thanh toán</div>
+											<div><small>(ZaloPay | Ngân hàng | Ví điện tử)</small></div>
+											<div style="  display: block; margin-left: auto; margin-right: auto; width: 70%;"><img class="qrc" [src]="VietQRCode"></div>
+										</div>
+
 										<div class="message">
-											<div><small>{{"This bill's invoice can only be generated in the same day" | translate}}</small></div>
-											<div><small>{{'This bill is valid within day' | translate}}</small></div>
-											<div style="text-transform: uppercase;">
+											<div><small>Cảm ơn & Hẹn gặp lại Quý Khách!</small></div>
+											<div><small>Phiếu thanh toán chỉ có giá trị xuất hoá đơn<br> GTGT trong ngày.</small></div>
+											<div>
 												{{'Thank you! See you again!' | translate}}
 											</div>
 										</div>
