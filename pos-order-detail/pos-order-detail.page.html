@@ -675,13 +675,13 @@
 
 										<div class="message" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
 											<div>Quét mã thanh toán</div>
-											<div><small>(ZaloPay | Ngân hàng | Ví điện tử)</small></div>
-											<div style="  display: block; margin-left: auto; margin-right: auto; width: 70%;"><img class="qrc" [src]="VietQRCode"></div>
+											<div style="font-size: 0.8em;">(ZaloPay | Ngân hàng | Ví điện tử)</div>
+											<div style="display: block; margin-left: auto; margin-right: auto; width: 70%;"><img class="qrc" [src]="VietQRCode"></div>
 										</div>
 
 										<div class="message">
-											<div><small>Cảm ơn & Hẹn gặp lại Quý Khách!</small></div>
-											<div><small>Phiếu thanh toán chỉ có giá trị xuất hoá đơn<br> GTGT trong ngày.</small></div>
+											<div style="font-size: 0.8em;">Cảm ơn & Hẹn gặp lại Quý Khách!</div>
+											<div style="font-size: 0.8em;">Phiếu thanh toán chỉ có giá trị xuất hoá đơn<br> GTGT trong ngày.</div>
 											<div>
 												{{'Thank you! See you again!' | translate}}
 											</div>
