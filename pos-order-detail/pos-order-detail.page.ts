@@ -852,11 +852,13 @@ export class POSOrderDetailPage extends PageBase {
         .then((savedItem: any) => {
             let that = this;
             if (savedItem.Code != "" && savedItem.Code != null) {
-                QRCode.toDataURL(savedItem.Code, { errorCorrectionLevel: 'H', version: 10, width: 500, scale: 20, type: 'image/webp' }, function (err, url) {
+                QRCode.toDataURL(savedItem.Code, { errorCorrectionLevel: 'H', version: 10, width: 150, scale: 1, type: 'image/jpeg' }, function (err, url) {
                     that.VietQRCode = url;
-                })
+                });
             }
-            this.refresh();
+            if (this.pageConfig.systemConfig.POSEnableTemporaryPayment && this.pageConfig.systemConfig.POSEnablePrintTemporaryBill) {
+                this.sendPrint('TemporaryBill');
+            };
         });
     }
 

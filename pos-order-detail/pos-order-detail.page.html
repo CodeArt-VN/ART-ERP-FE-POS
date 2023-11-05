@@ -482,7 +482,7 @@
 											<span class="brand">ORDER</span>
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
-										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'TemporaryBill'">
+										<ng-container *ngIf="item.Status == 'TemporaryBill'">
 											<span class="brand">TEMPORARY BILL</span>
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
@@ -676,7 +676,7 @@
 										<div class="message" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
 											<div>Quét mã thanh toán</div>
 											<div style="font-size: 10px;">(ZaloPay | Ngân hàng | Ví điện tử)</div>
-											<div style="display: block; margin-left: auto; margin-right: auto; width: 70%;"><img class="qrc" [src]="VietQRCode"></div>
+											<div style="display: block; margin-left: auto; margin-right: auto; width: 150px; height: 150px;"><img class="qrc" [src]="VietQRCode"></div>
 										</div>
 
 										<div class="message">
