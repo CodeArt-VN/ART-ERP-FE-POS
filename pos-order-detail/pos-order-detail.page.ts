@@ -276,10 +276,15 @@ export class POSOrderDetailPage extends PageBase {
 
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
+            this.getDefaultPrinter();
         }
         else {
             this.patchOrderValue();
-            this.getPayments();
+            this.getPayments().finally(() => {
+                this.getDefaultPrinter().finally(() => {
+                    this.getQRPayment();
+                });
+            });
             this.getPromotionProgram();
             if (this.item._Customer.IsStaff == true) {
                 this.getStaffInfo(this.item._Customer.Code);
@@ -288,11 +293,17 @@ export class POSOrderDetailPage extends PageBase {
         this.loadOrder();
         this.contactSearch();
         this.cdr.detectChanges();
+    }
 
-        this.printerTerminalProvider.read({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).then(async (results: any) => {
-            this.defaultPrinter.push(results['data']?.[0]?.['Printer']);
-            this.defaultPrinter = [...new Map(this.defaultPrinter.map((item: any) => [item?.['Id'], item])).values()];
-            this.getQRPayment();
+    getDefaultPrinter() {
+        return new Promise((resolve, reject) => {
+            this.printerTerminalProvider.read({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).then(async (results: any) => {
+                this.defaultPrinter.push(results['data']?.[0]?.['Printer']);
+                this.defaultPrinter = [...new Map(this.defaultPrinter.map((item: any) => [item?.['Id'], item])).values()];
+                resolve(this.defaultPrinter);
+            }).catch(err => {
+                reject(err);
+            });
         });
     }
 
@@ -1507,7 +1518,7 @@ export class POSOrderDetailPage extends PageBase {
                         this.doneOrder();
                         this.formGroup.disable();
                     }
-
+                    resolve(this.paymentList);
                 })
                 .catch(err => {
                     reject(err);
