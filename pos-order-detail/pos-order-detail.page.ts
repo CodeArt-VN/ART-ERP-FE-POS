@@ -906,6 +906,7 @@ export class POSOrderDetailPage extends PageBase {
 
     getQRPayment() {
         if (this.paymentList.length) {
+            this.VietQRCode = null;
             let payment = this.paymentList.find(p => p.IncomingPayment.Remark == "VietQR-AutoGen" && p.IncomingPayment.Status == "Processing")?.IncomingPayment;
             if (this.item.Status == "TemporaryBill" && payment) {
                 this.GenQRCode(payment.Code);

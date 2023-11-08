@@ -1160,7 +1160,7 @@ export class POSCustomerOrderPage extends PageBase {
     unlockOrder() {
         let postDTO = { Id: this.item.Id, Code: 'Scheduled' };
 
-        this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
+        this.pageProvider.commonService.connect("POST", "POS/ForCustomer/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
             this.refresh();
         });
