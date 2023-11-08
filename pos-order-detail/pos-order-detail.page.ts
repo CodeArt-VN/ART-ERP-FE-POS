@@ -276,10 +276,15 @@ export class POSOrderDetailPage extends PageBase {
 
             Object.assign(this.item, this.formGroup.getRawValue());
             this.setOrderValue(this.item);
+            this.getDefaultPrinter();
         }
         else {
             this.patchOrderValue();
-            this.getPayments();
+            this.getPayments().finally(() => {
+                this.getDefaultPrinter().finally(() => {
+                    this.getQRPayment();
+                });
+            });
             this.getPromotionProgram();
             if (this.item._Customer.IsStaff == true) {
                 this.getStaffInfo(this.item._Customer.Code);
@@ -288,10 +293,17 @@ export class POSOrderDetailPage extends PageBase {
         this.loadOrder();
         this.contactSearch();
         this.cdr.detectChanges();
+    }
 
-        this.printerTerminalProvider.read({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).then(async (results: any) => {
-            this.defaultPrinter.push(results['data']?.[0]?.['Printer']);
-            this.defaultPrinter = [...new Map(this.defaultPrinter.map((item: any) => [item?.['Id'], item])).values()];
+    getDefaultPrinter() {
+        return new Promise((resolve, reject) => {
+            this.printerTerminalProvider.read({ IDBranch: this.env.selectedBranch, IsDeleted: false, IsDisabled: false }).then(async (results: any) => {
+                this.defaultPrinter.push(results['data']?.[0]?.['Printer']);
+                this.defaultPrinter = [...new Map(this.defaultPrinter.map((item: any) => [item?.['Id'], item])).values()];
+                resolve(this.defaultPrinter);
+            }).catch(err => {
+                reject(err);
+            });
         });
     }
 
@@ -844,20 +856,37 @@ export class POSOrderDetailPage extends PageBase {
         });
     }
     
-    VietQRCode;
+
     lockOrder() {
         let postDTO = { Id: this.item.Id, Code: 'TemporaryBill' };
-        this.VietQRCode = null;
+        
         this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
-            let that = this;
-            if (savedItem.Code != "" && savedItem.Code != null) {
-                QRCode.toDataURL(savedItem.Code, { errorCorrectionLevel: 'H', version: 10, width: 500, scale: 20, type: 'image/webp' }, function (err, url) {
-                    that.VietQRCode = url;
-                })
-            }
             this.refresh();
         });
+    }
+
+    getQRPayment() {
+        if (this.paymentList.length) {
+            let payment = this.paymentList.find(p => p.IncomingPayment.Remark == "VietQR-AutoGen" && p.IncomingPayment.Status == "Processing")?.IncomingPayment;
+            if (this.item.Status == "TemporaryBill" && payment) {
+                this.GenQRCode(payment.Code);
+            }
+        };
+    }
+
+    VietQRCode;
+    GenQRCode(code) {
+        let that = this;
+        this.VietQRCode = null;
+        if (code != "" && code != null) {
+            QRCode.toDataURL(code, { errorCorrectionLevel: 'H', version: 10, width: 150, scale: 1, type: 'image/jpeg' }, function (err, url) {
+                that.VietQRCode = url;
+            });
+        }
+        if (this.pageConfig.systemConfig.POSEnableTemporaryPayment && this.pageConfig.systemConfig.POSEnablePrintTemporaryBill) {
+            this.sendPrint('TemporaryBill');
+        };
     }
 
     printerCodeList = [];
@@ -1485,9 +1514,11 @@ export class POSOrderDetailPage extends PageBase {
 
                     if (this.pageConfig.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done') {
                         this.env.showTranslateMessage('The order has been paid, the system will automatically close this bill.');
+                        this.formGroup.enable();
                         this.doneOrder();
+                        this.formGroup.disable();
                     }
-
+                    resolve(this.paymentList);
                 })
                 .catch(err => {
                     reject(err);
@@ -1554,7 +1585,7 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     cssStyling = `
-    .bill .items .name,.bill .items tr:last-child td{border:none!important}.bill,.bill .title,.sheet{color:#000}.sheet .no-break-page,.sheet .no-break-page *,.sheet table break-guard,.sheet table break-guard *,.sheet table tr{page-break-inside:avoid}.bill{display:block;overflow:hidden!important}.bill .sheet{box-shadow:none!important}.bill .header,.bill .message,.sheet.rpt .cen,.text-center{text-align:center}.bill .header span{display:inline-block;width:100%}.bill .header .logo img{max-width:150px;max-height:75px}.bill .header .bill-no,.bill .header .brand,.bill .items .quantity,.bold,.sheet.rpt .bol{font-weight:700}.bill .header .address{font-size:80%;font-style:italic}.bill .table-info{border:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .table-info-bottom{border-bottom:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .items{margin:5px 0}.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}.bill .items .name{width:100%;padding-top:5px;padding-bottom:2px!important}.bill .items .code{font-weight:700;text-transform:uppercase}.bill .items .total,.sheet.rpt .num,.text-right{text-align:right}.bill .header,.bill .items,.bill .message,.bill .table-info,.bill .table-info-bottom,.bill .table-info-top{padding-left:8px;padding-right:8px}.page-footer-space{margin-top:10px}.table-name-bill{font-size:16px}.table-info-top td{padding-top:5px}.table-info-top .small{font-size:smaller!important}.sheet{margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:'Times New Roman',Times,serif;font-size:13px;background:#fff}.sheet.rpt .top-zone{min-height:940px}.sheet.rpt table,.sheet.rpt tbody table{width:100%;border-collapse:collapse}.sheet.rpt tbody table td{padding:0}.sheet.rpt .rpt-header .ngay-hd{width:100px}.sheet.rpt .rpt-header .title{font-size:18px;font-weight:700;color:#000}.sheet.rpt .rpt-header .head-c1{width:75px}.sheet.rpt .chu-ky,.sheet.rpt .rpt-nvgh-header{margin-top:20px}.sheet.rpt .ds-san-pham{margin:10px 0}.sheet.rpt .ds-san-pham td{padding:2px 5px;border:1px solid #000;white-space:nowrap}.sheet.rpt .ds-san-pham .head{background-color:#f1f1f1;font-weight:700}.sheet.rpt .ds-san-pham .oven{background-color:#f1f1f1}.sheet.rpt .ds-san-pham .ghi-chu{min-width:170px}.sheet.rpt .ds-san-pham .tien{width:200px}.sheet.rpt .thanh-tien .c1{width:95px}.sheet.rpt .chu-ky td{font-weight:700;text-align:center}.sheet.rpt .chu-ky .line2{font-weight:400;height:100px;page-break-inside:avoid}.sheet.rpt .noti{margin-top:-105px}.sheet.rpt .noti td{vertical-align:bottom}.sheet.rpt .noti td .qrc{width:100px;height:100px;border:1px solid;display:block}.sheet.rpt .big{font-size:16px;font-weight:700;color:#b7332b}.sheet .page-footer,.sheet .page-footer-space,.sheet .page-header,.sheet .page-header-space{height:10mm}.sheet table{page-break-inside:auto}.sheet table tr{page-break-after:auto}.float-right{float:right}
+    .bill .items .name,.bill .items tr:last-child td{border:none!important}.bill,.bill .title,.sheet{color:#000;font-sized:13px;}.sheet .no-break-page,.sheet .no-break-page *,.sheet table break-guard,.sheet table break-guard *,.sheet table tr{page-break-inside:avoid}.bill{display:block;overflow:hidden!important}.bill .sheet{box-shadow:none!important}.bill .header,.bill .message,.sheet.rpt .cen,.text-center{text-align:center}.bill .header span{display:inline-block;width:100%}.bill .header .logo img{max-width:150px;max-height:75px}.bill .header .bill-no,.bill .header .brand,.bill .items .quantity,.bold,.sheet.rpt .bol{font-weight:700}.bill .header .address{font-size:80%;font-style:italic}.bill .table-info{border:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .table-info-bottom{border-bottom:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .items{margin:5px 0}.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}.bill .items .name{width:100%;padding-top:5px;padding-bottom:2px!important}.bill .items .code{font-weight:700;text-transform:uppercase}.bill .items .total,.sheet.rpt .num,.text-right{text-align:right}.bill .header,.bill .items,.bill .message,.bill .table-info,.bill .table-info-bottom,.bill .table-info-top{padding-left:8px;padding-right:8px}.page-footer-space{margin-top:10px}.table-name-bill{font-size:16px}.table-info-top td{padding-top:5px}.table-info-top .small{font-size:smaller!important}.sheet{margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:'Times New Roman',Times,serif;font-size:13px;background:#fff}.sheet.rpt .top-zone{min-height:940px}.sheet.rpt table,.sheet.rpt tbody table{width:100%;border-collapse:collapse}.sheet.rpt tbody table td{padding:0}.sheet.rpt .rpt-header .ngay-hd{width:100px}.sheet.rpt .rpt-header .title{font-size:18px;font-weight:700;color:#000}.sheet.rpt .rpt-header .head-c1{width:75px}.sheet.rpt .chu-ky,.sheet.rpt .rpt-nvgh-header{margin-top:20px}.sheet.rpt .ds-san-pham{margin:10px 0}.sheet.rpt .ds-san-pham td{padding:2px 5px;border:1px solid #000;white-space:nowrap}.sheet.rpt .ds-san-pham .head{background-color:#f1f1f1;font-weight:700}.sheet.rpt .ds-san-pham .oven{background-color:#f1f1f1}.sheet.rpt .ds-san-pham .ghi-chu{min-width:170px}.sheet.rpt .ds-san-pham .tien{width:200px}.sheet.rpt .thanh-tien .c1{width:95px}.sheet.rpt .chu-ky td{font-weight:700;text-align:center}.sheet.rpt .chu-ky .line2{font-weight:400;height:100px;page-break-inside:avoid}.sheet.rpt .noti{margin-top:-105px}.sheet.rpt .noti td{vertical-align:bottom}.sheet.rpt .noti td .qrc{width:100px;height:100px;border:1px solid;display:block}.sheet.rpt .big{font-size:16px;font-weight:700;color:#b7332b}.sheet .page-footer,.sheet .page-footer-space,.sheet .page-header,.sheet .page-header-space{height:10mm}.sheet table{page-break-inside:auto}.sheet table tr{page-break-after:auto}.float-right{float:right}
     `;
     deleteVoucher(p) {
         let apiPath = {
