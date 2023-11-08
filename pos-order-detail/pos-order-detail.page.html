@@ -65,13 +65,13 @@
 									</div>
 
 									<div class="od-quantity">
-										<ion-button title="{{'Delete' | translate}}" fill="clear" *ngIf="!line._Locked" [disabled]="submitAttempt" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx);">
+										<ion-button title="{{'Delete' | translate}}" fill="clear" *ngIf="!line._Locked" [disabled]="submitAttempt" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx, line.Status);">
 											<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1, idx); line._isShowFoC = false;">
+										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status); line._isShowFoC = false;">
 											<ion-icon slot="icon-only" name="add"></ion-icon>
 										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -1, idx); line._isShowFoC = false;">
+										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status); line._isShowFoC = false;">
 											<ion-icon slot="icon-only" name="remove"></ion-icon>
 										</ion-button>
 										<ion-button title="{{'Memo...' | translate}}" fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="openQuickMemo(line)">
@@ -434,7 +434,7 @@
 											</span>
 										</span>
 
-										<ion-button [disabled]="i.IsDisabled" [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small"  (click)="addToCart(i, u.Id)">
+										<ion-button [disabled]="i.IsDisabled" [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="(i.BookedQuantity && i.Status != 'Cancelled')? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small"  (click)="addToCart(i, u.Id)">
 											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
 										</ion-button>
 									</span>
