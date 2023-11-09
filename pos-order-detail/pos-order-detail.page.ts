@@ -25,6 +25,7 @@ import QRCode from 'qrcode'
 
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { Capacitor } from '@capacitor/core';
+import { POSOrderLinesCancelModalPage } from '../pos-orderlines-cancel-modal/pos-orderlines-cancel-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -323,7 +324,7 @@ export class POSOrderDetailPage extends PageBase {
         return this.item.OrderLines.filter(d => !(d.Status == 'New' || d.Status == 'Waiting')).map(x => x.Quantity).reduce((a, b) => (+a) + (+b), 0);
     }
 
-    async addToCart(item, idUoM, quantity = 1, idx = -1) {
+    async addToCart(item, idUoM, quantity = 1, idx = -1, status = '') {
         if (item.IsDisabled) {
             return;
         }
@@ -410,9 +411,7 @@ export class POSOrderDetailPage extends PageBase {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
                 if (this.pageConfig.canDeleteItems) {
                     this.env.showPrompt('Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?', item.Name, 'Xóa sản phẩm').then(_ => {
-
-                        line.Quantity += quantity;
-                        this.setOrderValue({ OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Quantity: line.Quantity }] });
+                        this.openOrderLinesCancellationReason(line, quantity);
                     }).catch(_ => { });
                 }
                 else {
@@ -689,6 +688,45 @@ export class POSOrderDetailPage extends PageBase {
         }
     }
 
+    async openOrderLinesCancellationReason(line, quantity) {
+        if (this.submitAttempt) return;
+        const modal = await this.modalController.create({
+            component: POSOrderLinesCancelModalPage,
+            id: 'POSOrderLinesCancelModalPage',
+            backdropDismiss: true,
+            cssClass: 'modal-cancellation-reason',
+            componentProps: { item: {} }
+        });
+        modal.present();
+
+        const { data, role } = await modal.onWillDismiss();
+
+        if (role == 'confirm') {
+            let cancelData: any = { Code: data.Code, OrderLine: line, RemoveQuantity: quantity};
+            if (cancelData.Code == 'Other') {
+                cancelData.Remark = data.CancelNote
+            }
+
+            this.env.showPrompt('Bạn chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm').then(_ => {
+                let publishEventCode = this.pageConfig.pageName;
+                if (this.submitAttempt == false) {
+                    this.submitAttempt = true;
+
+                    this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData).toPromise()
+                        .then(() => {
+                            if (publishEventCode) {
+                                this.env.publishEvent({ Code: publishEventCode });
+                            }
+                            this.refresh();
+                            this.submitAttempt = false;
+                        }).catch(err => {
+                            this.submitAttempt = false;
+                        });
+                }
+            }).catch(_ => { });
+        }
+    }
+
     saveOrderData() {
         let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
         this.env.showPrompt(message, null, 'Thông báo').then(_ => {
@@ -868,6 +906,7 @@ export class POSOrderDetailPage extends PageBase {
 
     getQRPayment() {
         if (this.paymentList.length) {
+            this.VietQRCode = null;
             let payment = this.paymentList.find(p => p.IncomingPayment.Remark == "VietQR-AutoGen" && p.IncomingPayment.Status == "Processing")?.IncomingPayment;
             if (this.item.Status == "TemporaryBill" && payment) {
                 this.GenQRCode(payment.Code);
