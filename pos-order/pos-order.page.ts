@@ -502,4 +502,34 @@ export class POSOrderPage extends PageBase {
         this.env.setStorage('Notifications',notifications);
         this.notifications.unshift(notification);
     }
+
+    exportPOSData() {
+        let query = {
+            IDBranch: this.query.IDBranch,
+            Type: this.query.Type,
+            Keyword: this.query.Keyword
+        };
+        this.loadingController.create({
+            cssClass: 'my-custom-class',
+            message: 'Đang tạo bảng kê, xin vui lòng chờ giây lát...'
+        }).then(loading => {
+            loading.present();
+            this.commonService.connect("GET", "SALE/Order/ExportPOSOrderList", query).toPromise().then((response: any) => {
+                this.submitAttempt = false;
+                if (loading) loading.dismiss();
+                this.downloadURLContent(ApiSetting.mainService.base + response);
+            }).catch(err => {
+				if (err.message != null) {
+					this.env.showMessage(err.message, 'danger');
+				}
+				else {
+					this.env.showTranslateMessage('erp.app.pages.bi.sales-report.message.can-not-get-data','danger');
+				}
+                this.submitAttempt = false;
+                if (loading) loading.dismiss();
+                this.refresh();
+            });
+
+        });
+    }
 }
