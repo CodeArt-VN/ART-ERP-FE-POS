@@ -95,22 +95,26 @@ export class POSSplitModalPage extends PageBase {
             this.item.SplitedOrders.push({
                 isFirst: true,
                 IDContact: this.selectedOrder.IDContact,
+                IDAddress: this.selectedOrder.IDAddress,
                 ContactName: this.selectedOrder.CustomerName,
                 IDTable: this.selectedOrder.Tables[0],
                 IDType: 293,
                 TableName: this.selectedOrder._Tables[0].Name,
-                Type: "POSOrder",
-                Status: "New",
+                Type: this.selectedOrder.Type,
+                SubType: this.selectedOrder.SubType,
+                Status: this.selectedOrder.Status,
             });
             this.item.SplitedOrders.push({
                 isFirst: false,
                 IDContact: null,
+                IDAddress: null,
                 ContactName: null,
                 IDTable: null,
                 IDType: 293,
                 TableName: null,
-                Type: "POSOrder",
-                Status: "New",
+                Type: this.selectedOrder.Type,
+                SubType: this.selectedOrder.SubType,
+                Status: this.selectedOrder.Status,
             });
 
             this.initOrderedContacts.push({
@@ -305,6 +309,7 @@ export class POSSplitModalPage extends PageBase {
                 this.contactSearch();
             }
             o.ContactName = i.Name;
+            o.IDAddress = i.IDAddress;
         }
         this.checkValid();
     }
@@ -333,12 +338,14 @@ export class POSSplitModalPage extends PageBase {
         this.item.SplitedOrders.push({
             isFirst: false,
             IDContact: null,
+            IDAddress: null,
             ContactName: null,
             IDTable: null,
             IDType: 293,
             TableName: null,
-            Type: "POSOrder",
-            Status: "New",        
+            Type: this.selectedOrder.Type,
+            SubType: this.selectedOrder.SubType,
+            Status: this.selectedOrder.Status,
             OrderLines: JSON.parse(JSON.stringify(this.items))
         });
         this.calcOrders();
@@ -365,7 +372,7 @@ export class POSSplitModalPage extends PageBase {
 
         this.items.forEach(i => {
             let order = i.splitDetail[0];
-            let props = ['Quantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
+            let props = ['Quantity', 'ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
             props.forEach(prop => {
                 this.checkOriginal(i, order, prop);
             });
@@ -381,7 +388,7 @@ export class POSSplitModalPage extends PageBase {
             cValue = maxValue;
         }
         if (editingRow['Quantity'] == originalRow['Quantity']) {
-            let props = ['Quantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
+            let props = ['Quantity', 'ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
             props.forEach(prop => {
                 editingRow[prop] = originalRow[prop];
             });
@@ -391,7 +398,7 @@ export class POSSplitModalPage extends PageBase {
 
         this.items.forEach(i => {
             let order = i.splitDetail[0];
-            let props = ['Quantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
+            let props = ['Quantity', 'ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
             props.forEach(prop => {
                 this.checkOriginal(i, order, prop);
             });
@@ -446,6 +453,11 @@ export class POSSplitModalPage extends PageBase {
                 break;
             }
 
+            if (!o.IDTable) {
+                this.isCanSplit = false;
+                break;
+            }
+
             let totalQty = 0;
             for (let j = 0; j < o.OrderLines.length; j++) {
                 const l = o.OrderLines[j];
@@ -465,7 +477,12 @@ export class POSSplitModalPage extends PageBase {
         line.UoMPrice = line.IsPromotionItem ? 0 : parseInt(line.UoMPrice) || 0;
         line.BuyPrice = parseInt(line.BuyPrice) || 0;
 
-        line.Quantity = parseInt(line.Quantity) || 0;
+        if (line.ShippedQuantity != 0 ) {
+            line.Quantity = line.ShippedQuantity = parseInt(line.Quantity) || 0;
+        }
+        else {
+            line.Quantity = parseInt(line.Quantity) || 0;
+        }
         line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscount1) || 0;
         line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscount2) || 0;
         line.OriginalDiscountFromSalesman = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscountFromSalesman) || 0;

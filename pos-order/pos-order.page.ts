@@ -22,7 +22,8 @@ import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-m
 export class POSOrderPage extends PageBase {
     tableGroupList = [];
     soStatusList = [];
-    noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
+    noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];//NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
+    queryStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']
     segmentView = 'all';
     orderCounter = 0;
     numberOfGuestCounter = 0;
@@ -173,7 +174,7 @@ export class POSOrderPage extends PageBase {
         
         let forceReload = event === 'force';
         this.query.Type = 'POSOrder';
-        this.query.Status = JSON.stringify(this.noLockStatusList);
+        this.query.Status = JSON.stringify(this.queryStatusList);
 
         this.query.IDBranch = this.env.selectedBranch;
 
@@ -199,7 +200,7 @@ export class POSOrderPage extends PageBase {
         this.numberOfGuestCounter = 0;      
         this.checkTable(null, 0); //reset table status
         this.items.forEach(o => {
-            o._Locked = this.noLockStatusList.indexOf(o.Status) == -1;
+            o._Locked = this.queryStatusList.indexOf(o.Status) == -1;
             o._Status = this.soStatusList.find(d => d.Code == o.Status);
             o._Tables = [];
             if (!o._Locked) {
@@ -269,7 +270,7 @@ export class POSOrderPage extends PageBase {
             }
         }
         else{
-            this.query.Status = (this.query.Status == '' ? JSON.stringify(this.noLockStatusList) : '');
+            this.query.Status = (this.query.Status == '' ? JSON.stringify(this.queryStatusList) : '');
             super.refresh();
         }
 

@@ -890,7 +890,7 @@ export class POSOrderDetailPage extends PageBase {
 
         this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
-            this.refresh();
+            // this.refresh();
         });
     }
     
@@ -900,7 +900,7 @@ export class POSOrderDetailPage extends PageBase {
         
         this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
-            this.refresh();
+            // this.refresh();
         });
     }
 
@@ -1555,7 +1555,6 @@ export class POSOrderDetailPage extends PageBase {
                         this.env.showTranslateMessage('The order has been paid, the system will automatically close this bill.');
                         this.formGroup.enable();
                         this.doneOrder();
-                        this.formGroup.disable();
                     }
                     resolve(this.paymentList);
                 })
