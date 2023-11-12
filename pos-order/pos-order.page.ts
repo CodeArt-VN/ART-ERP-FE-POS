@@ -504,17 +504,30 @@ export class POSOrderPage extends PageBase {
     }
 
     exportPOSData() {
-        let query = {
-            IDBranch: this.query.IDBranch,
-            Type: this.query.Type,
-            Keyword: this.query.Keyword
-        };
+        this.query.SortBy = "IDOrder_desc";
+
+        if (this.query.Keyword.indexOf("-") != -1) {
+            let dateParts = this.query.Keyword.split("-");
+            let fromDate = new Date(dateParts[0].slice(2, 4) + "/" + dateParts[0].slice(0, 2) + "/" + dateParts[0].slice(4, 6));
+            let toDate = new Date(dateParts[1].slice(2, 4) + "/" + dateParts[1].slice(0, 2) + "/" + dateParts[1].slice(4, 6));
+            let fromDateText = lib.dateFormat(fromDate);
+            let toDateText = lib.dateFormat(toDate);
+
+            let maxToDate = new Date(fromDate.setMonth(fromDate.getMonth() + 3));
+            let maxToDateText = lib.dateFormat(maxToDate);
+
+            if (toDateText > maxToDateText) {
+                this.env.showMessage("Giới hạn tải xuống dữ liệu tối đa trong vòng 3 tháng!", "danger", 5000);
+                return;
+            }
+        }
+
         this.loadingController.create({
             cssClass: 'my-custom-class',
             message: 'Đang tạo bảng kê, xin vui lòng chờ giây lát...'
         }).then(loading => {
             loading.present();
-            this.commonService.connect("GET", "SALE/Order/ExportPOSOrderList", query).toPromise().then((response: any) => {
+            this.commonService.connect("GET", "SALE/Order/ExportPOSOrderList", this.query).toPromise().then((response: any) => {
                 this.submitAttempt = false;
                 if (loading) loading.dismiss();
                 this.downloadURLContent(ApiSetting.mainService.base + response);
