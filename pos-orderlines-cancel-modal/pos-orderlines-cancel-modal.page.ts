@@ -25,7 +25,7 @@ export class POSOrderLinesCancelModalPage extends PageBase {
 	}
 
 	preLoadData(event?: any): void {
-		this.env.getType('POSSOCancellationReason').then(data => {
+		this.env.getType('POSSODetailCancellationReason').then(data => {
 			this.typeList = data;
 			this.item = this.typeList.find(d=>d.Code == 'Other');
 			super.loadedData(event);
