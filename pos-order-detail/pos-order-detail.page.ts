@@ -1510,8 +1510,8 @@ export class POSOrderDetailPage extends PageBase {
             this.staffProvider.read({ Code_eq: Code, IDBranch: this.env.branchList.map(b => b.Id).toString() }).then((result: any) => {
                 if (result['count'] > 0) {
                     this.Staff = result['data'][0];
-                    this.Staff.DepartmentName = this.env.branchList.find(b => b.Id == this.Staff.IDDepartment).Name;
-                    this.Staff.JobTitleName = this.env.jobTitleList.find(b => b.Id == this.Staff.IDJobTitle).Name;
+                    this.Staff.DepartmentName = this.env.branchList.find(b => b.Id == this.Staff.IDDepartment)?.Name;
+                    this.Staff.JobTitleName = this.env.jobTitleList.find(b => b.Id == this.Staff.IDJobTitle)?.Name;
                     this.Staff.avatarURL = environment.staffAvatarsServer + this.item._Customer.Code + '.jpg?t=' + new Date().getTime();
                 }
             })

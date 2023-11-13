@@ -533,7 +533,7 @@ export class POSOrderPage extends PageBase {
                 this.downloadURLContent(ApiSetting.mainService.base + response);
             }).catch(err => {
 				if (err.message != null) {
-					this.env.showMessage(err.message, 'danger');
+					this.env.showMessage(err.error.ExceptionMessage, 'danger');
 				}
 				else {
 					this.env.showTranslateMessage('erp.app.pages.bi.sales-report.message.can-not-get-data','danger');
