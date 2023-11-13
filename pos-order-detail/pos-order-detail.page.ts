@@ -25,7 +25,6 @@ import QRCode from 'qrcode'
 
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { Capacitor } from '@capacitor/core';
-import { POSOrderLinesCancelModalPage } from '../pos-orderlines-cancel-modal/pos-orderlines-cancel-modal.page';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -411,7 +410,7 @@ export class POSOrderDetailPage extends PageBase {
             if ((line.Quantity) > 0 && (line.Quantity + quantity) < line.ShippedQuantity) {
                 if (this.pageConfig.canDeleteItems) {
                     this.env.showPrompt('Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?', item.Name, 'Xóa sản phẩm').then(_ => {
-                        this.openOrderLinesCancellationReason(line, quantity);
+                        this.openCancellationReason(line, quantity);
                     }).catch(_ => { });
                 }
                 else {
@@ -642,7 +641,7 @@ export class POSOrderDetailPage extends PageBase {
 
 
 
-    async openCancellationReason() {
+    async openCancellationReason(line = null, quantity = null) {
         if (this.submitAttempt) return;
         if (this.item.Received > 0) {
             this.env.showTranslateMessage('Đơn hàng đã thanh toán không thể hủy, vui lòng hoàn tiền lại để hủy đơn hàng này!', 'warning');
@@ -665,65 +664,52 @@ export class POSOrderDetailPage extends PageBase {
                 cancelData.Remark = data.CancelNote
             }
 
-            this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {
-                let publishEventCode = this.pageConfig.pageName;
-                if (this.submitAttempt == false) {
-                    this.submitAttempt = true;
-                    cancelData.Type = 'POSOrder';
-                    cancelData.Ids = [this.item.Id];
-
-                    this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelOrders/', cancelData).toPromise()
-                        .then(() => {
-                            if (publishEventCode) {
-                                this.env.publishEvent({ Code: publishEventCode });
-                            }
-                            this.loadData();
-                            this.submitAttempt = false;
-                            this.nav('/pos-order', 'back');
-                        }).catch(err => {
-                            this.submitAttempt = false;
-                        });
-                }
-            }).catch(_ => { });
-        }
-    }
-
-    async openOrderLinesCancellationReason(line, quantity) {
-        if (this.submitAttempt) return;
-        const modal = await this.modalController.create({
-            component: POSOrderLinesCancelModalPage,
-            id: 'POSOrderLinesCancelModalPage',
-            backdropDismiss: true,
-            cssClass: 'modal-cancellation-reason',
-            componentProps: { item: {} }
-        });
-        modal.present();
-
-        const { data, role } = await modal.onWillDismiss();
-
-        if (role == 'confirm') {
-            let cancelData: any = { Code: data.Code, OrderLine: line, RemoveQuantity: quantity};
-            if (cancelData.Code == 'Other') {
-                cancelData.Remark = data.CancelNote
+            if (!line) {
+                this.env.showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng').then(_ => {
+                    let publishEventCode = this.pageConfig.pageName;
+                    if (this.submitAttempt == false) {
+                        this.submitAttempt = true;
+                        cancelData.Type = 'POSOrder';
+                        cancelData.Ids = [this.item.Id];
+    
+                        this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelOrders/', cancelData).toPromise()
+                            .then(() => {
+                                if (publishEventCode) {
+                                    this.env.publishEvent({ Code: publishEventCode });
+                                }
+                                this.loadData();
+                                this.submitAttempt = false;
+                                this.nav('/pos-order', 'back');
+                            }).catch(err => {
+                                this.submitAttempt = false;
+                            });
+                    }
+                }).catch(_ => { });
             }
-
-            this.env.showPrompt('Bạn chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm').then(_ => {
-                let publishEventCode = this.pageConfig.pageName;
-                if (this.submitAttempt == false) {
-                    this.submitAttempt = true;
-
-                    this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData).toPromise()
-                        .then(() => {
-                            if (publishEventCode) {
-                                this.env.publishEvent({ Code: publishEventCode });
-                            }
-                            this.refresh();
-                            this.submitAttempt = false;
-                        }).catch(err => {
-                            this.submitAttempt = false;
-                        });
+            else {
+                let cancelData: any = { Code: data.Code, OrderLine: line, RemoveQuantity: quantity};
+                if (cancelData.Code == 'Other') {
+                    cancelData.Remark = data.CancelNote
                 }
-            }).catch(_ => { });
+    
+                this.env.showPrompt('Bạn chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm').then(_ => {
+                    let publishEventCode = this.pageConfig.pageName;
+                    if (this.submitAttempt == false) {
+                        this.submitAttempt = true;
+    
+                        this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData).toPromise()
+                            .then(() => {
+                                if (publishEventCode) {
+                                    this.env.publishEvent({ Code: publishEventCode });
+                                }
+                                this.refresh();
+                                this.submitAttempt = false;
+                            }).catch(err => {
+                                this.submitAttempt = false;
+                            });
+                    }
+                }).catch(_ => { });
+            }
         }
     }
 
@@ -890,18 +876,28 @@ export class POSOrderDetailPage extends PageBase {
 
         this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
         .then((savedItem: any) => {
-            this.refresh();
+            // this.refresh();
         });
     }
     
 
     lockOrder() {
-        let postDTO = { Id: this.item.Id, Code: 'TemporaryBill' };
-        
-        this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
-        .then((savedItem: any) => {
-            this.refresh();
-        });
+        if (this.printData.undeliveredItems.length > 0) {
+            let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục gửi bếp và tạm tính?';
+            this.env.showPrompt(message, null, 'Thông báo').then(_ => {
+                this.sendKitchen()
+            }).catch(_ => {
+
+            });
+        }
+        else {
+            let postDTO = { Id: this.item.Id, Code: 'TemporaryBill' };
+            
+            this.pageProvider.commonService.connect("POST", "SALE/Order/toggleBillStatus/", postDTO).toPromise()
+            .then((savedItem: any) => {
+                // this.refresh();
+            });
+        }
     }
 
     getQRPayment() {
@@ -1825,8 +1821,16 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
         });
     }
 
-    async ConnectionPrompt(options, printInfo) {
-        this.env.showPrompt('Bạn có muốn tiếp tục in?', options.host, 'Có lỗi khi gọi đến server').then(_ => {
+    async ConnectionPrompt(options, printInfo, callingServer = true) {
+        let tittle;
+        if (callingServer) {
+            tittle = "Có lỗi khi gọi đến server";
+        }
+        else {
+            tittle = "Có lỗi khi gọi đến máy in";
+        }
+
+        this.env.showPrompt('Bạn có muốn tiếp tục in?', options.host, tittle).then(_ => {
             this.QZCloseConnection().then(() => {
                 this.sendQZTray(printInfo.printerHost, printInfo.printerCodeList, printInfo.base64dataList, printInfo.receipt, printInfo.times, printInfo.sendEachItem);
             });
@@ -1838,21 +1842,29 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
 
     async QZConnect(options, printInfo) {
         let checkCon = qz.websocket.isActive();
-        if (!checkCon)
-            return qz.websocket.connect(options).then().catch(err => {
+        if (!checkCon) {
+            return qz.websocket.connect(options).then(
+                setTimeout(() => {
+                    let checkCon = qz.websocket.isActive();
+                    if (!checkCon) {
+                        this.ConnectionPrompt(options, printInfo);
+                    }
+                }, 3000)
+            ).catch(err => {
                 this.ConnectionPrompt(options, printInfo);
             });
+        }
     }
 
     async QZFindPrinter(printerCode = null, options, printInfo) {
         if (printerCode == null) {
             return qz.printers.find().catch(err => {
-                this.ConnectionPrompt(options, printInfo);
+                this.ConnectionPrompt(options, printInfo, false);
             });
         }
         else {
             return qz.printers.find(printerCode).catch(err => {
-                this.ConnectionPrompt(options, printInfo);
+                this.ConnectionPrompt(options, printInfo, false);
             });
         }
     }
@@ -1863,10 +1875,16 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
 
     async QZActualPrinting(actualPrinters, actualDatas, options, printInfo) {
         return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                let checkCon = qz.websocket.isActive();
+                if (this.submitAttempt && checkCon) {
+                    this.ConnectionPrompt(options, printInfo, false);
+                }
+            }, 5000);
             qz.print(actualPrinters, actualDatas, true).then(() => {
                 resolve(true);
             }).catch(err => {
-                this.ConnectionPrompt(options, printInfo);
+                this.ConnectionPrompt(options, printInfo, false);
             });
         });
     }

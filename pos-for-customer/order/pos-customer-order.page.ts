@@ -1119,8 +1119,10 @@ export class POSCustomerOrderPage extends PageBase {
         let ItemModel = {
             ID: this.idTable,
             Code: "POSOrderFromCustomer",
+            Title: "Yêu cầu gọi món",
+            IDSaleOrder: this.item.Id,
             Name: this.Table.IDBranch,
-            Remark: "khách hàng bàn " + this.Table.Name + " đã gọi món"
+            Remark: "khách hàng bàn " + this.Table.Name + " đã gọi món",
         }
         this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result => {
             this.env.showMessage("Đã gọi món", "success");
@@ -1133,8 +1135,10 @@ export class POSCustomerOrderPage extends PageBase {
         let ItemModel = {
             ID: this.idTable,
             Code: "POSCallToPay",
+            Title: "Yêu cầu tính tiền",
+            IDSaleOrder: this.item.Id,
             Name: this.Table.IDBranch,
-            Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu tính tiền"
+            Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu tính tiền",
         }
         this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result => {
             this.env.showMessage("Đã gọi tính tiền", "success");
@@ -1147,8 +1151,10 @@ export class POSCustomerOrderPage extends PageBase {
         let ItemModel = {
             ID: this.idTable,
             Code: "POSSupport",
+            Title: "Yêu cầu phục vụ",
+            IDSaleOrder: this.item.Id,
             Name: this.Table.IDBranch,
-            Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu phục vụ"
+            Remark: "khách hàng bàn " + this.Table.Name + " yêu cầu phục vụ",
         }
         this.commonService.connect('POST', 'POS/ForCustomer/CallStaff', ItemModel).toPromise().then(result => {
             this.env.showMessage("Đã gọi phục vụ", "success");
@@ -1167,16 +1173,21 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     lockOrder() {
-        if (this.item.Status == "TemporaryBill") {
-            this.goToPayment();
+        if (this.printData.undeliveredItems.length > 0) {
+            this.callToPay();
         }
         else {
-            let postDTO = { Id: this.item.Id, Code: 'TemporaryBill' };
-    
-            this.pageProvider.commonService.connect("POST", "POS/ForCustomer/toggleBillStatus/", postDTO).toPromise()
-            .then((savedItem: any) => {
-                this.refresh();
-            });
+            if (this.item.Status == "TemporaryBill") {
+                this.goToPayment();
+            }
+            else {
+                let postDTO = { Id: this.item.Id, Code: 'TemporaryBill' };
+        
+                this.pageProvider.commonService.connect("POST", "POS/ForCustomer/toggleBillStatus/", postDTO).toPromise()
+                .then((savedItem: any) => {
+                    this.refresh();
+                });
+            }
         }
     }
 

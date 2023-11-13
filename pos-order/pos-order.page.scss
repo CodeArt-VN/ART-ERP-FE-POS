@@ -213,6 +213,10 @@ ion-content {
         }
     }
 
+    .row:last-child {
+        margin-bottom: 75px;
+    }
+
 }
 
 .table-list{
@@ -262,4 +266,34 @@ ion-content {
     width: 30px;
     height: 30px;
     align-items: end;
+}
+
+.custom-fab {
+    display: inline-flex;
+    flex-direction: column-reverse;
+	
+	.label-background {
+        height: 90px;
+        min-width: 230px;
+        width: min-content;
+        position: relative;
+        right: 240px;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        background: white;
+        border-radius: 5px;
+        margin-right: 5px;
+        box-shadow: 3px 3px 5px 0px #888888;
+        justify-content: center;
+        padding: 5px 10px;
+        margin-top: 5px;
+	}
+}
+  ion-fab[horizontal="start"] .custom-fab {
+	flex-direction: row-reverse;
+}
+  .custom-fab ion-button {
+	--height: 25px;
+	text-transform: none;
 }

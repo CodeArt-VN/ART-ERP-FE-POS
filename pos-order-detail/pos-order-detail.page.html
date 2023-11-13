@@ -518,6 +518,10 @@
 
 												</td>
 											</tr>
+											<tr *ngIf="kitchenQuery=='all' && item._Customer?.IsStaff">
+												<td class="title">Mã nhân viên</td>
+												<td>{{item._Customer?.Code}}</td>
+											</tr>
 											<tr *ngIf="kitchenQuery!='all'">
 												<td class="title">{{'Send To' | translate}}</td>
 												<td><span *ngFor="let k of kitchenList | filter:{Id:kitchenQuery}">{{k.Name}}</span></td>

@@ -49,6 +49,34 @@
 </ion-header>
 
 <ion-content appScrollbarTheme>
+	<!-- Notifications list FAB -->
+	<ion-fab slot="fixed" vertical="bottom" horizontal="end">
+		<ion-fab-button class="linear-blue-btn">
+			<ion-icon name="notifications-outline" ></ion-icon> 
+			<sup *ngIf="notifications.length > 0"><ion-text>{{notifications.length}}</ion-text></sup>
+		</ion-fab-button>
+		<ion-fab-list side="top">
+			<div class="custom-fab" *ngFor="let i of notifications; let j = index;">
+				<div class="label-background" *ngIf="!i.Watched">
+					<ng-container>
+						<ion-text>
+							<div><ion-text color="danger" class="clickable" (click)="goToNofication(i,j)"><small>{{i.Name}}</small></ion-text></div>
+							<div><ion-text class="clickable" (click)="goToNofication(i,j)">{{i.Message}}</ion-text></div>
+						</ion-text>
+						<ion-text slot="end" *ngIf="i.Watched">Đã xem</ion-text>
+
+						<ion-button color="success" fill="clear" slot="end" size="small" (click)="goToNofication(i,j)" *ngIf="!i.Watched">
+							<ion-icon name="arrow-forward-outline"></ion-icon>
+						</ion-button>
+						<ion-button slot="end" size="small" (click)="removeNotification(j)" color="danger" fill="clear">
+							<ion-icon name="trash-outline"></ion-icon>
+						</ion-button>
+					</ng-container>
+				</div>
+			</div>
+		</ion-fab-list>
+	</ion-fab>
+	
 	<!-- View TableList -->
 	<ion-fab *ngIf="pageConfig.isShowFeature" class="table-list feature no-print" vertical="top" horizontal="start" slot="fixed">
 		<div class="ion-padding" style="min-height: calc(100vh - 110px);">

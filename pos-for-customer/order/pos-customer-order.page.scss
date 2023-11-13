@@ -870,7 +870,8 @@ ion-fab-list {
 	
 	.label-background {
 		height: 30px;
-		width: 70px;
+		min-width: 70px;
+        width: min-content;
 		display: flex;
 		align-items: center;
 		background: white;
