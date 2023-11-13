@@ -381,11 +381,11 @@
 	<!-- Menu Group -->
 	<div class="no-print menu-holder">
 		<div class="menu-group-list">
-				<div  class="menu-group" [style]="{order:1}" (click)="segmentChanged('all'); query.Keyword ='deals'">
+				<div  class="menu-group" *ngIf="dealList.length" [style]="{order:0}" (click)="segmentChanged('all'); query.Keyword ='deals'">
 					<ion-img #img [src]="'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: query.Keyword == 'deals'}"></ion-img>
 					<ion-label>DEAL</ion-label>
 				</div>
-				<div class="menu-group" [style]="{order:(i==0 && g.Id==0) ? 0 :i+1}"*ngFor="let g of menuList;let i = index" (click)="segmentChanged(g.Id); query.Keyword =''">
+				<div class="menu-group" [style]="{order:(i==0 && g.Id==0) ? -1:''}" *ngFor="let g of menuList;let i = index" (click)="segmentChanged(g.Id); query.Keyword =''">
 					<ion-img #img [src]="g.menuImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
 					<ion-label>{{g.Name}}</ion-label>
 				</div>
