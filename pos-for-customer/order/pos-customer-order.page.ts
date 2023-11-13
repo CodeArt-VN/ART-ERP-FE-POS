@@ -466,6 +466,9 @@ export class POSCustomerOrderPage extends PageBase {
         if (this.item._Locked) {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
+            this.isLockOrderFromStaff = true;
+            this.pageConfig.isShowFeature = true;
+            this.isStatusModalOpen = true;
         }
         else {
             this.pageConfig.canEdit = true;
@@ -634,8 +637,6 @@ export class POSCustomerOrderPage extends PageBase {
             this.refresh();
             setTimeout(() => {
                 this.isLockOrderFromStaff = true;
-                this.pageConfig.isShowFeature = true;
-                this.isStatusModalOpen = true;
             }, 2500);
         }
     }
@@ -647,8 +648,6 @@ export class POSCustomerOrderPage extends PageBase {
             this.refresh();
             setTimeout(() => {
                 this.isLockOrderFromStaff = false;
-                this.pageConfig.isShowFeature = true;
-                this.isStatusModalOpen = true;
             }, 2500);
         }
     }

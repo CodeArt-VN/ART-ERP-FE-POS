@@ -349,12 +349,12 @@
 							Hủy tạm tính
 						</ion-button>
 					</ion-col>
-					<ion-col *ngIf="item.Status != 'TemporaryBill' && pageConfig.systemConfig.POSEnableTemporaryPayment">
+					<ion-col *ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && pageConfig.systemConfig.POSEnableTemporaryPayment">
 						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitAttempt || !item.Id">
 							Tạm tính tiền
 						</ion-button>
 					</ion-col>
-					<ion-col *ngIf="item.Status == 'TemporaryBill' || !pageConfig.systemConfig.POSEnableTemporaryPayment">
+					<ion-col *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !pageConfig.systemConfig.POSEnableTemporaryPayment">
 						<ion-button color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id">
 							In phiếu
 						</ion-button>
