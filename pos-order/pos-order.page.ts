@@ -62,7 +62,10 @@ export class POSOrderPage extends PageBase {
                 case 'app:POSCallToPay':
                     this.notifyCallToPay(data.Data);
                     break;
-                case 'app:POSLockOrder':
+                case 'app:POSLockOrderFromStaff':
+                    this.notifyLockOrder(data.Data);
+                    break;
+                case 'app:POSLockOrderFromCustomer':
                     this.notifyLockOrder(data.Data);
                     break;
                 case 'app:POSUnlockOrder':
@@ -98,26 +101,35 @@ export class POSOrderPage extends PageBase {
             this.refresh();
         }                
     }
+
     private notifySupport(data){
-        if(this.env.selectedBranch == data.name){
-            this.playAudio("Support");       
-            this.env.showMessage(data.value,"warning");
-            this.setStorageNotification(null,null,null,"Support","Yêu cầu phục vụ","pos-order",data.value,null);
+        const value = JSON.parse(data.value);  
+        console.log(value);  
+
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Support");
+            let message = "Khách bàn "+value.Tables[0].TableName+" yêu cầu phục vụ";
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Yêu cầu phục vụ","pos-order",message,url);
             this.refresh();
-        }
+        }  
     }
 
     private notifyCallToPay(data){
-        // const value = JSON.parse(data.value);
+        const value = JSON.parse(data.value);  
+        console.log(value);  
 
-        if(this.env.selectedBranch == data.name){
-            this.playAudio("Support");       
-            this.env.showMessage(data.value,"warning");
-            // let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
-
-            this.setStorageNotification(null,null,null,"Support","Yêu cầu tính tiền","pos-order",data.value,null);
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Payment");
+            let message = "Khách bàn "+value.Tables[0].TableName+" yêu cầu tính tiền";
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Yêu cầu tính tiền","pos-order",message,url);
             this.refresh();
-        }
+        }   
     }
 
     private notifyLockOrder(data){
@@ -125,7 +137,7 @@ export class POSOrderPage extends PageBase {
         console.log(value);  
 
         if(this.env.selectedBranch == value.IDBranch){
-            this.playAudio("Support");
+            this.playAudio("Order");
             let message = "Khách bàn "+value.Tables[0].TableName+" đã khóa đơn";
             this.env.showMessage(message,"warning");
             let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
@@ -140,7 +152,7 @@ export class POSOrderPage extends PageBase {
         console.log(value);  
 
         if(this.env.selectedBranch == value.IDBranch){
-            this.playAudio("Support");
+            this.playAudio("Order");
             let message = "Khách bàn "+value.Tables[0].TableName+" đã mở đơn";
             this.env.showMessage(message,"warning");
             let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
@@ -503,6 +515,19 @@ export class POSOrderPage extends PageBase {
         this.notifications.unshift(notification);
     }
 
+    goToNofication(i,j){
+      this.notifications[j].Watched = true;
+      this.env.setStorage("Notifications", this.notifications);
+      if (i.Url != null) {
+        this.nav(i.Url, "forward");
+      }
+    }
+
+    removeNotification(j){
+        this.notifications.splice(j, 1);
+        this.env.setStorage('Notifications',this.notifications);
+    }
+
     exportPOSData() {
         this.query.SortBy = "IDOrder_desc";
 
@@ -533,7 +558,7 @@ export class POSOrderPage extends PageBase {
                 this.downloadURLContent(ApiSetting.mainService.base + response);
             }).catch(err => {
 				if (err.message != null) {
-					this.env.showMessage(err.message, 'danger');
+					this.env.showMessage(err.error.ExceptionMessage, 'danger');
 				}
 				else {
 					this.env.showTranslateMessage('erp.app.pages.bi.sales-report.message.can-not-get-data','danger');
