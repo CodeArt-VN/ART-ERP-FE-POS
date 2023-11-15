@@ -117,7 +117,9 @@ export class POSCustomerOrderPage extends PageBase {
                 case 'app:POSLockOrderFromCustomer':
                     this.notifyLockOrderFromCustomer(data.Data);
                     break;
-                case 'app:POSUnlockOrder':
+                case 'app:POSUnlockOrderFromStaff':
+                    this.notifyUnlockOrder(data.Data);
+                case 'app:POSUnlockOrderFromCustomer':
                     this.notifyUnlockOrder(data.Data);
                     break;
                 // case 'app:POSOrderFromCustomer':
