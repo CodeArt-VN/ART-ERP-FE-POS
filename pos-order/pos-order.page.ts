@@ -63,13 +63,16 @@ export class POSOrderPage extends PageBase {
                     this.notifyCallToPay(data.Data);
                     break;
                 case 'app:POSLockOrderFromStaff':
-                    this.notifyLockOrder(data.Data);
+                    this.notifyLockOrderFromStaff(data.Data);
                     break;
                 case 'app:POSLockOrderFromCustomer':
-                    this.notifyLockOrder(data.Data);
+                    this.notifyLockOrderFromCustomer(data.Data);
                     break;
-                case 'app:POSUnlockOrder':
-                    this.notifyUnlockOrder(data.Data);
+                case 'app:POSUnlockOrderFromStaff':
+                    this.notifyUnlockOrderFromStaff(data.Data);
+                    break;
+                case 'app:POSUnlockOrderFromCustomer':
+                    this.notifyUnlockOrderFromCustomer(data.Data);
                     break;
             }
         });
@@ -132,7 +135,22 @@ export class POSOrderPage extends PageBase {
         }   
     }
 
-    private notifyLockOrder(data){
+    private notifyLockOrderFromStaff(data){
+        const value = JSON.parse(data.value);  
+        console.log(value);  
+
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Order");
+            let message = "Nhân viên đã khóa đơn bàn "+value.Tables[0].TableName;
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Khóa đơn hàng","pos-order",message,url);
+            this.refresh();
+        }     
+    }
+
+    private notifyLockOrderFromCustomer(data){
         const value = JSON.parse(data.value);  
         console.log(value);  
 
@@ -147,7 +165,22 @@ export class POSOrderPage extends PageBase {
         }     
     }
 
-    private notifyUnlockOrder(data){
+    private notifyUnlockOrderFromStaff(data){
+        const value = JSON.parse(data.value);  
+        console.log(value);  
+
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Order");
+            let message = "Nhân viên đã mở đơn bàn "+value.Tables[0].TableName;
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Mở khóa đơn hàng","pos-order",message,url);
+            this.refresh();
+        }     
+    }
+
+    private notifyUnlockOrderFromCustomer(data){
         const value = JSON.parse(data.value);  
         console.log(value);  
 
