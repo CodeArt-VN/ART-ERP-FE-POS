@@ -733,7 +733,7 @@ export class POSCustomerOrderPage extends PageBase {
             await this.getParentOrder(this.item.IDParent);
         }
         if (this.item.Status == 'Done') {
-            this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đồng ý').then(_ => {
+            this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
             this.newOrder();
             }).catch(_ => { });
         }
@@ -1275,7 +1275,7 @@ export class POSCustomerOrderPage extends PageBase {
             return;
         }
         else if(this.item.Status == 'Done'){
-            this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đồng ý').then(_ => {
+            this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
               this.newOrder();
             }).catch(_ => { });
         }

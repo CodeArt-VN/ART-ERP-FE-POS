@@ -1724,37 +1724,23 @@ export class POSOrderDetailPage extends PageBase {
             if (this.item.Debt > 0) {
                 message = `Bàn số ${this.item.Tables[0]} có ${this.printData.undeliveredItems.length} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
             }
-            let option: any = {
-                header: "Thông báo",
-                message : message,
-                buttons: [
-                    {
-                        text: 'GỬI',
-                        handler: () => {
-                            this.printData.undeliveredItems = []; //<-- clear;
-                            this.item.OrderLines.forEach(line => {
-                                if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
-                                    line.Status = 'Done';
-                                }
-                                if (line.Quantity > line.ShippedQuantity) {
-                                    line.ShippedQuantity = line.Quantity;
-                                    line.ReturnedQuantity = 0;
-                                    changed.OrderLines.push({ Id: line.Id, IDUoM: line.IDUoM, ShippedQuantity: line.ShippedQuantity, ReturnedQuantity: 0 });
-                                }
-                            });
-                            changed.OrderLines = this.item.OrderLines;
-                            changed.Status = 'Done';
-                            changed.IDStatus = 114;
-                            this.setOrderValue(changed, true, true);
-                        }
-                    },
-                    
-                ]
-            };
-            this.alertCtrl.create(option).then(alert => {
-                alert.present();
+            this.env.showPrompt(message,null,'Thông báo','GỬI',null).then(_=>{
+                this.printData.undeliveredItems = []; //<-- clear;
+                this.item.OrderLines.forEach(line => {
+                    if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+                        line.Status = 'Done';
+                    }
+                    if (line.Quantity > line.ShippedQuantity) {
+                        line.ShippedQuantity = line.Quantity;
+                        line.ReturnedQuantity = 0;
+                        changed.OrderLines.push({ Id: line.Id, IDUoM: line.IDUoM, ShippedQuantity: line.ShippedQuantity, ReturnedQuantity: 0 });
+                    }
+                });
+                changed.OrderLines = this.item.OrderLines;
+                changed.Status = 'Done';
+                changed.IDStatus = 114;
+                this.setOrderValue(changed, true, true);
             })
-           
         }
         else if (this.item.Debt > 0) {
             let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
