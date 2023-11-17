@@ -88,7 +88,7 @@ export class POSChangeTableModalPage extends PageBase {
             super.loadData(event);
         });
 
-        this.item = { Ids: [], Id: this.selectedOrder.Id, IDContact: this.selectedOrder.IDContact, IDTable: this.selectedOrder.Tables[0]};
+        this.item = { Ids: [], Id: this.selectedOrder.Id, IDContact: this.selectedOrder.IDContact, IDAddress: this.selectedOrder.IDAddress, IDTable: this.selectedOrder.Tables[0]};
         this.item.Ids.push(this.selectedOrder.Id);
 
         if (this.selectedOrder) {
@@ -314,7 +314,7 @@ export class POSChangeTableModalPage extends PageBase {
                 this.contactListSelected.push(i);
                 this.contactSearch();
             }
-
+            this.item.IDAddress = i.IDAddress;
         }
 
     }

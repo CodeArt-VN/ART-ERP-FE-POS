@@ -74,6 +74,12 @@ export class POSOrderPage extends PageBase {
                 case 'app:POSUnlockOrderFromCustomer':
                     this.notifyUnlockOrderFromCustomer(data.Data);
                     break;
+                case 'app:POSOrderSplittedFromStaff':
+                    this.notifySplittedOrderFromStaff(data.Data);
+                    break;
+                case 'app:POSOrderMergedFromStaff':
+                    this.notifyMergedOrderFromStaff(data.Data);
+                    break;
             }
         });
         
@@ -195,16 +201,46 @@ export class POSOrderPage extends PageBase {
         }     
     }
 
+    private notifySplittedOrderFromStaff(data){
+        const value = JSON.parse(data.value);  
+        console.log(value);  
+
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Order");
+            let message = "Nhân viên đã chia đơn bàn "+value.Tables[0].TableName;
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Chia đơn hàng","pos-order",message,url);
+            this.refresh();
+        }     
+    }
+
+    private notifyMergedOrderFromStaff(data){
+        const value = JSON.parse(data.value);  
+        console.log(value);  
+
+        if(this.env.selectedBranch == value.IDBranch){
+            this.playAudio("Order");
+            let message = "Nhân viên đã gộp đơn bàn "+value.Tables[0].TableName;
+            this.env.showMessage(message,"warning");
+            let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
+            
+            this.setStorageNotification(null,value.IDBranch,data.id,"Support","Gộp đơn hàng","pos-order",message,url);
+            this.refresh();
+        }     
+    }
+
     private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
-            audio.src = "assets/audio/audio-order.wav";
+            audio.src = environment.posImagesServer + "Audio/audio-order.wav";
         }
         if(type=="Payment"){
-            audio.src = "assets/audio/audio-payment.wav";
+            audio.src = environment.posImagesServer + "Audio/audio-payment.wav";
         }
         if(type=="Support"){
-            audio.src = "assets/audio/audio-support.wav";
+            audio.src = environment.posImagesServer + "Audio/audio-support.wav";
         }
         audio.load();
         audio.play();
@@ -264,10 +300,8 @@ export class POSOrderPage extends PageBase {
             if(result?.length>0){
                 this.notifications = result;
             }
-            else{
-                if(this.items.filter(o=>o.Status=='New').length > 0){
-                    this.setNotifications(this.items.filter(o=>o.Status=='New'));
-                }
+            if(this.items.filter(o=>o.Status=='New').length > 0){
+                this.setNotifications(this.items.filter(o=>o.Status=='New'));
             }
         });
         
