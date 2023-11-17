@@ -1216,12 +1216,7 @@ export class POSOrderDetailPage extends PageBase {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
         }
-        else {
-            this.pageConfig.canEdit = true;
-            this.formGroup?.enable();
-            this.formGroup?.get('Tables').disable();
-            this.formGroup?.get('Status').disable();
-        }
+
         if (this.item._Customer) {
             this.contactListSelected.push(this.item._Customer);
         }
