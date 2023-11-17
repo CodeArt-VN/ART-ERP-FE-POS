@@ -383,7 +383,7 @@
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="( item && pageConfig.canEdit ) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap;">
+				<ion-row *ngIf="( item && pageConfig.canEdit && !pageConfig.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap;">
 					<ion-col size="12">
 						<ion-button *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>{{'Bill please' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>

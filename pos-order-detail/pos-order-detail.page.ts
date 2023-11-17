@@ -195,6 +195,15 @@ export class POSOrderDetailPage extends PageBase {
                 case 'app:POSCallToPay':
                     this.notifyCallToPay(data.Data);
                     break;
+                case 'app:notifySplittedOrderFromStaff':
+                    this.notifySplittedOrderFromStaff(data.Data);
+                    break;
+                case 'app:POSOrderMergedFromStaff':
+                    this.notifyMergedOrderFromStaff(data.Data);
+                    break;
+                case 'app:networkStatusChange':
+                    this.checkNetworkChange(data);
+                    break;
             }
         });
 
@@ -270,6 +279,50 @@ export class POSOrderDetailPage extends PageBase {
             
             this.setStorageNotification(null,value.IDBranch,data.id,"Support","Yêu cầu tính tiền","pos-order",message,url);
         }   
+    }
+
+    private notifySplittedOrderFromStaff(data){
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+
+        if (index != -1) {
+            this.env.showTranslateMessage("Đơn hàng đã được chia.", 'warning');
+            this.refresh();
+        }
+        else {
+            this.getStorageNotifications();
+        }
+    }
+
+    private notifyMergedOrderFromStaff(data){
+        const value = JSON.parse(data.value);
+        let index = value.Tables.map(t => t.IDTable).indexOf(this.idTable);
+
+        if (index != -1) {
+            this.env.showTranslateMessage("Đơn hàng đã được gộp.", 'warning');
+            this.refresh();
+        }
+        else {
+            this.getStorageNotifications();
+        }   
+    }
+
+    private checkNetworkChange(data) {
+        if (data.status.connected) {
+            if (this.item.Id) {
+                this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSModifiedDate', { IDOrder: this.item.Id }).toPromise()
+                .then(lastModifiedDate => {
+                    lastModifiedDate;
+                    this.item.ModifiedDate;
+                    if (lastModifiedDate > this.item.ModifiedDate) {
+                        this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.','danger');
+                        this.refresh();
+                    }
+                }).catch(err => {
+                    console.log(err)
+                });
+            }
+        }
     }
 
     preLoadData(event?: any): void {
@@ -1163,10 +1216,7 @@ export class POSOrderDetailPage extends PageBase {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
         }
-        else {
-            this.pageConfig.canEdit = true;
-            this.formGroup?.enable();
-        }
+
         if (this.item._Customer) {
             this.contactListSelected.push(this.item._Customer);
         }

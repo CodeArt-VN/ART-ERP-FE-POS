@@ -68,8 +68,9 @@ export class POSSplitModalPage extends PageBase {
                     if (this.initOrderedContacts.findIndex(f => f.Id == o.IDContact) == -1) {
                         this.initOrderedContacts.push({
                             Id: o.IDContact,
+                            IDAdress: o.IDAddress,
                             Name: o.CustomerName,
-                            WorkPhone: o.IDContact,
+                            WorkPhone: o.WorkPhone,
                             AddressLine1: o.AddressLine1
                         });
                     }
@@ -96,7 +97,7 @@ export class POSSplitModalPage extends PageBase {
                 isFirst: true,
                 IDContact: this.selectedOrder.IDContact,
                 IDAddress: this.selectedOrder.IDAddress,
-                ContactName: this.selectedOrder.CustomerName,
+                ContactName: this.selectedOrder._Customer.Name,
                 IDTable: this.selectedOrder.Tables[0],
                 IDType: 293,
                 TableName: this.selectedOrder._Tables[0].Name,
@@ -119,6 +120,7 @@ export class POSSplitModalPage extends PageBase {
 
             this.initOrderedContacts.push({
                 Id: this.selectedOrder.IDContact,
+                IDAddress: this.selectedOrder.IDAddress,
                 Name: this.selectedOrder._Customer.Name,
                 WorkPhone: this.selectedOrder._Customer.WorkPhone,
                 AddressLine1: this.selectedOrder._Customer.Address.AddressLine1
@@ -126,6 +128,7 @@ export class POSSplitModalPage extends PageBase {
           
             this.contactListSelected.push({
                 Id: this.selectedOrder.IDContact,
+                IDAddress: this.selectedOrder.IDAddress,
                 Name: this.selectedOrder._Customer.Name,
                 WorkPhone: this.selectedOrder._Customer.WorkPhone,
                 AddressLine1: this.selectedOrder._Customer.Address.AddressLine1

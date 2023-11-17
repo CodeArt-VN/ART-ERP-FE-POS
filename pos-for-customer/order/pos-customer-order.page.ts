@@ -715,10 +715,10 @@ export class POSCustomerOrderPage extends PageBase {
     private playAudio(type) {
         let audio = new Audio();
         if (type == "Order") {
-            audio.src = "assets/audio/audio-order.wav";
+            audio.src = environment.posImagesServer + "Audio/audio-order.wav";
         }
         if (type == "Payment") {
-            audio.src = "assets/audio/audio-payment.wav";
+            audio.src = environment.posImagesServer + "Audio/audio-payment.wav";
         }
         audio.load();
         audio.play();

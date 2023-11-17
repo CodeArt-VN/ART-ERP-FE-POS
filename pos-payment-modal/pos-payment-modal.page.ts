@@ -163,7 +163,7 @@ export class POSPaymentModalPage extends PageBase {
             IsActiveTypeCC: false,
             Timestamp:Date.now()
         };
-        if(i.IncomingPayment.Type != "Cash" && i.IncomingPayment.Type != "Card" && i.IncomingPayment.Type != "Transfer"){
+        if(i.IncomingPayment.Type != "Cash" && i.IncomingPayment.Type != "Card" && i.IncomingPayment.Type != "Transfer" && i.IncomingPayment.Type != "Debt" && i.IncomingPayment.Type != "BOD") {
             payment.IsActiveTypeCash = false;
         }
         if(i.IncomingPayment.Type == "ATM"){
