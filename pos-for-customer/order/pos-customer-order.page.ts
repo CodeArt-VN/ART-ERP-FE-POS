@@ -733,8 +733,25 @@ export class POSCustomerOrderPage extends PageBase {
             await this.getParentOrder(this.item.IDParent);
         }
         if (this.item.Status == 'Done') {
-            this.env.showAlert("Đơn hàng này đã hoàn tất!");
-            this.playAudio("Order");
+            let option: any = {
+                header: "Đơn hàng đã hoàn tất",
+                buttons: [
+                    {
+                        text: 'Đồng ý'
+                    },
+                    {
+                        text: 'Tạo đơn mới',
+                        handler: () => {
+                            let newURL = '#/pos-customer-order/' + 0 + '/'+ this.item.Tables[0];
+                            window.location.href = newURL;
+                            window.location.reload();
+                        }
+                    }
+                ]
+            };
+            this.alertCtrl.create(option).then(alert => {
+                alert.present();
+            })
         }
         if (this.item.Status == 'Cancelled') {
             this.env.showAlert("Đơn hàng này đã hủy!");
@@ -1264,7 +1281,7 @@ export class POSCustomerOrderPage extends PageBase {
         }).catch(err => { });
     }
     async addToStorage(item, idUoM, quantity = 1, IsDelete = false, idx = -1) {
-        if (this.item.Status == 'TemporaryBill') {
+        if (this.item.Status == 'TemporaryBill' || this.item.Status == 'Done') {
             this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
             return;
         }
