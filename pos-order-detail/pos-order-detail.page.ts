@@ -1774,11 +1774,11 @@ export class POSOrderDetailPage extends PageBase {
     doneOrder() {
         let changed: any = { OrderLines: [] };
         if (this.printData.undeliveredItems.length > 0) {
-            let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục hoàn tất?';
+            let message = `Bàn số ${this.item.Tables[0]} có ${this.printData.undeliveredItems.length} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
             if (this.item.Debt > 0) {
-                message = 'Bạn có sản phẩm chưa in gửi bếp và đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?'
+                message = `Bàn số ${this.item.Tables[0]} có ${this.printData.undeliveredItems.length} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
             }
-            this.env.showPrompt(message, null, 'Thông báo').then(_ => {
+            this.env.showPrompt(message,null,'Thông báo','GỬI',null).then(_=>{
                 this.printData.undeliveredItems = []; //<-- clear;
                 this.item.OrderLines.forEach(line => {
                     if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -1794,9 +1794,7 @@ export class POSOrderDetailPage extends PageBase {
                 changed.Status = 'Done';
                 changed.IDStatus = 114;
                 this.setOrderValue(changed, true, true);
-            }).catch(_ => {
-
-            });
+            })
         }
         else if (this.item.Debt > 0) {
             let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';

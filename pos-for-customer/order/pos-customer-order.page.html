@@ -221,11 +221,12 @@
 								{{item.Debt | number: '1.0-0'}}
 							</ion-text>
 						</label>
-
-
 					</div>
 				</div>
 			</div>
+			<ion-button class="linear-blue-btn" *ngIf="item.Status == 'Done'" (click)="newOrder()" expand="block">
+				<ion-text>Tạo đơn mới</ion-text>
+			</ion-button>
 
 
 			<ion-button class="linear-blue-btn" *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">

@@ -734,8 +734,9 @@ export class POSCustomerOrderPage extends PageBase {
             await this.getParentOrder(this.item.IDParent);
         }
         if (this.item.Status == 'Done') {
-            this.env.showAlert("Đơn hàng này đã hoàn tất!");
-            this.playAudio("Order");
+            this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
+            this.newOrder();
+            }).catch(_ => { });
         }
         if (this.item.Status == 'Cancelled') {
             this.env.showAlert("Đơn hàng này đã hủy!");
@@ -1172,6 +1173,11 @@ export class POSCustomerOrderPage extends PageBase {
         }
     }
 
+    newOrder(){
+        let newURL = '#/pos-customer-order/' + 0 + '/'+ this.item.Tables[0];
+        window.location.href = newURL;
+        window.location.reload();
+    }
     unlockOrder() {
         const Debt = this.item.Debt;
         let postDTO = { Id: this.item.Id, Code: 'Scheduled', Debt: Debt};
@@ -1268,6 +1274,11 @@ export class POSCustomerOrderPage extends PageBase {
         if (this.item.Status == 'TemporaryBill') {
             this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
             return;
+        }
+        else if(this.item.Status == 'Done'){
+            this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
+              this.newOrder();
+            }).catch(_ => { });
         }
 
         if (!this.pageConfig.canEdit) {
