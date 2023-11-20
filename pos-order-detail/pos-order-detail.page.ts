@@ -312,8 +312,6 @@ export class POSOrderDetailPage extends PageBase {
             if (this.item.Id) {
                 this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSModifiedDate', { IDOrder: this.item.Id }).toPromise()
                 .then(lastModifiedDate => {
-                    lastModifiedDate;
-                    this.item.ModifiedDate;
                     if (lastModifiedDate > this.item.ModifiedDate) {
                         this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.','danger');
                         this.refresh();
@@ -406,7 +404,7 @@ export class POSOrderDetailPage extends PageBase {
             this.items.forEach(i => {
                 i.OrderLines.forEach(o => {
                     if(o.Status=='New'){
-                        this.setNotifications(this.items.filter(o=>o.Status=='New'));
+                        this.setNotifications([i]);
                         return;
                     }
                 });
@@ -1219,6 +1217,9 @@ export class POSOrderDetailPage extends PageBase {
         if (this.item._Locked) {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
+        }
+        else {
+            this.pageConfig.canEdit = true;
         }
 
         if (this.item._Customer) {

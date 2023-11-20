@@ -168,6 +168,25 @@ export class POSCustomerOrderPage extends PageBase {
         });
     }
 
+    private checkLastModifiedDate() {
+            if (this.item.Id && ['Merged', 'Splitted', 'Done'].indexOf(this.item.Status) == -1) {
+                this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/CheckPOSModifiedDate', { IDOrder: this.item.Id }).toPromise()
+                .then(lastModifiedDate => {
+                    if (lastModifiedDate > this.item.ModifiedDate) {
+                        this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.','danger');
+                        this.refresh();
+                        return true;
+                    }
+                }).catch(err => {
+                    console.log(err);
+                    return true;
+                });
+            }
+            else {
+                return false;
+            } 
+    }
+
     async loadedData(event?: any, ignoredFromGroup?: boolean): Promise<void> {
         super.loadedData(event, ignoredFromGroup);
         //await this.getOrdersOfTable(this.idTable);
@@ -472,7 +491,6 @@ export class POSCustomerOrderPage extends PageBase {
         }
         else {
             this.pageConfig.canEdit = true;
-            this.formGroup?.enable();
         }
         this.UpdatePrice();
         this.calcOrder();
@@ -725,15 +743,7 @@ export class POSCustomerOrderPage extends PageBase {
         audio.play();
     }
     async notifyFromStaff() {
-        if (this.item.Status == "Splitted") {
-            this.env.showAlert("Đơn hàng này đã được chia!");
-            await this.getChildrenOrder(this.item.Id);
-        }
-        if (this.item.Status == 'Merged') {
-            this.env.showAlert("Đơn hàng này đã được gộp!");
-            await this.getParentOrder(this.item.IDParent);
-        }
-        if (this.item.Status == 'Done') {
+        if (['Merged', 'Splitted', 'Done'].indexOf(this.item.Status) != -1) {
             this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
             this.newOrder();
             }).catch(_ => { });
@@ -1179,6 +1189,10 @@ export class POSCustomerOrderPage extends PageBase {
         window.location.reload();
     }
     unlockOrder() {
+        let orderUpdate = this.checkLastModifiedDate();
+        if (orderUpdate) {
+            return;
+        }
         const Debt = this.item.Debt;
         let postDTO = { Id: this.item.Id, Code: 'Scheduled', Debt: Debt};
 
@@ -1189,6 +1203,10 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     lockOrder() {
+        let orderUpdate = this.checkLastModifiedDate();
+        if (orderUpdate) {
+            return;
+        }
         if (this.item.Status == "TemporaryBill") {
             this.goToPayment();
         }
@@ -1275,7 +1293,7 @@ export class POSCustomerOrderPage extends PageBase {
             this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
             return;
         }
-        else if(this.item.Status == 'Done'){
+        else if(['Merged', 'Splitted', 'Done'].indexOf(this.item.Status) != -1){
             this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
               this.newOrder();
             }).catch(_ => { });
@@ -1283,6 +1301,11 @@ export class POSCustomerOrderPage extends PageBase {
 
         if (!this.pageConfig.canEdit) {
             if (!this.id) this.isWifiSecuredModalOpen = true;
+            return;
+        }
+
+        let orderUpdate = this.checkLastModifiedDate();
+        if (orderUpdate) {
             return;
         }
 

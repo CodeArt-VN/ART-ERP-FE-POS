@@ -303,7 +303,7 @@ export class POSOrderPage extends PageBase {
             this.items.forEach(i => {
                 i.OrderLines.forEach(o => {
                     if(o.Status=='New'){
-                        this.setNotifications(this.items.filter(o=>o.Status=='New'));
+                        this.setNotifications([i]);
                         return;
                     }
                 });
