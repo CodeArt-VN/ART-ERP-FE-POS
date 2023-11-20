@@ -89,7 +89,7 @@ export class POSOrderPage extends PageBase {
     private notifyPayment(data){
         const value = JSON.parse(data.Value);    
         if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
-            this.playAudio("IncomingPayment");
+            this.playAudio("Payment");
             
             let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
             this.env.showMessage(message,"warning");
@@ -240,7 +240,7 @@ export class POSOrderPage extends PageBase {
         else if(type=="CallToPay"){
             audio.src =  environment.posImagesServer+ "Uploads/POS/audio/audio-payment.wav" //this.pageConfig.systemConfig['POSAudioCallToPay'] =
         }
-        else if(type=="IncomingPayment"){
+        else if(type=="Payment"){
             audio.src = this.pageConfig.systemConfig['POSAudioIncomingPayment'];
         }
         else if(type=="Support"){

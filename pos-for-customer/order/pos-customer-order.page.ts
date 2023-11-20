@@ -718,7 +718,7 @@ export class POSCustomerOrderPage extends PageBase {
                     break;
             }
             this.env.showAlert("<h2>" + lib.currencyFormat(value.Amount) + "</h2>", type + " | " + status, header);
-            this.playAudio("IncomingPayment");
+            this.playAudio("Payment");
             this.refresh();
         }
     }
@@ -730,7 +730,7 @@ export class POSCustomerOrderPage extends PageBase {
         else if(type=="CallToPay"){
             audio.src = this.pageConfig.systemConfig['POSAudioCallToPay'];
         }
-        else if(type=="IncomingPayment"){
+        else if(type=="Payment"){
             audio.src = this.pageConfig.systemConfig['POSAudioIncomingPayment'];
         }
         else if(type=="Support"){
