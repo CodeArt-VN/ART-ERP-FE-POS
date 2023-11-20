@@ -11,6 +11,7 @@ import { environment } from 'src/environments/environment';
 import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
 import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
 import { POSForCustomerPaymentModalPage } from '../payment/pos-payment-modal.page';
+import { SYS_ConfigProvider } from 'src/app/services/static/services.service';
 
 @Component({
     selector: 'app-pos-customer-order',
@@ -61,6 +62,7 @@ export class POSCustomerOrderPage extends PageBase {
         public cdr: ChangeDetectorRef,
         public loadingController: LoadingController,
         public commonService: CommonService,
+        public sysConfigProvider: SYS_ConfigProvider,
     ) {
         super();
         this.pageConfig.isDetailPage = true;
@@ -138,15 +140,23 @@ export class POSCustomerOrderPage extends PageBase {
     preLoadData(event?: any): void {
         let forceReload = event === 'force';
         this.AllowSendOrder = false;
+        let sysConfigQuery = ['POSAudioCallStaff','POSAudioCallToPay','POSAudioOrderUpdate','POSAudioIncomingPayment'];
         Promise.all([
             this.getMenu(),
             this.getTable(),
             this.getDeal(),
+            this.sysConfigProvider.read({ Code_in: sysConfigQuery })
         ]).then((values: any) => {
-
             this.menuList = values[0];
             this.Table = values[1];
             this.dealList = values[2];
+            this.pageConfig.systemConfig = {};
+            values[3]['data'].forEach(e => {
+                if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
+                    e.Value = e._InheritedConfig.Value;
+                }
+                this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
+            });
             this.checkIPConfig(event);
         }).catch(err => {
             this.loadedData(event);
@@ -714,11 +724,11 @@ export class POSCustomerOrderPage extends PageBase {
     }
     private playAudio(type) {
         let audio = new Audio();
-        if (type == "Order") {
-            audio.src = environment.posImagesServer + "Audio/audio-order.wav";
+        if(type=="Order"){
+            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioOrderUpdate'];
         }
-        if (type == "Payment") {
-            audio.src = environment.posImagesServer + "Audio/audio-payment.wav";
+        if(type=="Payment"){
+            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioCallToPay'];
         }
         audio.load();
         audio.play();

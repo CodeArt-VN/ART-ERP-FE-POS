@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { NavController, ModalController, AlertController, LoadingController, PopoverController } from '@ionic/angular';
 import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
-import { POS_BillTableProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
+import { POS_BillTableProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, SALE_OrderProvider, SYS_ConfigProvider } from 'src/app/services/static/services.service';
 import { POSSplitModalPage } from '../pos-split-modal/pos-split-modal.page';
 import { POSMergeModalPage } from '../pos-merge-modal/pos-merge-modal.page';
 import { Location } from '@angular/common';
@@ -33,6 +33,7 @@ export class POSOrderPage extends PageBase {
         public tableProvider: POS_TableProvider,
         public menuProvider: POS_MenuProvider,
         public modalController: ModalController,
+        public sysConfigProvider: SYS_ConfigProvider,
         public popoverCtrl: PopoverController,
         public alertCtrl: AlertController,
         public loadingController: LoadingController,
@@ -43,9 +44,9 @@ export class POSOrderPage extends PageBase {
     ) {
         super();
         this.pageConfig.isShowFeature = true;
-        this.pageConfig.canMerge = true;
-        this.pageConfig.canSplit = true;
-        this.pageConfig.canChangeTable = true; 
+        // this.pageConfig.canMerge = true;
+        // this.pageConfig.canSplit = true;
+        // this.pageConfig.canChangeTable = true; 
     }
     ngOnInit() {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
@@ -234,13 +235,13 @@ export class POSOrderPage extends PageBase {
     private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
-            audio.src = environment.posImagesServer + "Audio/audio-order.wav";
+            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioOrderUpdate'];
         }
         if(type=="Payment"){
-            audio.src = environment.posImagesServer + "Audio/audio-payment.wav";
+            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioCallToPay'];
         }
         if(type=="Support"){
-            audio.src = environment.posImagesServer + "Audio/audio-support.wav";
+            audio.src = environment.posImagesServer +  this.pageConfig.systemConfig['POSAudioCallStaff'];
         }
         audio.load();
         audio.play();
@@ -251,7 +252,7 @@ export class POSOrderPage extends PageBase {
         super.ngOnDestroy();
     }
     preLoadData(event?: any): void {
-        
+        let sysConfigQuery = ['POSAudioCallStaff','POSAudioCallToPay','POSAudioOrderUpdate','POSAudioIncomingPayment'];
         let forceReload = event === 'force';
         this.query.Type = 'POSOrder';
         this.query.Status = JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']);
@@ -266,9 +267,17 @@ export class POSOrderPage extends PageBase {
         Promise.all([
             this.getTableGroupTree(forceReload),
             this.env.getStatus('POSOrder'),
+            this.sysConfigProvider.read({ Code_in: sysConfigQuery }),
         ]).then((values: any) => {
             this.tableGroupList = values[0];
             this.soStatusList = values[1];
+            this.pageConfig.systemConfig = {};
+            values[2]['data'].forEach(e => {
+                if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
+                    e.Value = e._InheritedConfig.Value;
+                }
+                this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
+            });
             super.preLoadData(event);
         })
 

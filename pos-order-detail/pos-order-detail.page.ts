@@ -327,7 +327,7 @@ export class POSOrderDetailPage extends PageBase {
 
     preLoadData(event?: any): void {
         //'IsUseIPWhitelist','IPWhitelistInput', 'IsRequireOTP','POSLockSpamPhoneNumber',
-        let sysConfigQuery = ['IsAutoSave', 'SODefaultBusinessPartner', 'POSSettleAtCheckout', 'POSHideSendBarKitButton', 'POSEnableTemporaryPayment', 'POSEnablePrintTemporaryBill', 'POSAutoPrintBillAtSettle'];
+        let sysConfigQuery = ['IsAutoSave', 'SODefaultBusinessPartner', 'POSSettleAtCheckout', 'POSHideSendBarKitButton', 'POSEnableTemporaryPayment', 'POSEnablePrintTemporaryBill', 'POSAutoPrintBillAtSettle','POSAudioCallStaff','POSAudioCallToPay','POSAudioOrderUpdate','POSAudioIncomingPayment'];
 
         let forceReload = event === 'force';
         Promise.all([
