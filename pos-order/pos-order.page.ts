@@ -246,11 +246,10 @@ export class POSOrderPage extends PageBase {
         else if(type=="Support"){
             audio.src = this.pageConfig.systemConfig['POSAudioCallStaff'];
         }
-        else{
-            return;
+        if(audio.src){
+            audio.load();
+            audio.play();
         }
-        audio.load();
-        audio.play();
     }
     
     ngOnDestroy() {

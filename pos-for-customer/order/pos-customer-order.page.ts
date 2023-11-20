@@ -736,12 +736,12 @@ export class POSCustomerOrderPage extends PageBase {
         else if(type=="Support"){
             audio.src = this.pageConfig.systemConfig['POSAudioCallStaff'];
         }
-        else{
-            return;
+        if(audio.src){
+            audio.load();
+            audio.play();
         }
-        audio.load();
-        audio.play();
     }
+    
     async notifyFromStaff() {
         if (this.item.Status == "Splitted") {
             this.env.showAlert("Đơn hàng này đã được chia!");
