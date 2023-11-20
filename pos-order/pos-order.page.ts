@@ -89,7 +89,7 @@ export class POSOrderPage extends PageBase {
     private notifyPayment(data){
         const value = JSON.parse(data.Value);    
         if(this.env.selectedBranch == value.IDBranch && value.IDStaff == 0){
-            this.playAudio("Payment");
+            this.playAudio("IncomingPayment");
             
             let message = "Khách hàng bàn "+ value.TableName+" thanh toán online "+ lib.currencyFormat(value.Amount) +" cho đơn hàng #"+ value.IDSaleOrder;
             this.env.showMessage(message,"warning");
@@ -132,7 +132,7 @@ export class POSOrderPage extends PageBase {
         console.log(value);  
 
         if(this.env.selectedBranch == value.IDBranch){
-            this.playAudio("Payment");
+            this.playAudio("CallToPay");
             let message = "Khách bàn "+value.Tables[0].TableName+" yêu cầu tính tiền";
             this.env.showMessage(message,"warning");
             let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
@@ -235,13 +235,19 @@ export class POSOrderPage extends PageBase {
     private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
-            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioOrderUpdate'];
+            audio.src = this.pageConfig.systemConfig['POSAudioOrderUpdate'];
         }
-        if(type=="Payment"){
-            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioCallToPay'];
+        else if(type=="CallToPay"){
+            audio.src =  environment.posImagesServer+ "Uploads/POS/audio/audio-payment.wav" //this.pageConfig.systemConfig['POSAudioCallToPay'] =
         }
-        if(type=="Support"){
-            audio.src = environment.posImagesServer +  this.pageConfig.systemConfig['POSAudioCallStaff'];
+        else if(type=="IncomingPayment"){
+            audio.src = this.pageConfig.systemConfig['POSAudioIncomingPayment'];
+        }
+        else if(type=="Support"){
+            audio.src = this.pageConfig.systemConfig['POSAudioCallStaff'];
+        }
+        else{
+            return;
         }
         audio.load();
         audio.play();

@@ -718,17 +718,26 @@ export class POSCustomerOrderPage extends PageBase {
                     break;
             }
             this.env.showAlert("<h2>" + lib.currencyFormat(value.Amount) + "</h2>", type + " | " + status, header);
-            this.playAudio("Payment");
+            this.playAudio("IncomingPayment");
             this.refresh();
         }
     }
-    private playAudio(type) {
+    private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
-            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioOrderUpdate'];
+            audio.src = this.pageConfig.systemConfig['POSAudioOrderUpdate'];
         }
-        if(type=="Payment"){
-            audio.src = environment.posImagesServer + this.pageConfig.systemConfig['POSAudioCallToPay'];
+        else if(type=="CallToPay"){
+            audio.src = this.pageConfig.systemConfig['POSAudioCallToPay'];
+        }
+        else if(type=="IncomingPayment"){
+            audio.src = this.pageConfig.systemConfig['POSAudioIncomingPayment'];
+        }
+        else if(type=="Support"){
+            audio.src = this.pageConfig.systemConfig['POSAudioCallStaff'];
+        }
+        else{
+            return;
         }
         audio.load();
         audio.play();
