@@ -403,11 +403,14 @@ export class POSOrderDetailPage extends PageBase {
             if(result?.length>0){
                 this.notifications = result;
             }
-            else{
-                if(this.items.filter(o=>o.Status=='New').length > 0){
-                    this.setNotifications(this.items.filter(o=>o.Status=='New'));
-                }
-            }
+            this.items.forEach(i => {
+                i.OrderLines.forEach(o => {
+                    if(o.Status=='New'){
+                        this.setNotifications(this.items.filter(o=>o.Status=='New'));
+                        return;
+                    }
+                });
+            });
         });
     }
 
@@ -711,7 +714,8 @@ export class POSOrderDetailPage extends PageBase {
             IsActiveTypeCash: true,
             ReturnUrl: window.location.href,
             Lang: this.env.language.current,
-            Timestamp: Date.now()
+            Timestamp: Date.now(),
+            CreatedBy: this.env.user.Email
         };
         let str = window.btoa(JSON.stringify(payment));
         let code = this.convertUrl(str);

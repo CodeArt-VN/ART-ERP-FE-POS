@@ -408,7 +408,8 @@ export class POSCustomerOrderPage extends PageBase {
             IsActiveTypeCash: false,
             ReturnUrl: window.location.href,
             Lang: this.env.language.current,
-            Timestamp:Date.now()
+            Timestamp:Date.now(),
+            CreatedBy: null
         };
 
         let str = window.btoa(JSON.stringify(payment));
@@ -715,10 +716,10 @@ export class POSCustomerOrderPage extends PageBase {
     private playAudio(type) {
         let audio = new Audio();
         if (type == "Order") {
-            audio.src = environment.posImagesServer + "Audio/audio-order.wav";
+            audio.src = environment.posImagesServer + "Uploads/POS/Audio/audio-order.wav";
         }
         if (type == "Payment") {
-            audio.src = environment.posImagesServer + "Audio/audio-payment.wav";
+            audio.src = environment.posImagesServer + "Uploads/POS/Audio/audio-payment.wav";
         }
         audio.load();
         audio.play();

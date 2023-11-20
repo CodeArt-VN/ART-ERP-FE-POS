@@ -131,7 +131,7 @@ export class POSOrderPage extends PageBase {
         console.log(value);  
 
         if(this.env.selectedBranch == value.IDBranch){
-            this.playAudio("Payment");
+            this.playAudio("Support");
             let message = "Khách bàn "+value.Tables[0].TableName+" yêu cầu tính tiền";
             this.env.showMessage(message,"warning");
             let url = "pos-order/"+data.id+"/"+value.Tables[0].IDTable;
@@ -234,13 +234,13 @@ export class POSOrderPage extends PageBase {
     private playAudio(type){
         let audio = new Audio();
         if(type=="Order"){
-            audio.src = environment.posImagesServer + "Audio/audio-order.wav";
+            audio.src = environment.posImagesServer + "Uploads/POS/Audio/audio-order.wav";
         }
         if(type=="Payment"){
-            audio.src = environment.posImagesServer + "Audio/audio-payment.wav";
+            audio.src = environment.posImagesServer + "Uploads/POS/Audio/audio-payment.wav";
         }
         if(type=="Support"){
-            audio.src = environment.posImagesServer + "Audio/audio-support.wav";
+            audio.src = environment.posImagesServer + "Uploads/POS/Audio/audio-supports.wav";
         }
         audio.load();
         audio.play();
@@ -300,9 +300,14 @@ export class POSOrderPage extends PageBase {
             if(result?.length>0){
                 this.notifications = result;
             }
-            if(this.items.filter(o=>o.Status=='New').length > 0){
-                this.setNotifications(this.items.filter(o=>o.Status=='New'));
-            }
+            this.items.forEach(i => {
+                i.OrderLines.forEach(o => {
+                    if(o.Status=='New'){
+                        this.setNotifications(this.items.filter(o=>o.Status=='New'));
+                        return;
+                    }
+                });
+            });
         });
         
         
