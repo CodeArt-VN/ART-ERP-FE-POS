@@ -238,7 +238,7 @@ export class POSOrderPage extends PageBase {
             audio.src = this.pageConfig.systemConfig['POSAudioOrderUpdate'];
         }
         else if(type=="CallToPay"){
-            audio.src =  environment.posImagesServer+ "Uploads/POS/audio/audio-payment.wav" //this.pageConfig.systemConfig['POSAudioCallToPay'] =
+            audio.src = this.pageConfig.systemConfig['POSAudioCallToPay'];
         }
         else if(type=="Payment"){
             audio.src = this.pageConfig.systemConfig['POSAudioIncomingPayment'];
