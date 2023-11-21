@@ -312,8 +312,6 @@ export class POSOrderDetailPage extends PageBase {
             if (this.item.Id) {
                 this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSModifiedDate', { IDOrder: this.item.Id }).toPromise()
                 .then(lastModifiedDate => {
-                    lastModifiedDate;
-                    this.item.ModifiedDate;
                     if (lastModifiedDate > this.item.ModifiedDate) {
                         this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.','danger');
                         this.refresh();
@@ -403,11 +401,14 @@ export class POSOrderDetailPage extends PageBase {
             if(result?.length>0){
                 this.notifications = result;
             }
-            else{
-                if(this.items.filter(o=>o.Status=='New').length > 0){
-                    this.setNotifications(this.items.filter(o=>o.Status=='New'));
-                }
-            }
+            this.items.forEach(i => {
+                i.OrderLines.forEach(o => {
+                    if(o.Status=='New'){
+                        this.setNotifications([i]);
+                        return;
+                    }
+                });
+            });
         });
     }
 
@@ -711,7 +712,8 @@ export class POSOrderDetailPage extends PageBase {
             IsActiveTypeCash: true,
             ReturnUrl: window.location.href,
             Lang: this.env.language.current,
-            Timestamp: Date.now()
+            Timestamp: Date.now(),
+            CreatedBy: this.env.user.Email
         };
         let str = window.btoa(JSON.stringify(payment));
         let code = this.convertUrl(str);
@@ -1215,6 +1217,9 @@ export class POSOrderDetailPage extends PageBase {
         if (this.item._Locked) {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
+        }
+        else {
+            this.pageConfig.canEdit = true;
         }
 
         if (this.item._Customer) {
