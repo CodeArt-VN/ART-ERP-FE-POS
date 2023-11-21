@@ -406,7 +406,7 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     private CheckPOSNewOrderLines() {
-        this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSNewOrderLines', this.query).toPromise().then((results: any) => {
+        this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', this.query).toPromise().then((results: any) => {
             if (results) {
                 this.setNotifications(results);
             }
