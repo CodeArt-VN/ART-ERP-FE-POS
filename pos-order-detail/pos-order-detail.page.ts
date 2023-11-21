@@ -394,21 +394,26 @@ export class POSOrderDetailPage extends PageBase {
         this.contactSearch();
         this.cdr.detectChanges();
         this.getStorageNotifications();
+        this.CheckPOSNewOrderLines();
     }
 
     getStorageNotifications() {
         this.env.getStorage('Notifications').then(result=>{
             if(result?.length>0){
-                this.notifications = result;
+                this.notifications = result.filter(n => !n.Watched);
             }
-            this.items.forEach(i => {
-                i.OrderLines.forEach(o => {
-                    if(o.Status=='New'){
-                        this.setNotifications([i]);
-                        return;
-                    }
-                });
-            });
+        });
+    }
+
+    private CheckPOSNewOrderLines() {
+        this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSNewOrderLines', this.query).toPromise().then((results: any) => {
+            if (results) {
+                this.setNotifications(results);
+            }
+        }).catch(err => {
+            if (err.message != null) {
+                this.env.showMessage(err.message, 'danger');
+            }
         });
     }
 
@@ -452,6 +457,7 @@ export class POSOrderDetailPage extends PageBase {
             await this.navBackOrder();
             this.nav(i.Url, "forward");
         }
+        this.removeNotification(j);
       }
     }
 
