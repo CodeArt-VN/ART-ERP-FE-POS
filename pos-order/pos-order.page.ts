@@ -44,9 +44,6 @@ export class POSOrderPage extends PageBase {
     ) {
         super();
         this.pageConfig.isShowFeature = true;
-        // this.pageConfig.canMerge = true;
-        // this.pageConfig.canSplit = true;
-        // this.pageConfig.canChangeTable = true; 
     }
     ngOnInit() {
         this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {         
