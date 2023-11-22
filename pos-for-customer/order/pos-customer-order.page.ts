@@ -210,8 +210,6 @@ export class POSCustomerOrderPage extends PageBase {
                 this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
                     this.newOrder();
                 }).catch(_ => { });
-                this.formGroup.removeControl('OrderLines');
-                this.formGroup.addControl('OrderLines', this.formBuilder.array([]));
                 this.AllowSendOrder = false;
             }
             if (this.item ==null) this.item = {Id: 0, IsDisabled: false};
