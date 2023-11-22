@@ -420,8 +420,8 @@ export class POSOrderDetailPage extends PageBase {
     setNotifications(items){
         if(items.length>0){
             items.forEach(o=>{
-                let message = "Đơn hàng "+o.Id+" có "+o.NewOrderLineCount+" sản phẩm chưa gửi bếp";
-                let url = "pos-order/"+o.Id+"/"+o.Tables[0];
+                let message = "Bàn "+o.Tables[0]?.TableName+" có "+o.NewOrderLineCount+" món chưa gửi bếp";
+                let url = "pos-order/"+o.Id+"/"+o.Tables[0].IDTable;
                 this.setStorageNotification(null,o.IDBranch,o.Id,"Order","Đơn hàng","pos-order",message,url);
             })
         }
