@@ -312,8 +312,6 @@ export class POSOrderDetailPage extends PageBase {
             if (this.item.Id) {
                 this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSModifiedDate', { IDOrder: this.item.Id }).toPromise()
                 .then(lastModifiedDate => {
-                    lastModifiedDate;
-                    this.item.ModifiedDate;
                     if (lastModifiedDate > this.item.ModifiedDate) {
                         this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.','danger');
                         this.refresh();
@@ -396,17 +394,25 @@ export class POSOrderDetailPage extends PageBase {
         this.contactSearch();
         this.cdr.detectChanges();
         this.getStorageNotifications();
+        this.CheckPOSNewOrderLines();
     }
 
     getStorageNotifications() {
         this.env.getStorage('Notifications').then(result=>{
             if(result?.length>0){
-                this.notifications = result;
+                this.notifications = result.filter(n => !n.Watched);
             }
-            else{
-                if(this.items.filter(o=>o.Status=='New').length > 0){
-                    this.setNotifications(this.items.filter(o=>o.Status=='New'));
-                }
+        });
+    }
+
+    private CheckPOSNewOrderLines() {
+        this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', this.query).toPromise().then((results: any) => {
+            if (results) {
+                this.setNotifications(results);
+            }
+        }).catch(err => {
+            if (err.message != null) {
+                this.env.showMessage(err.message, 'danger');
             }
         });
     }
@@ -414,8 +420,8 @@ export class POSOrderDetailPage extends PageBase {
     setNotifications(items){
         if(items.length>0){
             items.forEach(o=>{
-                let message = "Đơn hàng "+o.Id+" có sản phẩm chưa gửi bếp";
-                let url = "pos-order/"+o.Id+"/"+o.Tables[0];
+                let message = "Bàn "+o.Tables[0]?.TableName+" có "+o.NewOrderLineCount+" món chưa gửi bếp";
+                let url = "pos-order/"+o.Id+"/"+o.Tables[0].IDTable;
                 this.setStorageNotification(null,o.IDBranch,o.Id,"Order","Đơn hàng","pos-order",message,url);
             })
         }
@@ -451,6 +457,7 @@ export class POSOrderDetailPage extends PageBase {
             await this.navBackOrder();
             this.nav(i.Url, "forward");
         }
+        this.removeNotification(j);
       }
     }
 
@@ -711,7 +718,8 @@ export class POSOrderDetailPage extends PageBase {
             IsActiveTypeCash: true,
             ReturnUrl: window.location.href,
             Lang: this.env.language.current,
-            Timestamp: Date.now()
+            Timestamp: Date.now(),
+            CreatedBy: this.env.user.Email
         };
         let str = window.btoa(JSON.stringify(payment));
         let code = this.convertUrl(str);
@@ -1215,6 +1223,9 @@ export class POSOrderDetailPage extends PageBase {
         if (this.item._Locked) {
             this.pageConfig.canEdit = false;
             this.formGroup?.disable();
+        }
+        else {
+            this.pageConfig.canEdit = true;
         }
 
         if (this.item._Customer) {

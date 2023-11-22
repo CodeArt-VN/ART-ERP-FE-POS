@@ -178,6 +178,27 @@ export class POSCustomerOrderPage extends PageBase {
         });
     }
 
+    private checkLastModifiedDate() {
+            if (this.item.Id && ['Merged', 'Splitted', 'Done'].indexOf(this.item.Status) == -1) {
+                this.pageProvider.commonService.connect('GET', 'POS/ForCustomer/CheckPOSModifiedDate', { IDOrder: this.item.Id }).toPromise()
+                .then(lastModifiedDate => {
+                    let itemModifiedDateText = lib.dateFormat(this.item.ModifiedDate, 'yyyy-mm-dd') + ' ' + lib.dateFormat(this.item.ModifiedDate, 'hh:MM:ss');
+                    let lastModifiedDateText = lib.dateFormat(lastModifiedDate, 'yyyy-mm-dd') + ' ' + lib.dateFormat(lastModifiedDate, 'hh:MM:ss');
+                    if (lastModifiedDateText > itemModifiedDateText) {
+                        this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.','danger');
+                        this.refresh();
+                        return true;
+                    }
+                }).catch(err => {
+                    console.log(err);
+                    return true;
+                });
+            }
+            else {
+                return false;
+            } 
+    }
+
     async loadedData(event?: any, ignoredFromGroup?: boolean): Promise<void> {
         super.loadedData(event, ignoredFromGroup);
         //await this.getOrdersOfTable(this.idTable);
@@ -195,6 +216,15 @@ export class POSCustomerOrderPage extends PageBase {
                 this.env.showAlert("Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ", "Kiểm tra đơn hàng và cập nhật", 'Thông báo');
                 this.refresh();
             }
+            if (this.formGroup.controls['Id'].value != 0 && this.id == 0) {
+                this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
+                    this.newOrder();
+                }).catch(_ => { });
+                this.formGroup.removeControl('OrderLines');
+                this.formGroup.addControl('OrderLines', this.formBuilder.array([]));
+                this.AllowSendOrder = false;
+            }
+            if (this.item ==null) this.item = {Id: 0, IsDisabled: false};
             this.formGroup.controls.IDBranch.patchValue(this.Table.IDBranch);
             Object.assign(this.item, this.formGroup.getRawValue());
             this.item.OrderLines = [];
@@ -206,7 +236,7 @@ export class POSCustomerOrderPage extends PageBase {
         }
         this.loadOrder();
         this.loadInfoOrder();
-        if (this.OrderLines?.length > 0) {
+        if (this.OrderLines?.length > 0 && this.id) {
             this.AllowSendOrder = true;
             this.OrderLines.forEach(line => {
                 this.addToCart(line.Item, line.IDUoM, +line.Quantity, true);
@@ -418,7 +448,8 @@ export class POSCustomerOrderPage extends PageBase {
             IsActiveTypeCash: false,
             ReturnUrl: window.location.href,
             Lang: this.env.language.current,
-            Timestamp:Date.now()
+            Timestamp:Date.now(),
+            CreatedBy: null
         };
 
         let str = window.btoa(JSON.stringify(payment));
@@ -481,7 +512,6 @@ export class POSCustomerOrderPage extends PageBase {
         }
         else {
             this.pageConfig.canEdit = true;
-            this.formGroup?.enable();
         }
         this.UpdatePrice();
         this.calcOrder();
@@ -743,15 +773,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
     
     async notifyFromStaff() {
-        if (this.item.Status == "Splitted") {
-            this.env.showAlert("Đơn hàng này đã được chia!");
-            await this.getChildrenOrder(this.item.Id);
-        }
-        if (this.item.Status == 'Merged') {
-            this.env.showAlert("Đơn hàng này đã được gộp!");
-            await this.getParentOrder(this.item.IDParent);
-        }
-        if (this.item.Status == 'Done') {
+        if (['Merged', 'Splitted', 'Done'].indexOf(this.item.Status) != -1 || (this.formGroup.controls['Id'].value != 0 && this.id == 0)) {
             this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
             this.newOrder();
             }).catch(_ => { });
@@ -1197,6 +1219,10 @@ export class POSCustomerOrderPage extends PageBase {
         window.location.reload();
     }
     unlockOrder() {
+        let orderUpdate = this.checkLastModifiedDate();
+        if (orderUpdate) {
+            return;
+        }
         const Debt = this.item.Debt;
         let postDTO = { Id: this.item.Id, Code: 'Scheduled', Debt: Debt};
 
@@ -1207,6 +1233,10 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     lockOrder() {
+        let orderUpdate = this.checkLastModifiedDate();
+        if (orderUpdate) {
+            return;
+        }
         if (this.item.Status == "TemporaryBill") {
             this.goToPayment();
         }
@@ -1248,6 +1278,9 @@ export class POSCustomerOrderPage extends PageBase {
         await this.commonService.connect(apiPath.method, apiPath.url(IDTable), this.query).toPromise().then(result => {
             if (result) {
                 this.id = result;
+            }
+            else {
+                this.id = 0;
             }
         }).catch(err => { });
     }
@@ -1293,14 +1326,20 @@ export class POSCustomerOrderPage extends PageBase {
             this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
             return;
         }
-        else if(this.item.Status == 'Done'){
+        else if(['Merged', 'Splitted', 'Done'].indexOf(this.item.Status) != -1 || (this.formGroup.controls['Id'].value != 0 && this.id == 0)){
             this.env.showPrompt('',null,'Đơn hàng đã hoàn tất','Tạo đơn mới','Đóng').then(_ => {
               this.newOrder();
             }).catch(_ => { });
+            return;
         }
 
         if (!this.pageConfig.canEdit) {
             if (!this.id) this.isWifiSecuredModalOpen = true;
+            return;
+        }
+
+        let orderUpdate = this.checkLastModifiedDate();
+        if (orderUpdate) {
             return;
         }
 
