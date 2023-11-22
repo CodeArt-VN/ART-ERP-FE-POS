@@ -298,20 +298,22 @@ export class POSOrderPage extends PageBase {
         super.loadedData(event);
         this.env.getStorage('Notifications').then(result=>{
             if(result?.length>0){
-                this.notifications = result;
+                this.notifications = result.filter(n => !n.Watched);
             }
-            this.items.forEach(i => {
-                i.OrderLines.forEach(o => {
-                    if(o.Status=='New'){
-                        this.setNotifications([i]);
-                        return;
-                    }
-                });
-            });
         });
-        
-        
-        
+        this.CheckPOSNewOrderLines();
+    }
+    
+    private CheckPOSNewOrderLines() {
+        this.pageProvider.commonService.connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', this.query).toPromise().then((results: any) => {
+            if (results) {
+                this.setNotifications(results);
+            }
+        }).catch(err => {
+            if (err.message != null) {
+                this.env.showMessage(err.message, 'danger');
+            }
+        });
     }
 
     checkTable(o, tid) {       
@@ -561,8 +563,8 @@ export class POSOrderPage extends PageBase {
     setNotifications(items){
         if(items.length>0){
             items.forEach(o=>{
-                let message = "Đơn hàng "+o.Id+" có sản phẩm chưa gửi bếp";
-                let url = "pos-order/"+o.Id+"/"+o.Tables[0];
+                let message = "Bàn "+o.Tables[0]?.TableName+" có "+o.NewOrderLineCount+" món chưa gửi bếp";
+                let url = "pos-order/"+o.Id+"/"+o.Tables[0].IDTable;
                 this.setStorageNotification(null,o.IDBranch,o.Id,"Order","Đơn hàng","pos-order",message,url);
             })
         }
@@ -593,6 +595,7 @@ export class POSOrderPage extends PageBase {
       if (i.Url != null) {
         this.nav(i.Url, "forward");
       }
+      this.removeNotification(j);
     }
 
     removeNotification(j){
