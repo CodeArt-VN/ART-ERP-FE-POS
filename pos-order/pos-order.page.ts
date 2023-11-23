@@ -265,7 +265,6 @@ export class POSOrderPage extends PageBase {
             this.sort.Id = 'Id';
             this.sortToggle('Id', true);
         }
-        if(this.pageConfig.canMerge) this.pageConfig.canChangeTable = this.pageConfig.canMerge;
         Promise.all([
             this.getTableGroupTree(forceReload),
             this.env.getStatus('POSOrder'),
