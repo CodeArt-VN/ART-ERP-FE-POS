@@ -28,7 +28,7 @@
 	</ion-toolbar>
 	<div class="so-rows">
 		<ion-toolbar style="padding-top: 0px !important;" class="no-padding">
-			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionChange)="filter('search')" placeholder="{{'Type to search...' | translate}}"></ion-searchbar>
+			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px;height: 45px;" (ionInput)="filter('search')" placeholder="{{'Type to search...' | translate}}"></ion-searchbar>
 
 			<ion-buttons slot="primary">
 				<ion-button (click)="filter()" title="Ản/Hiện đơn đã xong">
