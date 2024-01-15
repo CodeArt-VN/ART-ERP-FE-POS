@@ -646,7 +646,7 @@ export class POSOrderPage extends PageBase {
 					this.env.showMessage(err.error.ExceptionMessage, 'danger');
 				}
 				else {
-					this.env.showTranslateMessage('erp.app.pages.bi.sales-report.message.can-not-get-data','danger');
+					this.env.showTranslateMessage('Cannot extract data','danger');
 				}
                 this.submitAttempt = false;
                 if (loading) loading.dismiss();

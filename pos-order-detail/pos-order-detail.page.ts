@@ -2097,7 +2097,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
     scanning = false;
     scanQRCode() {
         if (!Capacitor.isPluginAvailable('BarcodeScanner') || Capacitor.platform == 'web'){
-            this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.mobile-only','warning');
+            this.env.showTranslateMessage('This function is only available on phone','warning');
             return;
         }
         BarcodeScanner.prepare().then(() => {
@@ -2157,7 +2157,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
                                 setTimeout(() => this.scanQRCode(), 0);
                             }
                         } else {
-                            this.env.showTranslateMessage('erp.app.pages.sale.sale-order.message.scanning-with-value','', result.content);
+                            this.env.showTranslateMessage('You just scanned: {{value}}, please scanned QR code on paid delivery notes','', result.content);
                             setTimeout(() => this.scanQRCode(), 0);
                         }
                     })
