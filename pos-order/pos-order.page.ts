@@ -268,7 +268,7 @@ export class POSOrderPage extends PageBase {
         Promise.all([
             this.getTableGroupTree(forceReload),
             this.env.getStatus('POSOrder'),
-            this.sysConfigProvider.read({ Code_in: sysConfigQuery }),
+            this.sysConfigProvider.read({ Code_in: sysConfigQuery, IDBranch: this.env.selectedBranch }),
         ]).then((values: any) => {
             this.tableGroupList = values[0];
             this.soStatusList = values[1];

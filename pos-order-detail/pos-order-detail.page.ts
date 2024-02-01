@@ -334,7 +334,7 @@ export class POSOrderDetailPage extends PageBase {
             this.getTableGroupFlat(forceReload),
             this.getMenu(forceReload),
             this.getDeal(),
-            this.sysConfigProvider.read({ Code_in: sysConfigQuery }),
+            this.sysConfigProvider.read({ Code_in: sysConfigQuery, IDBranch: this.env.selectedBranch }),
             this.env.getType('PaymentType'),
             this.env.getStatus('PaymentStatus'),
         ]).then((values: any) => {
