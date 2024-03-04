@@ -78,7 +78,7 @@ export class POSCustomerOrderPage extends PageBase {
             Additions: this.formBuilder.array([]),
             Deductions: this.formBuilder.array([]),
             Tables: [[this.idTable]],
-            IDBranch: [''],
+            IDBranch: [this.env.selectedBranch],
             IDOwner: [-1],
             IDContact: [-1],
             IDAddress: [-1],

@@ -32,7 +32,7 @@ export class POSTableGroupDetailPage extends PageBase {
         this.pageConfig.isDetailPage = true;
 
         this.formGroup = formBuilder.group({
-            IDBranch: [''],
+            IDBranch: [this.env.selectedBranch],
             Id: new FormControl({ value: '', disabled: true }),
             Code: [''],
             Name: ['', Validators.required],
