@@ -8,50 +8,50 @@ import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 
 @Component({
-    selector: 'app-pos-terminal-detail',
-    templateUrl: './pos-terminal-detail.page.html',
-    styleUrls: ['./pos-terminal-detail.page.scss'],
+  selector: 'app-pos-terminal-detail',
+  templateUrl: './pos-terminal-detail.page.html',
+  styleUrls: ['./pos-terminal-detail.page.scss'],
 })
 export class POSTerminalDetailPage extends PageBase {
-    IDPrinterList = [];
-    constructor(
-        public pageProvider: POS_TerminalProvider,
-        public printerProvider: SYS_PrinterProvider,
-        public env: EnvService,
-        public navCtrl: NavController,
-        public route: ActivatedRoute,
-        public alertCtrl: AlertController,
-        public formBuilder: FormBuilder,
-        public cdr: ChangeDetectorRef,
-        public loadingController: LoadingController,
-        public commonService: CommonService,
-    ) {
-        super();
-        this.pageConfig.isDetailPage = true;
+  IDPrinterList = [];
+  constructor(
+    public pageProvider: POS_TerminalProvider,
+    public printerProvider: SYS_PrinterProvider,
+    public env: EnvService,
+    public navCtrl: NavController,
+    public route: ActivatedRoute,
+    public alertCtrl: AlertController,
+    public formBuilder: FormBuilder,
+    public cdr: ChangeDetectorRef,
+    public loadingController: LoadingController,
+    public commonService: CommonService,
+  ) {
+    super();
+    this.pageConfig.isDetailPage = true;
 
-        this.formGroup = formBuilder.group({
-            IDBranch: [this.env.selectedBranch],
-            Id: new FormControl({ value: '', disabled: true }),
-            Code: [''],
-            Name: ['', Validators.required],
-            Remark: [''],
-            IDPrinter: [''],
-        });
-    }
+    this.formGroup = formBuilder.group({
+      IDBranch: [this.env.selectedBranch],
+      Id: new FormControl({ value: '', disabled: true }),
+      Code: [''],
+      Name: ['', Validators.required],
+      Remark: [''],
+      IDPrinter: [''],
+    });
+  }
 
-    loadData(event?: any): void {
-        this.printerProvider.read().then(resp=>{
-            this.IDPrinterList = resp['data'];
-            super.loadData(event);
-        });
-    }
+  loadData(event?: any): void {
+    this.printerProvider.read().then((resp) => {
+      this.IDPrinterList = resp['data'];
+      super.loadData(event);
+    });
+  }
 
-    segmentView = 's1';
-    segmentChanged(ev: any) {
-        this.segmentView = ev.detail.value;
-    }
+  segmentView = 's1';
+  segmentChanged(ev: any) {
+    this.segmentView = ev.detail.value;
+  }
 
-    async saveChange() {
-        super.saveChange2();
-    }
+  async saveChange() {
+    super.saveChange2();
+  }
 }

@@ -12,8 +12,8 @@ import { ShareModule } from 'src/app/share.module';
     CommonModule,
     FormsModule,
     ShareModule,
-    RouterModule.forChild([{ path: '', component: POSTableGroupPage }])
+    RouterModule.forChild([{ path: '', component: POSTableGroupPage }]),
   ],
-  declarations: [POSTableGroupPage]
+  declarations: [POSTableGroupPage],
 })
 export class POSTableGroupPageModule {}

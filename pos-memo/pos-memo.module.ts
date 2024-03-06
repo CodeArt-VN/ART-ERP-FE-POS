@@ -12,8 +12,8 @@ import { ShareModule } from 'src/app/share.module';
     CommonModule,
     FormsModule,
     ShareModule,
-    RouterModule.forChild([{ path: '', component: POSMemoPage }])
+    RouterModule.forChild([{ path: '', component: POSMemoPage }]),
   ],
-  declarations: [POSMemoPage]
+  declarations: [POSMemoPage],
 })
 export class POSMemoPageModule {}

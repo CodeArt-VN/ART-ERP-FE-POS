@@ -14,8 +14,8 @@ import { PipesModule } from 'src/app/pipes/pipes.module';
     FormsModule,
     ShareModule,
     PipesModule,
-    RouterModule.forChild([{ path: '', component: POSWorkOrderPage }])
+    RouterModule.forChild([{ path: '', component: POSWorkOrderPage }]),
   ],
-  declarations: [POSWorkOrderPage]
+  declarations: [POSWorkOrderPage],
 })
 export class POSWorkOrderPageModule {}

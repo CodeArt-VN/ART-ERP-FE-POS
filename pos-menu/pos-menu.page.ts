@@ -7,24 +7,23 @@ import { Location } from '@angular/common';
 import { environment } from 'src/environments/environment';
 
 @Component({
-    selector: 'app-pos-menu',
-    templateUrl: 'pos-menu.page.html',
-    styleUrls: ['pos-menu.page.scss']
+  selector: 'app-pos-menu',
+  templateUrl: 'pos-menu.page.html',
+  styleUrls: ['pos-menu.page.scss'],
 })
 export class POSMenuPage extends PageBase {
-    ImagesServer = environment.posImagesServer;
-    constructor(
-        public pageProvider: POS_MenuProvider,
-        public branchProvider: POS_MenuDetailProvider,
-        public modalController: ModalController,
-		public popoverCtrl: PopoverController,
-        public alertCtrl: AlertController,
-        public loadingController: LoadingController,
-        public env: EnvService,
-        public navCtrl: NavController,
-        public location: Location,
-    ) {
-        super();
-    }
-
+  ImagesServer = environment.posImagesServer;
+  constructor(
+    public pageProvider: POS_MenuProvider,
+    public branchProvider: POS_MenuDetailProvider,
+    public modalController: ModalController,
+    public popoverCtrl: PopoverController,
+    public alertCtrl: AlertController,
+    public loadingController: LoadingController,
+    public env: EnvService,
+    public navCtrl: NavController,
+    public location: Location,
+  ) {
+    super();
+  }
 }

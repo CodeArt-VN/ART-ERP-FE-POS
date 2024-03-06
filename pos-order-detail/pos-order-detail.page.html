@@ -1,823 +1,1134 @@
 <ion-header>
-	<app-detail-toolbar [page]="this">
-		<ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
-			{{'Table' | translate}}: <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
-		</ion-button>
+  <app-detail-toolbar [page]="this">
+    <ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
+      {{'Table' | translate}}:
+      <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
+    </ion-button>
 
-		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
+    <ion-searchbar
+      class="search-box"
+      (ionFocus)="segmentChanged('all')"
+      (ionInput)="search($event)"
+      placeholder="{{'Search menu' | translate}}"
+    ></ion-searchbar>
 
-		<ion-button class="cart" title="{{'Cart' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-			<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
-		</ion-button>
+    <ion-button
+      class="cart"
+      title="{{'Cart' | translate}}"
+      [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}"
+      (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;"
+    >
+      <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+      <span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
+    </ion-button>
 
-		<ion-button (click)="scanQRCode()">
-			<ion-icon slot="icon-only" name="qr-code-outline"></ion-icon>
-		</ion-button>
-	</app-detail-toolbar>
-
+    <ion-button (click)="scanQRCode()">
+      <ion-icon slot="icon-only" name="qr-code-outline"></ion-icon>
+    </ion-button>
+  </app-detail-toolbar>
 </ion-header>
 
-<ion-content *ngIf="!scanning" appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
-	<!-- Notifications list FAB -->
-	<ion-fab slot="fixed" vertical="bottom" horizontal="end" [activated]="true">
-		<ion-fab-button class="linear-blue-btn">
-			<ion-icon name="notifications-outline" ></ion-icon> 
-			<sup *ngIf="notifications.length > 0"><ion-text>{{notifications.length}}</ion-text></sup>
-		</ion-fab-button>
-		<ion-fab-list side="start">
-			<div class="custom-fab" *ngFor="let i of notifications; let j = index;">
-				<div class="label-background" *ngIf="!i.Watched">
-					<ng-container>
-						<ion-text (click)="goToNofication(i,j)">
-							<div><ion-text color="danger" class="clickable"><small>{{i.Name}}</small></ion-text></div>
-							<div><ion-text color="dark" class="clickable">{{i.Message}}</ion-text></div>
-						</ion-text>
-						<ion-button slot="end" size="small" (click)="removeNotification(j)" color="danger" fill="clear">
-							<ion-icon name="trash-outline"></ion-icon>
-						</ion-button>
-					</ng-container>
-				</div>
-			</div>
-		</ion-fab-list>
-	</ion-fab>
-	
-	<!-- feature box -->
-	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
-		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
-		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 180px);">
-			<!-- Dishes -->
-			<div class="box" *ngIf="item?.OrderLines?.length">
+<ion-content
+  *ngIf="!scanning"
+  appScrollbarTheme
+  appPrintFix
+  class="table-list print-size-72"
+  [ngClass]="{withFeature: pageConfig.isShowFeature}"
+>
+  <!-- Notifications list FAB -->
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end" [activated]="true">
+    <ion-fab-button class="linear-blue-btn">
+      <ion-icon name="notifications-outline"></ion-icon>
+      <sup *ngIf="notifications.length > 0"><ion-text>{{notifications.length}}</ion-text></sup>
+    </ion-fab-button>
+    <ion-fab-list side="start">
+      <div class="custom-fab" *ngFor="let i of notifications; let j = index;">
+        <div class="label-background" *ngIf="!i.Watched">
+          <ng-container>
+            <ion-text (click)="goToNofication(i,j)">
+              <div>
+                <ion-text color="danger" class="clickable"><small>{{i.Name}}</small></ion-text>
+              </div>
+              <div>
+                <ion-text color="dark" class="clickable">{{i.Message}}</ion-text>
+              </div>
+            </ion-text>
+            <ion-button slot="end" size="small" (click)="removeNotification(j)" color="danger" fill="clear">
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-button>
+          </ng-container>
+        </div>
+      </div>
+    </ion-fab-list>
+  </ion-fab>
 
-				<ion-toolbar style="border-bottom: solid 0.55px var(--menu-right-border-color);">
-					<ion-segment scrollable="true" (ionChange)="changeFilterDishes($event)" [value]="segmentFilterDishes">
-						<ion-segment-button value="New">
-							<ion-label>
-								{{'New dishes' | translate}}
-								<ion-badge color="warning" style="vertical-align:top;" item-right *ngIf="countDishes('New') > 0">{{countDishes('New')}}</ion-badge>
-							</ion-label>
-						</ion-segment-button>
-						<ion-segment-button value="NotNew">
-							<ion-label>
-								{{'Ordered' | translate}}
-								<ion-badge color="success" style="vertical-align:top;" item-right *ngIf="countDishes('NotNew') > 0">{{countDishes('NotNew')}}</ion-badge>
-							</ion-label>
-						</ion-segment-button>
-					</ion-segment>
-				</ion-toolbar>
+  <!-- feature box -->
+  <ion-fab
+    *ngIf="pageConfig.isShowFeature && item"
+    class="feature no-print"
+    vertical="top"
+    horizontal="end"
+    slot="fixed"
+  >
+    <div id="pos-order-detail-page" style="position: absolute; z-index: 2"></div>
+    <form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 180px)">
+      <!-- Dishes -->
+      <div class="box" *ngIf="item?.OrderLines?.length">
+        <ion-toolbar style="border-bottom: solid 0.55px var(--menu-right-border-color)">
+          <ion-segment scrollable="true" (ionChange)="changeFilterDishes($event)" [value]="segmentFilterDishes">
+            <ion-segment-button value="New">
+              <ion-label>
+                {{'New dishes' | translate}}
+                <ion-badge color="warning" style="vertical-align: top" item-right *ngIf="countDishes('New') > 0"
+                  >{{countDishes('New')}}</ion-badge
+                >
+              </ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="NotNew">
+              <ion-label>
+                {{'Ordered' | translate}}
+                <ion-badge color="success" style="vertical-align: top" item-right *ngIf="countDishes('NotNew') > 0"
+                  >{{countDishes('NotNew')}}</ion-badge
+                >
+              </ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </ion-toolbar>
 
-				<div style="padding: 0px 16px !important;">
-					<div class="box-content" formArrayName="OrderLines">
-						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
-							<ng-container *ngIf="item.OrderLines[idx] as line" >
-								<div class="od" [formGroup]="g" *ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')" >
-									<div style="display: flex;">
-										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
-										<div class="od-info" *ngIf="line._item">
-											<div class="od-name">
-												<small class="od-id">#{{line._item.Id}}</small>&nbsp;
-												<span [appTranslateResource]="line._item"></span>
-											</div>
-											<div class="od-price">
-												<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
-											</div>
-											<div>
-												<ion-text [color]="line?.StatusColor"><small>{{line?.StatusText}}</small> {{line.CreatedDate | date: 'HH:mm dd/MM'}}</ion-text>
-											</div>
-										</div>
-									</div>
+        <div style="padding: 0px 16px !important">
+          <div class="box-content" formArrayName="OrderLines">
+            <ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
+              <ng-container *ngIf="item.OrderLines[idx] as line">
+                <div
+                  class="od"
+                  [formGroup]="g"
+                  *ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')"
+                >
+                  <div style="display: flex">
+                    <div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
+                    <div class="od-info" *ngIf="line._item">
+                      <div class="od-name">
+                        <small class="od-id">#{{line._item.Id}}</small>&nbsp;
+                        <span [appTranslateResource]="line._item"></span>
+                      </div>
+                      <div class="od-price">
+                        <span
+                          >{{line.UoMPrice | number: '1.0-0'}}
+                          <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small>
+                          <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span
+                        >
+                      </div>
+                      <div>
+                        <ion-text [color]="line?.StatusColor"
+                          ><small>{{line?.StatusText}}</small> {{line.CreatedDate | date: 'HH:mm dd/MM'}}</ion-text
+                        >
+                      </div>
+                    </div>
+                  </div>
 
-									<div class="od-quantity">
-										<ion-button title="{{'Delete' | translate}}" fill="clear" *ngIf="!line._Locked" [disabled]="submitAttempt" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx, line.Status);">
-											<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status); line._isShowFoC = false;">
-											<ion-icon slot="icon-only" name="add"></ion-icon>
-										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status); line._isShowFoC = false;">
-											<ion-icon slot="icon-only" name="remove"></ion-icon>
-										</ion-button>
-										<ion-button title="{{'Memo...' | translate}}" fill="clear" color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="openQuickMemo(line)">
-											<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"></ion-icon>
-										</ion-button>
-										<span class="quantity">
-											<small>x</small>
-											<ion-text color="dark">
-												{{line.Quantity}}
-											</ion-text>
-										</span>
-									</div>
+                  <div class="od-quantity">
+                    <ion-button
+                      title="{{'Delete' | translate}}"
+                      fill="clear"
+                      *ngIf="!line._Locked"
+                      [disabled]="submitAttempt"
+                      color="danger"
+                      class="ion-float-right ion-no-padding remark-btn"
+                      size="small"
+                      (click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx, line.Status);"
+                    >
+                      <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                    </ion-button>
+                    <ion-button
+                      fill="outline"
+                      [disabled]="submitAttempt || line._Locked "
+                      class="ion-float-right qty-btn"
+                      size="small"
+                      (click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status); line._isShowFoC = false;"
+                    >
+                      <ion-icon slot="icon-only" name="add"></ion-icon>
+                    </ion-button>
+                    <ion-button
+                      fill="outline"
+                      [disabled]="submitAttempt || line._Locked "
+                      class="ion-float-right qty-btn"
+                      size="small"
+                      (click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status); line._isShowFoC = false;"
+                    >
+                      <ion-icon slot="icon-only" name="remove"></ion-icon>
+                    </ion-button>
+                    <ion-button
+                      title="{{'Memo...' | translate}}"
+                      fill="clear"
+                      color="warning"
+                      class="ion-float-right ion-no-padding remark-btn"
+                      size="small"
+                      (click)="openQuickMemo(line)"
+                    >
+                      <ion-icon
+                        slot="icon-only"
+                        [name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"
+                      ></ion-icon>
+                    </ion-button>
+                    <span class="quantity">
+                      <small>x</small>
+                      <ion-text color="dark"> {{line.Quantity}} </ion-text>
+                    </span>
+                  </div>
 
-									<div class="od-remark " style="position: relative;" *ngIf="(line._isShowNote || line.Remark != null)">
-										<div class="clickable fullfill" (click)="openQuickMemo(line)"></div>
-										<textarea cols="30" rows="10" formControlName="Remark" spellcheck="false" placeholder="{{'Memo...'|translate}}"></textarea>
-									</div>
-									<div class="c-control ion-margin-top" *ngIf="line._isShowFoC">
-										<span disabled class="c-input ion-margin-bottom"><span class="ion-float-left">Tổng tiền SP</span> <span class="ion-float-right">{{line.CalcTotalOriginal | number: '1.0-0'}} đ</span> </span>
-										<span class="c-input ion-margin-bottom">
-											<span class="ion-float-left">Số tiền giảm</span>
-											<input style="text-align: right; border: none; outline: none; width: 130px; background: none;" class="ion-float-right" mask="separator.2" thousandSeparator="," [allowNegativeNumbers]="false" suffix=" ₫" (change)="discountFromSalesman(line,g)" formControlName="OriginalDiscountFromSalesman" placeholder="Số tiền tặng" />
-										</span>
+                  <div class="od-remark" style="position: relative" *ngIf="(line._isShowNote || line.Remark != null)">
+                    <div class="clickable fullfill" (click)="openQuickMemo(line)"></div>
+                    <textarea
+                      cols="30"
+                      rows="10"
+                      formControlName="Remark"
+                      spellcheck="false"
+                      placeholder="{{'Memo...'|translate}}"
+                    ></textarea>
+                  </div>
+                  <div class="c-control ion-margin-top" *ngIf="line._isShowFoC">
+                    <span disabled class="c-input ion-margin-bottom"
+                      ><span class="ion-float-left">Tổng tiền SP</span>
+                      <span class="ion-float-right">{{line.CalcTotalOriginal | number: '1.0-0'}} đ</span>
+                    </span>
+                    <span class="c-input ion-margin-bottom">
+                      <span class="ion-float-left">Số tiền giảm</span>
+                      <input
+                        style="text-align: right; border: none; outline: none; width: 130px; background: none"
+                        class="ion-float-right"
+                        mask="separator.2"
+                        thousandSeparator=","
+                        [allowNegativeNumbers]="false"
+                        suffix=" ₫"
+                        (change)="discountFromSalesman(line,g)"
+                        formControlName="OriginalDiscountFromSalesman"
+                        placeholder="Số tiền tặng"
+                      />
+                    </span>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+      <div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">
+        <div class="box-content">
+          <div class="check-out">
+            <div class="box-title">Khuyến mãi / Voucher</div>
+            <div class="check-out" style="min-height: 20px">
+              <div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
+                <ion-button
+                  fill="clear"
+                  color="danger"
+                  class="ion-float-right ion-no-padding del-btn"
+                  size="small"
+                  (click)="deleteVoucher(p)"
+                >
+                  <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                </ion-button>
+                <div class="coupon-left">
+                  <ion-icon size="large" name="ticket-outline"></ion-icon>
+                </div>
+                <div class="coupon-right">
+                  <span>Giảm {{p.Value | number: '1.0-0'}}<span *ngIf="p.IsByPercent">%</span></span>
+                  <small *ngIf="p.MinOrderValue">
+                    Cho đơn hàng từ {{p.MinOrderValue | number: '1.0-0'}}
+                    <span *ngIf="p.MaxValue"> - tối đa {{p.MaxValue | number: '1.0-0'}}</span>
+                  </small>
+                  <small *ngIf="p.ToDate">HSD: {{p.ToDate | date: 'dd/MM/yyyy'}}</small>
+                </div>
+              </div>
+            </div>
+            <a class="clickable" *ngIf="pageConfig.canEdit" (click)="processVouchers()">
+              <ion-icon name="ticket-outline"></ion-icon> Chọn hoặc nhập mã Voucher
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="box ion-padding">
+        <div class="box-content">
+          <div class="check-out">
+            <label class="c-label"
+              >{{'Total' | translate }}
+              <span class="c-value"> {{item.OriginalTotalBeforeDiscount | number: '1.0-0'}} </span>
+            </label>
+            <label class="c-label clickable" *ngIf="pageConfig.canEdit && item.Id" (click)="processDiscounts()"
+              ><span>{{'Discount' | translate }} <ion-icon name="open-outline"></ion-icon></span>
+              <span class="c-value">{{item.OriginalTotalDiscount | number: '1.0-0'}}</span>
+            </label>
+            <label class="c-label" *ngIf="!pageConfig.canEdit"
+              >{{'Discount' | translate }}
+              <span class="c-value"> {{item.OriginalTotalDiscount | number: '1.0-0'}} </span>
+            </label>
 
-									</div>
-								</div>
-							</ng-container>
-						</ng-container>
-					</div>
-				</div>
-			</div>
-			<div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">
-				<div class="box-content">
-					<div class="check-out">
-						<div class="box-title">
-							Khuyến mãi / Voucher
-						</div>
-						<div class="check-out" style="min-height: 20px;">
-							<div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
-								<ion-button fill="clear" color="danger" class="ion-float-right ion-no-padding del-btn" size="small" (click)="deleteVoucher(p)">
-									<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-								</ion-button>
-								<div class="coupon-left">
-									<ion-icon size="large" name="ticket-outline"></ion-icon>
-								</div>
-								<div class="coupon-right">
-									<span>Giảm {{p.Value | number: '1.0-0'}}<span *ngIf="p.IsByPercent">%</span></span>
-									<small *ngIf="p.MinOrderValue">
-										Cho đơn hàng từ {{p.MinOrderValue | number: '1.0-0'}} <span *ngIf="p.MaxValue"> - tối đa {{p.MaxValue | number: '1.0-0'}}</span>
-									</small>
-									<small *ngIf="p.ToDate">HSD: {{p.ToDate | date: 'dd/MM/yyyy'}}</small>
-								</div>
-							</div>
-						</div>
-						<a class="clickable" *ngIf="pageConfig.canEdit" (click)="processVouchers()">
-							<ion-icon name="ticket-outline"></ion-icon> Chọn hoặc nhập mã Voucher
-						</a>
-					</div>
-				</div>
+            <label class="c-label" *ngIf="item.AdditionsAmount"
+              >{{'Service charge' | translate}}
+              <span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
+            </label>
 
-			</div>
-			<div class="box ion-padding">
-				<div class="box-content">
-					<div class="check-out">
-						<label class="c-label">{{'Total' | translate }}
-							<span class="c-value">
-								{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}
-							</span>
-						</label>
-						<label class="c-label clickable" *ngIf="pageConfig.canEdit && item.Id" (click)="processDiscounts()"><span>{{'Discount' | translate }} <ion-icon name="open-outline"></ion-icon></span>
-							<span class="c-value">{{item.OriginalTotalDiscount | number: '1.0-0'}}</span>
-						</label>
-						<label class="c-label" *ngIf="!pageConfig.canEdit">{{'Discount' | translate }}
-							<span class="c-value">
-								{{item.OriginalTotalDiscount | number: '1.0-0'}}
-							</span>
-						</label>
+            <label class="c-label"
+              >{{'VAT' | translate}}
+              <span class="c-value">{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
+            </label>
 
-						<label class="c-label" *ngIf="item.AdditionsAmount">{{'Service charge' | translate}}
-							<span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
-						</label>
+            <label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0"
+              >{{'Discount from saleman' | translate}}
+              <span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
+            </label>
 
-						<label class="c-label">{{'VAT' | translate}}
-							<span class="c-value">{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
-						</label>
+            <label class="c-label total"
+              >{{'Total affter tax' | translate}}
+              <ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
+                {{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
+              </ion-text>
+            </label>
 
-						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">{{'Discount from saleman' | translate}}
-							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
-						</label>
+            <label class="c-label"
+              >{{'Amount paid' | translate}}
+              <ion-text class="c-value" color="dark">
+                <span *ngIf="item.Received">{{item.Received | number: '1.0-0'}}</span>
+                <span *ngIf="!item.Received">{{0 | number: '1.0-0'}}</span>
+              </ion-text>
+            </label>
+            <label class="c-label total" *ngIf="item.Debt >=0"
+              >{{'Amount due' | translate}}
+              <ion-text class="c-value" color="dark"> {{item.Debt | number: '1.0-0'}} </ion-text>
+            </label>
+            <label class="c-label" *ngIf="item.Debt <0"
+              >Tiền thừa |
+              <ion-text color="primary" class="clickable" (click)="processPayments()">Hoàn lại</ion-text>
+              <ion-text class="c-value" color="dark"> {{item.Debt * -1 | number: '1.0-0'}} </ion-text>
+            </label>
 
-						<label class="c-label total">{{'Total affter tax' | translate}}
-							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
-								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
-							</ion-text>
-						</label>
+            <span class="c-label" style="margin-top: 15px" *ngIf="item?.OrderLines?.length > 0">
+              <label class="InvoiceOptions">
+                <input
+                  class="c-checkbox"
+                  (click)="InvoiceRequired()"
+                  [(ngModel)]="this.item.IsInvoiceRequired"
+                  [ngModelOptions]="{standalone: true}"
+                  type="checkbox"
+                />
+                <ion-icon color="primary" name="receipt"></ion-icon>
+                <ion-label
+                  [ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}"
+                  [color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'"
+                >
+                  {{'Issue invoice' | translate}}
+                </ion-label>
+              </label>
+            </span>
+          </div>
+        </div>
+      </div>
 
-						<label class="c-label">{{'Amount paid' | translate}}
-							<ion-text class="c-value" color="dark">
-								<span *ngIf="item.Received">{{item.Received | number: '1.0-0'}}</span>
-								<span *ngIf="!item.Received">{{0 | number: '1.0-0'}}</span>
-							</ion-text>
-						</label>
-						<label class="c-label total" *ngIf="item.Debt >=0">{{'Amount due' | translate}}
-							<ion-text class="c-value" color="dark">
-								{{item.Debt | number: '1.0-0'}}
-							</ion-text>
-						</label>
-						<label class="c-label" *ngIf="item.Debt <0">Tiền thừa | <ion-text color="primary" class="clickable" (click)="processPayments()">Hoàn lại</ion-text>
-							<ion-text class="c-value" color="dark">
-								{{item.Debt * -1 | number: '1.0-0'}}
-							</ion-text>
-						</label>
+      <div class="box ion-padding" *ngIf="paymentList.length">
+        <div class="box-content">
+          <div class="check-out">
+            <label class="c-label" *ngFor="let p of paymentList">
+              <span>
+                <span *ngIf="p.IncomingPayment.IsRefundTransaction"
+                  ><ion-text color="danger">{{'Refund' | translate}}</ion-text>
+                  |
+                </span>
+                {{p.IncomingPayment.TypeText}}
+                <small *ngIf="p.IncomingPayment.SubType">| {{p.IncomingPayment.SubType}}</small>
+                <small>
+                  | {{p.IncomingPayment?.CreatedDate | date: 'HH:mm dd/MM'}}
+                  <ion-text [color]="p.IncomingPayment.IsRefundTransaction? 'danger' : p.IncomingPayment._Status?.Color"
+                    >{{p.IncomingPayment._Status?.Name}}</ion-text
+                  >
+                </small>
+                <span *ngIf="p.IncomingPayment.Remark"><br /><ion-note>{{p.IncomingPayment.Remark}}</ion-note></span>
+              </span>
 
-						<span class="c-label" style="margin-top: 15px;" *ngIf="item?.OrderLines?.length > 0">
-							<label class="InvoiceOptions">
-								<input class="c-checkbox" (click)="InvoiceRequired()" [(ngModel)]="this.item.IsInvoiceRequired" [ngModelOptions]="{standalone: true}" type="checkbox">
-								<ion-icon color="primary" name="receipt"></ion-icon>
-								<ion-label [ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}" [color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'">
-									{{'Issue invoice' | translate}}
-								</ion-label>
-							</label>
-						</span>
-					</div>
-				</div>
-			</div>
+              <ion-text [color]="p.IncomingPayment.IsRefundTransaction? 'danger' : 'dark'" class="c-value">
+                {{p.Amount | number: '1.0-0'}}
+              </ion-text>
+            </label>
 
-			<div class="box ion-padding" *ngIf="paymentList.length">
-				<div class="box-content">
+            <label class="c-label total clickable" (click)="processPayments()">
+              <span>
+                {{'Amount paid' | translate}}
+                <ion-icon name="open-outline"></ion-icon>
+              </span>
+              <span class="c-value">{{item.Received | number: '1.0-0'}}</span>
+            </label>
+          </div>
+        </div>
+      </div>
 
-					<div class="check-out">
+      <!-- Contact -->
+      <div class="box header-box ion-padding">
+        <div class="header-name">
+          <div class="bill-for">
+            <span *ngIf="item?.OrderDate">{{item.OrderDate | date: 'HH:mm dd/MM'}} </span>
+            <span *ngIf="!item?.Tables?.length">{{'Please choose a table' | translate}}</span>
+            <span *ngIf="item?.Tables?.length && !item?.OrderLines?.length"
+              >{{'Please choose products' | translate}}</span
+            >
+          </div>
+          <div class="total">
+            <div class="c-control">
+              <ion-item *ngIf="Staff" lines="none" class="staff-info">
+                <ion-avatar class="clickable" id="open-modal-staff-info" slot="start">
+                  <img alt="Silhouette of mountains" [src]="Staff.avatarURL" />
+                </ion-avatar>
+                <ion-text>
+                  <ion-label>
+                    <small>{{Staff.DepartmentName}}</small>
+                  </ion-label>
+                  <ion-label>
+                    <small>{{Staff.JobTitleName}}</small>
+                  </ion-label>
+                </ion-text>
+                <ion-modal trigger="open-modal-staff-info">
+                  <ng-template>
+                    <ion-content>
+                      <ion-button
+                        fill="clear"
+                        style="position: absolute; right: 0"
+                        color="secondary"
+                        (click)="closeModal()"
+                      >
+                        <ion-icon slot="icon-only" name="close"></ion-icon>
+                      </ion-button>
+                      <ion-img width="100%" alt="Silhouette of mountains" [src]="Staff.avatarURL"></ion-img>
+                    </ion-content>
+                  </ng-template>
+                </ion-modal>
+              </ion-item>
+              <ng-select
+                appendTo="#pos-order-detail-page"
+                style="text-align: left"
+                class="c-input"
+                (change)="changedIDAddress($event)"
+                #IDAddress
+                labelForId="IDAddress"
+                formControlName="IDAddress"
+                [items]="contactList$ | async"
+                [clearable]="false"
+                [typeahead]="contactListInput$"
+                [loading]="contactListLoading"
+                [virtualScroll]="true"
+                bindLabel="Name"
+                bindValue="IDAddress"
+                placeholder="{{'Search for name, code or phone number' | translate}}"
+              >
+                <ng-template ng-label-tmp let-i="item" let-a="item.Address">
+                  {{i.Name}}
+                  <small *ngIf="a">
+                    <span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
+                    <span *ngIf="a.Ward">, {{a.Ward}}</span>
+                    <span *ngIf="a.District">, {{a.District}}</span>
+                    <span *ngIf="a.Province">, {{a.Province}}</span>
+                  </small>
+                </ng-template>
+                <ng-template ng-option-tmp let-i="item" let-a="item.Address" let-search="searchTerm">
+                  <div *ngIf="i">
+                    <div>
+                      <span [ngOptionHighlight]="search">{{i.Name}}</span>
+                      <span *ngIf="i.WorkPhone">
+                        |
+                        <small>
+                          <b [ngOptionHighlight]="search">{{i.WorkPhone}}</b>
+                        </small></span
+                      >
+                    </div>
+                    <small *ngIf="a">
+                      <b *ngIf="i.Code"><span class="important" [ngOptionHighlight]="search">{{i.Code}}</span></b>
+                      <span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
+                      <span *ngIf="a.Ward">, {{a.Ward}}</span>
+                      <span *ngIf="a.District">, {{a.District}}</span>
+                      <span *ngIf="a.Province">, {{a.Province}}</span>
+                      <br *ngIf="a.AddressLine2 || a.Contact" />
+                      <span *ngIf="a.AddressLine2">{{a.AddressLine2}}</span>
+                      <span *ngIf="a.Contact"> | {{'Contact' | translate}}: {{a.Contact}}</span>
+                      <span *ngIf="a.Phone1"> - {{a.Phone1}}</span>
+                      <span *ngIf="a.Phone2"> - {{a.Phone2}}</span>
+                    </small>
+                  </div>
+                </ng-template>
+              </ng-select>
+              <div class="text-right" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
+                <ion-button
+                  [disabled]="submitAttempt"
+                  style="margin-top: 5px; margin-bottom: 9px"
+                  size="small"
+                  (click)="addContact()"
+                >
+                  <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                  {{'Create new customer' | translate}}
+                </ion-button>
+              </div>
+            </div>
+            <div class="c-control">
+              <input
+                #numberOfGuestsInput
+                style="text-align: left; min-height: 3.8rem; height: auto"
+                class="c-input no-check-dirty"
+                formControlName="NumberOfGuests"
+                (change)="saveChange();"
+                placeholder="Số khách"
+              />
+            </div>
+            <div class="c-control">
+              <ng-select
+                appendTo="#pos-order-detail-page"
+                style="text-align: left; min-height: 3.8rem; height: auto"
+                class="c-input no-check-dirty"
+                formControlName="Tables"
+                (change)="changeTable();"
+                [multiple]="true"
+                [closeOnSelect]="false"
+                [items]="tableList"
+                bindLabel="Name"
+                bindValue="Id"
+                placeholder="{{'Select Table' | translate}}"
+              >
+                <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                  <div *ngIf="i">
+                    <div>
+                      <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span>
+                      <span [ngOptionHighlight]="search">{{i.Name}}</span>
+                    </div>
+                  </div>
+                </ng-template>
+              </ng-select>
+            </div>
 
-						
+            <div class="c-control">
+              <ng-select
+                appendTo="#pos-order-detail-page"
+                style="text-align: left; min-height: 3.8rem; height: auto"
+                class="c-input no-check-dirty"
+                formControlName="Status"
+                labelForId="Status"
+                [multiple]="false"
+                [clearable]="false"
+                [items]="soStatusList"
+                bindLabel="Name"
+                bindValue="Code"
+                placeholder="Tình trạng..."
+              >
+                <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                  <div>
+                    <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span>
+                    <span [ngOptionHighlight]="search">{{i.Name}}</span>
+                  </div>
+                </ng-template>
+              </ng-select>
+            </div>
+            <div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
+              <label for=""></label>
+              <ion-button
+                size="small"
+                color="danger"
+                expand="block"
+                fill="outline"
+                (click)="openCancellationReason();"
+                [disabled]="submitAttempt || !pageConfig.canCancelOrder"
+              >
+                {{'Cancel' | translate}}
+              </ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
 
-						<label class="c-label" *ngFor="let p of paymentList">
-							<span>
-								<span *ngIf="p.IncomingPayment.IsRefundTransaction"><ion-text color="danger">{{'Refund' | translate}}</ion-text> | </span>
-								{{p.IncomingPayment.TypeText}} <small *ngIf="p.IncomingPayment.SubType">| {{p.IncomingPayment.SubType}}</small>
-								<small>
-									| {{p.IncomingPayment?.CreatedDate | date: 'HH:mm dd/MM'}}
-									<ion-text [color]="p.IncomingPayment.IsRefundTransaction? 'danger' : p.IncomingPayment._Status?.Color">{{p.IncomingPayment._Status?.Name}}</ion-text>
-								</small>
-								<span *ngIf="p.IncomingPayment.Remark"><br><ion-note>{{p.IncomingPayment.Remark}}</ion-note></span>
-							</span>
+    <div
+      class="functions-list"
+      *ngIf="!(item.Status === 'Merged' || item.Status === 'Splitted' || item.Status === 'Cancelled')"
+    >
+      <ion-grid fixed>
+        <ion-row *ngIf="item" style="flex-wrap: nowrap">
+          <ion-col *ngIf="pageConfig.canEdit && pageConfig.systemConfig.IsAutoSave">
+            <ion-button
+              class="gr-btn-order"
+              [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' "
+              [ngClass]="{'blink': printData.undeliveredItems?.length != 0}"
+              fill="outline"
+              expand="block"
+              (click)="sendKitchen()"
+              [disabled]="submitAttempt || printData.undeliveredItems?.length == 0"
+            >
+              {{'Send BAR/KIT' | translate}}
+            </ion-button>
+          </ion-col>
+          <ion-col *ngIf="pageConfig.canEdit && !pageConfig.systemConfig.IsAutoSave && item.Status != 'TemporaryBill'">
+            <ion-button
+              class="gr-btn-order"
+              [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' "
+              fill="outline"
+              expand="block"
+              (click)="saveOrderData()"
+              [disabled]="submitAttempt"
+            >
+              {{'Save' | translate}}
+            </ion-button>
+          </ion-col>
+          <ion-col *ngIf="item.Status == 'TemporaryBill'">
+            <ion-button
+              color="danger"
+              fill="outline"
+              expand="block"
+              (click)="unlockOrder();"
+              [disabled]="submitAttempt || !item.Id"
+            >
+              Hủy tạm tính
+            </ion-button>
+          </ion-col>
+          <ion-col
+            *ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && pageConfig.systemConfig.POSEnableTemporaryPayment"
+          >
+            <ion-button
+              color="medium"
+              fill="outline"
+              expand="block"
+              (click)="lockOrder();"
+              [disabled]="submitAttempt || !item.Id"
+            >
+              Tạm tính tiền
+            </ion-button>
+          </ion-col>
+          <ion-col
+            *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !pageConfig.systemConfig.POSEnableTemporaryPayment"
+          >
+            <ion-button
+              color="medium"
+              fill="outline"
+              expand="block"
+              (click)="sendPrint();"
+              [disabled]="submitAttempt || !item.Id"
+            >
+              In phiếu
+            </ion-button>
+          </ion-col>
+        </ion-row>
+        <ion-row
+          *ngIf="( item && pageConfig.canEdit && !pageConfig.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'"
+          style="flex-wrap: nowrap"
+        >
+          <ion-col size="12">
+            <ion-button
+              *ngIf="item.Debt > 0 "
+              expand="block"
+              (click)="goToPayment()"
+              [disabled]="submitAttempt || !item.Id"
+            >
+              <ion-text>{{'Bill please' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>
+            </ion-button>
+          </ion-col>
+        </ion-row>
+        <ion-row
+          *ngIf="item && pageConfig.canEdit && !pageConfig.systemConfig.POSSettleAtCheckout"
+          style="flex-wrap: nowrap"
+        >
+          <ion-col>
+            <ion-button
+              class="linear-blue-btn"
+              expand="block"
+              (click)="doneOrder()"
+              [disabled]="submitAttempt || !item.Id"
+            >
+              <ion-text>{{'Settle bill' | translate}}</ion-text>
+            </ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+  </ion-fab>
 
-							<ion-text [color]="p.IncomingPayment.IsRefundTransaction? 'danger' : 'dark'" class="c-value">
-								{{p.Amount | number: '1.0-0'}}
-							</ion-text>
-						</label>
+  <!-- Menu Group -->
+  <div class="no-print menu-holder">
+    <div class="menu-group-list">
+      <div
+        class="menu-group"
+        *ngIf="dealList.length"
+        [style]="{order:0}"
+        (click)="segmentChanged('all'); query.Keyword ='deals'"
+      >
+        <ion-img
+          #img
+          [src]="'assets/pos-icons/POS-Item-demo.png'"
+          (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"
+          [ngClass]="{selected: query.Keyword == 'deals'}"
+        ></ion-img>
+        <ion-label>DEAL</ion-label>
+      </div>
+      <div
+        class="menu-group"
+        [style]="{order:(i==0 && g.Id==0) ? -1:''}"
+        *ngFor="let g of menuList;let i = index"
+        (click)="segmentChanged(g.Id); query.Keyword =''"
+      >
+        <ion-img
+          #img
+          [src]="g.menuImage"
+          (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"
+          [ngClass]="{selected: segmentView==g.Id}"
+        ></ion-img>
+        <ion-label>{{g.Name}}</ion-label>
+      </div>
+    </div>
+  </div>
 
-						<label class="c-label total clickable" (click)="processPayments()">
-							<span>
-								{{'Amount paid' | translate}} <ion-icon name="open-outline"></ion-icon>
-							</span>
-							<span class="c-value">{{item.Received | number: '1.0-0'}}</span> 
-						</label>
-					</div>
-				</div>
-			</div>
+  <!-- View MenuList -->
+  <div class="no-print">
+    <ion-grid fixed *ngIf="menuList?.length">
+      <ng-container *ngFor="let g of menuList | filter:{Id:segmentView}">
+        <ng-container *ngIf="g.Items?.length">
+          <ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
+            <ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
+              <ion-list-header class="ion-no-padding">
+                <ion-label color="primary">{{g.Name}}</ion-label>
+              </ion-list-header>
+            </ion-col>
 
-			<!-- Contact -->
-			<div class="box header-box ion-padding">
-				<div class="header-name">
-					<div class="bill-for">
-						<span *ngIf="item?.OrderDate">{{item.OrderDate | date: 'HH:mm dd/MM'}} </span>
-						<span *ngIf="!item?.Tables?.length">{{'Please choose a table' | translate}}</span>
-						<span *ngIf="item?.Tables?.length && !item?.OrderLines?.length">{{'Please choose products' | translate}}</span>
-					</div>
-					<div class="total">
-						<div class="c-control">
+            <ion-col
+              class="shadow table-item"
+              [ngClass]="{'in-serve': i.BookedQuantity }"
+              *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}"
+            >
+              <span class="tag right" *ngIf="i.IsDisabled">
+                <ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
+              </span>
+              <div class="card" [id]="'item'+i.Id">
+                <ion-img
+                  class="item-image clickable"
+                  [title]="i.Name"
+                  #img
+                  [src]="i.imgPath"
+                  (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"
+                ></ion-img>
+                <span class="table-name clickable">
+                  <span [appTranslateResource]="i"></span>
+                </span>
 
-							<ion-item *ngIf="Staff" lines="none" class="staff-info">
-								<ion-avatar class="clickable" id="open-modal-staff-info" slot="start">
-									<img alt="Silhouette of mountains" [src]="Staff.avatarURL" />
-								</ion-avatar>
-								<ion-text>
-									<ion-label> <small>{{Staff.DepartmentName}}</small> </ion-label>
-									<ion-label> <small>{{Staff.JobTitleName}}</small> </ion-label>
-								</ion-text>
-								<ion-modal trigger="open-modal-staff-info">
-									<ng-template>
-										<ion-content>
-											<ion-button fill="clear" style="position: absolute; right:0" color="secondary" (click)="closeModal()">
-												<ion-icon slot="icon-only" name="close"></ion-icon>
-											</ion-button>
-											<ion-img width="100%" alt="Silhouette of mountains" [src]="Staff.avatarURL"></ion-img>
-										</ion-content>
-									</ng-template>
-								</ion-modal>
-							</ion-item>
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left;" class="c-input" (change)="changedIDAddress($event)" #IDAddress labelForId="IDAddress" formControlName="IDAddress" [items]="contactList$ | async" [clearable]="false" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="IDAddress" placeholder="{{'Search for name, code or phone number' | translate}}">
-								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
-									{{i.Name}}
-									<small *ngIf="a">
-										<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
-										<span *ngIf="a.Ward">, {{a.Ward}}</span>
-										<span *ngIf="a.District">, {{a.District}}</span>
-										<span *ngIf="a.Province">, {{a.Province}}</span>
-									</small>
-								</ng-template>
-								<ng-template ng-option-tmp let-i="item" let-a="item.Address" let-search="searchTerm">
-									<div *ngIf="i">
-										<div>
-											<span [ngOptionHighlight]="search">{{i.Name}}</span>
-											<span *ngIf="i.WorkPhone"> | <small> <b [ngOptionHighlight]="search">{{i.WorkPhone}}</b> </small></span>
-										</div>
-										<small *ngIf="a">
-											<b *ngIf="i.Code"><span class="important" [ngOptionHighlight]="search">{{i.Code}}</span></b>
-											<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
-											<span *ngIf="a.Ward">, {{a.Ward}}</span>
-											<span *ngIf="a.District">, {{a.District}}</span>
-											<span *ngIf="a.Province">, {{a.Province}}</span>
-											<br *ngIf="a.AddressLine2 || a.Contact">
-											<span *ngIf="a.AddressLine2">{{a.AddressLine2}}</span>
-											<span *ngIf="a.Contact"> | {{'Contact' | translate}}: {{a.Contact}}</span>
-											<span *ngIf="a.Phone1"> - {{a.Phone1}}</span>
-											<span *ngIf="a.Phone2"> - {{a.Phone2}}</span>
-										</small>
-									</div>
-								</ng-template>
-							</ng-select>
-							<div class="text-right" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
-								<ion-button [disabled]="submitAttempt" style="margin-top: 5px; margin-bottom: 9px;" size="small" (click)="addContact()">
-									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-									{{'Create new customer' | translate}}
-								</ion-button>
-							</div>
-						</div>
-						<div class="c-control">
-							<input #numberOfGuestsInput style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="NumberOfGuests" (change)="saveChange();" placeholder="Số khách" />
-						</div>
-						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Tables" (change)="changeTable();" [multiple]="true" [closeOnSelect]="false" [items]="tableList" bindLabel="Name" bindValue="Id" placeholder="{{'Select Table' | translate}}">
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div *ngIf="i">
-										<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
-									</div>
-								</ng-template>
-							</ng-select>
-						</div>
+                <ng-container *ngFor="let u of i.UoMs">
+                  <span *ngIf="u.PriceList.length" class="price clickable">
+                    <span class="price-list" *ngFor="let p of u.PriceList">
+                      <span *ngIf="!p.NewPrice">
+                        {{p.Price | number: '1.0-0'}}
+                        <span class="uom"> /{{u.Name}}</span>
+                      </span>
+                      <span *ngIf="p.NewPrice">
+                        {{p.NewPrice | number: '1.0-0'}}
+                        <span class="uom"> /{{u.Name}}</span>
+                        <small class="old-price">{{p.Price | number: '1.0-0'}}</small>
+                        -{{(p.Price - p.NewPrice)/p.Price * 100 | number: '1.0-0'}}%
+                      </span>
+                    </span>
 
-						<div class="c-control">
-							<ng-select appendTo="#pos-order-detail-page" style="text-align: left; min-height: 3.8rem; height: auto;" class="c-input no-check-dirty" formControlName="Status" labelForId="Status" [multiple]="false" [clearable]="false" [items]="soStatusList" bindLabel="Name" bindValue="Code" placeholder="Tình trạng...">
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div> <span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span> <span [ngOptionHighlight]="search">{{i.Name}}</span></div>
-								</ng-template>
-							</ng-select>
-						</div>
-						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
-							<label for=""></label>
-							<ion-button size="small" color="danger" expand="block" fill="outline" (click)="openCancellationReason();" [disabled]="submitAttempt || !pageConfig.canCancelOrder">
-								{{'Cancel' | translate}}
-							</ion-button>
-						</div>
+                    <ion-button
+                      [disabled]="i.IsDisabled"
+                      [ngClass]="{'linear-blue-btn': i.BookedQuantity}"
+                      [title]="(i.BookedQuantity && i.Status != 'Cancelled')? i.BookedQuantity: '+'"
+                      class="ion-float-right add-to-cart-btn"
+                      size="small"
+                      (click)="addToCart(i, u.Id)"
+                    >
+                      <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+                    </ion-button>
+                  </span>
+                </ng-container>
+              </div>
+            </ion-col>
+          </ion-row>
+        </ng-container>
+      </ng-container>
+    </ion-grid>
+    <app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+  </div>
 
-					</div>
-				</div>
-			</div>
-		</form>
+  <!-- Bill Printing -->
+  <style>
+    .page-footer-space {
+      margin-top: 10px;
+    }
+  </style>
+  <div id="bill" class="bill" style="overflow: auto; width: 72mm" *ngIf="item?.OrderLines?.length">
+    <div class="receipt giao-nhan" style="overflow: auto">
+      <section class="sheet rpt p1">
+        <table>
+          <thead>
+            <tr>
+              <td>
+                <div class="page-header-space"></div>
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div>
+                  <div class="header">
+                    <span class="logo"
+                      ><img
+                        [src]="printData.currentBranch?.LogoURL || 'assets/logo/logo-in-holdings.png'"
+                        (error)="$event.src='assets/logos/logo-the-log.png'"
+                    /></span>
+                    <span class="brand">{{printData.currentBranch?.ShortName || printData.currentBranch?.Name}}</span>
+                    <span class="address">{{printData.currentBranch?.Address || ''}}</span>
+                    <span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
 
-		<div class="functions-list" *ngIf="!(item.Status === 'Merged' || item.Status === 'Splitted' || item.Status === 'Cancelled')">
-			<ion-grid fixed>
-				<ion-row *ngIf="item" style="flex-wrap: nowrap;">
-					<ion-col *ngIf="pageConfig.canEdit && pageConfig.systemConfig.IsAutoSave">
-						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " [ngClass]="{'blink': printData.undeliveredItems?.length != 0}" fill="outline" expand="block" (click)="sendKitchen()" [disabled]="submitAttempt || printData.undeliveredItems?.length == 0">
-							{{'Send BAR/KIT' | translate}}
-						</ion-button>
-					</ion-col>
-					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.systemConfig.IsAutoSave && item.Status != 'TemporaryBill'">
-						<ion-button class="gr-btn-order" [color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' " fill="outline" expand="block" (click)="saveOrderData()" [disabled]="submitAttempt">
-							{{'Save' | translate}}
-						</ion-button>
-					</ion-col>
-					<ion-col *ngIf="item.Status == 'TemporaryBill'">
-						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();" [disabled]="submitAttempt || !item.Id">
-							Hủy tạm tính
-						</ion-button>
-					</ion-col>
-					<ion-col *ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && pageConfig.systemConfig.POSEnableTemporaryPayment">
-						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitAttempt || !item.Id">
-							Tạm tính tiền
-						</ion-button>
-					</ion-col>
-					<ion-col *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !pageConfig.systemConfig.POSEnableTemporaryPayment">
-						<ion-button color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id">
-							In phiếu
-						</ion-button>
-					</ion-col>
-				</ion-row>
-				<ion-row *ngIf="( item && pageConfig.canEdit && !pageConfig.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap;">
-					<ion-col size="12">
-						<ion-button *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
-							<ion-text>{{'Bill please' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>
-						</ion-button>
-					</ion-col>
-				</ion-row>
-				<ion-row *ngIf="item && pageConfig.canEdit && !pageConfig.systemConfig.POSSettleAtCheckout" style="flex-wrap: nowrap;">
-					<ion-col>
-						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
-							<ion-text>{{'Settle bill' | translate}}</ion-text>
-						</ion-button>
-					</ion-col>
-				</ion-row>
-			</ion-grid>
-		</div>
-	</ion-fab>
+                    <ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
+                      <span class="brand">ORDER</span>
+                      <span>({{'Bill No.' | translate}}: {{id}})</span>
+                    </ng-container>
+                    <ng-container *ngIf="item.Status == 'TemporaryBill'">
+                      <span class="brand">TEMPORARY BILL</span>
+                      <span>({{'Bill No.' | translate}}: {{id}})</span>
+                    </ng-container>
+                    <ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
+                      <span class="brand">RECEIPT</span>
+                      <span>({{'Receipt No.' | translate}}: {{id}})</span>
+                    </ng-container>
+                  </div>
+                  <div class="table-info">
+                    <table>
+                      <tr>
+                        <td class="title">{{'Table' | translate}}</td>
+                        <td>
+                          <span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="title">Ngày mở</td>
+                        <td>{{item.OrderDate | date: 'HH:mm dd/MM/yyyy'}}</td>
+                      </tr>
+                      <tr>
+                        <td class="title">Ngày in</td>
+                        <td>{{printData.printDate}}</td>
+                      </tr>
+                      <tr *ngIf="kitchenQuery=='all'">
+                        <td class="title">Thu ngân</td>
+                        <td>{{env.user.FullName}}</td>
+                      </tr>
+                      <tr *ngIf="kitchenQuery=='all'">
+                        <td class="title">{{'Customer' | translate}}</td>
+                        <td>
+                          {{item._Customer?.Name}}
+                          <span *ngIf="item._Customer?.Code"> ({{item._Customer.Code}}) </span>
+                        </td>
+                      </tr>
+                      <tr *ngIf="kitchenQuery!='all'">
+                        <td class="title">{{'Send To' | translate}}</td>
+                        <td>
+                          <span *ngFor="let k of kitchenList | filter:{Id:kitchenQuery}">{{k.Name}}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                  <div class="items" *ngIf="kitchenQuery=='all'">
+                    <table>
+                      <tr style="font-size: 10px; font-weight: bold">
+                        <td>{{'Item' | translate}}</td>
+                        <td class="text-right">{{'Price' | translate}}</td>
+                        <td class="text-right">{{'Quantity' | translate}}</td>
+                        <td class="text-right">{{'Discount' | translate}}</td>
+                        <td class="text-right">{{'Amount' | translate}}</td>
+                      </tr>
+                      <ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
+                        <tr class="small">
+                          <td colspan="5" class="name">
+                            <span [appTranslateResource]="o._item"></span>
+                          </td>
+                        </tr>
+                        <tr class="small">
+                          <td>&#8203;</td>
+                          <td class="od-price total">
+                            <span>{{o.UoMPrice | number: '1.0-0'}}</span>
+                          </td>
+                          <td class="quantity total">
+                            <span>{{o.Quantity}}</span>
+                          </td>
+                          <td class="total">
+                            <span>{{o.OriginalTotalDiscount | number: '1.0-0'}}</span>
+                          </td>
+                          <td class="total">
+                            <span>{{o.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                      </ng-container>
+                    </table>
+                  </div>
+                  <div class="items" *ngIf="kitchenQuery!='all'">
+                    <table>
+                      <tr class="bold">
+                        <td>{{'Item' | translate}}</td>
+                        <td class="total">{{'Qty' | translate}}</td>
+                      </tr>
+                      <ng-container
+                        *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery} ; let idx = index "
+                      >
+                        <ng-container *ngIf="o._undeliveredQuantity > 0">
+                          <tr>
+                            <td>
+                              {{idx + 1}}.
+                              <span [appTranslateResource]="o._item"></span>
+                            </td>
+                            <td class="total">
+                              <span class="bold quantity">{{o._undeliveredQuantity}}</span>
+                            </td>
+                          </tr>
+                          <tr *ngIf="o.Remark">
+                            <td colspan="2">Note: {{o.Remark}}</td>
+                          </tr>
+                        </ng-container>
+                      </ng-container>
+                    </table>
+                  </div>
+                  <div style="border-bottom: none" class="table-info" *ngIf="kitchenQuery!='all'">
+                    <table>
+                      <tr>
+                        <td class="title">{{'Printing date' | translate}}</td>
+                        <td class="text-right">
+                          <span>{{printData.printDate}}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
 
-	<!-- Menu Group -->
-	<div class="no-print menu-holder">
-		<div class="menu-group-list">
-				<div  class="menu-group" *ngIf="dealList.length" [style]="{order:0}" (click)="segmentChanged('all'); query.Keyword ='deals'">
-					<ion-img #img [src]="'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: query.Keyword == 'deals'}"></ion-img>
-					<ion-label>DEAL</ion-label>
-				</div>
-				<div class="menu-group" [style]="{order:(i==0 && g.Id==0) ? -1:''}" *ngFor="let g of menuList;let i = index" (click)="segmentChanged(g.Id); query.Keyword =''">
-					<ion-img #img [src]="g.menuImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
-					<ion-label>{{g.Name}}</ion-label>
-				</div>
-		</div>
-	</div>
+                  <ng-container *ngIf="kitchenQuery=='all'">
+                    <!-- Total & Discount -->
+                    <div class="table-info-top">
+                      <table>
+                        <tr>
+                          <td class="title">{{'Total' | translate }}</td>
+                          <td class="text-right">
+                            <span>{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="title">{{'Discount' | translate }} [ {{item.OriginalTotalDiscountPercent}}% ]</td>
+                          <td class="text-right">
+                            <span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
 
-	<!-- View MenuList -->
-	<div class="no-print">
-		<ion-grid fixed *ngIf="menuList?.length">
-			<ng-container *ngFor="let g of menuList | filter:{Id:segmentView}">
-				<ng-container *ngIf="g.Items?.length">
+                    <!-- Service charge -->
+                    <div class="table-info-top">
+                      <table>
+                        <tr>
+                          <td class="title">{{'Discounted amount' | translate}}</td>
+                          <td class="text-right">
+                            <span>{{item.OriginalTotalAfterDiscount | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="title">{{'Service charge' | translate}} [ {{item.AdditionsAmountPercent}}% ]</td>
+                          <td class="text-right">
+                            <span>{{item.AdditionsAmount | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
 
-					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
+                    <!-- VAT -->
+                    <div class="table-info-top">
+                      <table>
+                        <tr>
+                          <td class="title">{{'Base VAT amount' | translate}}</td>
+                          <td class="text-right">
+                            <span>{{item.OriginalTotalAfterDiscount + item.AdditionsAmount | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="title">{{'VAT' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
+                          <td class="text-right">
+                            <span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
 
-						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
-							<ion-list-header class="ion-no-padding">
-								<ion-label color="primary">{{g.Name}}</ion-label>
-							</ion-list-header>
-						</ion-col>
+                    <!-- Total -->
+                    <div class="table-info-top">
+                      <table>
+                        <tr *ngIf="item.OriginalDiscountFromSalesman>0">
+                          <td class="title">
+                            {{'Discount from saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]
+                          </td>
+                          <td class="text-right">
+                            <span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="title bold">{{'Total affter tax' | translate}}</td>
+                          <td class="text-right bold">
+                            <span
+                              >{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span
+                            >
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
 
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
-							<span class="tag right" *ngIf="i.IsDisabled">
-								<ion-text class="tag-content" color="danger">
-									{{'Out of stock' | translate}}
-								</ion-text>
-							</span>
-							<div class="card" [id]="'item'+i.Id">
+                    <!-- Amount paid -->
+                    <div class="table-info-top">
+                      <table>
+                        <tr>
+                          <td class="title bold">{{'Amount paid' | translate}}</td>
+                          <td class="text-right bold">
+                            <span>{{item.Received | number: '1.0-0' }}</span>
+                          </td>
+                        </tr>
+                        <tr *ngFor="let p of paymentList">
+                          <ng-container *ngIf="p.IncomingPayment.Status == 'Success'">
+                            <td class="title" style="padding-left: 8px; text-indent: -8px">
+                              -
+                              <span *ngIf="p.IncomingPayment.IsRefundTransaction">{{'Refund' | translate}} | </span>
+                              {{p.IncomingPayment.TypeText}}
+                              <small *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</small>
+                              <small *ngIf="p.IncomingPayment.Remark"> | {{p.IncomingPayment.Remark}}</small>
+                            </td>
+                            <td class="text-right">
+                              <span>{{p.Amount | number: '1.0-0'}}</span>
+                            </td>
+                          </ng-container>
+                        </tr>
+                      </table>
+                    </div>
 
-								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
-								<span class="table-name clickable">
-									<span [appTranslateResource]="i"></span>
-								</span>
+                    <!-- Amount due -->
+                    <div class="table-info-top">
+                      <table>
+                        <tr *ngIf="item.Debt > 0">
+                          <td class="title bold">{{'Amount due' | translate}}</td>
+                          <td class="text-right bold">
+                            <span>{{item.Debt | number: '1.0-0'}}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
 
-								<ng-container *ngFor="let u of i.UoMs">
-									<span *ngIf="u.PriceList.length" class="price clickable">
-										<span class="price-list" *ngFor="let p of u.PriceList">
-											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-											</span>
-											<span *ngIf="p.NewPrice">
-												{{p.NewPrice | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100 | number: '1.0-0'}}%
+                    <div class="message" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
+                      <div>Quét mã thanh toán</div>
+                      <div style="font-size: 10px">(ZaloPay | Ngân hàng | Ví điện tử)</div>
+                      <div style="display: block; margin-left: auto; margin-right: auto; width: 150px; height: 150px">
+                        <img class="qrc" [src]="VietQRCode" />
+                      </div>
+                    </div>
 
-											</span>
-										</span>
+                    <div class="message">
+                      <div style="font-size: 10px">Cảm ơn & Hẹn gặp lại Quý Khách!</div>
+                      <div style="font-size: 10px">
+                        Phiếu thanh toán chỉ có giá trị xuất hoá đơn<br />
+                        GTGT trong ngày.
+                      </div>
+                      <div>{{'Thank you! See you again!' | translate}}</div>
+                    </div>
+                  </ng-container>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>
+                <div class="page-footer-space"></div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+    </div>
+  </div>
 
-										<ion-button [disabled]="i.IsDisabled" [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="(i.BookedQuantity && i.Status != 'Cancelled')? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small"  (click)="addToCart(i, u.Id)">
-											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-										</ion-button>
-									</span>
-								</ng-container>
-
-							</div>
-						</ion-col>
-
-					</ion-row>
-				</ng-container>
-			</ng-container>
-		</ion-grid>
-		<app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
-	</div>
-
-	<!-- Bill Printing -->
-	<style>
-.page-footer-space {
-	margin-top: 10px;
-}
-	</style>
-	<div id="bill" class="bill" style="overflow: auto; width: 72mm;" *ngIf="item?.OrderLines?.length">
-		<div class="receipt giao-nhan" style="overflow: auto;">
-			<section class="sheet rpt p1">
-				<table>
-					<thead>
-						<tr>
-							<td>
-								<div class="page-header-space"></div>
-							</td>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>
-
-								<div>
-									<div class="header">
-										<span class="logo"><img [src]="printData.currentBranch?.LogoURL || 'assets/logo/logo-in-holdings.png'" (error)="$event.src='assets/logos/logo-the-log.png'"></span>
-										<span class="brand">{{printData.currentBranch?.ShortName || printData.currentBranch?.Name}}</span>
-										<span class="address">{{printData.currentBranch?.Address || ''}}</span>
-										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
-
-										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
-											<span class="brand">ORDER</span>
-											<span>({{'Bill No.' | translate}}: {{id}})</span>
-										</ng-container>
-										<ng-container *ngIf="item.Status == 'TemporaryBill'">
-											<span class="brand">TEMPORARY BILL</span>
-											<span>({{'Bill No.' | translate}}: {{id}})</span>
-										</ng-container>
-										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
-											<span class="brand">RECEIPT</span>
-											<span>({{'Receipt No.' | translate}}: {{id}})</span>
-										</ng-container>
-
-									</div>
-									<div class="table-info">
-										<table>
-											<tr>
-												<td class="title">{{'Table' | translate}}</td>
-												<td><span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span></td>
-											</tr>
-											<tr>
-												<td class="title">Ngày mở</td>
-												<td>{{item.OrderDate | date: 'HH:mm dd/MM/yyyy'}}</td>
-											</tr>
-											<tr>
-												<td class="title">Ngày in</td>
-												<td>{{printData.printDate}}</td>
-											</tr>
-											<tr *ngIf="kitchenQuery=='all'">
-												<td class="title">Thu ngân</td>
-												<td>{{env.user.FullName}}
-
-												</td>
-											</tr>
-											<tr *ngIf="kitchenQuery=='all'">
-												<td class="title">{{'Customer' | translate}}
-												</td>
-												<td>{{item._Customer?.Name}} 
-													<span *ngIf="item._Customer?.Code">
-														({{item._Customer.Code}})
-													</span>
-												</td>
-											</tr>
-											<tr *ngIf="kitchenQuery!='all'">
-												<td class="title">{{'Send To' | translate}}</td>
-												<td><span *ngFor="let k of kitchenList | filter:{Id:kitchenQuery}">{{k.Name}}</span></td>
-											</tr>
-										</table>
-									</div>
-									<div class="items" *ngIf="kitchenQuery=='all'">
-										<table>
-											<tr style="font-size: 10px; font-weight: bold;">
-												<td>{{'Item' | translate}}</td>
-												<td class="text-right">{{'Price' | translate}}</td>
-												<td class="text-right">{{'Quantity' | translate}}</td>
-												<td class="text-right">{{'Discount' | translate}}</td>
-												<td class="text-right">{{'Amount' | translate}}</td>
-											</tr>
-											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
-												<tr class="small">
-													<td colspan="5" class="name">
-														<span [appTranslateResource]="o._item"></span>
-													</td>
-												</tr>
-												<tr class="small">
-													<td>&#8203;</td>
-													<td class="od-price total"><span>{{o.UoMPrice | number: '1.0-0'}}</span></td>
-													<td class="quantity total"><span>{{o.Quantity}}</span></td>
-													<td class="total"><span>{{o.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
-													<td class="total"><span>{{o.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
-												</tr>
-											</ng-container>
-										</table>
-									</div>
-									<div class="items" *ngIf="kitchenQuery!='all'">
-										<table>
-											<tr class="bold">
-												<td>{{'Item' | translate}}</td>
-												<td class="total">{{'Qty' | translate}}</td>
-											</tr>
-											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery} ; let idx = index ">
-												<ng-container *ngIf="o._undeliveredQuantity > 0">
-													<tr>
-														<td>
-															{{idx + 1}}.
-															<span [appTranslateResource]="o._item"></span>
-														</td>
-														<td class="total"><span class="bold quantity">{{o._undeliveredQuantity}}</span> </td>
-													</tr>
-													<tr *ngIf="o.Remark">
-														<td colspan="2">
-															Note: {{o.Remark}}
-														</td>
-													</tr>
-												</ng-container>
-											</ng-container>
-										</table>
-									</div>
-									<div style="border-bottom: none;" class="table-info" *ngIf="kitchenQuery!='all'">
-										<table>
-											<tr>
-												<td class="title">{{'Printing date' | translate}}</td>
-												<td class="text-right"><span>{{printData.printDate}}</span></td>
-											</tr>
-										</table>
-									</div>
-
-
-									<ng-container *ngIf="kitchenQuery=='all'">
-
-										<!-- Total & Discount -->
-										<div class="table-info-top">
-											<table>
-												<tr>
-													<td class="title">{{'Total' | translate }}</td>
-													<td class="text-right"><span>{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span></td>
-												</tr>
-												<tr>
-													<td class="title">{{'Discount' | translate }} [ {{item.OriginalTotalDiscountPercent}}% ]</td>
-													<td class="text-right"><span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span></td>
-												</tr>
-											</table>
-										</div>
-
-										<!-- Service charge -->
-										<div class="table-info-top">
-											<table>
-												<tr>
-													<td class="title">{{'Discounted amount' | translate}}</td>
-													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount | number: '1.0-0'}}</span></td>
-												</tr>
-												<tr>
-													<td class="title">{{'Service charge' | translate}} [ {{item.AdditionsAmountPercent}}% ]</td>
-													<td class="text-right"><span>{{item.AdditionsAmount | number: '1.0-0'}}</span></td>
-												</tr>
-											</table>
-										</div>
-
-										<!-- VAT -->
-										<div class="table-info-top">
-											<table>
-												<tr>
-													<td class="title">{{'Base VAT amount' | translate}}</td>
-													<td class="text-right"><span>{{item.OriginalTotalAfterDiscount + item.AdditionsAmount | number: '1.0-0'}}</span></td>
-												</tr>
-												<tr>
-													<td class="title">{{'VAT' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
-													<td class="text-right"><span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span></td>
-												</tr>
-											</table>
-										</div>
-
-										<!-- Total -->
-										<div class="table-info-top">
-											<table>
-												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
-													<td class="title">{{'Discount from saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
-													<td class="text-right"><span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
-												</tr>
-												<tr>
-													<td class="title bold">{{'Total affter tax' | translate}}</td>
-													<td class="text-right bold"><span>{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span></td>
-												</tr>
-											</table>
-										</div>
-
-										<!-- Amount paid -->
-										<div class="table-info-top">
-											<table>
-												<tr>
-													<td class="title bold">{{'Amount paid' | translate}}</td>
-													<td class="text-right bold"><span>{{item.Received | number: '1.0-0' }}</span></td>
-												</tr>
-												<tr *ngFor="let p of paymentList">
-													<ng-container *ngIf="p.IncomingPayment.Status == 'Success'">
-														<td class="title" style="padding-left: 8px; text-indent: -8px;">
-															- 
-															<span *ngIf="p.IncomingPayment.IsRefundTransaction">{{'Refund' | translate}} | </span>
-															{{p.IncomingPayment.TypeText}}
-															<small *ngIf="p.IncomingPayment.SubType"> | {{p.IncomingPayment.SubType}}</small>
-															<small *ngIf="p.IncomingPayment.Remark"> | {{p.IncomingPayment.Remark}}</small>
-														</td>
-														<td class="text-right"><span>{{p.Amount | number: '1.0-0'}}</span></td>
-													</ng-container>
-												</tr>
-											</table>
-										</div>
-
-										<!-- Amount due -->
-										<div class="table-info-top">
-											<table>
-												<tr *ngIf="item.Debt > 0">
-													<td class="title bold">{{'Amount due' | translate}}</td>
-													<td class="text-right bold"><span>{{item.Debt | number: '1.0-0'}}</span></td>
-												</tr>
-											</table>
-										</div>
-
-										<div class="message" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
-											<div>Quét mã thanh toán</div>
-											<div style="font-size: 10px;">(ZaloPay | Ngân hàng | Ví điện tử)</div>
-											<div style="display: block; margin-left: auto; margin-right: auto; width: 150px; height: 150px;"><img class="qrc" [src]="VietQRCode"></div>
-										</div>
-
-										<div class="message">
-											<div style="font-size: 10px;">Cảm ơn & Hẹn gặp lại Quý Khách!</div>
-											<div style="font-size: 10px;">Phiếu thanh toán chỉ có giá trị xuất hoá đơn<br> GTGT trong ngày.</div>
-											<div>
-												{{'Thank you! See you again!' | translate}}
-											</div>
-										</div>
-									</ng-container>
-								</div>
-							</td>
-						</tr>
-					</tbody>
-					<tfoot>
-						<tr>
-							<td>
-								<div class="page-footer-space"></div>
-							</td>
-						</tr>
-					</tfoot>
-				</table>
-			</section>
-		</div>
-	</div>
-
-	<!-- Kitchen Dishes Printing -->
-	<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
-		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}; let idx = index">
-			<div [id]="'bill-item-each-'+o.Id" class="bill" style="overflow: auto; width: 72mm;">
-				<div class="receipt giao-nhan" style="overflow: auto;">
-					<section class="sheet rpt p1">
-						<table>
-							<thead>
-								<tr>
-									<td>
-										<!-- <div class="page-header-space"></div> -->
-									</td>
-								</tr>
-							</thead>
-							<tbody>
-								<tr>
-									<td>
-										<div>
-											<div class="items">
-												<table>
-													<tr>
-														<td class="title" colspan="2" style="font-size: 16px;">
-															<ion-text class="bold ">{{'Table' | translate}}: </ion-text>
-															<ng-container *ngFor="let t of printData.selectedTables">
-																<ion-text class="bold">{{t.Name}};</ion-text>
-															</ng-container>
-														</td>
-													</tr>
-												</table>
-												<table>
-													<tr class="bold">
-														<td>{{'Item' | translate}}</td>
-														<td class="total">{{'Qty' | translate}}</td>
-													</tr>
-													<ng-container>
-														<tr>
-															<td>
-																{{idx + 1}}.
-																<span [appTranslateResource]="o._item"></span>
-															</td>
-															<td class="total"><span class="bold quantity">{{o._undeliveredQuantity}}</span>
-															</td>
-														</tr>
-														<tr *ngIf="o.Remark">
-															<td colspan="2">
-																Note: {{o.Remark}}
-															</td>
-														</tr>
-													</ng-container>
-												</table>
-											</div>
-											<div style="border-bottom: none;" class="table-info" *ngIf="kitchenQuery!='all'">
-												<table>
-													<tr>
-														<td class="title">{{'PrintDate' | translate}}</td>
-														<td class="text-right"><span>{{printData.printDate}}</span></td>
-													</tr>
-												</table>
-											</div>
-										</div>
-									</td>
-								</tr>
-							</tbody>
-							<tfoot>
-								<tr>
-									<td>
-										<div class="page-footer-space"></div>
-									</td>
-								</tr>
-							</tfoot>
-						</table>
-					</section>
-				</div>
-			</div>
-		</ng-container>
-	</ng-container>
+  <!-- Kitchen Dishes Printing -->
+  <ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
+    <ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}; let idx = index">
+      <div [id]="'bill-item-each-'+o.Id" class="bill" style="overflow: auto; width: 72mm">
+        <div class="receipt giao-nhan" style="overflow: auto">
+          <section class="sheet rpt p1">
+            <table>
+              <thead>
+                <tr>
+                  <td>
+                    <!-- <div class="page-header-space"></div> -->
+                  </td>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div>
+                      <div class="items">
+                        <table>
+                          <tr>
+                            <td class="title" colspan="2" style="font-size: 16px">
+                              <ion-text class="bold">{{'Table' | translate}}: </ion-text>
+                              <ng-container *ngFor="let t of printData.selectedTables">
+                                <ion-text class="bold">{{t.Name}};</ion-text>
+                              </ng-container>
+                            </td>
+                          </tr>
+                        </table>
+                        <table>
+                          <tr class="bold">
+                            <td>{{'Item' | translate}}</td>
+                            <td class="total">{{'Qty' | translate}}</td>
+                          </tr>
+                          <ng-container>
+                            <tr>
+                              <td>
+                                {{idx + 1}}.
+                                <span [appTranslateResource]="o._item"></span>
+                              </td>
+                              <td class="total">
+                                <span class="bold quantity">{{o._undeliveredQuantity}}</span>
+                              </td>
+                            </tr>
+                            <tr *ngIf="o.Remark">
+                              <td colspan="2">Note: {{o.Remark}}</td>
+                            </tr>
+                          </ng-container>
+                        </table>
+                      </div>
+                      <div style="border-bottom: none" class="table-info" *ngIf="kitchenQuery!='all'">
+                        <table>
+                          <tr>
+                            <td class="title">{{'PrintDate' | translate}}</td>
+                            <td class="text-right">
+                              <span>{{printData.printDate}}</span>
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>
+                    <div class="page-footer-space"></div>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </section>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
 </ion-content>
 
 <ion-content *ngIf="scanning" no-scroll class="cameraFrame">
-	<div class="frame">
-		<div class="blink-line">
-		</div>
-	</div>
-	<ion-fab vertical="bottom" horizontal="center" slot="fixed">
-		<ion-fab-button id='closeCamera' color="secondary" (click)="closeCamera()">
-			<ion-icon name="close"></ion-icon>
-		</ion-fab-button>
-	</ion-fab>
-	<!-- <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+  <div class="frame">
+    <div class="blink-line"></div>
+  </div>
+  <ion-fab vertical="bottom" horizontal="center" slot="fixed">
+    <ion-fab-button id="closeCamera" color="secondary" (click)="closeCamera()">
+      <ion-icon name="close"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+  <!-- <ion-fab vertical="bottom" horizontal="start" slot="fixed">
 		<ion-fab-button color="warning" (click)="lightCamera()">
 			<ion-icon name="flashlight"></ion-icon>
 		</ion-fab-button>

@@ -1,60 +1,91 @@
 <ion-header>
-	<ion-toolbar class="toolbar-no">
-		<ion-buttons slot="start" *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">
-			<ion-button (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-				<ion-icon slot="start" name="chevron-back-outline"></ion-icon>
-				{{'Back' | translate}}
-			</ion-button>
-		</ion-buttons>
+  <ion-toolbar class="toolbar-no">
+    <ion-buttons slot="start" *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">
+      <ion-button (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
+        <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+        {{'Back' | translate}}
+      </ion-button>
+    </ion-buttons>
 
-		<ion-title *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">{{'Cart' | translate}}</ion-title>
-		<ion-buttons slot="end" class="full-width">
-			<ion-searchbar [debounce]="300" [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}" slot="start" class="search-box" (ionFocus)="segmentChanged('all')"  (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
-			<ion-button (click)="refresh()">
-				<ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
-			</ion-button>
-			<ion-button *ngIf="!pageConfig.isShowFeature" class="cart" title="{{'Cart' | translate}}" [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-				<ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
-				<span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
-			</ion-button>
-			<ion-button [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}" *ngIf="pageConfig.isShowFeature" (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
-				<ion-icon color="primary" slot="icon-only" name="close-circle-outline"></ion-icon>
-			</ion-button>
-		</ion-buttons>
-	</ion-toolbar>
+    <ion-title *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}"
+      >{{'Cart' | translate}}</ion-title
+    >
+    <ion-buttons slot="end" class="full-width">
+      <ion-searchbar
+        [debounce]="300"
+        [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}"
+        slot="start"
+        class="search-box"
+        (ionFocus)="segmentChanged('all')"
+        (ionInput)="search($event)"
+        placeholder="{{'Search menu' | translate}}"
+      ></ion-searchbar>
+      <ion-button (click)="refresh()">
+        <ion-icon color="primary" slot="icon-only" name="reload-outline"></ion-icon>
+      </ion-button>
+      <ion-button
+        *ngIf="!pageConfig.isShowFeature"
+        class="cart"
+        title="{{'Cart' | translate}}"
+        [ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}"
+        (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;"
+      >
+        <ion-icon color="primary" slot="icon-only" name="cart-outline"></ion-icon>
+        <span *ngIf="item?._TotalQuantity">{{item._TotalQuantity}}</span>
+      </ion-button>
+      <ion-button
+        [ngClass]="{'ion-hide-sm-down': pageConfig.isShowFeature}"
+        *ngIf="pageConfig.isShowFeature"
+        (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;"
+      >
+        <ion-icon color="primary" slot="icon-only" name="close-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
 </ion-header>
 
-<ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
-	<ion-fab slot="fixed" vertical="bottom" horizontal="end">
-		<ion-fab-button class="linear-blue-btn">
-			<ion-icon name="megaphone-outline" ></ion-icon>
-		</ion-fab-button>
-		<ion-fab-list side="top">
-			<div class="custom-fab">
-				<div class="label-background">
-					<ion-text color="dark">Call to pay</ion-text>
-				</div>
-				<ion-fab-button color="primary" (click)="callToPay();">
-					<ion-icon name="receipt-outline"></ion-icon>
-				</ion-fab-button>
-			</div>
+<ion-content
+  appScrollbarTheme
+  appPrintFix
+  class="table-list print-size-72"
+  [ngClass]="{withFeature: pageConfig.isShowFeature}"
+>
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button class="linear-blue-btn">
+      <ion-icon name="megaphone-outline"></ion-icon>
+    </ion-fab-button>
+    <ion-fab-list side="top">
+      <div class="custom-fab">
+        <div class="label-background">
+          <ion-text color="dark">Call to pay</ion-text>
+        </div>
+        <ion-fab-button color="primary" (click)="callToPay();">
+          <ion-icon name="receipt-outline"></ion-icon>
+        </ion-fab-button>
+      </div>
 
-			<div class="custom-fab">
-				<div class="label-background">
-					<ion-text color="dark">Call staff</ion-text>
-				</div>
-				<ion-fab-button color="primary" (click)="callStaff();">
-					<ion-icon name="person-outline"></ion-icon>
-				</ion-fab-button>
-			</div>
-		</ion-fab-list>
-	</ion-fab>
-	<!-- list Item -->
-	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
-		<div id="pos-order-detail-page" style="position: absolute; z-index: 2;"></div>
-		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px);">
-			<!-- Dishes -->
-			<!-- <div class="box" *ngIf="item?.Status=='Done' || item?.Status=='Cancelled'">
+      <div class="custom-fab">
+        <div class="label-background">
+          <ion-text color="dark">Call staff</ion-text>
+        </div>
+        <ion-fab-button color="primary" (click)="callStaff();">
+          <ion-icon name="person-outline"></ion-icon>
+        </ion-fab-button>
+      </div>
+    </ion-fab-list>
+  </ion-fab>
+  <!-- list Item -->
+  <ion-fab
+    *ngIf="pageConfig.isShowFeature && item"
+    class="feature no-print"
+    vertical="top"
+    horizontal="end"
+    slot="fixed"
+  >
+    <div id="pos-order-detail-page" style="position: absolute; z-index: 2"></div>
+    <form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 200px)">
+      <!-- Dishes -->
+      <!-- <div class="box" *ngIf="item?.Status=='Done' || item?.Status=='Cancelled'">
 				<ion-row>
 					<ion-col size="12" class="ion-text-center">
 						<ion-button expand="full" fill="clear" (click)="helpOrder(item.Status)">
@@ -98,243 +129,315 @@
 				</ion-row>
 				
 			</div> -->
-			<div class="box" *ngIf="item?.OrderLines?.length">
+      <div class="box" *ngIf="item?.OrderLines?.length">
+        <ion-toolbar style="border-bottom: solid 0.55px var(--menu-right-border-color)">
+          <ion-segment scrollable="true" (ionChange)="changeFilterDishes($event)" [value]="segmentFilterDishes">
+            <ion-segment-button value="New">
+              <ion-label>
+                {{'New dishes' | translate}}
+                <ion-badge color="warning" style="vertical-align: top" item-right *ngIf="countDishes('New') > 0"
+                  >{{countDishes('New')}}</ion-badge
+                >
+              </ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="NotNew">
+              <ion-label>
+                {{'Ordered' | translate}}
+                <ion-badge color="success" style="vertical-align: top" item-right *ngIf="countDishes('NotNew') > 0"
+                  >{{countDishes('NotNew')}}</ion-badge
+                >
+              </ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </ion-toolbar>
 
-				<ion-toolbar style="border-bottom: solid 0.55px var(--menu-right-border-color);">
-					<ion-segment scrollable="true" (ionChange)="changeFilterDishes($event)" [value]="segmentFilterDishes">
-						<ion-segment-button value="New">
-							<ion-label>
-								{{'New dishes' | translate}}
-								<ion-badge color="warning" style="vertical-align:top;" item-right *ngIf="countDishes('New') > 0">{{countDishes('New')}}</ion-badge>
-							</ion-label>
-						</ion-segment-button>
-						<ion-segment-button value="NotNew">
-							<ion-label>
-								{{'Ordered' | translate}}
-								<ion-badge color="success" style="vertical-align:top;" item-right *ngIf="countDishes('NotNew') > 0">{{countDishes('NotNew')}}</ion-badge>
-							</ion-label>
-						</ion-segment-button>
-					</ion-segment>
-				</ion-toolbar>
+        <div style="padding: 0px 16px !important">
+          <div class="box-content" formArrayName="OrderLines">
+            <ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
+              <ng-container *ngIf="item.OrderLines[idx] as line">
+                <div
+                  class="od"
+                  [formGroup]="g"
+                  *ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')"
+                >
+                  <div style="display: flex">
+                    <div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
+                    <div class="od-info" *ngIf="line._item">
+                      <div class="od-name">
+                        <small class="od-id">#{{line._item.Id}}</small>
+                        <span [appTranslateResource]="line._item"></span>
+                      </div>
+                      <div class="od-price">
+                        <span
+                          >{{line.UoMPrice | number: '1.0-0'}}
+                          <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small>
+                          <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span
+                        >
+                      </div>
+                      <div>
+                        <ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"
+                          ><small>{{line?.StatusText | translate}}</small></ion-text
+                        >
+                      </div>
+                    </div>
+                  </div>
 
-				<div style="padding: 0px 16px !important;">
-					<div class="box-content" formArrayName="OrderLines">
-						<ng-container *ngFor="let g of formGroup.get('OrderLines')['controls']; let idx = index;">
-							<ng-container *ngIf="item.OrderLines[idx] as line" >
-								<div class="od" [formGroup]="g" *ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')" >
-									<div style="display: flex;">
-										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
-										<div class="od-info" *ngIf="line._item">
-											<div class="od-name"><small class="od-id">#{{line._item.Id}}</small>
-												<span [appTranslateResource]="line._item"></span>
-											</div>
-											<div class="od-price">
-												<span>{{line.UoMPrice | number: '1.0-0'}} <small *ngIf="line.TaxRate">+{{line.TaxRate}}% {{'VAT' | translate}} </small> <small *ngIf="line.UoMName"> /{{line.UoMName}}</small></span>
-											</div>
-											<div>
-												<ion-text *ngIf="line?.StatusText" [color]="line?.StatusColor"><small>{{line?.StatusText  | translate}}</small></ion-text>
-											</div>
-										</div>
-									</div>
-
-									<div class="od-quantity">
-										<ion-button title="{{'Delete' | translate}}" fill="clear" *ngIf="!line._Locked" color="danger" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -(line.Quantity),true, idx);">
-											<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, +1,false, idx);">
-											<ion-icon slot="icon-only" name="add"></ion-icon>
-										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked " class="ion-float-right qty-btn" size="small" (click)="addToStorage(line._item, line.IDUoM, -1,false, idx)">
-											<ion-icon slot="icon-only" name="remove"></ion-icon>
-										</ion-button>
-										<ion-button title="{{'Memo...' | translate}}" fill="clear" [disabled]="submitAttempt || line._Locked " color="warning" class="ion-float-right ion-no-padding remark-btn" size="small" (click)="openQuickMemo(line)">
-											<ion-icon slot="icon-only" [name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"></ion-icon>
-										</ion-button>
-										<span class="quantity">
-											<small>x</small>
-											<ion-text color="dark">
-												{{line.Quantity}}
-											</ion-text>
-											<span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
-											<!-- <span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
+                  <div class="od-quantity">
+                    <ion-button
+                      title="{{'Delete' | translate}}"
+                      fill="clear"
+                      *ngIf="!line._Locked"
+                      color="danger"
+                      class="ion-float-right ion-no-padding remark-btn"
+                      size="small"
+                      (click)="addToStorage(line._item, line.IDUoM, -(line.Quantity),true, idx);"
+                    >
+                      <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                    </ion-button>
+                    <ion-button
+                      fill="outline"
+                      [disabled]="submitAttempt || line._Locked "
+                      class="ion-float-right qty-btn"
+                      size="small"
+                      (click)="addToStorage(line._item, line.IDUoM, +1,false, idx);"
+                    >
+                      <ion-icon slot="icon-only" name="add"></ion-icon>
+                    </ion-button>
+                    <ion-button
+                      fill="outline"
+                      [disabled]="submitAttempt || line._Locked "
+                      class="ion-float-right qty-btn"
+                      size="small"
+                      (click)="addToStorage(line._item, line.IDUoM, -1,false, idx)"
+                    >
+                      <ion-icon slot="icon-only" name="remove"></ion-icon>
+                    </ion-button>
+                    <ion-button
+                      title="{{'Memo...' | translate}}"
+                      fill="clear"
+                      [disabled]="submitAttempt || line._Locked "
+                      color="warning"
+                      class="ion-float-right ion-no-padding remark-btn"
+                      size="small"
+                      (click)="openQuickMemo(line)"
+                    >
+                      <ion-icon
+                        slot="icon-only"
+                        [name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"
+                      ></ion-icon>
+                    </ion-button>
+                    <span class="quantity">
+                      <small>x</small>
+                      <ion-text color="dark"> {{line.Quantity}} </ion-text>
+                      <span class="uom" *ngIf="line.UoMName">({{line.UoMName}})</span>
+                      <!-- <span title="Đã chuyển bếp" *ngIf="line.ShippedQuantity>0">
 												<ion-icon color="primary" name="arrow-redo"></ion-icon>
 												<sup>{{line.ShippedQuantity}} </sup>
 											</span> -->
-										</span>
-									</div>
+                    </span>
+                  </div>
 
-									<div class="od-remark " style="position: relative;" *ngIf="(line._isShowNote || line.Remark != null)">
-										<div class="clickable fullfill" (click)="openQuickMemo(line)"></div>
-										<textarea cols="30" rows="10" formControlName="Remark" spellcheck="false" placeholder="{{'Memo...'|translate}}"></textarea>
-									</div>
-								</div>
-							</ng-container>
-						</ng-container>
-					</div>
-				</div>
-			</div>
-			<div class="box ion-padding">
-				<div class="box-content">
-					<div class="check-out">
-						<label class="c-label">{{'Table' | translate}}
-							<b class="c-value">
-								{{Table.Name}}
-							</b>
-						</label>
-						<label class="c-label">{{'Total' | translate }}
-							<span class="c-value">
-								{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}
-							</span>
-						</label>
-						<label class="c-label" *ngIf="item.OriginalTotalDiscount>0">{{'Discount' | translate }}
-							<span class="c-value">
-								{{item.OriginalTotalDiscount | number: '1.0-0'}}
-							</span>
-						</label>
+                  <div class="od-remark" style="position: relative" *ngIf="(line._isShowNote || line.Remark != null)">
+                    <div class="clickable fullfill" (click)="openQuickMemo(line)"></div>
+                    <textarea
+                      cols="30"
+                      rows="10"
+                      formControlName="Remark"
+                      spellcheck="false"
+                      placeholder="{{'Memo...'|translate}}"
+                    ></textarea>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+      <div class="box ion-padding">
+        <div class="box-content">
+          <div class="check-out">
+            <label class="c-label"
+              >{{'Table' | translate}}
+              <b class="c-value"> {{Table.Name}} </b>
+            </label>
+            <label class="c-label"
+              >{{'Total' | translate }}
+              <span class="c-value"> {{item.OriginalTotalBeforeDiscount | number: '1.0-0'}} </span>
+            </label>
+            <label class="c-label" *ngIf="item.OriginalTotalDiscount>0"
+              >{{'Discount' | translate }}
+              <span class="c-value"> {{item.OriginalTotalDiscount | number: '1.0-0'}} </span>
+            </label>
 
-						<label class="c-label" *ngIf="item.AdditionsAmount">{{'Service charge' | translate}}
-							<span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
-						</label>
+            <label class="c-label" *ngIf="item.AdditionsAmount"
+              >{{'Service charge' | translate}}
+              <span class="c-value">{{item.AdditionsAmount | number: '1.0-0'}}</span>
+            </label>
 
-						<label class="c-label">{{'VAT' | translate}}
-							<span class="c-value">{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
-						</label>
+            <label class="c-label"
+              >{{'VAT' | translate}}
+              <span class="c-value">{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
+            </label>
 
-						<label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0">{{'Discount from saleman' | translate}}
-							<span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
-						</label>
+            <label class="c-label" *ngIf="item.OriginalDiscountFromSalesman > 0"
+              >{{'Discount from saleman' | translate}}
+              <span class="c-value">{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
+            </label>
 
-						<label class="c-label total">{{'Total affter tax' | translate}}
-							<ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
-								{{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
-							</ion-text>
-						</label>
+            <label class="c-label total"
+              >{{'Total affter tax' | translate}}
+              <ion-text class="c-value total" [color]="item.OriginalTotalAfterTax >= 20000000? 'danger' : 'primary'">
+                {{item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0'}}
+              </ion-text>
+            </label>
 
-						<label class="c-label" *ngIf="item.Received">{{'Amount paid' | translate}}
-							<ion-text class="c-value" color="dark">
-								{{item.Received | number: '1.0-0'}}
-							</ion-text>
-						</label>
+            <label class="c-label" *ngIf="item.Received"
+              >{{'Amount paid' | translate}}
+              <ion-text class="c-value" color="dark"> {{item.Received | number: '1.0-0'}} </ion-text>
+            </label>
 
-						<label class="c-label" *ngIf="item.Received">{{'Amount Due' | translate}}
-							<ion-text class="c-value" color="dark">
-								{{item.Debt | number: '1.0-0'}}
-							</ion-text>
-						</label>
-					</div>
-				</div>
-			</div>
-			<ion-button class="linear-blue-btn" *ngIf="item.Status == 'Done' || item.Status == 'Merged' || item.Status == 'Splitted'" (click)="newOrder()" expand="block">
-				<ion-text>Tạo đơn mới</ion-text>
-			</ion-button>
+            <label class="c-label" *ngIf="item.Received"
+              >{{'Amount Due' | translate}}
+              <ion-text class="c-value" color="dark"> {{item.Debt | number: '1.0-0'}} </ion-text>
+            </label>
+          </div>
+        </div>
+      </div>
+      <ion-button
+        class="linear-blue-btn"
+        *ngIf="item.Status == 'Done' || item.Status == 'Merged' || item.Status == 'Splitted'"
+        (click)="newOrder()"
+        expand="block"
+      >
+        <ion-text>Tạo đơn mới</ion-text>
+      </ion-button>
 
+      <ion-button
+        class="linear-blue-btn"
+        *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'"
+        [disabled]="!AllowSendOrder"
+        (click)="sendOrder()"
+        expand="block"
+        [fill]="AllowSendOrder? 'solid' : 'outline'"
+      >
+        <ion-text *ngIf="id==0">{{'Order' | translate}}</ion-text>
+        <ion-text *ngIf="id!=0">{{'Update' | translate}}</ion-text>
+      </ion-button>
 
-			<ion-button class="linear-blue-btn" *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'" [disabled]="!AllowSendOrder" (click)="sendOrder()" expand="block" [fill]="AllowSendOrder? 'solid' : 'outline'">
-				<ion-text *ngIf="id==0">{{'Order' | translate}}</ion-text>
-				<ion-text *ngIf="id!=0">{{'Update' | translate}}</ion-text>
-			</ion-button>
+      <ion-modal [isOpen]="isSuccessModalOpen">
+        <ng-template>
+          <ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
+            <ion-fab slot="fixed" vertical="top" horizontal="end">
+              <ion-fab-button (click)="closeSuccessModal()">
+                <ion-icon name="close"></ion-icon>
+              </ion-fab-button>
+            </ion-fab>
+            <div class="ion-padding" class="customer-message">
+              <div class="logo-wrapper">
+                <img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}" />
+              </div>
+              <div>
+                <ion-text color="success">
+                  <h1>{{ 'T1756' | translate}}</h1>
+                </ion-text>
 
-			<ion-modal [isOpen]="isSuccessModalOpen">
-				<ng-template>
-					<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
-						<ion-fab slot="fixed" vertical="top" horizontal="end">
-							<ion-fab-button (click)="closeSuccessModal()">
-								<ion-icon name="close"></ion-icon>
-							</ion-fab-button>
-						</ion-fab>
-						<div class="ion-padding" class="customer-message">
-							<div class="logo-wrapper">
-								<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
-							</div>
-							<div>
-								<ion-text color="success">
-									<h1>{{ 'T1756' | translate}}</h1>
-								</ion-text>
+                <p>
+                  {{'T1757' | translate}} <br />
+                  <br />
+                  <ion-note>
+                    {{'T1758'| translate}}<br />
+                    <a [href]="'tel:'+Branch?.Phone">
+                      <ion-text color="danger">
+                        <b>{{ Branch?.Phone }}</b>
+                      </ion-text>
+                    </a>
+                  </ion-note>
+                </p>
+              </div>
+              <div class="ion-padding"></div>
+              <div class="ion-padding">
+                <ion-button expand="block" (click)="closeSuccessModal()">Đóng</ion-button>
+              </div>
+            </div>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
 
-								<p>
-									{{'T1757' | translate}} <br>
-									<br>
-									<ion-note>
-										{{'T1758'| translate}}<br>
-										<a [href]="'tel:'+Branch?.Phone">
-											<ion-text color="danger">
-												<b>{{ Branch?.Phone }}</b>
-											</ion-text>
-										</a>
-									</ion-note>
-								</p>
-							</div>
-							<div class="ion-padding"></div>
-							<div class="ion-padding">
-								<ion-button expand="block" (click)="closeSuccessModal()">Đóng</ion-button>
-							</div>
-						</div>
+      <ion-modal [isOpen]="isStatusModalOpen">
+        <ng-template>
+          <ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
+            <ion-fab slot="fixed" vertical="top" horizontal="end">
+              <ion-fab-button (click)="closeStatusModal()">
+                <ion-icon name="close"></ion-icon>
+              </ion-fab-button>
+            </ion-fab>
+            <div class="ion-padding" class="customer-message">
+              <div class="logo-wrapper">
+                <img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}" />
+              </div>
+              <div>
+                <ion-text *ngIf="item.Status != 'TemporaryBill'" color="success">
+                  <h1>Đã mở đơn</h1>
+                </ion-text>
+                <ion-text *ngIf="item.Status == 'TemporaryBill'" color="danger">
+                  <h1>Đã khóa đơn</h1>
+                </ion-text>
 
-					</ion-content>
-				</ng-template>
-			</ion-modal>
+                <p>
+                  <ion-text *ngIf="item.Status != 'TemporaryBill'"
+                    >Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.</ion-text
+                  >
+                  <ion-text *ngIf="item.Status == 'TemporaryBill'"
+                    >Đơn hàng đã được tạm khóa cho việc thanh toán.<br /><br />
+                    Bấm nút <b>Tính tiền</b> hoặc <em><b>Quét mã QR</b></em> để thanh toán, <br />
+                    Bấm nút <b>Tiếp tục gọi món</b> để mở lại đơn hàng.<br />
+                  </ion-text>
+                  <br />
+                  <br />
+                  <ion-note>
+                    {{'T1758'| translate}}<br />
+                    <a [href]="'tel:'+Branch?.Phone">
+                      <ion-text color="danger">
+                        <b>{{ Branch?.Phone }}</b>
+                      </ion-text>
+                    </a>
+                  </ion-note>
+                </p>
+              </div>
+              <div class="ion-padding"></div>
+              <div class="ion-padding">
+                <ion-button expand="block" (click)="closeStatusModal();">
+                  <ion-text>Đóng</ion-text>
+                </ion-button>
+              </div>
+            </div>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
 
-			<ion-modal [isOpen]="isStatusModalOpen">
-				<ng-template>
-					<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
-						<ion-fab slot="fixed" vertical="top" horizontal="end">
-							<ion-fab-button (click)="closeStatusModal()">
-								<ion-icon name="close"></ion-icon>
-							</ion-fab-button>
-						</ion-fab>
-						<div class="ion-padding" class="customer-message">
-							<div class="logo-wrapper">
-								<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
-							</div>
-							<div>
-								<ion-text *ngIf="item.Status != 'TemporaryBill'" color="success">
-									<h1>Đã mở đơn</h1>
-								</ion-text>
-								<ion-text *ngIf="item.Status == 'TemporaryBill'" color="danger">
-									<h1>Đã khóa đơn</h1>
-								</ion-text>
+      <ion-button
+        *ngIf="item.Status == 'TemporaryBill'"
+        [disabled]="submitAttempt || !item.Id"
+        class="ion-margin-top"
+        expand="block"
+        (click)="unlockOrder()"
+      >
+        <ion-text>Tiếp tục gọi món</ion-text>
+      </ion-button>
 
-								<p>
-									<ion-text *ngIf="item.Status != 'TemporaryBill'">Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.</ion-text>
-									<ion-text *ngIf="item.Status == 'TemporaryBill'">Đơn hàng đã được tạm khóa cho việc thanh toán.<br><br>
-										Bấm nút <b>Tính tiền</b> hoặc <em><b>Quét mã QR</b></em> để thanh toán, <br>
-										Bấm nút <b>Tiếp tục gọi món</b> để mở lại đơn hàng.<br>
-									</ion-text>
-									<br>
-									<br>
-									<ion-note>
-										{{'T1758'| translate}}<br>
-										<a [href]="'tel:'+Branch?.Phone">
-											<ion-text color="danger">
-												<b>{{ Branch?.Phone }}</b>
-											</ion-text>
-										</a>
-									</ion-note>
-								</p>
-							</div>
-							<div class="ion-padding"></div>
-							<div class="ion-padding">
-								<ion-button expand="block" (click)="closeStatusModal();">
-									<ion-text>Đóng</ion-text>
-								</ion-button>
-							</div>
-						</div>
-
-					</ion-content>
-				</ng-template>
-			</ion-modal>
-
-			<ion-button *ngIf="item.Status == 'TemporaryBill'" [disabled]="submitAttempt || !item.Id" class="ion-margin-top" expand="block" (click)="unlockOrder()">
-				<ion-text>Tiếp tục gọi món</ion-text>
-			</ion-button>
-
-			<ion-button *ngIf="item.Debt > 0 && item.Status != 'Cancelled' && item.Status != 'Done' && item.Status != 'Merged' && item.Status != 'Splitted' && item?.Id != 0" [disabled]="submitAttempt || !item.Id || AllowSendOrder || item.Debt <= 0" class="ion-margin-top" expand="block" (click)="lockOrder();">
-				<ion-text >{{'Bill please' | translate}}</ion-text>
-			</ion-button>
-		</form>
-		<div style="margin-top: 80px;"></div>
-	</ion-fab>
-	<!-- <ng-container *ngIf="OrdersOfTable?.length>1">
+      <ion-button
+        *ngIf="item.Debt > 0 && item.Status != 'Cancelled' && item.Status != 'Done' && item.Status != 'Merged' && item.Status != 'Splitted' && item?.Id != 0"
+        [disabled]="submitAttempt || !item.Id || AllowSendOrder || item.Debt <= 0"
+        class="ion-margin-top"
+        expand="block"
+        (click)="lockOrder();"
+      >
+        <ion-text>{{'Bill please' | translate}}</ion-text>
+      </ion-button>
+    </form>
+    <div style="margin-top: 80px"></div>
+  </ion-fab>
+  <!-- <ng-container *ngIf="OrdersOfTable?.length>1">
 		<ion-fab slot="fixed" vertical="bottom" horizontal="start">
 			<ion-fab-button id="open-modal-list-order">
 				<ion-icon name="bag-handle-outline"></ion-icon> 
@@ -356,115 +459,127 @@
 			</ng-template>
 		</ion-modal>
 	</ng-container> -->
-	
 
-	<ion-modal [isOpen]="isWifiSecuredModalOpen" (willDismiss)="isWifiSecuredModalOpen = false">
-		<ng-template>
-			<ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
-				<div class="ion-padding" class="customer-message">
-					<div class="logo-wrapper">
-						<img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}">
-					</div>
-					<div>
-						<ion-text color="warning">
-							<h1>{{'PLEASE CHECK THE INTERNET CONNETION' | translate}}</h1>
-						</ion-text>
+  <ion-modal [isOpen]="isWifiSecuredModalOpen" (willDismiss)="isWifiSecuredModalOpen = false">
+    <ng-template>
+      <ion-content [fullscreen]="true" class="ion-padding" [scrollY]="false">
+        <div class="ion-padding" class="customer-message">
+          <div class="logo-wrapper">
+            <img class="branch-logo" src="{{Branch?.LogoURL}}" title="{{Branch?.ShortName}}" />
+          </div>
+          <div>
+            <ion-text color="warning">
+              <h1>{{'PLEASE CHECK THE INTERNET CONNETION' | translate}}</h1>
+            </ion-text>
 
-						<p>
-							{{'Please use the wifi to order' | translate}}<br>
-							<br>
-							<ion-note>
-								{{'In case of emergency, please call the hotline'| translate}}<br>
-								<a [href]="'tel:'+Branch?.Phone">
-									<ion-text color="danger">
-										<b>{{ Branch?.Phone }}</b>
-									</ion-text>
-								</a>
-							</ion-note>
-						</p>
-						
-						<div class="ion-padding"></div>
-						<div class="ion-padding">
-							<ion-button expand="block" (click)="isWifiSecuredModalOpen = false">{{'Agree' | translate}}</ion-button>
-						</div>
-					</div>
-				</div>
+            <p>
+              {{'Please use the wifi to order' | translate}}<br />
+              <br />
+              <ion-note>
+                {{'In case of emergency, please call the hotline'| translate}}<br />
+                <a [href]="'tel:'+Branch?.Phone">
+                  <ion-text color="danger">
+                    <b>{{ Branch?.Phone }}</b>
+                  </ion-text>
+                </a>
+              </ion-note>
+            </p>
 
-			</ion-content>
-		</ng-template>
-	</ion-modal>
+            <div class="ion-padding"></div>
+            <div class="ion-padding">
+              <ion-button expand="block" (click)="isWifiSecuredModalOpen = false">{{'Agree' | translate}}</ion-button>
+            </div>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 
-	<!-- Menu Group -->
-	<div class="no-print menu-holder">
-		<div class="menu-group-list">
-			<!-- <div class="menu-group" (click)="segmentChanged('all')">
+  <!-- Menu Group -->
+  <div class="no-print menu-holder">
+    <div class="menu-group-list">
+      <!-- <div class="menu-group" (click)="segmentChanged('all')">
 				<ion-img #img [src]="AllSegmentImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView=='all'}"></ion-img>
 				<ion-label>{{'All' | translate}}</ion-label>
 			</div> -->
-			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
-				<ion-img [src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
-				<ion-label>{{g.Name}}</ion-label>
-			</div>
-		</div>
-	</div>
+      <div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
+        <ion-img
+          [src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'"
+          (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"
+          [ngClass]="{selected: segmentView==g.Id}"
+        ></ion-img>
+        <ion-label>{{g.Name}}</ion-label>
+      </div>
+    </div>
+  </div>
 
-	<!-- View MenuList -->
-	<div class="no-print">
-		<ion-grid fixed *ngIf="menuList?.length">
-			<ng-container *ngFor="let g of menuList | filter:{Id:segmentView}">
-				<ng-container *ngIf="g.Items?.length">
+  <!-- View MenuList -->
+  <div class="no-print">
+    <ion-grid fixed *ngIf="menuList?.length">
+      <ng-container *ngFor="let g of menuList | filter:{Id:segmentView}">
+        <ng-container *ngIf="g.Items?.length">
+          <ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
+            <ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
+              <ion-list-header class="ion-no-padding">
+                <ion-label color="primary">{{g.Name}}</ion-label>
+              </ion-list-header>
+            </ion-col>
 
-					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
+            <ion-col
+              class="shadow table-item"
+              [ngClass]="{'in-serve': i.BookedQuantity }"
+              *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}"
+            >
+              <span class="tag right" *ngIf="i.IsDisabled">
+                <ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
+              </span>
+              <div class="card" [id]="'item'+i.Id">
+                <ion-img
+                  class="item-image clickable"
+                  [title]="i.Name"
+                  #img
+                  [src]="i.imgPath"
+                  (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"
+                ></ion-img>
+                <span class="table-name clickable">
+                  <span [appTranslateResource]="i"></span>
+                </span>
 
-						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
-							<ion-list-header class="ion-no-padding">
-								<ion-label color="primary">{{g.Name}}</ion-label>
-							</ion-list-header>
-						</ion-col>
+                <ng-container *ngFor="let u of i.UoMs">
+                  <a *ngIf="u.PriceList.length" class="price clickable">
+                    <span class="price-list" *ngFor="let p of u.PriceList">
+                      <span *ngIf="!p.NewPrice">
+                        {{p.Price | number: '1.0-0'}}
+                        <span class="uom"> /{{u.Name}}</span>
+                      </span>
+                      <span *ngIf="p.NewPrice">
+                        {{p.NewPrice | number: '1.0-0'}}
+                        <span class="uom"> /{{u.Name}}</span>
+                        <small class="old-price">{{p.Price | number: '1.0-0'}}</small>
+                        -{{(p.Price - p.NewPrice)/p.Price * 100 | number: '1.0-0'}}%
+                      </span>
+                    </span>
 
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
-							<span class="tag right" *ngIf="i.IsDisabled">
-								<ion-text class="tag-content" color="danger">
-									{{'Out of stock' | translate}}
-								</ion-text>
-							</span>
-							<div class="card" [id]="'item'+i.Id">
+                    <ion-button
+                      [disabled]="i.IsDisabled"
+                      [ngClass]="{'linear-blue-btn': i.BookedQuantity}"
+                      [title]="i.BookedQuantity? i.BookedQuantity: '+'"
+                      class="ion-float-right add-to-cart-btn"
+                      size="small"
+                      (click)="addToStorage(i, u.Id);"
+                    >
+                      <ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+                    </ion-button>
+                  </a>
+                </ng-container>
+              </div>
+            </ion-col>
+          </ion-row>
+        </ng-container>
+      </ng-container>
+    </ion-grid>
+    <app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+  </div>
 
-								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
-								<span class="table-name clickable">
-									<span [appTranslateResource]="i"></span>
-								</span>
-
-								<ng-container *ngFor="let u of i.UoMs">
-									<a *ngIf="u.PriceList.length" class="price clickable">
-										<span class="price-list" *ngFor="let p of u.PriceList">
-											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-											</span>
-											<span *ngIf="p.NewPrice">
-												{{p.NewPrice | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-												<small class="old-price">{{p.Price | number: '1.0-0'}}</small> -{{(p.Price - p.NewPrice)/p.Price * 100  | number: '1.0-0'}}%
-
-											</span>
-										</span>
-
-										<ion-button [disabled]="i.IsDisabled" [ngClass]="{'linear-blue-btn': i.BookedQuantity}" [title]="i.BookedQuantity? i.BookedQuantity: '+'" class="ion-float-right add-to-cart-btn" size="small" (click)="addToStorage(i, u.Id);">
-											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-										</ion-button>
-									</a>
-								</ng-container>
-
-							</div>
-						</ion-col>
-
-					</ion-row>
-				</ng-container>
-			</ng-container>
-		</ion-grid>
-		<app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
-	</div>
-
-	<div style="margin-top: 60px;"></div>
+  <div style="margin-top: 60px"></div>
 </ion-content>

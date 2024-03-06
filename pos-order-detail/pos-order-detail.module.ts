@@ -5,7 +5,6 @@ import { Routes, RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { ShareModule } from 'src/app/share.module';
 import { POSOrderDetailPage } from './pos-order-detail.page';
-import { FileUploadModule } from 'ng2-file-upload';
 import { PipesModule } from 'src/app/pipes/pipes.module';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
@@ -13,8 +12,8 @@ import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page
 const routes: Routes = [
   {
     path: '',
-    component: POSOrderDetailPage
-  }
+    component: POSOrderDetailPage,
+  },
 ];
 
 @NgModule({
@@ -23,11 +22,10 @@ const routes: Routes = [
     FormsModule,
     IonicModule,
     ReactiveFormsModule,
-    FileUploadModule,
     ShareModule,
     PipesModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
   ],
-  declarations: [POSOrderDetailPage,POSVoucherModalPage,POSContactModalPage,POSInvoiceModalPage]
+  declarations: [POSOrderDetailPage, POSVoucherModalPage, POSContactModalPage, POSInvoiceModalPage],
 })
-export class POSOrderDetailPageModule { }
+export class POSOrderDetailPageModule {}

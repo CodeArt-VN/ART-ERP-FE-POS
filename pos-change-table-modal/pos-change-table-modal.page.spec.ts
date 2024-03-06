@@ -9,10 +9,9 @@ describe('POSChangeTableModalPage', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ POSChangeTableModalPage ],
+      declarations: [POSChangeTableModalPage],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    })
-    .compileComponents();
+    }).compileComponents();
   }));
 
   beforeEach(() => {

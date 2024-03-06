@@ -1,47 +1,59 @@
 <ion-header>
-    <app-detail-toolbar [page]="this"></app-detail-toolbar>
+  <app-detail-toolbar [page]="this"></app-detail-toolbar>
 </ion-header>
 
 <ion-content appScrollbarTheme class="ion-padding">
-    <div class="main-view" *ngIf="item && pageConfig.showSpinner==false">
-        <div class="row-full shadow full-screen">
-            <div>
-                <div *ngIf="segmentView == 's1'">
-                    <div class="ion-padding">
-                        <ion-grid fixed>
-                            <form [formGroup]="formGroup">
-                                <ion-row class="hr-group">
-                                    <ion-col size="12" size-sm="12" size-md="4" size-xl="4">
-                                        <ion-list-header class="ion-no-padding">
-                                            <ion-label color="primary">{{'General information' | translate}}</ion-label>
-                                        </ion-list-header>
-                                    </ion-col>
-                                    <ion-col size="12" size-sm size-md="8" size-xl="6">
-                                        <div class="c-control" *ngIf="item.Id">
-                                            <label class="c-label" for="Id">{{'Id' | translate}}</label>
-                                            <input class="c-input" id="Id" formControlName="Id" type="number">
-                                        </div>
-                                        
-                                        <div class="c-control">
-                                            <label class="c-label" for="Name">{{'Name' | translate}}
-                                                <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                                            </label>
-                                            <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
-                                        </div>
-                                        <div class="c-control">
-                                            <label class="c-label" for="Type">{{'Classification' | translate}}
-                                                <span *ngIf="!formGroup.controls.Type.valid && !formGroup.controls.Type.pending && (formGroup.controls.Type.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                                            </label>
-                                            <input (change)="saveChange()" class="c-input" id="Type" formControlName="Type" type="text">
-                                        </div>
-                                    </ion-col>
-                                </ion-row>
-                            </form>
-                        </ion-grid>
+  <div class="main-view" *ngIf="item && pageConfig.showSpinner==false">
+    <div class="row-full shadow full-screen">
+      <div>
+        <div *ngIf="segmentView == 's1'">
+          <div class="ion-padding">
+            <ion-grid fixed>
+              <form [formGroup]="formGroup">
+                <ion-row class="hr-group">
+                  <ion-col size="12" size-sm="12" size-md="4" size-xl="4">
+                    <ion-list-header class="ion-no-padding">
+                      <ion-label color="primary">{{'General information' | translate}}</ion-label>
+                    </ion-list-header>
+                  </ion-col>
+                  <ion-col size="12" size-sm size-md="8" size-xl="6">
+                    <div class="c-control" *ngIf="item.Id">
+                      <label class="c-label" for="Id">{{'Id' | translate}}</label>
+                      <input class="c-input" id="Id" formControlName="Id" type="number" />
                     </div>
-                </div>
-            </div>
+
+                    <div class="c-control">
+                      <label class="c-label" for="Name"
+                        >{{'Name' | translate}}
+                        <span
+                          *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)"
+                          ion-text
+                          color="danger"
+                          >(*)</span
+                        >
+                      </label>
+                      <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text" />
+                    </div>
+                    <div class="c-control">
+                      <label class="c-label" for="Type"
+                        >{{'Classification' | translate}}
+                        <span
+                          *ngIf="!formGroup.controls.Type.valid && !formGroup.controls.Type.pending && (formGroup.controls.Type.dirty || submitAttempt)"
+                          ion-text
+                          color="danger"
+                          >(*)</span
+                        >
+                      </label>
+                      <input (change)="saveChange()" class="c-input" id="Type" formControlName="Type" type="text" />
+                    </div>
+                  </ion-col>
+                </ion-row>
+              </form>
+            </ion-grid>
+          </div>
         </div>
+      </div>
     </div>
-    <app-page-message [itemsLength]="item? 1: 0" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+  </div>
+  <app-page-message [itemsLength]="item? 1: 0" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 </ion-content>

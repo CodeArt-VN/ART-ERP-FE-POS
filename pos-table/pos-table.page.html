@@ -1,60 +1,104 @@
 <ion-header>
-	<app-list-toolbar pageTitle="{{'List' | translate}}" [pageConfig]="pageConfig" [selectedItems]="selectedItems" [query]="query" [ShowSearch]="false" [ShowFeature]="false" (add)="add(null,true)" (refresh)="refresh()" (export)="export()" (import)="import($event)" (help)="help()" (unselect)="unselect()" (archiveItems)="archiveItems()" (deleteItems)="deleteItems()" (changeBranch)="changeBranch($event)"></app-list-toolbar>
+  <app-list-toolbar
+    pageTitle="{{'List' | translate}}"
+    [pageConfig]="pageConfig"
+    [selectedItems]="selectedItems"
+    [query]="query"
+    [ShowSearch]="false"
+    [ShowFeature]="false"
+    (add)="add(null,true)"
+    (refresh)="refresh()"
+    (export)="export()"
+    (import)="import($event)"
+    (help)="help()"
+    (unselect)="unselect()"
+    (archiveItems)="archiveItems()"
+    (deleteItems)="deleteItems()"
+    (changeBranch)="changeBranch($event)"
+  ></app-list-toolbar>
 </ion-header>
 
 <ion-content appScrollbarTheme>
-	<div class="ion-padding" style="min-height: calc(100vh - 110px);">
-		<ion-grid fixed>
-			<ng-container *ngFor="let g of tableGroupList; let lastitem = last ;">
-				<ion-row>
-					<ion-col size="10" size-sm="10" size-md="10" size-xl="10">
-						<div class="edit">
-							<ion-list-header class="ion-no-padding " style=" float: left;">
-								<ion-label class="ion-no-margin " color="primary">{{g.Name}}</ion-label>
-								<ion-buttons class="edit-button">
-									<ion-button fill="clear" size="small" (click)="showModalTableGroup(g)" title="{{'Sửa nhóm bàn' | translate}}">
-										<ion-icon name="pencil" slot="icon-only"></ion-icon>
-									</ion-button>
-									<ion-button fill="clear" size="small" color="danger" (click)="deleteitem(g,true)" title="{{'Xóa nhóm bàn' | translate}}">
-										<ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-									</ion-button>
-								</ion-buttons>
-							</ion-list-header>
-						</div>
+  <div class="ion-padding" style="min-height: calc(100vh - 110px)">
+    <ion-grid fixed>
+      <ng-container *ngFor="let g of tableGroupList; let lastitem = last ;">
+        <ion-row>
+          <ion-col size="10" size-sm="10" size-md="10" size-xl="10">
+            <div class="edit">
+              <ion-list-header class="ion-no-padding" style="float: left">
+                <ion-label class="ion-no-margin" color="primary">{{g.Name}}</ion-label>
+                <ion-buttons class="edit-button">
+                  <ion-button
+                    fill="clear"
+                    size="small"
+                    (click)="showModalTableGroup(g)"
+                    title="{{'Sửa nhóm bàn' | translate}}"
+                  >
+                    <ion-icon name="pencil" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-button
+                    fill="clear"
+                    size="small"
+                    color="danger"
+                    (click)="deleteitem(g,true)"
+                    title="{{'Xóa nhóm bàn' | translate}}"
+                  >
+                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </ion-buttons>
+              </ion-list-header>
+            </div>
+          </ion-col>
+          <ion-col size="2" size-sm="2" size-md="2" size-xl="2" class="ion-text-end">
+            <ion-button
+              color="success"
+              fill="clear"
+              class="ion-no-padding"
+              (click)="add(g.Id,false)"
+              title="{{'Thêm bàn mới' | translate}}"
+              [hidden]="!pageConfig.canAdd"
+            >
+              <ion-icon name="add" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-col>
+        </ion-row>
 
-					</ion-col>
-					<ion-col size="2" size-sm="2" size-md="2" size-xl="2" class="ion-text-end">
-						<ion-button color="success" fill="clear" class="ion-no-padding" (click)="add(g.Id,false)" title="{{'Thêm bàn mới' | translate}}" [hidden]="!pageConfig.canAdd">
-							<ion-icon name="add" slot="icon-only"></ion-icon>
-						</ion-button>
-					</ion-col>
-				</ion-row>
-				
-				<ion-row class="table-holder">
-					<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.Order, 'test-btn': i.NeedPrint}" *ngFor="let i of g.TableList">
-						<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox">
-						<ion-button fill="clear" color="danger" size="small" (click)="deleteitem(i)" class="table-item-icon" *ngIf="pageConfig.canDelete">
-							<ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-						</ion-button>
-						<a (click)="showModalTable(i)">
-							<span class="table-name">{{i.Name}}</span>
-						</a>
-					</ion-col>
-				</ion-row>
+        <ion-row class="table-holder">
+          <ion-col
+            class="shadow table-item"
+            [ngClass]="{'in-serve': i.Order, 'test-btn': i.NeedPrint}"
+            *ngFor="let i of g.TableList"
+          >
+            <input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox" />
+            <ion-button
+              fill="clear"
+              color="danger"
+              size="small"
+              (click)="deleteitem(i)"
+              class="table-item-icon"
+              *ngIf="pageConfig.canDelete"
+            >
+              <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+            <a (click)="showModalTable(i)">
+              <span class="table-name">{{i.Name}}</span>
+            </a>
+          </ion-col>
+        </ion-row>
 
-				<ion-row *ngIf="lastitem">
-					<ion-col size="10" size-sm="10" size-md="10" size-xl="10">
-						<a (click)="add(null,true)" title="{{'Thêm nhóm bàn' | translate}}">
-							<ion-list-header class="ion-no-padding">
-								<ion-button fill="clear" class="ion-no-padding">
-									<ion-icon name="add" slot="icon-only"></ion-icon>
-								</ion-button>
-								<ion-label color="primary">Thêm nhóm bàn</ion-label>
-							</ion-list-header>
-						</a>
-					</ion-col>
-				</ion-row>
-			</ng-container>
-		</ion-grid>
-	</div>
+        <ion-row *ngIf="lastitem">
+          <ion-col size="10" size-sm="10" size-md="10" size-xl="10">
+            <a (click)="add(null,true)" title="{{'Thêm nhóm bàn' | translate}}">
+              <ion-list-header class="ion-no-padding">
+                <ion-button fill="clear" class="ion-no-padding">
+                  <ion-icon name="add" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-label color="primary">Thêm nhóm bàn</ion-label>
+              </ion-list-header>
+            </a>
+          </ion-col>
+        </ion-row>
+      </ng-container>
+    </ion-grid>
+  </div>
 </ion-content>

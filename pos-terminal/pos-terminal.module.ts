@@ -12,8 +12,8 @@ import { ShareModule } from 'src/app/share.module';
     CommonModule,
     FormsModule,
     ShareModule,
-    RouterModule.forChild([{ path: '', component: POSTerminalPage }])
+    RouterModule.forChild([{ path: '', component: POSTerminalPage }]),
   ],
-  declarations: [POSTerminalPage]
+  declarations: [POSTerminalPage],
 })
 export class POSTerminalPageModule {}

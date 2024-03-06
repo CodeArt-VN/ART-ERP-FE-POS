@@ -1,137 +1,137 @@
-ion-card{
-    margin-inline: 0px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+ion-card {
+  margin-inline: 0px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
-.item-row{
-    margin-bottom: 5px;
-    background-color: var(--ion-color-light);
+.item-row {
+  margin-bottom: 5px;
+  background-color: var(--ion-color-light);
 }
-ion-card-content{
-    padding: 10px;
+ion-card-content {
+  padding: 10px;
 }
-.header-title-payment{
-    background-color: var(--ion-color-light) ;
-    color: var(--ion-color-primary-contrast);
-    padding: 10px;
+.header-title-payment {
+  background-color: var(--ion-color-light);
+  color: var(--ion-color-primary-contrast);
+  padding: 10px;
 }
-.btn-payment{
-    background-color: var(--ion-color-primary) ;
-    color: var(--ion-color-primary-contrast);
-    padding: 10px;
+.btn-payment {
+  background-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  padding: 10px;
 }
 
 .payment-methods {
-    display: flex;
-    align-items: center;
-    align-content: center;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  align-content: center;
+  cursor: pointer;
 
-    ion-icon {
-        transform: scale(1.2);
-        margin: 0px 8px;
-    }
+  ion-icon {
+    transform: scale(1.2);
+    margin: 0px 8px;
+  }
 }
 
 .c-input {
-    &[type="textarea"]{
-        height: 8rem !important;
-    }
+  &[type='textarea'] {
+    height: 8rem !important;
+  }
 }
 
 .remove-padding {
-    padding: 0px !important;
+  padding: 0px !important;
 }
 
 .remove-margin {
-    margin-bottom: 0px !important;
+  margin-bottom: 0px !important;
 }
 
 .topQR {
-    text-align: center;
-    margin: 10px;
+  text-align: center;
+  margin: 10px;
 }
 
 .topQR img {
-    width: 90px;
-    height: 90px;
-    border: solid 1px #CCC;
+  width: 90px;
+  height: 90px;
+  border: solid 1px #ccc;
 }
 
 .table-contain {
-    .bold{
-        min-width: 650px;
-    }
-    .row {
-        padding-right: 6px;
-        background: var(--ion-color-tertiary-tint);
-        min-width: 650px;
-    }
-    .col-type {
-        padding-left: 10px;
-        text-align: left;
-        max-width: 170px !important;
-        min-width: 170px !important;
-    }
-    .col-money {
-        max-width: 120px !important;
-        min-width: 120px !important;
-        color: var(--ion-color-primary);
-    }
-    .col-refund {
-        max-width: 130px !important;
-        min-width: 130px !important;
-        color: var(--ion-color-primary);
-        justify-content: right !important;
-    }
-    .col-status {
-        white-space: break-spaces;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 100px;
-        max-width: 100px;
-    }  
-    .col-remark {
-        justify-content: right !important;
-        max-width: 120px !important;
-        min-width: 120px !important;
-        padding-right: 10px;
-        float: right;
-        text-align: right;
-    }
+  .bold {
+    min-width: 650px;
+  }
+  .row {
+    padding-right: 6px;
+    background: var(--ion-color-tertiary-tint);
+    min-width: 650px;
+  }
+  .col-type {
+    padding-left: 10px;
+    text-align: left;
+    max-width: 170px !important;
+    min-width: 170px !important;
+  }
+  .col-money {
+    max-width: 120px !important;
+    min-width: 120px !important;
+    color: var(--ion-color-primary);
+  }
+  .col-refund {
+    max-width: 130px !important;
+    min-width: 130px !important;
+    color: var(--ion-color-primary);
+    justify-content: right !important;
+  }
+  .col-status {
+    white-space: break-spaces;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 100px;
+    max-width: 100px;
+  }
+  .col-remark {
+    justify-content: right !important;
+    max-width: 120px !important;
+    min-width: 120px !important;
+    padding-right: 10px;
+    float: right;
+    text-align: right;
+  }
 }
 
 .header-box {
-    .header-name {
-        .total {
-            .c-control {
-                margin-bottom: 7px;
-            }
+  .header-name {
+    .total {
+      .c-control {
+        margin-bottom: 7px;
+      }
 
-            .c-input {
-                text-align: right;
-                color: var(--ion-color-primary);
-            }
+      .c-input {
+        text-align: right;
+        color: var(--ion-color-primary);
+      }
 
-            .c-control .c-label {
-                position: absolute;
-                line-height: 3.8rem;
-                margin-left: 9px;
-                width: auto;
-            }
-        }
+      .c-control .c-label {
+        position: absolute;
+        line-height: calc(10/16 * 3.8rem);
+        margin-left: 9px;
+        width: auto;
+      }
     }
+  }
 }
 .sticky-btn {
-    position: sticky;
-    bottom: -20px;
-    z-index: 20;
-    background-color: var(--ion-background-color);
+  position: sticky;
+  bottom: -20px;
+  z-index: 20;
+  background-color: var(--ion-background-color);
 }
 
 .col-del {
-    width: 35px;
+  width: 35px;
 }
 ion-popover {
-    --width: 370px;
+  --width: 370px;
 }

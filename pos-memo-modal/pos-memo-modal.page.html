@@ -1,61 +1,94 @@
 <ion-header>
-	<ion-toolbar class="no-padding">
-		<ion-buttons slot="start" class="ion-hide-sm-down_">
-			<ion-button color="dark">
-				Ghi chú
-			</ion-button>
-		</ion-buttons>
-		<ion-buttons slot="primary">
-            <ion-button  (click)="refresh()" title="{{'Refresh' | translate}}">
-                <ion-icon slot="icon-only" name="reload-outline"></ion-icon>
-            </ion-button>
-			<ion-button title="{{'Close' | translate}}" color="secondary" (click)="dismiss()">
-				<ion-icon slot="icon-only" name="close"></ion-icon>
-			</ion-button>
-		</ion-buttons>
-	</ion-toolbar>
+  <ion-toolbar class="no-padding">
+    <ion-buttons slot="start" class="ion-hide-sm-down_">
+      <ion-button color="dark"> Ghi chú </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="primary">
+      <ion-button (click)="refresh()" title="{{'Refresh' | translate}}">
+        <ion-icon slot="icon-only" name="reload-outline"></ion-icon>
+      </ion-button>
+      <ion-button title="{{'Close' | translate}}" color="secondary" (click)="dismiss()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content appScrollbarTheme>
-	<ion-fab class="feature no-print " vertical="top" horizontal="start" slot="fixed">
-		<ion-list>
-			<ion-item [color]="selectedGroupType == 'All'? 'primary': '' " button detail="true" lines="full" class="clickable" (click)="loadGroupType('All')">
-				<ion-label class="ion-text-wrap">
-					Tất cả
-				</ion-label>
-			</ion-item>
-			<ion-item [hidden]="(g == null) || (g == '')" [color]="g == selectedGroupType? 'primary': '' " button detail="true" lines="full" class="clickable" *ngFor="let g of GroupType" (click)="loadGroupType(g)">
-				<ion-label class="ion-text-wrap">
-					{{g}}
-				</ion-label>
-			</ion-item>
-		</ion-list>
-	</ion-fab>
+  <ion-fab class="feature no-print" vertical="top" horizontal="start" slot="fixed">
+    <ion-list>
+      <ion-item
+        [color]="selectedGroupType == 'All'? 'primary': '' "
+        button
+        detail="true"
+        lines="full"
+        class="clickable"
+        (click)="loadGroupType('All')"
+      >
+        <ion-label class="ion-text-wrap"> Tất cả </ion-label>
+      </ion-item>
+      <ion-item
+        [hidden]="(g == null) || (g == '')"
+        [color]="g == selectedGroupType? 'primary': '' "
+        button
+        detail="true"
+        lines="full"
+        class="clickable"
+        *ngFor="let g of GroupType"
+        (click)="loadGroupType(g)"
+      >
+        <ion-label class="ion-text-wrap"> {{g}} </ion-label>
+      </ion-item>
+    </ion-list>
+  </ion-fab>
 
-	<div class="main-view">
-		<ion-grid>
-			<ion-row class="card-list">
-				<ion-col size="auto" size-sm="auto" size-md="auto" class="memo-holder" *ngFor="let q of memoList" (click)="addRemark(q.Name)">
-					<ion-card [ngClass]="{selected:  (Remark?.indexOf(' '+q.Name) != -1) && (Remark != null)}">
-						{{q.Name}}
-					</ion-card>
-				</ion-col>
-			</ion-row>
-		</ion-grid>
-		<div class="sticky-btn">
-			<div class="c-control" style="margin-bottom: 0px !important;">
-				<label class="c-label" for="Remark">Ghi chú
-					<ion-button color="danger" *ngIf="!item._Locked " class="ion-float-right" size="small" (click)="Remark = null;">
-						<ion-icon slot="start" name="remove-circle-outline"></ion-icon>
-						Xóa tất cả
-					</ion-button>
-				</label>
-				<textarea rows="3" class="c-input remark" id="Remark" [disabled]="item._Locked" [(ngModel)]="Remark" spellcheck="false" placeholder="Thêm ghi chú cho món" type="textarea">
-                    </textarea>
-			</div>
-			<div *ngIf="!item._Locked">
-				<ion-button expand="block" [disabled]="submitAttempt" (click)="dismiss(true)">Áp dụng ghi chú</ion-button>
-			</div>
-		</div>
-	</div>
+  <div class="main-view">
+    <ion-grid>
+      <ion-row class="card-list">
+        <ion-col
+          size="auto"
+          size-sm="auto"
+          size-md="auto"
+          class="memo-holder"
+          *ngFor="let q of memoList"
+          (click)="addRemark(q.Name)"
+        >
+          <ion-card [ngClass]="{selected:  (Remark?.indexOf(' '+q.Name) != -1) && (Remark != null)}">
+            {{q.Name}}
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+    <div class="sticky-btn">
+      <div class="c-control" style="margin-bottom: 0px !important">
+        <label class="c-label" for="Remark"
+          >Ghi chú
+          <ion-button
+            color="danger"
+            *ngIf="!item._Locked "
+            class="ion-float-right"
+            size="small"
+            (click)="Remark = null;"
+          >
+            <ion-icon slot="start" name="remove-circle-outline"></ion-icon>
+            Xóa tất cả
+          </ion-button>
+        </label>
+        <textarea
+          rows="3"
+          class="c-input remark"
+          id="Remark"
+          [disabled]="item._Locked"
+          [(ngModel)]="Remark"
+          spellcheck="false"
+          placeholder="Thêm ghi chú cho món"
+          type="textarea"
+        >
+        </textarea>
+      </div>
+      <div *ngIf="!item._Locked">
+        <ion-button expand="block" [disabled]="submitAttempt" (click)="dismiss(true)">Áp dụng ghi chú</ion-button>
+      </div>
+    </div>
+  </div>
 </ion-content>

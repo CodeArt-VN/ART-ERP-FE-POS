@@ -16,6 +16,6 @@ import { PipesModule } from 'src/app/pipes/pipes.module';
     PipesModule,
     RouterModule.forChild([{ path: '', component: POSOrderPage }]),
   ],
-  declarations: [POSOrderPage]
+  declarations: [POSOrderPage],
 })
 export class POSOrderPageModule {}

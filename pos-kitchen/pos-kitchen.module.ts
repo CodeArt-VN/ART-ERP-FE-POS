@@ -12,8 +12,8 @@ import { ShareModule } from 'src/app/share.module';
     CommonModule,
     FormsModule,
     ShareModule,
-    RouterModule.forChild([{ path: '', component: POSKitchenPage }])
+    RouterModule.forChild([{ path: '', component: POSKitchenPage }]),
   ],
-  declarations: [POSKitchenPage]
+  declarations: [POSKitchenPage],
 })
 export class POSKitchenPageModule {}

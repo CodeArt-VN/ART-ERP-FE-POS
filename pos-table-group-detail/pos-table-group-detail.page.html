@@ -1,40 +1,50 @@
 <ion-header>
-    <ion-toolbar>
-        <ion-title>{{item.Name??"Thêm Nhóm Bàn"}}</ion-title>
+  <ion-toolbar>
+    <ion-title>{{item.Name??"Thêm Nhóm Bàn"}}</ion-title>
 
-        <ion-buttons slot="primary">
-            <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModal()">
-                <ion-icon slot="icon-only" name="close"></ion-icon>
-            </ion-button>
-        </ion-buttons>
-
-    </ion-toolbar>
-</ion-header> -->
+    <ion-buttons slot="primary">
+      <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModal()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+-->
 <ion-content appScrollbarTheme class="ion-padding" fullscreen>
-    <form [formGroup]="formGroup">
-        <ion-grid fixed>
-            <ion-row class="hr-group">                
-                <ion-col size="12" size-sm size-xl="12">
-                    <div class="c-control" *ngIf="item.Id">
-                        <label class="c-label" for="Id">{{'Id' | translate}}</label>
-                        <input class="c-input" id="Id" formControlName="Id" type="number">
-                    </div>
-                    <div class="c-control">
-                        <label class="c-label" for="Code">{{'Code' | translate}}
-                            <span *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                        </label>
-                        <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text">
-                    </div>
-                    <div class="c-control">
-                        <label class="c-label" for="Name">{{'Name' | translate}}
-                            <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                        </label>
-                        <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text">
-                    </div>                   
-
-                </ion-col>
-            </ion-row>            
-        </ion-grid>
-    </form>
-
+  <form [formGroup]="formGroup">
+    <ion-grid fixed>
+      <ion-row class="hr-group">
+        <ion-col size="12" size-sm size-xl="12">
+          <div class="c-control" *ngIf="item.Id">
+            <label class="c-label" for="Id">{{'Id' | translate}}</label>
+            <input class="c-input" id="Id" formControlName="Id" type="number" />
+          </div>
+          <div class="c-control">
+            <label class="c-label" for="Code"
+              >{{'Code' | translate}}
+              <span
+                *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)"
+                ion-text
+                color="danger"
+                >(*)</span
+              >
+            </label>
+            <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text" />
+          </div>
+          <div class="c-control">
+            <label class="c-label" for="Name"
+              >{{'Name' | translate}}
+              <span
+                *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)"
+                ion-text
+                color="danger"
+                >(*)</span
+              >
+            </label>
+            <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text" />
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </form>
 </ion-content>

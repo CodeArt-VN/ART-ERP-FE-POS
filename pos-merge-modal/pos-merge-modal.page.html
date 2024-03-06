@@ -1,50 +1,65 @@
 <ion-header>
-    <ion-toolbar>
-        <ion-buttons slot="start" class="ion-hide-sm-down_">
-            <ion-button color="dark" class="ion-hide-sm-down_">
-                {{'Merge' | translate}} {{selectedOrders.length}} {{'Order' | translate}}
-            </ion-button>
-        </ion-buttons>
+  <ion-toolbar>
+    <ion-buttons slot="start" class="ion-hide-sm-down_">
+      <ion-button color="dark" class="ion-hide-sm-down_">
+        {{'Merge' | translate}} {{selectedOrders.length}} {{'Order' | translate}}
+      </ion-button>
+    </ion-buttons>
 
-        <ion-buttons slot="primary">
-            <ion-button title="{{'Help' | translate}}" (click)="help()">
-                <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
-            </ion-button>
+    <ion-buttons slot="primary">
+      <ion-button title="{{'Help' | translate}}" (click)="help()">
+        <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+      </ion-button>
 
-            <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModalView()">
-                <ion-icon slot="icon-only" name="close"></ion-icon>
-            </ion-button>
-        </ion-buttons>
-    </ion-toolbar>
-
-
+      <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModalView()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
 </ion-header>
 <ion-content appScrollbarTheme class="ion-padding">
-    <div id="order-detail-page" style="position: absolute;"></div>
-    <div class="main-view">
-        <ion-grid fixed style="max-width: 500px;">
+  <div id="order-detail-page" style="position: absolute"></div>
+  <div class="main-view">
+    <ion-grid fixed style="max-width: 500px">
+      <ion-row class="hr-group">
+        <ion-col size="12">
+          <div class="c-control">
+            <label class="c-label" for="IDContact"> {{'Customer' | translate}} </label>
 
-            <ion-row class="hr-group">
-                <ion-col size="12">
-                    <div class="c-control">
-                        <label class="c-label" for="IDContact">
-                            {{'Customer' | translate}}
-                        </label>
+            <ng-select
+              [(ngModel)]="item.IDContact"
+              appendTo="#order-detail-page"
+              class="c-input"
+              (change)="changedIDContact($event)"
+              #IDContact
+              labelForId="IDContact"
+              [items]="contactList$ | async"
+              [typeahead]="contactListInput$"
+              [loading]="contactListLoading"
+              [virtualScroll]="true"
+              bindLabel="Name"
+              bindValue="Id"
+              placeholder="{{'Search for name, code or phone number' | translate}}"
+            >
+              <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
+                <div *ngIf="i">
+                  <div>
+                    <span>{{i.Name}}</span>
+                    <span *ngIf="i.WorkPhone">
+                      |
+                      <small> <b>{{i.WorkPhone}}</b></small></span
+                    >
+                  </div>
+                  <small
+                    >#<b><span class="important">{{i.Id}} - {{i.Code}}</span></b>
+                    <span *ngIf="i.AddressLine1"> | {{i.AddressLine1}}</span></small
+                  >
+                </div>
+              </ng-template>
+            </ng-select>
+          </div>
 
-                        <ng-select [(ngModel)]="item.IDContact" appendTo="#order-detail-page" class="c-input" (change)="changedIDContact($event)" #IDContact labelForId="IDContact" [items]="contactList$ | async" [typeahead]="contactListInput$" [loading]='contactListLoading' [virtualScroll]="true" bindLabel="Name" bindValue="Id" placeholder="{{'Search for name, code or phone number' | translate}}">
-                            <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-                                <div *ngIf="i">
-                                    <div>
-                                        <span >{{i.Name}}</span>
-                                        <span *ngIf="i.WorkPhone"> | <small> <b >{{i.WorkPhone}}</b></small></span>
-                                    </div>
-                                    <small>#<b><span class="important" >{{i.Id}} - {{i.Code}}</span></b> <span *ngIf="i.AddressLine1"> | {{i.AddressLine1}}</span></small>
-                                </div>
-                            </ng-template>
-                        </ng-select>
-                    </div>
-
-                    <!-- <div class="c-control ">
+          <!-- <div class="c-control ">
                         <ion-button size="small" [disabled]="!pageConfig.canEdit" (click)="item.IsSampleOrder = !item.IsSampleOrder;" [fill]=" item.IsSampleOrder? 'solid' : 'outline' ">
                             {{'Sample' | translate}}
                         </ion-button>
@@ -56,15 +71,13 @@
                         </ion-button>
                     </div> -->
 
-                    <div class="c-control ion-text-right">
-                        <ion-button [disabled]="submitAttempt" (click)="mergeSaleOrders()">{{'Merge order' | translate}}</ion-button>
-                    </div>
-
-                </ion-col>
-            </ion-row>
-
-        </ion-grid>
-    </div>
-
-
+          <div class="c-control ion-text-right">
+            <ion-button [disabled]="submitAttempt" (click)="mergeSaleOrders()"
+              >{{'Merge order' | translate}}</ion-button
+            >
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
 </ion-content>

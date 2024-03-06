@@ -9,8 +9,8 @@ describe('POSAddContactModalPage', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ POSAddContactModalPage ],
-      imports: [IonicModule.forRoot()]
+      declarations: [POSAddContactModalPage],
+      imports: [IonicModule.forRoot()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(POSAddContactModalPage);
