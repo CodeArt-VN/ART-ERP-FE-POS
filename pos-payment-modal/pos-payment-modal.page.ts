@@ -46,7 +46,7 @@ export class POSPaymentModalPage extends PageBase {
   }
   ngOnInit() {
     this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
-      switch (data.Code) {
+      switch (data.code) {
         case 'app:POSOrderPaymentUpdate':
           this.pushPayment(data);
           break;
@@ -220,7 +220,7 @@ export class POSPaymentModalPage extends PageBase {
   }
   pushPayment(data) {
     let query: any = {
-      IDIncomingPayment: data.Id,
+      IDIncomingPayment: data.value.Id,
       IDSaleOrder: this.item.Id,
     };
     this.pageProvider.read(query).then((result: any) => {

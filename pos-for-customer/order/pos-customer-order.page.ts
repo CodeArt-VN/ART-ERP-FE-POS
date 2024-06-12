@@ -107,26 +107,26 @@ export class POSCustomerOrderPage extends PageBase {
   ////EVENTS
   ngOnInit() {
     this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
-      switch (data.Code) {
+      switch (data.code) {
         case 'app:POSOrderPaymentUpdate':
           this.notifyPayment(data);
           break;
         case 'app:POSOrderFromStaff':
-          this.notifyOrder(data.Data);
+          this.notifyOrder(data);
           break;
         case 'app:POSLockOrderFromStaff':
-          this.notifyLockOrderFromStaff(data.Data);
+          this.notifyLockOrderFromStaff(data);
           break;
         case 'app:POSLockOrderFromCustomer':
-          this.notifyLockOrderFromCustomer(data.Data);
+          this.notifyLockOrderFromCustomer(data);
           break;
         case 'app:POSUnlockOrderFromStaff':
-          this.notifyUnlockOrder(data.Data);
+          this.notifyUnlockOrder(data);
         case 'app:POSUnlockOrderFromCustomer':
-          this.notifyUnlockOrder(data.Data);
+          this.notifyUnlockOrder(data);
           break;
         // case 'app:POSOrderFromCustomer':
-        //     this.notifyFromCustomer(data.Data);
+        //     this.notifyFromCustomer(data);
         //     break;
       }
     });
@@ -759,7 +759,7 @@ export class POSCustomerOrderPage extends PageBase {
   }
 
   private notifyPayment(data) {
-    const value = JSON.parse(data.Value);
+    const value = JSON.parse(data.value);
     if (this.item.Id == value.IDSaleOrder) {
       let type;
       let status;

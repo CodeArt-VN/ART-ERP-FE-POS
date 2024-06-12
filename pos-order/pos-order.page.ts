@@ -54,36 +54,36 @@ export class POSOrderPage extends PageBase {
   }
   ngOnInit() {
     this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
-      switch (data.Code) {
+      switch (data.code) {
         case 'app:POSOrderFromCustomer':
-          this.notifyOrder(data.Data);
+          this.notifyOrder(data);
           break;
         case 'app:POSOrderPaymentUpdate':
           this.notifyPayment(data);
           break;
         case 'app:POSSupport':
-          this.notifySupport(data.Data);
+          this.notifySupport(data);
           break;
         case 'app:POSCallToPay':
-          this.notifyCallToPay(data.Data);
+          this.notifyCallToPay(data);
           break;
         case 'app:POSLockOrderFromStaff':
-          this.notifyLockOrderFromStaff(data.Data);
+          this.notifyLockOrderFromStaff(data);
           break;
         case 'app:POSLockOrderFromCustomer':
-          this.notifyLockOrderFromCustomer(data.Data);
+          this.notifyLockOrderFromCustomer(data);
           break;
         case 'app:POSUnlockOrderFromStaff':
-          this.notifyUnlockOrderFromStaff(data.Data);
+          this.notifyUnlockOrderFromStaff(data);
           break;
         case 'app:POSUnlockOrderFromCustomer':
-          this.notifyUnlockOrderFromCustomer(data.Data);
+          this.notifyUnlockOrderFromCustomer(data);
           break;
         case 'app:POSOrderSplittedFromStaff':
-          this.notifySplittedOrderFromStaff(data.Data);
+          this.notifySplittedOrderFromStaff(data);
           break;
         case 'app:POSOrderMergedFromStaff':
-          this.notifyMergedOrderFromStaff(data.Data);
+          this.notifyMergedOrderFromStaff(data);
           break;
       }
     });
@@ -91,7 +91,7 @@ export class POSOrderPage extends PageBase {
     super.ngOnInit();
   }
   private notifyPayment(data) {
-    const value = JSON.parse(data.Value);
+    const value = JSON.parse(data.value);
     if (this.env.selectedBranch == value.IDBranch && value.IDStaff == 0) {
       this.playAudio('Payment');
 
@@ -119,13 +119,11 @@ export class POSOrderPage extends PageBase {
   }
   private notifyOrder(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' Gọi món';
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
       this.setStorageNotification(null, value.IDBranch, data.id, 'Order', 'Đơn hàng', 'pos-order', message, url);
       this.refresh();
     }
@@ -133,8 +131,6 @@ export class POSOrderPage extends PageBase {
 
   private notifySupport(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Support');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
@@ -157,8 +153,6 @@ export class POSOrderPage extends PageBase {
 
   private notifyCallToPay(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Support');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
@@ -181,8 +175,6 @@ export class POSOrderPage extends PageBase {
 
   private notifyLockOrderFromStaff(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Nhân viên đã khóa đơn bàn ' + value.Tables[0].TableName;
@@ -196,14 +188,11 @@ export class POSOrderPage extends PageBase {
 
   private notifyLockOrderFromCustomer(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' đã khóa đơn';
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
       this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Khóa đơn hàng', 'pos-order', message, url);
       this.refresh();
     }
@@ -211,14 +200,11 @@ export class POSOrderPage extends PageBase {
 
   private notifyUnlockOrderFromStaff(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Nhân viên đã mở đơn bàn ' + value.Tables[0].TableName;
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
       this.setStorageNotification(
         null,
         value.IDBranch,
@@ -235,8 +221,6 @@ export class POSOrderPage extends PageBase {
 
   private notifyUnlockOrderFromCustomer(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' đã mở đơn';
@@ -259,8 +243,6 @@ export class POSOrderPage extends PageBase {
 
   private notifySplittedOrderFromStaff(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Nhân viên đã chia đơn bàn ' + value.Tables[0].TableName;
