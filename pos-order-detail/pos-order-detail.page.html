@@ -1,13 +1,5 @@
 <ion-header>
-  <app-toolbar
-    [page]="this"
-    pageTitle="{{'Pos' | translate}}"
-    [pageConfig]="pageConfig"
-    [selectedItems]="selectedItems"
-    [query]="query"
-    [ShowArchive]="false"
-    [ShowDelete]="false"
-  >
+  <app-toolbar [page]="this" [ShowArchive]="false" [ShowDelete]="false">
     <ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
       {{'Table' | translate}}:
       <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>

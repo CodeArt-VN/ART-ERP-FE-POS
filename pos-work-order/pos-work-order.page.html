@@ -1,19 +1,10 @@
 <ion-header>
-  <app-toolbar
-    [page]="this"
-    selectedTitle="{{selectedItems.length}} {{'Work order' | translate}}"
-    pageTitle="{{'Work order' | translate}}"
-    [pageConfig]="pageConfig"
-    [selectedItems]="selectedItems"
-    [query]="query"
-    [ShowFeature]="true"
-  ></app-toolbar>
+  <app-toolbar [page]="this" [ShowFeature]="true"></app-toolbar>
   <ion-toolbar class="no-padding" color="primary" [ngClass]="{withFeature: pageConfig.isShowFeature}">
     <ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
       <ion-segment-button value="all">
         <ion-label>{{'All' | translate}}</ion-label>
       </ion-segment-button>
-
       <ion-segment-button *ngFor="let g of tableGroupList" [value]="g.Id">
         <ion-label>{{g.Name}}</ion-label>
       </ion-segment-button>
