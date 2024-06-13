@@ -1,20 +1,13 @@
 <ion-header>
-  <app-list-toolbar
+  <app-toolbar
     [page]="this"
-    pageTitle="{{'POS' | translate}}"
+    selectedTitle="{{selectedItems.length}} {{'Work order' | translate}}"
+    pageTitle="{{'Work order' | translate}}"
     [pageConfig]="pageConfig"
     [selectedItems]="selectedItems"
     [query]="query"
-    (add)="add()"
-    (refresh)="refresh()"
-    (export)="export()"
-    (import)="import($event)"
-    (help)="help()"
-    (unselect)="unselect()"
-    (archiveItems)="archiveItems()"
-    (deleteItems)="deleteItems()"
-    (changeBranch)="changeBranch($event)"
-  ></app-list-toolbar>
+    [ShowFeature]="true"
+  ></app-toolbar>
   <ion-toolbar class="no-padding" color="primary" [ngClass]="{withFeature: pageConfig.isShowFeature}">
     <ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
       <ion-segment-button value="all">

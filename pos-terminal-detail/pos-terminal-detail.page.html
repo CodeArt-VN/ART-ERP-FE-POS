@@ -1,5 +1,11 @@
 <ion-header>
-  <app-detail-toolbar [page]="this"></app-detail-toolbar>
+  <app-toolbar 
+   [page]="this" 
+   pageTitle="{{'Pos terminal' | translate}}" 
+   [pageConfig]="pageConfig"
+   [selectedItems]="selectedItems" 
+   [query]="query">
+  </app-toolbar>
 </ion-header>
 
 <ion-content appScrollbarTheme class="ion-padding">

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
-import { NavController, LoadingController, AlertController, ModalController, NavParams } from '@ionic/angular';
+import { NavController, LoadingController, AlertController, ModalController, NavParams, PopoverController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
@@ -26,11 +26,10 @@ export class POSTableGroupDetailPage extends PageBase {
     public loadingController: LoadingController,
     public commonService: CommonService,
     public modalController: ModalController,
-    public navParams: NavParams,
+    public popoverCtrl: PopoverController,
   ) {
     super();
     this.pageConfig.isDetailPage = true;
-
     this.formGroup = formBuilder.group({
       IDBranch: [this.env.selectedBranch],
       Id: new FormControl({ value: '', disabled: true }),
@@ -38,14 +37,6 @@ export class POSTableGroupDetailPage extends PageBase {
       Name: ['', Validators.required],
     });
   }
-
-  preLoadData(event) {
-    if (this.navParams) {
-      this.id = this.navParams.data.id;
-    }
-    super.preLoadData();
-  }
-
   async saveChange() {
     this.formGroup.controls.IDBranch.setValue(this.env.selectedBranch);
     super.saveChange2();

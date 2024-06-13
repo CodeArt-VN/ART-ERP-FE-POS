@@ -1,5 +1,13 @@
 <ion-header>
-  <app-detail-toolbar [page]="this">
+  <app-toolbar
+    [page]="this"
+    pageTitle="{{'Pos' | translate}}"
+    [pageConfig]="pageConfig"
+    [selectedItems]="selectedItems"
+    [query]="query"
+    [ShowArchive]="false"
+    [ShowDelete]="false"
+  >
     <ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
       {{'Table' | translate}}:
       <span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
@@ -25,7 +33,7 @@
     <ion-button (click)="scanQRCode()">
       <ion-icon slot="icon-only" name="qr-code-outline"></ion-icon>
     </ion-button>
-  </app-detail-toolbar>
+  </app-toolbar>
 </ion-header>
 
 <ion-content
