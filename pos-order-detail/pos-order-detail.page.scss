@@ -184,7 +184,7 @@
     }
 
     .box {
-      background-color: var(--ion-color-tertiary-tint);
+      background-color: var(--table-row-background);
       border-radius: 4px;
       overflow: hidden;
       color: var(--ion-color-dark);
@@ -418,7 +418,7 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: 4px;
-      background: var(--ion-color-tertiary-tint);
+      background: var(--table-row-background);
       padding-bottom: 5px;
 
       .item-image {
@@ -858,7 +858,7 @@ ion-img {
     width: min-content;
     display: flex;
     align-items: center;
-    background-color: var(--ion-color-tertiary-tint);
+    background-color: var(--table-row-background);
     border-radius: 5px;
     margin-right: 5px;
     box-shadow: 3px 3px 5px 0px #888888;
