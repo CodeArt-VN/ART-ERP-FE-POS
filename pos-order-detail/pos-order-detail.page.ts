@@ -176,36 +176,36 @@ export class POSOrderDetailPage extends PageBase {
   ////EVENTS
   ngOnInit() {
     this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
-      switch (data.Code) {
+      switch (data.code) {
         case 'app:POSOrderPaymentUpdate':
           this.notifyPayment(data);
           break;
         case 'app:POSOrderFromCustomer':
-          this.notifyOrder(data.Data);
+          this.notifyOrder(data);
           break;
         case 'app:POSLockOrderFromStaff':
-          this.notifyLockOrder(data.Data);
+          this.notifyLockOrder(data);
           break;
         case 'app:POSLockOrderFromCustomer':
-          this.notifyLockOrder(data.Data);
+          this.notifyLockOrder(data);
           break;
         case 'app:POSUnlockOrderFromStaff':
-          this.notifyUnlockOrder(data.Data);
+          this.notifyUnlockOrder(data);
           break;
         case 'app:POSUnlockOrderFromCustomer':
-          this.notifyUnlockOrder(data.Data);
+          this.notifyUnlockOrder(data);
           break;
         case 'app:POSSupport':
-          this.notifySupport(data.Data);
+          this.notifySupport(data);
           break;
         case 'app:POSCallToPay':
-          this.notifyCallToPay(data.Data);
+          this.notifyCallToPay(data);
           break;
         case 'app:notifySplittedOrderFromStaff':
-          this.notifySplittedOrderFromStaff(data.Data);
+          this.notifySplittedOrderFromStaff(data);
           break;
         case 'app:POSOrderMergedFromStaff':
-          this.notifyMergedOrderFromStaff(data.Data);
+          this.notifyMergedOrderFromStaff(data);
           break;
         case 'app:networkStatusChange':
           this.checkNetworkChange(data);
@@ -220,7 +220,7 @@ export class POSOrderDetailPage extends PageBase {
     super.ngOnDestroy();
   }
   private notifyPayment(data) {
-    const value = JSON.parse(data.Value);
+    const value = JSON.parse(data.value);
     if (value.IDSaleOrder == this.item?.Id) {
       this.refresh();
     } else {
@@ -237,7 +237,6 @@ export class POSOrderDetailPage extends PageBase {
   private notifyLockOrder(data) {
     const value = JSON.parse(data.value);
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-
     if (index != -1) {
       this.env.showTranslateMessage(
         'Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.',
@@ -251,7 +250,6 @@ export class POSOrderDetailPage extends PageBase {
   private notifyUnlockOrder(data) {
     const value = JSON.parse(data.value);
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-
     if (index != -1) {
       this.env.showTranslateMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
       this.refresh();
@@ -262,13 +260,10 @@ export class POSOrderDetailPage extends PageBase {
 
   private notifySupport(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
       this.setStorageNotification(
         null,
         value.IDBranch,
@@ -284,8 +279,6 @@ export class POSOrderDetailPage extends PageBase {
 
   private notifyCallToPay(data) {
     const value = JSON.parse(data.value);
-    console.log(value);
-
     if (this.env.selectedBranch == value.IDBranch) {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
       this.env.showMessage(message, 'warning');
@@ -307,7 +300,6 @@ export class POSOrderDetailPage extends PageBase {
   private notifySplittedOrderFromStaff(data) {
     const value = JSON.parse(data.value);
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-
     if (index != -1) {
       this.env.showTranslateMessage('Đơn hàng đã được chia.', 'warning');
       this.refresh();
@@ -1209,6 +1201,21 @@ export class POSOrderDetailPage extends PageBase {
   }
 
   async lockOrder() {
+
+    const Debt = this.item.Debt;
+    let postDTO = {
+      Id: this.item.Id,
+      Code: 'TemporaryBill',
+      Debt: Debt,
+    };
+
+    this.pageProvider.commonService
+      .connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
+      .toPromise()
+      .then((savedItem: any) => {
+        // this.refresh();
+      });
+
     if (this.printData.undeliveredItems.length > 0) {
       let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục gửi bếp và tạm tính?';
       this.env

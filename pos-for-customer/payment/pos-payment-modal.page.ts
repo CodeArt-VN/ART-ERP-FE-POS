@@ -44,7 +44,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
   }
   ngOnInit() {
     this.pageConfig.subscribePOSOrderPaymentUpdate = this.env.getEvents().subscribe((data) => {
-      switch (data.Code) {
+      switch (data.code) {
         case 'app:POSOrderPaymentUpdate':
           this.refresh();
           break;
