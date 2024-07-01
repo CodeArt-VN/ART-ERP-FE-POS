@@ -1,23 +1,6 @@
 <ion-header>
-  <app-list-toolbar
-    pageTitle="{{'List' | translate}}"
-    [pageConfig]="pageConfig"
-    [selectedItems]="selectedItems"
-    [query]="query"
-    [ShowSearch]="false"
-    [ShowFeature]="false"
-    (add)="add(null,true)"
-    (refresh)="refresh()"
-    (export)="export()"
-    (import)="import($event)"
-    (help)="help()"
-    (unselect)="unselect()"
-    (archiveItems)="archiveItems()"
-    (deleteItems)="deleteItems()"
-    (changeBranch)="changeBranch($event)"
-  ></app-list-toolbar>
+  <app-toolbar [page]="this"> </app-toolbar>
 </ion-header>
-
 <ion-content appScrollbarTheme>
   <div class="ion-padding" style="min-height: calc(100vh - 110px)">
     <ion-grid fixed>

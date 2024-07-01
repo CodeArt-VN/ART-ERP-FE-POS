@@ -1,44 +1,8 @@
 <ion-header>
-  <app-list-toolbar
-    pageTitle="{{'POS' | translate}} || {{'Order Qty' | translate}}: {{orderCounter}}"
-    [ShowRefresh]="false"
-    [ShowAdd]="false"
-    [ShowImport]="false"
-    [ShowExport]="true"
-    (export)="exportPOSData()"
-    [ShowArchive]="false"
-    [ShowSearch]="false"
-    [ShowFeature]="false"
-    [pageConfig]="pageConfig"
-    [selectedItems]="selectedItems"
-    [query]="query"
-    (showNotify)="showNotify()"
-    (add)="add()"
-    (refresh)="refresh(true)"
-    (changeTable)="changeTable($event)"
-    (splitOrder)="splitPOSBill()"
-    (cancelOrder)="openCancellationReason()"
-    (help)="help()"
-    (unselect)="unselect()"
-    (deleteItems)="deleteItems()"
-    (changeBranch)="changeBranch($event)"
-  >
-    <span class="hide-small" title>{{'Order Qty' | translate}}: {{orderCounter}}</span>
-    <span class="hide-small ion-margin-start" title>Số khách: {{numberOfGuestCounter}}</span>
-
-    <ion-button
-      class="toggle"
-      title="{{'View order' | translate}}"
-      (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;"
-    >
-      <ion-icon slot="icon-only" [name]="pageConfig.isShowFeature? 'albums-outline':'albums-outline'"> </ion-icon>
-    </ion-button>
-    <ion-buttons slot="end">
-      <ion-button title="{{'Refresh' | translate}}" color="primary" (click)="refresh(true)">
-        <ion-icon slot="icon-only" name="reload-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </app-list-toolbar>
+  <app-toolbar [page]="this" [ShowAdd]="false" [ShowSearch]="false" [ShowImport]="false" [ShowArchive]="false">
+    <span class="hide-small" startTitle>{{'Order Qty' | translate}}: {{orderCounter}}</span>
+    <span class="hide-small ion-margin-start" startTitle>Số khách: {{numberOfGuestCounter}}</span>
+  </app-toolbar>
   <ion-toolbar
     style="position: absolute; z-index: 100; padding-top: 0px !important"
     *ngIf="pageConfig.isShowFeature"
