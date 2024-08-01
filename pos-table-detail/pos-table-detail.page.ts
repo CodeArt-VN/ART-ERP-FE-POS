@@ -1,5 +1,5 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
-import { NavController, LoadingController, AlertController, ModalController, NavParams } from '@ionic/angular';
+import { NavController, LoadingController, AlertController, ModalController, NavParams, PopoverController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
@@ -18,6 +18,7 @@ export class POSTableDetailPage extends PageBase {
   constructor(
     public pageProvider: POS_TableProvider,
     public tableGroupProvider: POS_TableGroupProvider,
+    public popoverCtrl: PopoverController,
     public env: EnvService,
     public navCtrl: NavController,
     public route: ActivatedRoute,
