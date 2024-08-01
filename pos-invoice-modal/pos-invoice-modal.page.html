@@ -18,7 +18,7 @@
         <ion-col>
           <div class="c-control">
             <label class="c-label" for="Name"
-              >Khách hàng
+              >{{'Customer' | translate}}
               <span
                 *ngIf="!formGroup['controls'].Name.valid && !formGroup['controls'].Name.pending && (formGroup['controls'].Name.dirty || submitAttempt)"
                 ion-text

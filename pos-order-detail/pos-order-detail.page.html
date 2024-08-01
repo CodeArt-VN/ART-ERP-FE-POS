@@ -188,11 +188,11 @@
                   </div>
                   <div class="c-control ion-margin-top" *ngIf="line._isShowFoC">
                     <span disabled class="c-input ion-margin-bottom"
-                      ><span class="ion-float-left">Tổng tiền SP</span>
+                      ><span class="ion-float-left">{{'Gross product' | translate}}</span>
                       <span class="ion-float-right">{{line.CalcTotalOriginal | number: '1.0-0'}} đ</span>
                     </span>
                     <span class="c-input ion-margin-bottom">
-                      <span class="ion-float-left">Số tiền giảm</span>
+                      <span class="ion-float-left">{{'Amount reduced' | translate}}</span>
                       <input
                         style="text-align: right; border: none; outline: none; width: 130px; background: none"
                         class="ion-float-right"
@@ -202,7 +202,7 @@
                         suffix=" ₫"
                         (change)="discountFromSalesman(line,g)"
                         formControlName="OriginalDiscountFromSalesman"
-                        placeholder="Số tiền tặng"
+                        placeholder="{{'Amount of donation' | translate}}"
                       />
                     </span>
                   </div>
@@ -215,7 +215,7 @@
       <div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">
         <div class="box-content">
           <div class="check-out">
-            <div class="box-title">Khuyến mãi / Voucher</div>
+            <div class="box-title">{{'Promotion / Voucher' | translate}}</div>
             <div class="check-out" style="min-height: 20px">
               <div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
                 <ion-button
@@ -231,17 +231,17 @@
                   <ion-icon size="large" name="ticket-outline"></ion-icon>
                 </div>
                 <div class="coupon-right">
-                  <span>Giảm {{p.Value | number: '1.0-0'}}<span *ngIf="p.IsByPercent">%</span></span>
+                  <span>{{'Reduce' | translate}} {{p.Value | number: '1.0-0'}}<span *ngIf="p.IsByPercent">%</span></span>
                   <small *ngIf="p.MinOrderValue">
-                    Cho đơn hàng từ {{p.MinOrderValue | number: '1.0-0'}}
-                    <span *ngIf="p.MaxValue"> - tối đa {{p.MaxValue | number: '1.0-0'}}</span>
+                    {{'For orders from' | translate}} {{p.MinOrderValue | number: '1.0-0'}}
+                    <span *ngIf="p.MaxValue"> - {{'Maximum'| translate}} {{p.MaxValue | number: '1.0-0'}}</span>
                   </small>
-                  <small *ngIf="p.ToDate">HSD: {{p.ToDate | date: 'dd/MM/yyyy'}}</small>
+                  <small *ngIf="p.ToDate">{{'Expiry' | translate}}: {{p.ToDate | date: 'dd/MM/yyyy'}}</small>
                 </div>
               </div>
             </div>
             <a class="clickable" *ngIf="pageConfig.canEdit" (click)="processVouchers()">
-              <ion-icon name="ticket-outline"></ion-icon> Chọn hoặc nhập mã Voucher
+              <ion-icon name="ticket-outline"></ion-icon> {{'Select or enter voucher code' | translate}}
             </a>
           </div>
         </div>
@@ -296,8 +296,8 @@
               <ion-text class="c-value" color="dark"> {{item.Debt | number: '1.0-0'}} </ion-text>
             </label>
             <label class="c-label" *ngIf="item.Debt <0"
-              >Tiền thừa |
-              <ion-text color="primary" class="clickable" (click)="processPayments()">Hoàn lại</ion-text>
+              >{{'Surplus money' | translate}} |
+              <ion-text color="primary" class="clickable" (click)="processPayments()">{{'Refunds' | translate}}</ion-text>
               <ion-text class="c-value" color="dark"> {{item.Debt * -1 | number: '1.0-0'}} </ion-text>
             </label>
 
@@ -470,7 +470,7 @@
                 class="c-input no-check-dirty"
                 formControlName="NumberOfGuests"
                 (change)="saveChange();"
-                placeholder="Số khách"
+                placeholder="{{'Customer Qty' | translate}}"
               />
             </div>
             <div class="c-control">
@@ -510,7 +510,7 @@
                 [items]="soStatusList"
                 bindLabel="Name"
                 bindValue="Code"
-                placeholder="Tình trạng..."
+                placeholder="{{'Status' | translate}}"
               >
                 <ng-template ng-option-tmp let-i="item" let-search="searchTerm">
                   <div>

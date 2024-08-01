@@ -25,7 +25,7 @@
         class="clickable"
         (click)="loadGroupType('All')"
       >
-        <ion-label class="ion-text-wrap"> Tất cả </ion-label>
+        <ion-label class="ion-text-wrap"> {{'All' | translate}} </ion-label>
       </ion-item>
       <ion-item
         [hidden]="(g == null) || (g == '')"
