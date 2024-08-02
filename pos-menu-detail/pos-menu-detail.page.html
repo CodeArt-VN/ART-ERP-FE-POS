@@ -121,11 +121,11 @@
                   <header class="bold" style="padding-right: 0">
                     <div class="col-checkbox cell" *ngIf="pageConfig.canEdit"></div>
                     <div class="col-checkbox cell" *ngIf="pageConfig.canEdit"></div>
-                    <div class="col-id cell">STT</div>
-                    <div class="col-name cell">Tên sản phẩm</div>
+                    <div class="col-id cell">{{'STT' | translate}}</div>
+                    <div class="col-name cell">{{'Tên sản phẩm' | translate}}</div>
                     <div class="col-uom cell">{{'Unit' | translate}}</div>
                     <!-- <div class="col-image cell">URL Hình ảnh</div> -->
-                    <div class="col-kit cell">Bếp</div>
+                    <div class="col-kit cell">{{'Bếp' | translate}}</div>
                     <div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
                     <div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
                   </header>
@@ -250,7 +250,7 @@
                         <b
                           *ngIf="pageConfig.canEdit"
                           (click)="addItemLine({_Item:null, IDMenu: item.Id, Id: 0, UoMs: [], Sort: null })"
-                          >Thêm sản phẩm</b
+                          >{{'Thêm sản phẩm' | translate}}</b
                         >
                       </div>
                     </div>

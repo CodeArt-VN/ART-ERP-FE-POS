@@ -62,7 +62,7 @@
     <div class="sticky-btn">
       <div class="c-control" style="margin-bottom: 0px !important">
         <label class="c-label" for="Remark"
-          >Ghi chú
+          >{{'Ghi chú' | translate}}
           <ion-button
             color="danger"
             *ngIf="!item._Locked "
@@ -71,7 +71,7 @@
             (click)="Remark = null;"
           >
             <ion-icon slot="start" name="remove-circle-outline"></ion-icon>
-            Xóa tất cả
+            {{'Xóa tất cả' | translate}}
           </ion-button>
         </label>
         <textarea
@@ -81,13 +81,13 @@
           [disabled]="item._Locked"
           [(ngModel)]="Remark"
           spellcheck="false"
-          placeholder="Thêm ghi chú cho món"
+          placeholder="{{'Thêm ghi chú cho món | translate}}"
           type="textarea"
         >
         </textarea>
       </div>
       <div *ngIf="!item._Locked">
-        <ion-button expand="block" [disabled]="submitAttempt" (click)="dismiss(true)">Áp dụng ghi chú</ion-button>
+        <ion-button expand="block" [disabled]="submitAttempt" (click)="dismiss(true)">{{'Áp dụng ghi chú'}}</ion-button>
       </div>
     </div>
   </div>

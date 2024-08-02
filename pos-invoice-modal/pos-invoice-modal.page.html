@@ -61,7 +61,7 @@
 
           <div class="c-control">
             <label class="c-label" for="CompanyName"
-              >Tên Công Ty
+              >{{'Tên Công Ty' | translate}}
               <span
                 *ngIf="!formGroup['controls'].CompanyName.valid && !formGroup['controls'].CompanyName.pending && (formGroup['controls'].CompanyName.dirty || submitAttempt)"
                 ion-text
@@ -73,7 +73,7 @@
           </div>
           <div class="c-control">
             <label class="c-label" for="BillingAddress"
-              >Địa chỉ công ty
+              >{{'Địa chỉ công ty' | translate}}
               <span
                 *ngIf="!formGroup['controls'].BillingAddress.valid && !formGroup['controls'].BillingAddress.pending && (formGroup['controls'].BillingAddress.dirty || submitAttempt)"
                 ion-text
@@ -86,13 +86,13 @@
           <div *ngIf="IsShowSave" class="c-control ion-text-right">
             <label class="c-label" for=""></label>
             <ion-button expand="block" (click)="saveChange()">
-              <ion-text *ngIf="!IsShowSpinner">Cập nhật</ion-text>
+              <ion-text *ngIf="!IsShowSpinner">{{'Cập nhật' | translate}}</ion-text>
               <ion-spinner *ngIf="IsShowSpinner" name="dots"></ion-spinner>
             </ion-button>
           </div>
           <div *ngIf="IsShowApply" class="c-control ion-text-right">
             <label class="c-label" for=""></label>
-            <ion-button expand="block" (click)="Apply(true)">Áp dụng</ion-button>
+            <ion-button expand="block" (click)="Apply(true)">{{'Áp dụng' | translate}}</ion-button>
           </div>
         </ion-col>
       </ion-row>

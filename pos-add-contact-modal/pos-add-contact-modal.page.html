@@ -15,7 +15,7 @@
         <ion-col>
           <div class="c-control">
             <label class="c-label" for="Name"
-              >Tên người xuất hóa đơn
+              >{{'Tên người xuất hóa đơn' | translate}}
               <span
                 *ngIf="!formGroup['controls'].Name.valid && !formGroup['controls'].Name.pending && (formGroup['controls'].Name.dirty || submitAttempt)"
                 ion-text
@@ -27,7 +27,7 @@
           </div>
           <div class="c-control">
             <label class="c-label" for="CompanyName"
-              >Tên công ty
+              >{{'Tên công ty'| translate}}
               <span
                 *ngIf="!formGroup['controls'].CompanyName.valid && !formGroup['controls'].CompanyName.pending && (formGroup['controls'].CompanyName.dirty || submitAttempt)"
                 ion-text
@@ -39,7 +39,7 @@
           </div>
           <div class="c-control">
             <label class="c-label" for="TaxCode"
-              >Mã số thuế
+              >{{'Mã số thuế' | translate}}
               <span
                 *ngIf="!formGroup['controls'].TaxCode.valid && !formGroup['controls'].TaxCode.pending && (formGroup['controls'].TaxCode.dirty || submitAttempt)"
                 ion-text
@@ -51,7 +51,7 @@
           </div>
           <div class="c-control">
             <label class="c-label" for="BillingAddress"
-              >Địa chỉ hóa đơn
+              >{{'Địa chỉ hóa đơn' | translate}}
               <span
                 *ngIf="!formGroup['controls'].BillingAddress.valid && !formGroup['controls'].BillingAddress.pending && (formGroup['controls'].BillingAddress.dirty || submitAttempt)"
                 ion-text
