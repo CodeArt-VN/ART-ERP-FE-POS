@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Đơn hàng #{{item.Id}}</ion-title>
+    <ion-title>{{'Đơn hàng #' | translate}}{{item.Id}}</ion-title>
     <ion-buttons slot="primary">
       <ion-button title="{{'Refresh' | translate}}" color="primary" (click)="refresh()">
         <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
@@ -17,7 +17,7 @@
     <ion-grid fixed style="max-width: 670px">
       <ion-row>
         <ion-col size="12" class="ion-text-center">
-          <ion-text>Tổng Tiền Đã Thanh Toán</ion-text>
+          <ion-text>{{'Tổng Tiền Đã Thanh Toán' | translate}}</ion-text>
           <ion-text color="primary"
             ><b><h5>{{PaidAmounted | number: '1.0-0'}} đ</h5></b></ion-text
           >
@@ -26,17 +26,17 @@
         <ion-col size="12" *ngIf="items.length>0">
           <div class="c-control">
             <div class="c-label header-title-payment ion-text-center">
-              <ion-text color="primary">Các lần thanh toán</ion-text>
+              <ion-text color="primary">{{'Các lần thanh toán' | translate}}</ion-text>
             </div>
             <div class="table-contain">
               <section class="table">
                 <header class="bold">
-                  <div class="col-type cell">Hình thức</div>
+                  <div class="col-type cell">{{'Hình thức' | translate}}</div>
                   <div class="col-status cell">{{'Status' | translate}}</div>
-                  <div class="col-money cell" style="padding-right: 0px">Số tiền</div>
-                  <div class="col-refund cell" style="padding-right: 0px">Hoàn tiền</div>
+                  <div class="col-money cell" style="padding-right: 0px">{{'Số tiền' | translate}}</div>
+                  <div class="col-refund cell" style="padding-right: 0px">{{'Hoàn tiền' | translate}}</div>
 
-                  <div class="col-remark cell" style="padding-right: 0px">Ghi chú</div>
+                  <div class="col-remark cell" style="padding-right: 0px">{{'Ghi chú' | translate }}</div>
                 </header>
                 <div class="row" [ngClass]="{odd: idx % 2 != 0 }" *ngFor="let i of payments, let idx = index;">
                   <ng-container *ngIf="i.IncomingPayment.IsRefundTransaction == false">
@@ -107,7 +107,7 @@
                                   </div>
                                   <div *ngIf="r.IncomingPayment.Status=='Processing'">
                                     <span (click)="getStatus(idx,r.IncomingPayment.Id)">
-                                      <small class="clickable"><ion-text color="primary">kiểm tra</ion-text></small>
+                                      <small class="clickable"><ion-text color="primary">{{'kiểm tra'| translate}}</ion-text></small>
                                     </span>
                                   </div>
                                 </ion-text>

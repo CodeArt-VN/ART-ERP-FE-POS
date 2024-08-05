@@ -53,10 +53,10 @@
                 *ngIf="Voucher.Used == false"
                 slot="end"
                 (click)="applyVoucher(Voucher)"
-                >Áp dụng</ion-button
+                >{{'Áp dụng' | translate}}</ion-button
               >
               <ion-button expand="block" size="small" [disabled]="Voucher.Used" *ngIf="Voucher.Used == true" slot="end"
-                >Đã áp dụng</ion-button
+                >{{'Đã áp dụng' | translate}}</ion-button
               >
             </ion-card-content>
           </ion-card>
@@ -85,10 +85,10 @@
                 <ion-text color="dark">{{i.NumberOfUsed}}/{{i.NumberOfCoupon}}</ion-text>
               </div>
               <ion-button expand="block" size="small" *ngIf="i.Used == false" slot="end" (click)="applyVoucher(i)"
-                >Áp dụng</ion-button
+                >{{'Áp dụng' | translate}}</ion-button
               >
               <ion-button expand="block" size="small" [disabled]="i.Used" *ngIf="i.Used == true" slot="end"
-                >Đã áp dụng</ion-button
+                >{{'Đã áp dụng' | translate}}</ion-button
               >
             </ion-card-content>
           </ion-card>

@@ -20,7 +20,7 @@
           </div>
           <div class="c-control">
             <label class="c-label" for="IDTableGroup"
-              >Khu vực / Dãy bàn
+              >{{'Khu vực / Dãy bàn' | translate}}
               <span
                 *ngIf="!formGroup.controls.IDTableGroup.valid && !formGroup.controls.IDTableGroup.pending && (formGroup.controls.IDTableGroup.dirty || submitAttempt)"
                 ion-text
@@ -58,7 +58,7 @@
           </div>
           <div class="c-control">
             <div class="c-input" style="margin-top: 7px">
-              <ion-label>Cho phép khách hàng đặt món</ion-label>
+              <ion-label>{{'Cho phép khách hàng đặt món' | translate}}</ion-label>
               <span class="ion-float-right">
                 <ion-toggle (ionChange)="saveChange()" formControlName="IsAllowCustomerOrder"></ion-toggle>
               </span>
@@ -66,7 +66,7 @@
           </div>
           <div class="c-control">
             <div class="c-input" style="margin-top: 7px">
-              <ion-label>Cho phép nhiều đơn hàng</ion-label>
+              <ion-label>{{'Cho phép nhiều đơn hàng' | translate}}</ion-label>
               <span class="ion-float-right">
                 <ion-toggle (ionChange)="saveChange()" formControlName="IsAllowMultipleOrder"></ion-toggle>
               </span>
@@ -81,13 +81,13 @@
       <ion-row class="hr-group">
         <ion-col size="12" size-sm="12" size-md="12" size-xl="3">
           <ion-list-header class="ion-no-padding">
-            <ion-label color="primary">QR Code</ion-label>
+            <ion-label color="primary">{{'QR Code'| translate}}</ion-label>
           </ion-list-header>
         </ion-col>
 
         <ion-col size="12" size-sm size-xl="4">
           <div class="c-control">
-            <label class="c-label" for="QRC">Mã QR</label>
+            <label class="c-label" for="QRC">{{'Mã QR' | translate}}</label>
             <div class="QRCODE">
               <img class="qrc" [src]="item.QRC" />
             </div>
