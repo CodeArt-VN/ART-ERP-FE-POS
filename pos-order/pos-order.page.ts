@@ -102,7 +102,7 @@ export class POSOrderPage extends PageBase {
         lib.currencyFormat(value.Amount) +
         ' cho đơn hàng #' +
         value.IDSaleOrder;
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage(message, 'warning');
       let url = 'pos-order/' + value.IDSaleOrder + '/' + value.IDTable;
 
       this.setStorageNotification(
@@ -122,7 +122,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' Gọi món';
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
       this.setStorageNotification(null, value.IDBranch, data.id, 'Order', 'Đơn hàng', 'pos-order', message, url);
       this.refresh();
@@ -134,7 +134,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Support');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(
@@ -156,7 +156,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Support');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(
@@ -178,7 +178,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Nhân viên đã khóa đơn bàn ' + value.Tables[0].TableName;
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage("Nhân viên đã khóa đơn bàn {{value}}", 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Khóa đơn hàng', 'pos-order', message, url);
@@ -191,7 +191,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' đã khóa đơn';
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage("Khách bàn {{value}} đã khóa đơn", 'warning',value.Tables[0].TableName );
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
       this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Khóa đơn hàng', 'pos-order', message, url);
       this.refresh();
@@ -203,7 +203,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Nhân viên đã mở đơn bàn ' + value.Tables[0].TableName;
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage("Nhân viên đã mở đơn bàn {{value}}", 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
       this.setStorageNotification(
         null,
@@ -224,7 +224,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' đã mở đơn';
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage('Khách bàn {{value}} đã mở đơn', 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(
@@ -246,7 +246,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Nhân viên đã chia đơn bàn ' + value.Tables[0].TableName;
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage('Nhân viên đã chia đơn bàn {{value}}', 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Chia đơn hàng', 'pos-order', message, url);
@@ -261,7 +261,7 @@ export class POSOrderPage extends PageBase {
     if (this.env.selectedBranch == value.IDBranch) {
       this.playAudio('Order');
       let message = 'Nhân viên đã gộp đơn bàn ' + value.Tables[0].TableName;
-      this.env.showMessage(message, 'warning');
+      this.env.showTranslateMessage('Nhân viên đã gộp đơn bàn {{value}}', 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Gộp đơn hàng', 'pos-order', message, url);
@@ -362,7 +362,7 @@ export class POSOrderPage extends PageBase {
       })
       .catch((err) => {
         if (err.message != null) {
-          this.env.showMessage(err.message, 'danger');
+          this.env.showTranslateMessage(err.message, 'danger');
         }
       });
   }
@@ -532,7 +532,7 @@ export class POSOrderPage extends PageBase {
       }
 
       this.env
-        .showPrompt('Bạn chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
+        .showPrompt2('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
         .then((_) => {
           let publishEventCode = this.pageConfig.pageName;
           if (this.submitAttempt == false) {
@@ -687,7 +687,7 @@ export class POSOrderPage extends PageBase {
       let maxToDateText = lib.dateFormat(maxToDate);
 
       if (toDateText > maxToDateText) {
-        this.env.showMessage('Giới hạn tải xuống dữ liệu tối đa trong vòng 3 tháng!', 'danger', 5000);
+        this.env.showTranslateMessage('Giới hạn tải xuống dữ liệu tối đa trong vòng 3 tháng!', 'danger', 5000);
         return;
       }
     }
@@ -709,7 +709,7 @@ export class POSOrderPage extends PageBase {
           })
           .catch((err) => {
             if (err.message != null) {
-              this.env.showMessage(err.error.ExceptionMessage, 'danger');
+              this.env.showTranslateMessage(err.error.ExceptionMessage, 'danger');
             } else {
               this.env.showTranslateMessage('Cannot extract data', 'danger');
             }

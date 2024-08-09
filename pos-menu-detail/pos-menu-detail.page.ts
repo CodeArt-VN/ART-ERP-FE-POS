@@ -382,7 +382,7 @@ export class POSMenuDetailPage extends PageBase {
       .create({
         header: 'Xóa sản phẩm',
         //subHeader: '---',
-        message: 'Bạn chắc muốn xóa sản phẩm này?',
+        message: 'Bạn có chắc muốn xóa sản phẩm này?',
         buttons: [
           {
             text: 'Không',

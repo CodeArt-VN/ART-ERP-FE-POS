@@ -186,7 +186,7 @@ export class POSCustomerOrderPage extends PageBase {
           let lastModifiedDateText =
             lib.dateFormat(lastModifiedDate, 'yyyy-mm-dd') + ' ' + lib.dateFormat(lastModifiedDate, 'hh:MM:ss');
           if (lastModifiedDateText > itemModifiedDateText) {
-            this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.', 'danger');
+            this.env.showTranslateMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.', 'danger');
             this.refresh();
             return true;
           }
@@ -214,7 +214,7 @@ export class POSCustomerOrderPage extends PageBase {
       if (this.id != 0) {
         let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
         history.pushState({}, null, newURL);
-        this.env.showAlert(
+        this.env.showAlert2(
           'Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ',
           'Kiểm tra đơn hàng và cập nhật',
           'Thông báo',
@@ -223,7 +223,7 @@ export class POSCustomerOrderPage extends PageBase {
       }
       if (this.formGroup.controls['Id'].value != 0 && this.id == 0) {
         this.env
-          .showPrompt('', null, 'Đơn hàng đã hoàn tất', 'Tạo đơn mới', 'Đóng')
+          .showPrompt2('', null, 'Đơn hàng đã hoàn tất', 'Tạo đơn mới', 'Đóng')
           .then((_) => {
             this.newOrder();
           })
@@ -313,7 +313,7 @@ export class POSCustomerOrderPage extends PageBase {
     }
 
     if (!item.UoMs.length) {
-      this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
+      this.env.showAlert2('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
       return;
     }
 
@@ -360,10 +360,8 @@ export class POSCustomerOrderPage extends PageBase {
       this.setOrderValue({ OrderLines: [line], Status: 'New' });
     } else {
       if (line.Quantity > 0 && line.Quantity + quantity < line.ShippedQuantity) {
-        this.env.showAlert(
-          'Vui lòng liên hệ nhân viên để được hỗ trợ ',
-          item.Name + ' đã chuyển bếp ' + line.ShippedQuantity + ' ' + line.UoMName,
-          'Thông báo',
+        this.env.showAlert2(
+          'Vui lòng liên hệ nhân viên để được hỗ trợ',{code:'{{value}} đã chuyển bếp {{value1}} {{value2}}',value:{value:item.Name,value1:line.ShippedQuantity,value2:line.UoMName}},'Thông báo',
         );
       } else if (line.Quantity + quantity > 0) {
         line.Quantity += quantity;
@@ -379,7 +377,7 @@ export class POSCustomerOrderPage extends PageBase {
         });
       } else {
         this.env
-          .showPrompt('Bạn chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
+          .showPrompt2('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
           .then((_) => {
             line.Quantity += quantity;
             this.loadInfoOrder();
@@ -454,7 +452,7 @@ export class POSCustomerOrderPage extends PageBase {
   async processPayments() {
     if (this.OrderLines.length > 0 || this.AllowSendOrder == true) {
       this.env
-        .showPrompt('Cập nhật đơn hàng và tiến hành thanh toán!', null, 'Thông báo', 'Cập nhật', 'không')
+        .showPrompt2('Cập nhật đơn hàng và tiến hành thanh toán!', null, 'Thông báo', 'Cập nhật', 'không')
         .then((_) => {
           this.sendOrder();
           this.openModalPayments();
@@ -697,7 +695,7 @@ export class POSCustomerOrderPage extends PageBase {
     //     let index = value.Tables.map(t=>t.IDTable).indexOf(this.idTable);
     //     if(index != -1){
     //         await this.getOrdersOfTable(this.idTable);
-    //         this.env.showAlert("Có đơn hàng mới trên bàn này","Kiểm tra đơn hàng ",'Thông báo');
+    //         this.env.showAlert2("Có đơn hàng mới trên bàn này","Kiểm tra đơn hàng",'Thông báo');
     //     }
     // }
   }
@@ -706,9 +704,9 @@ export class POSCustomerOrderPage extends PageBase {
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
     if (index != -1) {
       if (!this.IsMyHandle) {
-        this.env.showAlert(
+        this.env.showAlert2(
           'Có một khách hàng nào đó đã gọi món trên bàn này. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ',
-          'Kiểm tra đơn hàng ',
+          'Kiểm tra đơn hàng',
           'Thông báo',
         );
         this.id = data.id;
@@ -798,7 +796,7 @@ export class POSCustomerOrderPage extends PageBase {
           type = 'Thẻ ATM (qua Cổng ZaloPay)';
           break;
       }
-      this.env.showAlert('<h2>' + lib.currencyFormat(value.Amount) + '</h2>', type + ' | ' + status, header);
+      this.env.showAlert2('<h2>' + lib.currencyFormat(value.Amount) + '</h2>', type + ' | ' + status, header);
       this.playAudio('Payment');
       this.refresh();
     }
@@ -820,32 +818,32 @@ export class POSCustomerOrderPage extends PageBase {
       (this.formGroup.controls['Id'].value != 0 && this.id == 0)
     ) {
       this.env
-        .showPrompt('', null, 'Đơn hàng đã hoàn tất', 'Tạo đơn mới', 'Đóng')
+        .showPrompt2('', null, 'Đơn hàng đã hoàn tất', 'Tạo đơn mới', 'Đóng')
         .then((_) => {
           this.newOrder();
         })
         .catch((_) => {});
     }
     if (this.item.Status == 'Cancelled') {
-      this.env.showAlert('Đơn hàng này đã hủy!');
+      this.env.showAlert2('Đơn hàng này đã hủy!');
     }
     if (this.item.Status == 'Confirmed') {
-      this.env.showAlert('Đơn hàng đã được xác nhận!');
+      this.env.showAlert2('Đơn hàng đã được xác nhận!');
       this.playAudio('Order');
     }
     // if(this.item.Status == "Scheduled"){
-    //     this.env.showAlert("Món bạn vừa đặt đã được chuyển Bar/Bếp",null,'Thông báo');
+    //     this.env.showAlert2("Món bạn vừa đặt đã được chuyển Bar/Bếp",null,'Thông báo');
     //     //this.playAudio("Order");
     // }
     if (this.item.Status == 'Picking') {
-      this.env.showAlert('Món đã được chuẩn bị');
+      this.env.showAlert2('Món đã được chuẩn bị');
     }
     if (this.item.Status == 'Delivered') {
-      this.env.showAlert('Chúc quý khách ngon miệng');
+      this.env.showAlert2('Chúc quý khách ngon miệng');
     }
     if (this.idTable != this.item.Tables[0]) {
       await this.reloadTable(this.item.Tables[0]);
-      this.env.showAlert('Đơn hàng của bạn đã được chuyển bàn ' + this.Table.Name, null, 'Thông báo chuyển bàn');
+      this.env.showAlert2({code:'Đơn hàng của bạn đã được chuyển bàn {{value}}',value:{value:this.Table.Name}}, null, 'Thông báo chuyển bàn');
       this.env.setStorage('OrderLines' + this.idTable, []);
       this.env.setStorage('OrderLines' + this.item.Tables[0], this.OrderLines);
       this.idTable = this.item.Tables[0];
@@ -1170,7 +1168,7 @@ export class POSCustomerOrderPage extends PageBase {
         if (this.id != 0) {
           let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
           history.pushState({}, null, newURL);
-          this.env.showAlert(
+          this.env.showAlert2(
             'Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ',
             'Kiểm tra đơn hàng và cập nhật',
             'Thông báo',
@@ -1233,7 +1231,7 @@ export class POSCustomerOrderPage extends PageBase {
         .connect('POST', 'POS/ForCustomer/CallStaff', ItemModel)
         .toPromise()
         .then((result) => {
-          this.env.showMessage('Đã gọi món', 'success');
+          this.env.showTranslateMessage('Đã gọi món', 'success');
         })
         .catch((err) => {
           console.log(err);
@@ -1255,7 +1253,7 @@ export class POSCustomerOrderPage extends PageBase {
         .connect('POST', 'POS/ForCustomer/CallStaff', ItemModel)
         .toPromise()
         .then((result) => {
-          this.env.showMessage('Đã gọi tính tiền', 'success');
+          this.env.showTranslateMessage('Đã gọi tính tiền', 'success');
         })
         .catch((err) => {
           console.log(err);
@@ -1277,7 +1275,7 @@ export class POSCustomerOrderPage extends PageBase {
         .connect('POST', 'POS/ForCustomer/CallStaff', ItemModel)
         .toPromise()
         .then((result) => {
-          this.env.showMessage('Đã gọi phục vụ', 'success');
+          this.env.showTranslateMessage('Đã gọi phục vụ', 'success');
         })
         .catch((err) => {
           console.log(err);
@@ -1349,7 +1347,7 @@ export class POSCustomerOrderPage extends PageBase {
       subHeader = 'Đơn hàng đã gộp';
       message = 'Không thể thao tác trên đơn hàng này. Vui lòng đi đến đơn gốc để tiếp tục đặt hàng';
     }
-    this.env.showAlert(message, subHeader, 'Thông báo');
+    this.env.showAlert2(message, subHeader, 'Thông báo');
   }
 
   async checkOrderOfTable(IDTable) {
@@ -1429,7 +1427,7 @@ export class POSCustomerOrderPage extends PageBase {
       (this.formGroup.controls['Id'].value != 0 && this.id == 0)
     ) {
       this.env
-        .showPrompt('', null, 'Đơn hàng đã hoàn tất', 'Tạo đơn mới', 'Đóng')
+        .showPrompt2('', null, 'Đơn hàng đã hoàn tất', 'Tạo đơn mới', 'Đóng')
         .then((_) => {
           this.newOrder();
         })
