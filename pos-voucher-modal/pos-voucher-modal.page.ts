@@ -91,7 +91,7 @@ export class POSVoucherModalPage extends PageBase {
               }
             }
           } else {
-            this.env.showMessage('Mã Voucher không hợp lệ', 'danger');
+            this.env.showTranslateMessage('Mã Voucher không hợp lệ', 'danger');
           }
         })
         .catch((err) => {});
@@ -123,7 +123,7 @@ export class POSVoucherModalPage extends PageBase {
           });
       });
     } else {
-      this.env.showMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
+      this.env.showTranslateMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
     }
   }
 }

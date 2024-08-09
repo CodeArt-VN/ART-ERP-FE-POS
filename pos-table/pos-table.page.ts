@@ -52,10 +52,10 @@ export class POSTablePage extends PageBase {
   deleteitem(item: any, isgrouptable?: boolean) {
     if (this.pageConfig.canDelete) {
       this.env
-        .showPrompt(
-          'Bạn chắc muốn xóa' + (item.Name ? ' ' + item.Name : '') + '?',
+        .showPrompt2(
+          {code:item.Name ?'Bạn có chắc muốn xóa {{value}}?':'Bạn có chắc muốn xóa không?' , value:{value:item.Name}},
           null,
-          'Xóa' + (item.Name ? ' ' + item.Name : ''),
+          {code:item.Name ?'Xóa {{value}}':'Xóa' , value:{value:item.Name}},
         )
         .then((_) => {
           let ltitem = this.items;
