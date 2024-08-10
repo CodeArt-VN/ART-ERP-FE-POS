@@ -238,10 +238,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
     if (index != -1) {
-      this.env.showMessage(
-        'Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.',
-        'warning',
-      );
+      this.env.showMessage('Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.', 'warning');
       this.refresh();
     } else {
       this.getStorageNotifications();
@@ -262,7 +259,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     if (this.env.selectedBranch == value.IDBranch) {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
-      this.env.showMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning',value.Tables[0].TableName );
+      this.env.showMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning', value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
       this.setStorageNotification(
         null,
@@ -281,7 +278,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     if (this.env.selectedBranch == value.IDBranch) {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
-      this.env.showMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning',value.Tables[0].TableName);
+      this.env.showMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning', value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(
@@ -1201,7 +1198,6 @@ export class POSOrderDetailPage extends PageBase {
   }
 
   async lockOrder() {
-
     const Debt = this.item.Debt;
     let postDTO = {
       Id: this.item.Id,
@@ -2051,30 +2047,38 @@ export class POSOrderDetailPage extends PageBase {
     if (this.printData.undeliveredItems.length > 0) {
       let message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
       if (this.item.Debt > 0) {
-       message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
+        message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
       }
-      this.env.showPrompt({code:message,value:{value:this.item.Tables[0],value1:this.printData.undeliveredItems.length}}, null, 'Thông báo', 'GỬI', null).then((_) => {
-        this.printData.undeliveredItems = []; //<-- clear;
-        this.item.OrderLines.forEach((line) => {
-          if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
-            line.Status = 'Done';
-          }
-          if (line.Quantity > line.ShippedQuantity) {
-            line.ShippedQuantity = line.Quantity;
-            line.ReturnedQuantity = 0;
-            changed.OrderLines.push({
-              Id: line.Id,
-              IDUoM: line.IDUoM,
-              ShippedQuantity: line.ShippedQuantity,
-              ReturnedQuantity: 0,
-            });
-          }
+      this.env
+        .showPrompt(
+          { code: message, value: this.item.Tables[0], value1: this.printData.undeliveredItems.length },
+          null,
+          'Thông báo',
+          'GỬI',
+          null,
+        )
+        .then((_) => {
+          this.printData.undeliveredItems = []; //<-- clear;
+          this.item.OrderLines.forEach((line) => {
+            if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
+              line.Status = 'Done';
+            }
+            if (line.Quantity > line.ShippedQuantity) {
+              line.ShippedQuantity = line.Quantity;
+              line.ReturnedQuantity = 0;
+              changed.OrderLines.push({
+                Id: line.Id,
+                IDUoM: line.IDUoM,
+                ShippedQuantity: line.ShippedQuantity,
+                ReturnedQuantity: 0,
+              });
+            }
+          });
+          changed.OrderLines = this.item.OrderLines;
+          changed.Status = 'Done';
+          changed.IDStatus = 114;
+          this.setOrderValue(changed, true, true);
         });
-        changed.OrderLines = this.item.OrderLines;
-        changed.Status = 'Done';
-        changed.IDStatus = 114;
-        this.setOrderValue(changed, true, true);
-      });
     } else if (this.item.Debt > 0) {
       let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
       this.env
@@ -2191,10 +2195,7 @@ export class POSOrderDetailPage extends PageBase {
               }
             });
           } else {
-            this.env.showMessage(
-              "No Printers Available, Please Check Printers' IP  / Printers' Power",
-              'warning',
-            );
+            this.env.showMessage("No Printers Available, Please Check Printers' IP  / Printers' Power", 'warning');
             this.submitAttempt = false;
           }
 
@@ -2433,7 +2434,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
                       address.IDAddress = address['Addresses'][0]['Id'];
                       address.Address = address['Addresses'][0];
 
-                      this.env.showMessage('Quét thành công! Họ và Tên: {{value}}',null,address['Name']);
+                      this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
 
                       this.contactListSelected.push(address);
                       this.changedIDAddress(address);
@@ -2445,7 +2446,8 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
                 } else {
                   this.env.showMessage(
                     'Mã đã hết hạn, vui lòng lấy lại mã nhân viên mới! Thời gian tạo mã QR: {{value}}',
-                    'danger',QRGenTime
+                    'danger',
+                    QRGenTime,
                   );
                   setTimeout(() => this.scanQRCode(), 0);
                 }
