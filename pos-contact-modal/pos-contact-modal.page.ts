@@ -71,7 +71,7 @@ export class POSContactModalPage extends PageBase {
 
     this.pageProvider.read({ WorkPhone_eq: WorkPhone }).then((results: any) => {
       if (results['data'].length > 0) {
-        this.env.showTranslateMessage('Khách hàng đã tồn tại', 'warning');
+        this.env.showMessage('Khách hàng đã tồn tại', 'warning');
         this.IsBtnApply = true;
         this.IsBtnNew = false;
         this.formGroup.controls.Name.patchValue(results['data'][0].Name);

@@ -238,7 +238,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
     if (index != -1) {
-      this.env.showTranslateMessage(
+      this.env.showMessage(
         'Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.',
         'warning',
       );
@@ -251,7 +251,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
     if (index != -1) {
-      this.env.showTranslateMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
+      this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
       this.refresh();
     } else {
       this.getStorageNotifications();
@@ -262,7 +262,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     if (this.env.selectedBranch == value.IDBranch) {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
-      this.env.showTranslateMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning',value.Tables[0].TableName );
+      this.env.showMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning',value.Tables[0].TableName );
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
       this.setStorageNotification(
         null,
@@ -281,7 +281,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     if (this.env.selectedBranch == value.IDBranch) {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
-      this.env.showTranslateMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning',value.Tables[0].TableName);
+      this.env.showMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
       this.setStorageNotification(
@@ -301,7 +301,7 @@ export class POSOrderDetailPage extends PageBase {
     const value = JSON.parse(data.value);
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
     if (index != -1) {
-      this.env.showTranslateMessage('Đơn hàng đã được chia.', 'warning');
+      this.env.showMessage('Đơn hàng đã được chia.', 'warning');
       this.refresh();
     } else {
       this.getStorageNotifications();
@@ -313,7 +313,7 @@ export class POSOrderDetailPage extends PageBase {
     let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 
     if (index != -1) {
-      this.env.showTranslateMessage('Đơn hàng đã được gộp.', 'warning');
+      this.env.showMessage('Đơn hàng đã được gộp.', 'warning');
       this.refresh();
     } else {
       this.getStorageNotifications();
@@ -330,7 +330,7 @@ export class POSOrderDetailPage extends PageBase {
           .toPromise()
           .then((lastModifiedDate) => {
             if (lastModifiedDate > this.item.ModifiedDate) {
-              this.env.showTranslateMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.', 'danger');
+              this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.', 'danger');
               this.refresh();
             }
           })
@@ -399,7 +399,7 @@ export class POSOrderDetailPage extends PageBase {
   loadedData(event?: any, ignoredFromGroup?: boolean): void {
     super.loadedData(event, ignoredFromGroup);
     if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
-      this.env.showTranslateMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
+      this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
       return;
     }
 
@@ -445,7 +445,7 @@ export class POSOrderDetailPage extends PageBase {
       })
       .catch((err) => {
         if (err.message != null) {
-          this.env.showTranslateMessage(err.message, 'danger');
+          this.env.showMessage(err.message, 'danger');
         }
       });
   }
@@ -563,22 +563,22 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     if (!this.pageConfig.canAdd) {
-      this.env.showTranslateMessage('Bạn không có quyền thêm sản phẩm!', 'warning');
+      this.env.showMessage('Bạn không có quyền thêm sản phẩm!', 'warning');
       return;
     }
 
     if (!this.pageConfig.canEdit) {
-      this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+      this.env.showMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
       return;
     }
 
     if (this.item.Tables == null || this.item.Tables.length == 0) {
-      this.env.showTranslateMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
+      this.env.showMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
       return;
     }
 
     if (!item.UoMs.length) {
-      this.env.showAlert2('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
+      this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
       return;
     }
 
@@ -629,7 +629,7 @@ export class POSOrderDetailPage extends PageBase {
       if (line.Quantity > 0 && line.Quantity + quantity < line.ShippedQuantity) {
         if (this.pageConfig.canDeleteItems) {
           this.env
-            .showPrompt2(
+            .showPrompt(
               'Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?',
               item.Name,
               'Xóa sản phẩm',
@@ -639,7 +639,7 @@ export class POSOrderDetailPage extends PageBase {
             })
             .catch((_) => {});
         } else {
-          this.env.showTranslateMessage('Item đã chuyển Bar/Bếp');
+          this.env.showMessage('Item đã chuyển Bar/Bếp');
           return;
         }
       } else if (line.Quantity + quantity > 0) {
@@ -657,7 +657,7 @@ export class POSOrderDetailPage extends PageBase {
       } else {
         if (line.Status == 'New') {
           this.env
-            .showPrompt2('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
+            .showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
             .then((_) => {
               line.Quantity += quantity;
               this.setOrderValue({
@@ -674,7 +674,7 @@ export class POSOrderDetailPage extends PageBase {
         } else {
           if (this.pageConfig.canDeleteItems) {
             this.env
-              .showPrompt2('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
+              .showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
               .then((_) => {
                 line.Quantity += quantity;
                 this.setOrderValue({
@@ -689,7 +689,7 @@ export class POSOrderDetailPage extends PageBase {
               })
               .catch((_) => {});
           } else {
-            this.env.showTranslateMessage('Tài khoản chưa được cấp quyền xóa sản phẩm!', 'warning');
+            this.env.showMessage('Tài khoản chưa được cấp quyền xóa sản phẩm!', 'warning');
           }
         }
       }
@@ -700,7 +700,7 @@ export class POSOrderDetailPage extends PageBase {
     if (this.submitAttempt) return;
     if (line.Status != 'New') return;
     if (this.item.Status == 'TemporaryBill') {
-      this.env.showTranslateMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+      this.env.showMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
       return;
     }
 
@@ -856,15 +856,15 @@ export class POSOrderDetailPage extends PageBase {
 
   InvoiceRequired() {
     if (this.pageConfig.canEdit == false) {
-      this.env.showTranslateMessage('Đơn hàng đã khóa không thể chỉnh sửa', 'warning');
+      this.env.showMessage('Đơn hàng đã khóa không thể chỉnh sửa', 'warning');
       return false;
     }
     if (!this.item._Customer) {
-      this.env.showTranslateMessage('Vui lòng chọn khách hàng', 'warning');
+      this.env.showMessage('Vui lòng chọn khách hàng', 'warning');
       return false;
     }
     if (this.item._Customer.Id == 922) {
-      this.env.showTranslateMessage('Không thể xuất hóa đơn cho khách lẻ', 'warning');
+      this.env.showMessage('Không thể xuất hóa đơn cho khách lẻ', 'warning');
       return false;
     }
     if (this.item.IsInvoiceRequired == false) {
@@ -900,7 +900,7 @@ export class POSOrderDetailPage extends PageBase {
   async openCancellationReason(line = null, quantity = null) {
     if (this.submitAttempt) return;
     if (this.item.Received > 0) {
-      this.env.showTranslateMessage(
+      this.env.showMessage(
         'Đơn hàng đã thanh toán không thể hủy, vui lòng hoàn tiền lại để hủy đơn hàng này!',
         'warning',
       );
@@ -926,7 +926,7 @@ export class POSOrderDetailPage extends PageBase {
 
       if (!line) {
         this.env
-          .showPrompt2('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
+          .showPrompt('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
           .then((_) => {
             let publishEventCode = this.pageConfig.pageName;
             if (this.submitAttempt == false) {
@@ -964,7 +964,7 @@ export class POSOrderDetailPage extends PageBase {
         }
 
         this.env
-          .showPrompt2('Bạn có chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm')
+          .showPrompt('Bạn có chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm')
           .then((_) => {
             let publishEventCode = this.pageConfig.pageName;
             if (this.submitAttempt == false) {
@@ -995,7 +995,7 @@ export class POSOrderDetailPage extends PageBase {
   saveOrderData() {
     let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
     this.env
-      .showPrompt2(message, null, 'Thông báo')
+      .showPrompt(message, null, 'Thông báo')
       .then(async (_) => {
         if (this.item.Id) {
           await this.sendKitchen();
@@ -1036,7 +1036,7 @@ export class POSOrderDetailPage extends PageBase {
       });
 
       if (this.printData.undeliveredItems.length == 0) {
-        this.env.showTranslateMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
+        this.env.showMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
         this.submitAttempt = false;
         return;
       }
@@ -1083,7 +1083,7 @@ export class POSOrderDetailPage extends PageBase {
       });
 
       if (this.printData.undeliveredItems.length == 0) {
-        this.env.showTranslateMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
+        this.env.showMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
         this.submitAttempt = false;
         resolve(true);
         return;
@@ -1164,7 +1164,7 @@ export class POSOrderDetailPage extends PageBase {
           newTerminalList.push({ Printer: Info });
         });
       } else {
-        this.env.showTranslateMessage('Recheck Receipt Printer information!', 'warning');
+        this.env.showMessage('Recheck Receipt Printer information!', 'warning');
         this.submitAttempt = false;
         return;
       }
@@ -1219,7 +1219,7 @@ export class POSOrderDetailPage extends PageBase {
     if (this.printData.undeliveredItems.length > 0) {
       let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục gửi bếp và tạm tính?';
       this.env
-        .showPrompt2(message, null, 'Thông báo')
+        .showPrompt(message, null, 'Thông báo')
         .then(async (_) => {
           await this.sendKitchen();
           await this.sendKitchenEachItem();
@@ -1840,7 +1840,7 @@ export class POSOrderDetailPage extends PageBase {
     this.loadedData();
 
     this.submitAttempt = false;
-    this.env.showTranslateMessage('Saving completed!', 'success');
+    this.env.showMessage('Saving completed!', 'success');
 
     if (savedItem.Status == 'Done') {
       this.sendPrint(savedItem.Status, true);
@@ -1965,7 +1965,7 @@ export class POSOrderDetailPage extends PageBase {
     }
 
     if (OriginalDiscountFromSalesman > line.CalcTotalOriginal) {
-      this.env.showTranslateMessage('Số tiền tặng không lớn hơn trị giá sản phẩm!', 'danger');
+      this.env.showMessage('Số tiền tặng không lớn hơn trị giá sản phẩm!', 'danger');
       return false;
     }
     this.setOrderValue(
@@ -2034,7 +2034,7 @@ export class POSOrderDetailPage extends PageBase {
             Math.abs(this.item.Debt) < 10 &&
             this.item.Status != 'Done'
           ) {
-            this.env.showTranslateMessage('The order has been paid, the system will automatically close this bill.');
+            this.env.showMessage('The order has been paid, the system will automatically close this bill.');
             this.formGroup.enable();
             this.doneOrder();
           }
@@ -2053,7 +2053,7 @@ export class POSOrderDetailPage extends PageBase {
       if (this.item.Debt > 0) {
        message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
       }
-      this.env.showPrompt2({code:message,value:{value:this.item.Tables[0],value1:this.printData.undeliveredItems.length}}, null, 'Thông báo', 'GỬI', null).then((_) => {
+      this.env.showPrompt({code:message,value:{value:this.item.Tables[0],value1:this.printData.undeliveredItems.length}}, null, 'Thông báo', 'GỬI', null).then((_) => {
         this.printData.undeliveredItems = []; //<-- clear;
         this.item.OrderLines.forEach((line) => {
           if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -2078,7 +2078,7 @@ export class POSOrderDetailPage extends PageBase {
     } else if (this.item.Debt > 0) {
       let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
       this.env
-        .showPrompt2(message, null, 'Thông báo')
+        .showPrompt(message, null, 'Thông báo')
         .then((_) => {
           this.item.OrderLines.forEach((line) => {
             if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -2122,12 +2122,12 @@ export class POSOrderDetailPage extends PageBase {
         })
         .toPromise()
         .then((savedItem: any) => {
-          this.env.showTranslateMessage('Saving completed!', 'success');
+          this.env.showMessage('Saving completed!', 'success');
           resolve(true);
           this.refresh();
         })
         .catch((err) => {
-          this.env.showTranslateMessage('Cannot save, please try again!', 'danger');
+          this.env.showMessage('Cannot save, please try again!', 'danger');
           reject(err);
         });
     });
@@ -2191,7 +2191,7 @@ export class POSOrderDetailPage extends PageBase {
               }
             });
           } else {
-            this.env.showTranslateMessage(
+            this.env.showMessage(
               "No Printers Available, Please Check Printers' IP  / Printers' Power",
               'warning',
             );
@@ -2306,7 +2306,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
       setTimeout(() => {
         let checkCon = qz.websocket.isActive();
         if (!checkCon) {
-          this.env.showTranslateMessage('Kết nối không được đến server máy in', 'danger', null, null, true);
+          this.env.showMessage('Kết nối không được đến server máy in', 'danger', null, null, true);
           this.QZCloseConnection();
         }
       }, 3000);
@@ -2314,7 +2314,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
         .connect(options)
         .then()
         .catch((err) => {
-          this.env.showTranslateMessage('Kết nối không được đến server máy in', 'danger', null, null, true);
+          this.env.showMessage('Kết nối không được đến server máy in', 'danger', null, null, true);
           this.QZCloseConnection();
         });
     }
@@ -2328,7 +2328,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
         })
         .catch((err) => {
           err.forEach((er) => {
-            this.env.showTranslateMessage('Không tìm thấy máy in. ' + er.message, 'danger', null, null, true);
+            this.env.showMessage('Không tìm thấy máy in. ' + er.message, 'danger', null, null, true);
           });
           this.QZCloseConnection();
         });
@@ -2355,7 +2355,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
         resolve(true);
       }
 
-      this.env.showTranslateMessage('Gửi đơn thành công!', 'success');
+      this.env.showMessage('Gửi đơn thành công!', 'success');
       this.submitAttempt = false;
       this.printData.undeliveredItems = []; //<-- clear;
       this.printerCodeList = [];
@@ -2380,18 +2380,18 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
       })
       .toPromise()
       .then((result) => {
-        this.env.showTranslateMessage('Saving completed!', 'success');
+        this.env.showMessage('Saving completed!', 'success');
         this.refresh();
       })
       .catch((err) => {
-        this.env.showTranslateMessage('Cannot save, please try again!', 'danger');
+        this.env.showMessage('Cannot save, please try again!', 'danger');
       });
   }
 
   scanning = false;
   scanQRCode() {
     if (!Capacitor.isPluginAvailable('BarcodeScanner') || Capacitor.platform == 'web') {
-      this.env.showTranslateMessage('This function is only available on phone', 'warning');
+      this.env.showMessage('This function is only available on phone', 'warning');
       return;
     }
     BarcodeScanner.prepare().then(() => {
@@ -2433,7 +2433,7 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
                       address.IDAddress = address['Addresses'][0]['Id'];
                       address.Address = address['Addresses'][0];
 
-                      this.env.showTranslateMessage('Quét thành công! Họ và Tên: {{value}}',null,address['Name']);
+                      this.env.showMessage('Quét thành công! Họ và Tên: {{value}}',null,address['Name']);
 
                       this.contactListSelected.push(address);
                       this.changedIDAddress(address);
@@ -2443,14 +2443,14 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
                     });
                   }, 0);
                 } else {
-                  this.env.showTranslateMessage(
+                  this.env.showMessage(
                     'Mã đã hết hạn, vui lòng lấy lại mã nhân viên mới! Thời gian tạo mã QR: {{value}}',
                     'danger',QRGenTime
                   );
                   setTimeout(() => this.scanQRCode(), 0);
                 }
               } else {
-                this.env.showTranslateMessage(
+                this.env.showMessage(
                   'You just scanned: {{value}}, please scanned QR code on paid delivery notes',
                   '',
                   result.content,

@@ -302,7 +302,7 @@ export class POSSplitModalPage extends PageBase {
   splitOrder() {
     return new Promise((resolve, reject) => {
       if (!this.item.Ids.length || !this.item.IDContact) {
-        this.env.showTranslateMessage('Please check the invoice to combine and select customer', 'warning');
+        this.env.showMessage('Please check the invoice to combine and select customer', 'warning');
       } else if (this.submitAttempt == false) {
         this.submitAttempt = true;
         if (!this.item.IDBranch) {
@@ -313,13 +313,13 @@ export class POSSplitModalPage extends PageBase {
           .connect('POST', 'SALE/Order/MergeOrders/', this.item)
           .toPromise()
           .then((savedItem: any) => {
-            this.env.showTranslateMessage('Saving completed!', 'warning');
+            this.env.showMessage('Saving completed!', 'warning');
             resolve(savedItem.Id);
             this.submitAttempt = false;
             this.closeModalView();
           })
           .catch((err) => {
-            this.env.showTranslateMessage('Cannot save, please try again!', 'danger');
+            this.env.showMessage('Cannot save, please try again!', 'danger');
             this.cdr.detectChanges();
             this.submitAttempt = false;
             reject(err);
@@ -566,7 +566,7 @@ export class POSSplitModalPage extends PageBase {
 
     return new Promise((resolve, reject) => {
       if (!this.isCanSplit) {
-        this.env.showTranslateMessage('Please check customer name and order must have at least 01 item.', 'warning');
+        this.env.showMessage('Please check customer name and order must have at least 01 item.', 'warning');
       } else if (this.submitAttempt == false) {
         this.submitAttempt = true;
 
@@ -581,14 +581,14 @@ export class POSSplitModalPage extends PageBase {
             if (publishEventCode) {
               this.env.publishEvent({ Code: publishEventCode });
             }
-            this.env.showTranslateMessage('Saving completed!', 'success');
+            this.env.showMessage('Saving completed!', 'success');
             resolve(true);
             this.submitAttempt = false;
 
             this.closeModalView();
           })
           .catch((err) => {
-            this.env.showTranslateMessage('Cannot save, please try again!', 'danger');
+            this.env.showMessage('Cannot save, please try again!', 'danger');
             this.cdr?.detectChanges();
             this.submitAttempt = false;
             reject(err);

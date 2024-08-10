@@ -91,7 +91,7 @@ export class POSVoucherModalPage extends PageBase {
               }
             }
           } else {
-            this.env.showTranslateMessage('Mã Voucher không hợp lệ', 'danger');
+            this.env.showMessage('Mã Voucher không hợp lệ', 'danger');
           }
         })
         .catch((err) => {});
@@ -114,16 +114,16 @@ export class POSVoucherModalPage extends PageBase {
           })
           .toPromise()
           .then((savedItem: any) => {
-            this.env.showTranslateMessage('Saving completed!', 'success');
+            this.env.showMessage('Saving completed!', 'success');
             resolve(true);
             this.modalController.dismiss(this.item);
           })
           .catch((err) => {
-            this.env.showTranslateMessage(err.error.Message, 'danger');
+            this.env.showMessage(err.error.Message, 'danger');
           });
       });
     } else {
-      this.env.showTranslateMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
+      this.env.showMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
     }
   }
 }

@@ -148,13 +148,13 @@ export class POSForCustomerPaymentModalPage extends PageBase {
       this.items[i].IncomingPayment.Status = data['Status'];
       switch (data['Status']) {
         case 'Success':
-          this.env.showTranslateMessage('Thanh toán thành công', 'success');
+          this.env.showMessage('Thanh toán thành công', 'success');
           break;
         case 'Fail':
-          this.env.showTranslateMessage('Giao dịch thất bại', 'danger');
+          this.env.showMessage('Giao dịch thất bại', 'danger');
           break;
         default:
-          this.env.showTranslateMessage('Đang chờ khách hàng thanh toán', 'warning');
+          this.env.showMessage('Đang chờ khách hàng thanh toán', 'warning');
           break;
       }
       this.calcPayment();

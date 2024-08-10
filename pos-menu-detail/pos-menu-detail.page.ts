@@ -128,10 +128,10 @@ export class POSMenuDetailPage extends PageBase {
     };
     this.commonService.upload(apiPath, event.target.files[0]).then((result: any) => {
       if (result != null) {
-        this.env.showTranslateMessage('upload thành công', 'success');
+        this.env.showMessage('upload thành công', 'success');
         this.Image = environment.posImagesServer + result;
       } else {
-        this.env.showTranslateMessage('upload thất bại', 'success');
+        this.env.showMessage('upload thất bại', 'success');
       }
     });
   };
@@ -309,7 +309,7 @@ export class POSMenuDetailPage extends PageBase {
 
         this.menuItemList.push(item);
       }
-      this.env.showTranslateMessage('Saving completed!', 'success');
+      this.env.showMessage('Saving completed!', 'success');
     });
   }
 
@@ -336,10 +336,10 @@ export class POSMenuDetailPage extends PageBase {
             if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
               this.menuDetailList.push(savedData);
             }
-            this.env.showTranslateMessage('Saving completed!', 'success');
+            this.env.showMessage('Saving completed!', 'success');
           })
           .catch((err) => {
-            this.env.showTranslateMessage(err, 'danger');
+            this.env.showMessage(err, 'danger');
           });
       } else {
         // Unselect
@@ -359,10 +359,10 @@ export class POSMenuDetailPage extends PageBase {
             if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
               this.menuDetailList.push(savedData);
             }
-            this.env.showTranslateMessage('Saving completed!', 'success');
+            this.env.showMessage('Saving completed!', 'success');
           })
           .catch((err) => {
-            this.env.showTranslateMessage(err, 'danger');
+            this.env.showMessage(err, 'danger');
           });
       }
     }
@@ -374,7 +374,7 @@ export class POSMenuDetailPage extends PageBase {
 
     this.menuDetailProvider.disable([{ Id: groups.controls[index]['controls'].Id.value }], isDisable).then((resp) => {
       console.log(resp);
-      this.env.showTranslateMessage('Saved change!', 'success');
+      this.env.showMessage('Saved change!', 'success');
     });
   }
   removeItemLine(index, permanentlyRemove = true) {
@@ -402,7 +402,7 @@ export class POSMenuDetailPage extends PageBase {
               if (permanentlyRemove) {
                 this.menuDetailProvider.delete(Ids).then((resp) => {
                   groups.removeAt(index);
-                  this.env.showTranslateMessage('Deleted!', 'success');
+                  this.env.showMessage('Deleted!', 'success');
                 });
               }
             },
@@ -435,13 +435,13 @@ export class POSMenuDetailPage extends PageBase {
         .save(savingItem)
         .then((savedData: any) => {
           if (counter == max - 1) {
-            this.env.showTranslateMessage('Saving completed!', 'success');
+            this.env.showMessage('Saving completed!', 'success');
             this.submitAttempt = false;
           }
           counter++;
         })
         .catch((err) => {
-          this.env.showTranslateMessage(err, 'danger');
+          this.env.showMessage(err, 'danger');
           this.submitAttempt = false;
         });
     });

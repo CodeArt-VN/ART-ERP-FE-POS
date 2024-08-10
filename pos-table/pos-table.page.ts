@@ -52,7 +52,7 @@ export class POSTablePage extends PageBase {
   deleteitem(item: any, isgrouptable?: boolean) {
     if (this.pageConfig.canDelete) {
       this.env
-        .showPrompt2(
+        .showPrompt(
           {code:item.Name ?'Bạn có chắc muốn xóa {{value}}?':'Bạn có chắc muốn xóa không?' , value:{value:item.Name}},
           null,
           {code:item.Name ?'Xóa {{value}}':'Xóa' , value:{value:item.Name}},
@@ -63,7 +63,7 @@ export class POSTablePage extends PageBase {
             this.tableGroupProvider
               .delete(item)
               .then(() => {
-                this.env.showTranslateMessage('Deleted!', 'success');
+                this.env.showMessage('Deleted!', 'success');
                 this.env.publishEvent({
                   Code: this.pageConfig.pageName,
                 });
@@ -74,7 +74,7 @@ export class POSTablePage extends PageBase {
             this.pageProvider
               .delete(item)
               .then(() => {
-                this.env.showTranslateMessage('Deleted!', 'success');
+                this.env.showMessage('Deleted!', 'success');
                 this.env.publishEvent({
                   Code: this.pageConfig.pageName,
                 });

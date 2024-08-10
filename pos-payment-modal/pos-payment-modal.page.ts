@@ -134,25 +134,25 @@ export class POSPaymentModalPage extends PageBase {
         if (data['IsRefundTransaction'] == true) {
           switch (data['Status']) {
             case 'Success':
-              this.env.showTranslateMessage('Refund successful', 'success');
+              this.env.showMessage('Refund successful', 'success');
               break;
             case 'Fail':
-              this.env.showTranslateMessage('Refund failed', 'danger');
+              this.env.showMessage('Refund failed', 'danger');
               break;
             default:
-              this.env.showTranslateMessage('Refund pending', 'warning');
+              this.env.showMessage('Refund pending', 'warning');
               break;
           }
         } else {
           switch (data['Status']) {
             case 'Success':
-              this.env.showTranslateMessage('Payment successful', 'success');
+              this.env.showMessage('Payment successful', 'success');
               break;
             case 'Fail':
-              this.env.showTranslateMessage('Transaction failed', 'danger');
+              this.env.showMessage('Transaction failed', 'danger');
               break;
             default:
-              this.env.showTranslateMessage('Waiting for customers to pay', 'warning');
+              this.env.showMessage('Waiting for customers to pay', 'warning');
               break;
           }
         }
@@ -164,7 +164,7 @@ export class POSPaymentModalPage extends PageBase {
   }
   goToRefund(i) {
     if (!this.pageConfig.canRefund) {
-      this.env.showTranslateMessage('You have not been authorized to refund', 'danger');
+      this.env.showMessage('You have not been authorized to refund', 'danger');
       return false;
     }
     // if(i.IncomingPayment.Status != "Success"){
@@ -172,7 +172,7 @@ export class POSPaymentModalPage extends PageBase {
     //     return false;
     // }
     if (parseInt(i.IncomingPayment.TotalRefund) >= parseInt(i.IncomingPayment.Amount)) {
-      this.env.showTranslateMessage('Refunds cannot be continued on this transaction', 'danger');
+      this.env.showMessage('Refunds cannot be continued on this transaction', 'danger');
       return false;
     }
     let RefundAmount = i.IncomingPayment.Amount - i.IncomingPayment.TotalRefund;

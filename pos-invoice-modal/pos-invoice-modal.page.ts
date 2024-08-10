@@ -89,7 +89,7 @@ export class POSInvoiceModalPage extends PageBase {
           this.IsShowSpinner = false;
         })
         .catch((err) => {
-          this.env.showTranslateMessage('Mã số thuế không hợp lệ!', 'danger');
+          this.env.showMessage('Mã số thuế không hợp lệ!', 'danger');
           this.IsShowSpinner = false;
         });
     }
