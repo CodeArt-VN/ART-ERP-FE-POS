@@ -22,9 +22,10 @@ import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 
 @Component({
-  selector: 'app-pos-order',
-  templateUrl: 'pos-order.page.html',
-  styleUrls: ['pos-order.page.scss'],
+    selector: 'app-pos-order',
+    templateUrl: 'pos-order.page.html',
+    styleUrls: ['pos-order.page.scss'],
+    standalone: false
 })
 export class POSOrderPage extends PageBase {
   tableGroupList = [];

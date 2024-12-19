@@ -17,9 +17,10 @@ import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-pos-split-modal',
-  templateUrl: './pos-split-modal.page.html',
-  styleUrls: ['./pos-split-modal.page.scss'],
+    selector: 'app-pos-split-modal',
+    templateUrl: './pos-split-modal.page.html',
+    styleUrls: ['./pos-split-modal.page.scss'],
+    standalone: false
 })
 export class POSSplitModalPage extends PageBase {
   @Input() selectedOrder;

@@ -11,9 +11,10 @@ import {
 } from 'src/app/services/static/services.service';
 
 @Component({
-  selector: 'app-pos-voucher-modal',
-  templateUrl: './pos-voucher-modal.page.html',
-  styleUrls: ['./pos-voucher-modal.page.scss'],
+    selector: 'app-pos-voucher-modal',
+    templateUrl: './pos-voucher-modal.page.html',
+    styleUrls: ['./pos-voucher-modal.page.scss'],
+    standalone: false
 })
 export class POSVoucherModalPage extends PageBase {
   Code = '';

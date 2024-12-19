@@ -17,9 +17,10 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { environment } from 'src/environments/environment';
 
 @Component({
-  selector: 'app-pos-menu-detail',
-  templateUrl: './pos-menu-detail.page.html',
-  styleUrls: ['./pos-menu-detail.page.scss'],
+    selector: 'app-pos-menu-detail',
+    templateUrl: './pos-menu-detail.page.html',
+    styleUrls: ['./pos-menu-detail.page.scss'],
+    standalone: false
 })
 export class POSMenuDetailPage extends PageBase {
   kitchenList;

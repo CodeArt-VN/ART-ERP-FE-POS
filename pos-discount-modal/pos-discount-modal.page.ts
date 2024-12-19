@@ -6,9 +6,10 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { SALE_OrderDetailProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
 
 @Component({
-  selector: 'app-pos-discount-modal',
-  templateUrl: './pos-discount-modal.page.html',
-  styleUrls: ['./pos-discount-modal.page.scss'],
+    selector: 'app-pos-discount-modal',
+    templateUrl: './pos-discount-modal.page.html',
+    styleUrls: ['./pos-discount-modal.page.scss'],
+    standalone: false
 })
 export class POSDiscountModalPage extends PageBase {
   Discount;

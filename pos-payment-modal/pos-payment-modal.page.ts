@@ -1,23 +1,22 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
-import { NavController, ModalController, NavParams, LoadingController, AlertController } from '@ionic/angular';
-import { PageBase } from 'src/app/page-base';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { AlertController, LoadingController, ModalController, NavController, NavParams } from '@ionic/angular';
+import { PageBase } from 'src/app/page-base';
+import { CommonService } from 'src/app/services/core/common.service';
 import { EnvService } from 'src/app/services/core/env.service';
+import { lib } from 'src/app/services/static/global-functions';
 import {
   BANK_IncomingPaymentDetailProvider,
   BANK_IncomingPaymentProvider,
 } from 'src/app/services/static/services.service';
-import { FormBuilder } from '@angular/forms';
-import { lib } from 'src/app/services/static/global-functions';
-import { CommonService } from 'src/app/services/core/common.service';
 import { environment } from 'src/environments/environment';
-import { number } from 'echarts';
-import { flattenDiagnosticMessageText } from 'typescript';
 
 @Component({
-  selector: 'app-pos-payment-modal',
-  templateUrl: './pos-payment-modal.page.html',
-  styleUrls: ['./pos-payment-modal.page.scss'],
+    selector: 'app-pos-payment-modal',
+    templateUrl: './pos-payment-modal.page.html',
+    styleUrls: ['./pos-payment-modal.page.scss'],
+    standalone: false
 })
 export class POSPaymentModalPage extends PageBase {
   DebtAmount = 0;

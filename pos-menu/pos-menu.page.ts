@@ -7,9 +7,10 @@ import { Location } from '@angular/common';
 import { environment } from 'src/environments/environment';
 
 @Component({
-  selector: 'app-pos-menu',
-  templateUrl: 'pos-menu.page.html',
-  styleUrls: ['pos-menu.page.scss'],
+    selector: 'app-pos-menu',
+    templateUrl: 'pos-menu.page.html',
+    styleUrls: ['pos-menu.page.scss'],
+    standalone: false
 })
 export class POSMenuPage extends PageBase {
   ImagesServer = environment.posImagesServer;

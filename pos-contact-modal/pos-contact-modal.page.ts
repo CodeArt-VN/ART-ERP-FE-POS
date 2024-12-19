@@ -6,9 +6,10 @@ import { CRM_ContactProvider } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 
 @Component({
-  selector: 'app-pos-contact-modal',
-  templateUrl: './pos-contact-modal.page.html',
-  styleUrls: ['./pos-contact-modal.page.scss'],
+    selector: 'app-pos-contact-modal',
+    templateUrl: './pos-contact-modal.page.html',
+    styleUrls: ['./pos-contact-modal.page.scss'],
+    standalone: false
 })
 export class POSContactModalPage extends PageBase {
   IsBtnNew = true;

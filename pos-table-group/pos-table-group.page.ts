@@ -6,9 +6,10 @@ import { POS_TableGroupProvider } from 'src/app/services/static/services.service
 import { Location } from '@angular/common';
 
 @Component({
-  selector: 'app-pos-table-group',
-  templateUrl: 'pos-table-group.page.html',
-  styleUrls: ['pos-table-group.page.scss'],
+    selector: 'app-pos-table-group',
+    templateUrl: 'pos-table-group.page.html',
+    styleUrls: ['pos-table-group.page.scss'],
+    standalone: false
 })
 export class POSTableGroupPage extends PageBase {
   constructor(

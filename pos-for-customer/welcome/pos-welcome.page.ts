@@ -8,9 +8,10 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 
 @Component({
-  selector: 'app-pos-welcome',
-  templateUrl: 'pos-welcome.page.html',
-  styleUrls: ['pos-welcome.page.scss'],
+    selector: 'app-pos-welcome',
+    templateUrl: 'pos-welcome.page.html',
+    styleUrls: ['pos-welcome.page.scss'],
+    standalone: false
 })
 export class POSWelcomePage extends PageBase {
   idTable = this.route.snapshot.paramMap.get('id');

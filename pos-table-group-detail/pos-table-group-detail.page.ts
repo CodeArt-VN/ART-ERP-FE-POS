@@ -8,9 +8,10 @@ import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 
 @Component({
-  selector: 'app-pos-table-group-detail',
-  templateUrl: './pos-table-group-detail.page.html',
-  styleUrls: ['./pos-table-group-detail.page.scss'],
+    selector: 'app-pos-table-group-detail',
+    templateUrl: './pos-table-group-detail.page.html',
+    styleUrls: ['./pos-table-group-detail.page.scss'],
+    standalone: false
 })
 export class POSTableGroupDetailPage extends PageBase {
   TableList = [];

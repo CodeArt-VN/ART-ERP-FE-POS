@@ -14,9 +14,10 @@ import { environment } from 'src/environments/environment';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 
 @Component({
-  selector: 'app-posforcustomer-payment-modal',
-  templateUrl: './pos-payment-modal.page.html',
-  styleUrls: ['./pos-payment-modal.page.scss'],
+    selector: 'app-posforcustomer-payment-modal',
+    templateUrl: './pos-payment-modal.page.html',
+    styleUrls: ['./pos-payment-modal.page.scss'],
+    standalone: false
 })
 export class POSForCustomerPaymentModalPage extends PageBase {
   DebtAmount = 0;

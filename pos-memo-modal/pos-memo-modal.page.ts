@@ -6,9 +6,10 @@ import { EnvService } from 'src/app/services/core/env.service';
 import { POS_MemoProvider } from 'src/app/services/static/services.service';
 
 @Component({
-  selector: 'app-pos-memo-modal',
-  templateUrl: './pos-memo-modal.page.html',
-  styleUrls: ['./pos-memo-modal.page.scss'],
+    selector: 'app-pos-memo-modal',
+    templateUrl: './pos-memo-modal.page.html',
+    styleUrls: ['./pos-memo-modal.page.scss'],
+    standalone: false
 })
 export class POSMemoModalPage extends PageBase {
   Remark;

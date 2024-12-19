@@ -12,9 +12,10 @@ import {
 import { Location } from '@angular/common';
 
 @Component({
-  selector: 'app-pos-work-order',
-  templateUrl: 'pos-work-order.page.html',
-  styleUrls: ['pos-work-order.page.scss'],
+    selector: 'app-pos-work-order',
+    templateUrl: 'pos-work-order.page.html',
+    styleUrls: ['pos-work-order.page.scss'],
+    standalone: false
 })
 export class POSWorkOrderPage extends PageBase {
   tableGroupList = [];

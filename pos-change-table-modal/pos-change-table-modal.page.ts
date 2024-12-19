@@ -11,9 +11,10 @@ import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators
 import { ApiSetting } from 'src/app/services/static/api-setting';
 
 @Component({
-  selector: 'app-pos-change-table-modal',
-  templateUrl: './pos-change-table-modal.page.html',
-  styleUrls: ['./pos-change-table-modal.page.scss'],
+    selector: 'app-pos-change-table-modal',
+    templateUrl: './pos-change-table-modal.page.html',
+    styleUrls: ['./pos-change-table-modal.page.scss'],
+    standalone: false
 })
 export class POSChangeTableModalPage extends PageBase {
   @Input() selectedOrder;

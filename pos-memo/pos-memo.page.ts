@@ -6,9 +6,10 @@ import { POS_MemoProvider } from 'src/app/services/static/services.service';
 import { Location } from '@angular/common';
 
 @Component({
-  selector: 'app-pos-memo',
-  templateUrl: 'pos-memo.page.html',
-  styleUrls: ['pos-memo.page.scss'],
+    selector: 'app-pos-memo',
+    templateUrl: 'pos-memo.page.html',
+    styleUrls: ['pos-memo.page.scss'],
+    standalone: false
 })
 export class POSMemoPage extends PageBase {
   constructor(

@@ -7,9 +7,10 @@ import { POS_MemoProvider } from 'src/app/services/static/services.service';
 import { FormGroup, FormControl } from '@angular/forms';
 
 @Component({
-  selector: 'app-pos-cancel-modal',
-  templateUrl: './pos-cancel-modal.page.html',
-  styleUrls: ['./pos-cancel-modal.page.scss'],
+    selector: 'app-pos-cancel-modal',
+    templateUrl: './pos-cancel-modal.page.html',
+    styleUrls: ['./pos-cancel-modal.page.scss'],
+    standalone: false
 })
 export class POSCancelModalPage extends PageBase {
   typeList = [];

@@ -7,9 +7,10 @@ import { POSTableDetailPage } from '../pos-table-detail/pos-table-detail.page';
 import { POSTableGroupDetailPage } from '../pos-table-group-detail/pos-table-group-detail.page';
 
 @Component({
-  selector: 'app-pos-table',
-  templateUrl: 'pos-table.page.html',
-  styleUrls: ['pos-table.page.scss'],
+    selector: 'app-pos-table',
+    templateUrl: 'pos-table.page.html',
+    styleUrls: ['pos-table.page.scss'],
+    standalone: false
 })
 export class POSTablePage extends PageBase {
   tableGroupList = [];

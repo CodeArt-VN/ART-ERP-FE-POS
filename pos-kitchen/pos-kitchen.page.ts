@@ -6,9 +6,10 @@ import { POS_KitchenProvider } from 'src/app/services/static/services.service';
 import { Location } from '@angular/common';
 
 @Component({
-  selector: 'app-pos-kitchen',
-  templateUrl: 'pos-kitchen.page.html',
-  styleUrls: ['pos-kitchen.page.scss'],
+    selector: 'app-pos-kitchen',
+    templateUrl: 'pos-kitchen.page.html',
+    styleUrls: ['pos-kitchen.page.scss'],
+    standalone: false
 })
 export class POSKitchenPage extends PageBase {
   constructor(

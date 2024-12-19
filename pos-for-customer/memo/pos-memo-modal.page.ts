@@ -8,9 +8,10 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 
 @Component({
-  selector: 'app-pos-cusotmer-memo-modal',
-  templateUrl: './pos-memo-modal.page.html',
-  styleUrls: ['./pos-memo-modal.page.scss'],
+    selector: 'app-pos-cusotmer-memo-modal',
+    templateUrl: './pos-memo-modal.page.html',
+    styleUrls: ['./pos-memo-modal.page.scss'],
+    standalone: false
 })
 export class POSCustomerMemoModalPage extends PageBase {
   Remark;

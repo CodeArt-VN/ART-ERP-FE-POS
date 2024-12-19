@@ -9,9 +9,10 @@ import { CommonService } from 'src/app/services/core/common.service';
 import QRCode from 'qrcode';
 
 @Component({
-  selector: 'app-pos-table-detail',
-  templateUrl: './pos-table-detail.page.html',
-  styleUrls: ['./pos-table-detail.page.scss'],
+    selector: 'app-pos-table-detail',
+    templateUrl: './pos-table-detail.page.html',
+    styleUrls: ['./pos-table-detail.page.scss'],
+    standalone: false
 })
 export class POSTableDetailPage extends PageBase {
   tableGroupList = [];

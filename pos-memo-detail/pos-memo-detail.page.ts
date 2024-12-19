@@ -8,9 +8,10 @@ import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 
 @Component({
-  selector: 'app-pos-memo-detail',
-  templateUrl: './pos-memo-detail.page.html',
-  styleUrls: ['./pos-memo-detail.page.scss'],
+    selector: 'app-pos-memo-detail',
+    templateUrl: './pos-memo-detail.page.html',
+    styleUrls: ['./pos-memo-detail.page.scss'],
+    standalone: false
 })
 export class POSMemoDetailPage extends PageBase {
   constructor(

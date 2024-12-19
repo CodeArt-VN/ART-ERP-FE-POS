@@ -8,9 +8,10 @@ import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 
 @Component({
-  selector: 'app-pos-kitchen-detail',
-  templateUrl: './pos-kitchen-detail.page.html',
-  styleUrls: ['./pos-kitchen-detail.page.scss'],
+    selector: 'app-pos-kitchen-detail',
+    templateUrl: './pos-kitchen-detail.page.html',
+    styleUrls: ['./pos-kitchen-detail.page.scss'],
+    standalone: false
 })
 export class POSKitchenDetailPage extends PageBase {
   IDPrinterList = [];

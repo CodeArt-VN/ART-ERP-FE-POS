@@ -7,9 +7,10 @@ import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 
 @Component({
-  selector: 'app-pos-add-contact-modal',
-  templateUrl: './pos-add-contact-modal.page.html',
-  styleUrls: ['./pos-add-contact-modal.page.scss'],
+    selector: 'app-pos-add-contact-modal',
+    templateUrl: './pos-add-contact-modal.page.html',
+    styleUrls: ['./pos-add-contact-modal.page.scss'],
+    standalone: false
 })
 export class POSAddContactModalPage extends PageBase {
   formGroup: FormGroup;

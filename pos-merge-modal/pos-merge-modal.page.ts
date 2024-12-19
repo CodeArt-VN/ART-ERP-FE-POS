@@ -11,9 +11,10 @@ import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators
 import { ApiSetting } from 'src/app/services/static/api-setting';
 
 @Component({
-  selector: 'app-pos-merge-modal',
-  templateUrl: './pos-merge-modal.page.html',
-  styleUrls: ['./pos-merge-modal.page.scss'],
+    selector: 'app-pos-merge-modal',
+    templateUrl: './pos-merge-modal.page.html',
+    styleUrls: ['./pos-merge-modal.page.scss'],
+    standalone: false
 })
 export class POSMergeModalPage extends PageBase {
   @Input() selectedOrders;

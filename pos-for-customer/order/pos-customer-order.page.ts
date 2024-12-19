@@ -13,9 +13,10 @@ import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
 import { POSForCustomerPaymentModalPage } from '../payment/pos-payment-modal.page';
 
 @Component({
-  selector: 'app-pos-customer-order',
-  templateUrl: './pos-customer-order.page.html',
-  styleUrls: ['./pos-customer-order.page.scss'],
+    selector: 'app-pos-customer-order',
+    templateUrl: './pos-customer-order.page.html',
+    styleUrls: ['./pos-customer-order.page.scss'],
+    standalone: false
 })
 export class POSCustomerOrderPage extends PageBase {
   ImagesServer = environment.posImagesServer;

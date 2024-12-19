@@ -8,9 +8,10 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 
 @Component({
-  selector: 'app-pos-invoice-modal',
-  templateUrl: './pos-invoice-modal.page.html',
-  styleUrls: ['./pos-invoice-modal.page.scss'],
+    selector: 'app-pos-invoice-modal',
+    templateUrl: './pos-invoice-modal.page.html',
+    styleUrls: ['./pos-invoice-modal.page.scss'],
+    standalone: false
 })
 export class POSInvoiceModalPage extends PageBase {
   IsShowSave = true;

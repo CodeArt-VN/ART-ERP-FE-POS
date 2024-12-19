@@ -8,9 +8,10 @@ import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 
 @Component({
-  selector: 'app-pos-terminal-detail',
-  templateUrl: './pos-terminal-detail.page.html',
-  styleUrls: ['./pos-terminal-detail.page.scss'],
+    selector: 'app-pos-terminal-detail',
+    templateUrl: './pos-terminal-detail.page.html',
+    styleUrls: ['./pos-terminal-detail.page.scss'],
+    standalone: false
 })
 export class POSTerminalDetailPage extends PageBase {
   IDPrinterList = [];

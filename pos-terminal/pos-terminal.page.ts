@@ -6,9 +6,10 @@ import { POS_TerminalProvider } from 'src/app/services/static/services.service';
 import { Location } from '@angular/common';
 
 @Component({
-  selector: 'app-pos-terminal',
-  templateUrl: 'pos-terminal.page.html',
-  styleUrls: ['pos-terminal.page.scss'],
+    selector: 'app-pos-terminal',
+    templateUrl: 'pos-terminal.page.html',
+    styleUrls: ['pos-terminal.page.scss'],
+    standalone: false
 })
 export class POSTerminalPage extends PageBase {
   constructor(
