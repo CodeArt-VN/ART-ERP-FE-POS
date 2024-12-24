@@ -34,9 +34,8 @@ import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
-
+import { printData, PrintingService } from 'src/app/services/printing.service';
 import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
-import { Capacitor } from '@capacitor/core';
 
 @Component({
     selector: 'app-pos-order-detail',
@@ -89,6 +88,9 @@ export class POSOrderDetailPage extends PageBase {
     public sysConfigProvider: SYS_ConfigProvider,
     public printerProvider: SYS_PrinterProvider,
     public printerTerminalProvider: POS_TerminalProvider,
+    public printingService:  PrintingService,
+    public scanner: BarcodeScannerService,
+
     public env: EnvService,
     public navCtrl: NavController,
     public route: ActivatedRoute,
@@ -1018,7 +1020,7 @@ export class POSOrderDetailPage extends PageBase {
       if (this.submitAttempt) return;
       this.submitAttempt = true;
       let times = 2; // Số lần in phiếu; Nếu là 2, in 2 lần;
-
+     // this.qzPrint('bill')
       this.printData.undeliveredItems = [];
 
       this.item.OrderLines.forEach((e) => {
@@ -1041,20 +1043,24 @@ export class POSOrderDetailPage extends PageBase {
 
       const newKitchenList = [
         ...new Map(
-          this.printData.undeliveredItems.map((item: any) => [item['_item']['Kitchen']['Name'], item._item.Kitchen]),
+          this.printData.undeliveredItems.map((item: any) => [item._item?.Kitchen?.Name, item._item?.Kitchen]),
         ).values(),
       ];
       this.kitchenList = newKitchenList;
       for (let index = 0; index < newKitchenList.length; index++) {
         await this.setKitchenID(newKitchenList[index].Id);
 
-        let object: any = document.getElementById('bill');
-
+         let object: any = document.getElementById('bill');
+    //    this.qzPrint('bill')
         let printerInfo = newKitchenList[index]['Printer'];
-        let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
-        if (index + 1 == newKitchenList.length && result) {
-          resolve(result);
-        }
+        let printing = this.qzPrint('bill',printerInfo.Code);
+        if (index + 1 == newKitchenList.length && printing) {
+            resolve(printing);
+          }
+        // let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
+        // if (index + 1 == newKitchenList.length && result) {
+        //   resolve(result);
+        // }
       }
     });
   }
@@ -1329,8 +1335,7 @@ export class POSOrderDetailPage extends PageBase {
         this.printerCodeList.push(data[0]);
         this.dataList.push(data[1]);
         if (this.printerCodeList.length == printerListLength && this.dataList.length == printerListLength) {
-          this.QZsetCertificate().then(() => {
-            this.QZsignMessage().then(async () => {
+          this.printingService.ensureCertificate().then(async () => {
               await this.sendQZTray(printerHost, this.printerCodeList, this.dataList, receipt, times, sendEachItem)
                 .then((result) => {
                   resolve(result);
@@ -1338,13 +1343,33 @@ export class POSOrderDetailPage extends PageBase {
                 .catch((err) => {
                   this.submitAttempt = false;
                 });
-            });
           });
         }
       });
     });
   }
 
+  qzPrint(id,printer){
+    return new Promise((resolve,reject)=>{
+      let content = document.getElementById(id);
+      //let ele = this.printingService.applyAllStyles(content);
+      let data : printData =  {
+        content: content.outerHTML,
+        type: 'html',
+        options: {
+          printer: printer,
+          // tray: '1',
+          jobName:`PrintJob_${new Date().toISOString()}`,
+          copies: 1,
+          //orientation: 'landscape',
+          duplex : 'duplex',
+        //  autoStyle:content
+      }}
+      this.printingService.print(data)
+      resolve(true);
+    })
+ 
+  }
   ////PRIVATE METHODS
   private UpdatePrice() {
     this.dealList.forEach((d) => {
@@ -1661,6 +1686,10 @@ export class POSOrderDetailPage extends PageBase {
           reject(err);
         });
     });
+  }
+
+  patchOrderLines(){
+    
   }
 
   private addOrderLine(line) {
@@ -2390,149 +2419,54 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
       });
   }
 
-  scanning = false;
-  scanQRCode() {
-    // if (!Capacitor.isPluginAvailable('BarcodeScanner') || Capacitor.platform == 'web') {
-    //   this.env.showMessage('This function is only available on phone', 'warning');
-    //   return;
-    // }
-    // BarcodeScanner.prepare().then(() => {
-    //   BarcodeScanner.checkPermission({ force: true })
-    //     .then((status) => {
-    //       if (status.granted) {
-    //         this.scanning = true;
-    //         document.querySelector('ion-app').style.backgroundColor = 'transparent';
-    //         BarcodeScanner.startScan().then((result) => {
-    //           console.log(result);
-    //           let close: any = document.querySelector('#closeCamera');
+ async scanQRCode() {
+    let code = await this.scanner.scan();
+    if (code.indexOf('VCARD;') != -1) {
+      var tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
 
-    //           if (!result.hasContent) {
-    //             close.click();
-    //           }
+      var StaffCode = tempString.split(';')[0];
+      var QRGenTime = tempString.split(';')[1];
 
-    //           if (result.content.indexOf('VCARD;') != -1) {
-    //             var tempString = result.content.substring(result.content.indexOf('VCARD;') + 6, result.content.length);
+      let toDay = new Date();
+      let fromTime = new Date(toDay);
+      let toTime = new Date(toDay);
+      fromTime.setMinutes(toDay.getMinutes() - 1);
+      toTime.setMinutes(toDay.getMinutes() + 1);
 
-    //             var StaffCode = tempString.split(';')[0];
-    //             var QRGenTime = tempString.split(';')[1];
+      let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+      let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
 
-    //             let toDay = new Date();
-    //             let fromTime = new Date(toDay);
-    //             let toTime = new Date(toDay);
-    //             fromTime.setMinutes(toDay.getMinutes() - 1);
-    //             toTime.setMinutes(toDay.getMinutes() + 1);
+      if (currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo) {
+          this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
+            let address = resp['data'][0];
+            address.IDAddress = address['Addresses'][0]['Id'];
+            address.Address = address['Addresses'][0];
 
-    //             let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
-    //             let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+            this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
 
-    //             if (currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo) {
-    //               setTimeout(() => {
-    //                 if (close) {
-    //                   close.click();
-    //                 }
-    //                 this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
-    //                   let address = resp['data'][0];
-    //                   address.IDAddress = address['Addresses'][0]['Id'];
-    //                   address.Address = address['Addresses'][0];
-
-    //                   this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
-
-    //                   this.contactListSelected.push(address);
-    //                   this.changedIDAddress(address);
-    //                   this.contactSearch();
-    //                   this.cdr.detectChanges();
-    //                   this.saveChange();
-    //                 });
-    //               }, 0);
-    //             } else {
-    //               this.env.showMessage(
-    //                 'Mã đã hết hạn, vui lòng lấy lại mã nhân viên mới! Thời gian tạo mã QR: {{value}}',
-    //                 'danger',
-    //                 QRGenTime,
-    //               );
-    //               setTimeout(() => this.scanQRCode(), 0);
-    //             }
-    //           } else {
-    //             this.env.showMessage(
-    //               'You just scanned: {{value}}, please scanned QR code on paid delivery notes',
-    //               '',
-    //               result.content,
-    //             );
-    //             setTimeout(() => this.scanQRCode(), 0);
-    //           }
-    //         });
-    //       } else {
-    //         this.alertCtrl
-    //           .create({
-    //             header: 'Quét QR code',
-    //             //subHeader: '---',
-    //             message: 'Bạn chưa cho phép sử dụng camera, Xin vui lòng cấp quyền cho ứng dụng.',
-    //             buttons: [
-    //               {
-    //                 text: 'Không',
-    //                 role: 'cancel',
-    //                 handler: () => {},
-    //               },
-    //               {
-    //                 text: 'Đồng ý',
-    //                 cssClass: 'danger-btn',
-    //                 handler: () => {
-    //                   BarcodeScanner.openAppSettings();
-    //                 },
-    //               },
-    //             ],
-    //           })
-    //           .then((alert) => {
-    //             alert.present();
-    //           });
-    //       }
-    //     })
-    //     .catch((e: any) => console.log('Error is', e));
-    // });
-  }
-
-  closeCamera() {
-    // if (!Capacitor.isPluginAvailable('BarcodeScanner') || Capacitor.platform == 'web') {
-    //   return;
-    // }
-    // this.scanning = false;
-    // this.lighting = false;
-    // this.useFrontCamera = false;
-    // document.querySelector('ion-app').style.backgroundColor = '';
-    // BarcodeScanner.showBackground();
-    // BarcodeScanner.stopScan();
-  }
-
-  lighting = false;
-  lightCamera() {
-    // if (this.lighting) {
-    //     this.qrScanner.disableLight().then(() => {
-    //         this.lighting = false;
-    //     });
-    // }
-    // else {
-    //     this.qrScanner.enableLight().then(() => {
-    //         this.lighting = true;
-    //     });
-    // }
-  }
-
-  useFrontCamera = false;
-  reversalCamera() {
-    // if (this.useFrontCamera) {
-    //     this.qrScanner.useBackCamera().then(() => {
-    //         this.useFrontCamera = false;
-    //     });
-    // }
-    // else {
-    //     this.qrScanner.useFrontCamera().then(() => {
-    //         this.useFrontCamera = true;
-    //     });
-    // }
-  }
-
-  ionViewWillLeave() {
-    this.closeCamera();
+            this.contactListSelected.push(address);
+            this.changedIDAddress(address);
+            this.contactSearch();
+            this.cdr.detectChanges();
+            this.saveChange();
+          });
+        }
+      else {
+        this.env.showMessage(
+          'Mã đã hết hạn, vui lòng lấy lại mã nhân viên mới! Thời gian tạo mã QR: {{value}}',
+          'danger',
+          QRGenTime,
+        );
+        setTimeout(() => this.scanQRCode(), 0);
+      }
+    }
+    else {
+      this.env.showPrompt('Please scan valid QR code', 'Invalid QR code', null, 'Retry', 'Cancel')
+          .then(() => {
+            setTimeout(() => this.scanQRCode(), 0);
+          }).catch(() => {});
+        return;
+    }
   }
 }
 
