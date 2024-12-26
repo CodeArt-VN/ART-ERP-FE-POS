@@ -1142,7 +1142,7 @@ export class POSOrderDetailPage extends PageBase {
     });
   }
 
-  async sendPrint(Status?, receipt = true) {
+  async sendPrint(Status?, receipt = true,sendEachItem = false) {
     return new Promise(async (resolve, reject) => {
       this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
 
@@ -1181,6 +1181,7 @@ export class POSOrderDetailPage extends PageBase {
         let printerInfo = newTerminalList[index]['Printer'];
         let printing = this.qzPrint('bill',printerInfo.Code);
         if (printing) {
+          this.QZCheckData(receipt,!receipt,sendEachItem);
           resolve(true);
         }
       }
@@ -2139,8 +2140,8 @@ export class POSOrderDetailPage extends PageBase {
           }
         });
 
-        this.setOrderValue({ Status: 'Scheduled', OrderLines: undelivered }, true, true);
         this.submitAttempt = false;
+        this.setOrderValue({ Status: 'Scheduled', OrderLines: undelivered }, true, true);
         resolve(true);
       }
 
