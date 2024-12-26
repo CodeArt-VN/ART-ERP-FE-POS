@@ -1050,12 +1050,12 @@ export class POSOrderDetailPage extends PageBase {
       for (let index = 0; index < newKitchenList.length; index++) {
         await this.setKitchenID(newKitchenList[index].Id);
 
-         let object: any = document.getElementById('bill');
     //    this.qzPrint('bill')
         let printerInfo = newKitchenList[index]['Printer'];
         let printing = this.qzPrint('bill',printerInfo.Code);
         if (index + 1 == newKitchenList.length && printing) {
             resolve(printing);
+            this.QZCheckData(false, true, false);
           }
         // let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
         // if (index + 1 == newKitchenList.length && result) {
@@ -1122,14 +1122,12 @@ export class POSOrderDetailPage extends PageBase {
             let kitchenPrinter = newKitchenList2.find((p) => p.Id == ItemsForKitchen[index]._IDKitchen);
 
             await this.setKitchenID(kitchenPrinter.Id);
-
             let LineID = ItemsForKitchen[index].Id;
-            let object: any = document.getElementById('bill-item-each-' + LineID);
-
             let printerInfo = kitchenPrinter['Printer'];
-            let result = this.setupPrinting(printerInfo, object, false, times, true, ItemsForKitchen.length);
-            if (index + 1 == ItemsForKitchen.length && result) {
-              resolve(result);
+            let printing = this.qzPrint('bill-item-each-' + LineID,printerInfo.Code);
+            if (index + 1 == ItemsForKitchen.length && printing) {
+              resolve(printing);
+              this.QZCheckData(false, true, true)
             }
           }
         }
@@ -1144,7 +1142,7 @@ export class POSOrderDetailPage extends PageBase {
     });
   }
 
-  async sendPrint(Status?, receipt = true) {
+  async sendPrint(Status?, receipt = true,sendEachItem = false) {
     return new Promise(async (resolve, reject) => {
       this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
 
@@ -1180,12 +1178,10 @@ export class POSOrderDetailPage extends PageBase {
 
         await this.setKitchenID('all');
 
-        let object: any = document.getElementById('bill'); //Xem toàn bộ bill
-
         let printerInfo = newTerminalList[index]['Printer'];
-
-        let result = this.setupPrinting(printerInfo, object, receipt, times, true);
-        if (result) {
+        let printing = this.qzPrint('bill',printerInfo.Code);
+        if (printing) {
+          this.QZCheckData(receipt,!receipt,sendEachItem);
           resolve(true);
         }
       }
@@ -1300,54 +1296,6 @@ export class POSOrderDetailPage extends PageBase {
 
   printerCodeList = [];
   dataList = [];
-  setupPrinting(printer, object, receipt, times, sendEachItem = false, printerListLength = 1) {
-    return new Promise(async (resolve, reject) => {
-      let printerInfo = printer;
-      let printerCode = printerInfo.Code;
-      let printerHost = printerInfo.Host;
-
-      let data = [
-        {
-          type: 'pixel',
-          format: 'html',
-          flavor: 'plain', // 'file' or 'plain' if the data is raw HTML
-          data:
-            `
-            <html>
-                <head>
-                    <style>
-                    ` +
-            this.cssStyling +
-            `
-                    </style>
-                </head>
-                <body>
-                ` +
-            object.outerHTML +
-            `
-                </body>
-            </html>
-            `,
-        },
-      ];
-
-      Promise.all([printerCode, data]).then((data) => {
-        this.printerCodeList.push(data[0]);
-        this.dataList.push(data[1]);
-        if (this.printerCodeList.length == printerListLength && this.dataList.length == printerListLength) {
-          this.printingService.ensureCertificate().then(async () => {
-              await this.sendQZTray(printerHost, this.printerCodeList, this.dataList, receipt, times, sendEachItem)
-                .then((result) => {
-                  resolve(result);
-                })
-                .catch((err) => {
-                  this.submitAttempt = false;
-                });
-          });
-        }
-      });
-    });
-  }
 
   qzPrint(id,printer){
     return new Promise((resolve,reject)=>{
@@ -2176,195 +2124,6 @@ export class POSOrderDetailPage extends PageBase {
     });
   }
 
-  async sendQZTray(printerHost, printerCodeList, dataList, receipt, times, sendEachItem) {
-    return new Promise(async (resolve, reject) => {
-      //Flow:
-      // Open Connection >>
-      // Get Printer List from DB >>
-      // Check printer match ? (create printer config) : (create PDF config) >>
-      // QZ Printing >>
-      // Update item Quantity >>
-      // Save Order >>
-      // Close Connection >> Done.
-
-      let printInfo = {
-        printerHost: printerHost,
-        printerCodeList: printerCodeList,
-        dataList: dataList,
-        receipt: receipt,
-        times: times,
-        sendEachItem: sendEachItem,
-      };
-
-      let actualPrinters = [];
-      let actualDatas = [];
-
-      let ConnectOption = {
-        // host: '192.168.1.97', //<< Use for test
-        host: printerHost,
-        keepAlive: 60,
-        retries: 0,
-      };
-
-      let checkCon = qz.websocket.isActive();
-      // if (checkCon) {
-      //     qz.websocket.disconnect();
-      // }
-      await this.QZConnect(ConnectOption, printInfo).then(async () => {
-        if (qz.websocket.isActive()) {
-          if (printerCodeList.length != 0) {
-            printerCodeList.forEach((p) => {
-              let config = qz.configs.create(p);
-              for (let idx = 0; idx < times; idx++) {
-                actualPrinters.push(config);
-              }
-            });
-            dataList.forEach((d) => {
-              for (let idx = 0; idx < times; idx++) {
-                actualDatas.push(d);
-              }
-            });
-          } else {
-            this.env.showMessage("No Printers Available, Please Check Printers' IP  / Printers' Power", 'warning');
-            this.submitAttempt = false;
-          }
-
-          if (actualPrinters.length != 0 && actualDatas.length != 0) {
-            await this.QZActualPrinting(actualPrinters, actualDatas, ConnectOption, printInfo).then(
-              async (result: any) => {
-                if (result) {
-                  this.submitAttempt = false;
-                  await this.QZCheckData(receipt, !receipt, sendEachItem).then((result) => {
-                    resolve(result);
-                    if (this.item.Status == 'Done' || this.item.Status == 'Cancelled') {
-                      this.nav('/pos-order', 'back');
-                    }
-                  });
-                }
-              },
-            );
-          }
-        }
-      });
-    });
-  }
-
-  async QZsetCertificate() {
-    /// Authentication setup ///
-    qz.security.setCertificatePromise(function (resolve, reject) {
-      resolve(
-        `-----BEGIN CERTIFICATE-----
-MIIDyjCCArKgAwIBAgIUNyDQWpqLjSk0Gmf3SLg67MuWdkkwDQYJKoZIhvcNAQEL
-BQAwazEWMBQGA1UEAwwNaW5ob2xkaW5ncy52bjELMAkGA1UEBhMCVk4xDDAKBgNV
-BAgMA0hDTTEMMAoGA1UEBwwDSENNMRMwEQYDVQQKDApJbmhvbGRpbmdzMRMwEQYD
-VQQLDApJbmhvbGRpbmdzMB4XDTIzMDkyNjA0MTYxM1oXDTMzMDkyMzA0MTYxM1ow
-azEWMBQGA1UEAwwNaW5ob2xkaW5ncy52bjELMAkGA1UEBhMCVk4xDDAKBgNVBAgM
-A0hDTTEMMAoGA1UEBwwDSENNMRMwEQYDVQQKDApJbmhvbGRpbmdzMRMwEQYDVQQL
-DApJbmhvbGRpbmdzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoFj3
-TUVwCHLXQ6Yux5YfJeXeDvuvq+agqXhJv7C31WLz5on6nf86Dyh+l5rPmNe1Xg1s
-8jZlmW8a+BZWZwEoao+XINa/KjBzHuVTBU8PDMioFcHeJxomW7kuAAaCXVG0FrrM
-aQE3zialGN1igdPscC0RHo8AcwJV4k+KnoQgbIatUFl/fFFD1LL5t7lTgO/u/uLS
-HxOBBqTWs7Pfti3o/nm7JzyZGZcGSIRt3+MEh0RgJDyxMSb6bXcSxmEAza7hDCrG
-grvpcKhF/NQKjKeP3L1OLIDZONMifkQLIq8zvZ9XVPhWIfmZLu81aTCwQeLlvNEu
-pWh0QO9mihhmUEudOwIDAQABo2YwZDAdBgNVHQ4EFgQUURovU+z5QvkVTkjZxgSY
-pnjO7xEwHwYDVR0jBBgwFoAUURovU+z5QvkVTkjZxgSYpnjO7xEwDgYDVR0PAQH/
-BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwDQYJKoZIhvcNAQELBQADggEBAHoK
-6OvwM2gQndUxm2nqNOMsjKFdu0HyLg/Wc75rAbc7Ga7uVACqypWHgjvtjcOAqrUt
-hslwf9Gib6h3a+o0Ywx3lLQbUuXpX1cKAqSLbkILw4SW2tOsTWOwkYDQ9ztqu1Tr
-0hpTOLWVe+RHbrx5P81noSfGprqQ6YTxEqC4tgclQt/MT8FFmZpHoTruEyoIU+Xv
-p2MLbl23oY2mUUrc0/+JMKDu4X3pVTYGx/Nb78W9vZeAj1RhMq3aFGr2ervESx9b
-+aNn0Q3uhefUWOukJENQeMo/7so+vqD3V6WIJTEmb9Xk721Yz7fHISlajgBPjL67
-5ULUsV0wtlXgroVVEL8=
------END CERTIFICATE-----`,
-      );
-    });
-  }
-
-  async QZsignMessage() {
-    var privateKey = `-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCgWPdNRXAIctdD
-pi7Hlh8l5d4O+6+r5qCpeEm/sLfVYvPmifqd/zoPKH6Xms+Y17VeDWzyNmWZbxr4
-FlZnAShqj5cg1r8qMHMe5VMFTw8MyKgVwd4nGiZbuS4ABoJdUbQWusxpATfOJqUY
-3WKB0+xwLREejwBzAlXiT4qehCBshq1QWX98UUPUsvm3uVOA7+7+4tIfE4EGpNaz
-s9+2Lej+ebsnPJkZlwZIhG3f4wSHRGAkPLExJvptdxLGYQDNruEMKsaCu+lwqEX8
-1AqMp4/cvU4sgNk40yJ+RAsirzO9n1dU+FYh+Zku7zVpMLBB4uW80S6laHRA72aK
-GGZQS507AgMBAAECggEANSHFsGEV4nbLRatHTPM9lv04O5bCex+MlRs6tL4F7DtB
-vl5yIPB1eJheejXeHDM98dBZDVlhCRp7wUEFmFQV5Fl4JnWCGqS7QL2UaOntfrru
-l2cKCcLsevA9gdymTe3I0s9K9HBm4XSEuFyDS6nBatpEFfAkofdgJgFdWXFGnS7s
-8RwGI6jF/zBB+BAwyfLJvKLf7gLz4p6FHlnK/a6T7cWSH3nqo95/WZGj5FRdk2n8
-VghKGYmGkdZKLK6jRngpeJwC3c6gcSa/dCahCYuYyxnFmiZawg90mAKjwaIv7kwJ
-i6Oj+tPZj6gWSLi75hF7OO4KDDOoRqfQu3emVI9jAQKBgQDLx/U1yYyckbngPuP9
-G/kFb6tFi5l36yuIJudgRTQD/c5gKnuL6gZ8ma0fEXLzEvMlDjCzBsMSZxuw6pe3
-2nujy5GdvppsOXDrNT/v4OCuWFlu9R/MHJ8RfCQOkS/zXX1hmuLQfW5Pde0WPYF8
-+ktIjB2hFBe61zAPdbV0sAn1GwKBgQDJb8QRHfZhqZnhr1Fv7T67WupyBJDJ5vaB
-Fsjl9e6zNCTfemtlA1IRWEEaxan/idMkvB3QyCAY7mR7nekRP3SAV/giSNoqXlEL
-51X89jnQss6GwYqVVWwmC5yqO+Or4Z5OqdlbmWrvhceIjPmaLyZtxZlxD2KvM1SX
-H5rM4/MaYQKBgQComFWiW47vFo3PHpknlpYPTlVII3gkQ7fvXCh/eKHRT5IH8/3l
-Qwh82/PkSV5uBtaNaNEXvNd1iULauyws2yEB4fEmrkQ6l8d5gcPVJZseA1BywXC+
-QUvFfoyiVLJ0SXvrXeabkbrLGQi/JsHT8YyJiAsXcnUzisdjcwJeeSqz0wKBgCHm
-KjPLPAxhc2EUlPrmDRmQikXX2NnxgWhmAjcY9Su5Sb9GJc6hCW2b0ZEE1MAJXLwg
-4E+jbitj6wsWnwNlD2EN7NcwNW7N4ovDSahBc6dYgAMTjRPmhUW9zIalf4IMfQy1
-7rtIjUNz2wly2AqHhssQZuss8KmVVNX93po+fknhAoGAVXtryIo3lOUfzXsjUzHZ
-7RBxXLYZ5+hxpyivrDI11eFolaWJnp+bOWa2c4dOlb1NkTMzIPIFQS7FCMU1UKkX
-eXh8jdv+XZW7tXqxNxCFxKzfxMn9SaA14D4tKFAZzOG8USqInmZ7xJHXI2oGt9ob
-Zb2Mby/Ky+iBPuRtLuWciAI=
------END PRIVATE KEY-----`;
-
-    qz.security.setSignatureAlgorithm('SHA512'); // Since 2.1
-    qz.security.setSignaturePromise(function (toSign) {
-      return function (resolve, reject) {
-        try {
-          var pk = KEYUTIL.getKey(privateKey);
-          var sig = new KJUR.crypto.Signature({
-            alg: 'SHA512withRSA',
-          }); // Use "SHA1withRSA" for QZ Tray 2.0 and older
-          sig.init(pk);
-          sig.updateString(toSign);
-          var hex = sig.sign();
-          // console.log("DEBUG: \n\n" + stob64(hextorstr(hex)));
-          resolve(stob64(hextorstr(hex)));
-        } catch (err) {
-          console.error(err);
-          reject(err);
-        }
-      };
-    });
-  }
-
-  async QZConnect(options, printInfo) {
-    let checkCon = qz.websocket.isActive();
-    if (!checkCon) {
-      setTimeout(() => {
-        let checkCon = qz.websocket.isActive();
-        if (!checkCon) {
-          this.env.showMessage('Kết nối không được đến server máy in', 'danger', null, null, true);
-          this.QZCloseConnection();
-        }
-      }, 3000);
-      return qz.websocket
-        .connect(options)
-        .then()
-        .catch((err) => {
-          this.env.showMessage('Kết nối không được đến server máy in', 'danger', null, null, true);
-          this.QZCloseConnection();
-        });
-    }
-  }
-
-  async QZActualPrinting(actualPrinters, actualDatas, options, printInfo) {
-    return new Promise((resolve, reject) => {
-      qz.print(actualPrinters, actualDatas, true)
-        .then(() => {
-          resolve(true);
-        })
-        .catch((err) => {
-          err.forEach((er) => {
-            this.env.showMessage('Không tìm thấy máy in. ' + er.message, 'danger', null, null, true);
-          });
-          this.QZCloseConnection();
-        });
-    });
-  }
 
   async QZCheckData(receipt = true, saveData = true, sendEachItem = false) {
     return new Promise(async (resolve, reject) => {
@@ -2381,8 +2140,8 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
           }
         });
 
-        this.setOrderValue({ Status: 'Scheduled', OrderLines: undelivered }, true, true);
         this.submitAttempt = false;
+        this.setOrderValue({ Status: 'Scheduled', OrderLines: undelivered }, true, true);
         resolve(true);
       }
 
@@ -2393,14 +2152,6 @@ Zb2Mby/Ky+iBPuRtLuWciAI=
       this.dataList = [];
       resolve(true);
     });
-  }
-
-  async QZCloseConnection() {
-    let checkCon = qz.websocket.isActive();
-    this.submitAttempt = false;
-    if (checkCon) {
-      return qz.websocket.disconnect();
-    }
   }
 
   applyDiscount() {
