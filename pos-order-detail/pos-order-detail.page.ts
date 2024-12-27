@@ -1055,13 +1055,13 @@ export class POSOrderDetailPage extends PageBase {
         let printing = this.qzPrint('bill',printerInfo.Code);
         if (index + 1 == newKitchenList.length && printing) {
             resolve(printing);
-            this.QZCheckData(false, true, false);
           }
-        // let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
-        // if (index + 1 == newKitchenList.length && result) {
-        //   resolve(result);
-        // }
-      }
+          // let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
+          // if (index + 1 == newKitchenList.length && result) {
+            //   resolve(result);
+            // }
+          }
+          this.QZCheckData(false, true, false);
     });
   }
 
@@ -1127,9 +1127,9 @@ export class POSOrderDetailPage extends PageBase {
             let printing = this.qzPrint('bill-item-each-' + LineID,printerInfo.Code);
             if (index + 1 == ItemsForKitchen.length && printing) {
               resolve(printing);
-              this.QZCheckData(false, true, true)
             }
           }
+          this.QZCheckData(false, true, true)
         }
       }
       if (!this.haveFoodItems) {

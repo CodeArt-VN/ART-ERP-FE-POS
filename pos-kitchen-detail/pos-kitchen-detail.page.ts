@@ -3,7 +3,7 @@ import { NavController, LoadingController, AlertController, PopoverController } 
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { POS_KitchenProvider } from 'src/app/services/static/services.service';
+import { POS_KitchenProvider, SYS_PrinterProvider } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 
@@ -23,6 +23,7 @@ export class POSKitchenDetailPage extends PageBase {
     public route: ActivatedRoute,
     public alertCtrl: AlertController,
     public formBuilder: FormBuilder,
+    public printerProvider: SYS_PrinterProvider,
     public cdr: ChangeDetectorRef,
     public loadingController: LoadingController,
     public commonService: CommonService,
@@ -39,12 +40,14 @@ export class POSKitchenDetailPage extends PageBase {
       IDPrinter: [''],
     });
   }
-  // preLoadData(event?: any): void {
-  //     // this.printerProvider.read().then(resp=>{
-  //     //     this.IDPrinterList = resp['data'];
-  //     //     super.preLoadData(event);
-  //     // });
-  // }
+  preLoadData(event?: any): void {
+    this.printerProvider.read().then(resp=>{
+      this.IDPrinterList = resp['data'];
+      super.preLoadData(event);
+  });
+    super.preLoadData(event);
+    
+  }
 
   segmentView = 's1';
   segmentChanged(ev: any) {
