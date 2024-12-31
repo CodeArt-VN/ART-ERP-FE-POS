@@ -264,16 +264,19 @@ export class POSOrderDetailPage extends PageBase {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
       this.env.showMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning', value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Yêu cầu phục vụ',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: value.Id,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: value.IDSaleOrder,
+        Type:'Support',
+        Name: 'Yêu cầu phục vụ',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+        Watched: false,
+      };
+
+      this.setNotifications(notification,true);
     }
   }
 
@@ -284,16 +287,19 @@ export class POSOrderDetailPage extends PageBase {
       this.env.showMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning', value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Yêu cầu tính tiền',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: value.Id,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: value.IDSaleOrder,
+        Type:'Support',
+        Name: 'Yêu cầu tính tiền',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+        Watched: false,
+      };
+
+      this.setNotifications(notification,true);
     }
   }
 
@@ -440,7 +446,7 @@ export class POSOrderDetailPage extends PageBase {
       .toPromise()
       .then((results: any) => {
         if (results) {
-          this.setNotifications(results);
+          this.setNotifiOrder(results);
         }
       })
       .catch((err) => {
@@ -450,15 +456,68 @@ export class POSOrderDetailPage extends PageBase {
       });
   }
 
-  setNotifications(items) {
-    if (items.length > 0) {
-      items.forEach((o) => {
-        let message = 'Bàn ' + o.Tables[0]?.TableName + ' có ' + o.NewOrderLineCount + ' món chưa gửi bếp';
-        let url = 'pos-order/' + o.Id + '/' + o.Tables[0].IDTable;
-        this.setStorageNotification(null, o.IDBranch, o.Id, 'Order', 'Đơn hàng', 'pos-order', message, url);
-      });
+  async setNotifiOrder(items){
+
+    for (let item of items) {
+      let url = 'pos-order/' + item.Id + '/' + item.Tables[0].IDTable;
+      let message = 'Bàn ' + item.Tables[0]?.TableName + ' có ' + item.NewOrderLineCount + ' món chưa gửi bếp';
+
+      let notification = {
+        Id: item.Id,
+        IDBranch: item.IDBranch,
+        IDSaleOrder: item.IDSaleOrder,
+        Type:'Order',
+        Name:'Đơn hàng',
+        Code: 'pos-order',
+        Message: message, 
+        Url: url,
+        Watched: false,
+      };
+     await this.setNotifications(notification)
     }
   }
+
+  async setNotifications(item,lasted = false) {
+    if (
+      this.notifications.some(
+        (d) =>
+          d.Id == item.Id &&
+          d.IDBranch == item.IDBranch &&
+          d.IDSaleOrder == item.IDSaleOrder &&
+          d.Type == item.Type &&
+          d.Name == item.Name &&
+          d.Code == item.Code &&
+          d.Message ==item.Message &&
+          d.Url == item.Url &&
+          !d.Watched
+      )
+    ){
+      if(lasted){
+        let index =  this.notifications.findIndex((d) =>
+          d.Id == item.Id &&
+          d.IDBranch == item.IDBranch &&
+          d.IDSaleOrder == item.IDSaleOrder &&
+          d.Type == item.Type &&
+          d.Name == item.Name &&
+          d.Code == item.Code &&
+          d.Message == item.Message &&
+          d.Url ==item.Url &&
+          !d.Watched)
+        if(index != -1){
+          this.notifications.splice(index, 1);
+          this.notifications.unshift(item);
+          await this.env.setStorage('Notifications', this.notifications);
+        } 
+      } 
+    }
+      else {
+        this.notifications.unshift(item)
+        await this.env.setStorage('Notifications', this.notifications);
+      }
+  
+
+}
+
   async setStorageNotification(Id, IDBranch, IDSaleOrder, Type, Name, Code, Message, Url) {
     let notification = {
       Id: Id,
@@ -478,6 +537,11 @@ export class POSOrderDetailPage extends PageBase {
         return [];
       }
     });
+    if(notifications.some(d=> d.Id ==notification.Id && d.IDBranch == notification.IDBranch &&
+      d.IDSaleOrder == notification.IDSaleOrder && d.Type == notification.Type && d.Name == notification.Name && d.Code == notification.Code && d.Message == notification.Message && d.Url == notification.Url
+    )){
+      return;
+    }
     notifications.unshift(notification);
     this.env.setStorage('Notifications', notifications);
     this.notifications.unshift(notification);
@@ -783,7 +847,6 @@ export class POSOrderDetailPage extends PageBase {
 
       if (data.SetDone) {
         changed.Status = 'Done';
-        changed.IDStatus = 114;
       }
 
       this.setOrderValue(changed, true);
@@ -1793,7 +1856,7 @@ export class POSOrderDetailPage extends PageBase {
 
   async saveChange() {
     let submitItem = this.getDirtyValues(this.formGroup);
-    this.saveChange2();
+    return this.saveChange2();
   }
 
   savedChange(savedItem?: any, form?: FormGroup<any>): void {
@@ -2054,7 +2117,6 @@ export class POSOrderDetailPage extends PageBase {
           });
           changed.OrderLines = this.item.OrderLines;
           changed.Status = 'Done';
-          changed.IDStatus = 114;
           this.setOrderValue(changed, true, true);
         });
     } else if (this.item.Debt > 0) {
@@ -2069,7 +2131,6 @@ export class POSOrderDetailPage extends PageBase {
           });
           changed.OrderLines = this.item.OrderLines;
           changed.Status = 'Done';
-          changed.IDStatus = 114;
           this.setOrderValue(changed, true, true);
         })
         .catch((_) => {});
@@ -2081,7 +2142,6 @@ export class POSOrderDetailPage extends PageBase {
       });
       changed.OrderLines = this.item.OrderLines;
       changed.Status = 'Done';
-      changed.IDStatus = 114;
       this.setOrderValue(changed, true, true);
     }
   }

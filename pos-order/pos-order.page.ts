@@ -106,16 +106,17 @@ export class POSOrderPage extends PageBase {
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + value.IDSaleOrder + '/' + value.IDTable;
 
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        value.IDSaleOrder,
-        'Payment',
-        'Thanh toán',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: value.IDSaleOrder,
+        Type:'Payment',
+        Name: 'Thanh toán',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
     }
   }
   private notifyOrder(data) {
@@ -125,7 +126,17 @@ export class POSOrderPage extends PageBase {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' Gọi món';
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-      this.setStorageNotification(null, value.IDBranch, data.id, 'Order', 'Đơn hàng', 'pos-order', message, url);
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Order',
+        Name: 'Đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
       this.refresh();
     }
   }
@@ -138,16 +149,17 @@ export class POSOrderPage extends PageBase {
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Yêu cầu phục vụ',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name:'Yêu cầu phục vụ',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
       this.refresh();
     }
   }
@@ -160,16 +172,17 @@ export class POSOrderPage extends PageBase {
       this.env.showMessage(message, 'warning');
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Yêu cầu tính tiền',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name:'Yêu cầu tính tiền',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
       this.refresh();
     }
   }
@@ -182,7 +195,17 @@ export class POSOrderPage extends PageBase {
       this.env.showMessage("Nhân viên đã khóa đơn bàn {{value}}", 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Khóa đơn hàng', 'pos-order', message, url);
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name:'Khóa đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
       this.refresh();
     }
   }
@@ -194,7 +217,17 @@ export class POSOrderPage extends PageBase {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' đã khóa đơn';
       this.env.showMessage("Khách bàn {{value}} đã khóa đơn", 'warning',value.Tables[0].TableName );
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-      this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Khóa đơn hàng', 'pos-order', message, url);
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name:'Khóa đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
       this.refresh();
     }
   }
@@ -206,16 +239,17 @@ export class POSOrderPage extends PageBase {
       let message = 'Nhân viên đã mở đơn bàn ' + value.Tables[0].TableName;
       this.env.showMessage("Nhân viên đã mở đơn bàn {{value}}", 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Mở khóa đơn hàng',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name: 'Mở khóa đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
       this.refresh();
     }
   }
@@ -228,16 +262,18 @@ export class POSOrderPage extends PageBase {
       this.env.showMessage('Khách bàn {{value}} đã mở đơn', 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Mở khóa đơn hàng',
-        'pos-order',
-        message,
-        url,
-      );
+        
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name: 'Mở khóa đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
       this.refresh();
     }
   }
@@ -250,7 +286,19 @@ export class POSOrderPage extends PageBase {
       this.env.showMessage('Nhân viên đã chia đơn bàn {{value}}', 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Chia đơn hàng', 'pos-order', message, url);
+      
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name: 'Chia đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
+
       this.refresh();
     }
   }
@@ -265,7 +313,19 @@ export class POSOrderPage extends PageBase {
       this.env.showMessage('Nhân viên đã gộp đơn bàn {{value}}', 'warning',value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(null, value.IDBranch, data.id, 'Support', 'Gộp đơn hàng', 'pos-order', message, url);
+     
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type:'Support',
+        Name:  'Gộp đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      this.setNotifications(notification,true)
+
       this.refresh();
     }
   }
@@ -358,7 +418,7 @@ export class POSOrderPage extends PageBase {
       .toPromise()
       .then((results: any) => {
         if (results) {
-          this.setNotifications(results);
+          this.setNotifiOrder(results);
         }
       })
       .catch((err) => {
@@ -625,38 +685,71 @@ export class POSOrderPage extends PageBase {
       this.notifications = data;
     }
   }
-  setNotifications(items) {
-    if (items.length > 0) {
-      items.forEach((o) => {
-        let message = 'Bàn ' + o.Tables[0]?.TableName + ' có ' + o.NewOrderLineCount + ' món chưa gửi bếp';
-        let url = 'pos-order/' + o.Id + '/' + o.Tables[0].IDTable;
-        this.setStorageNotification(null, o.IDBranch, o.Id, 'Order', 'Đơn hàng', 'pos-order', message, url);
-      });
+
+  async setNotifiOrder(items){
+
+    for (let item of items) {
+      let url = 'pos-order/' + item.Id + '/' + item.Tables[0].IDTable;
+      let message = 'Bàn ' + item.Tables[0]?.TableName + ' có ' + item.NewOrderLineCount + ' món chưa gửi bếp';
+
+      let notification = {
+        Id: item.Id,
+        IDBranch: item.IDBranch,
+        IDSaleOrder: item.IDSaleOrder,
+        Type:'Order',
+        Name:'Đơn hàng',
+        Code: 'pos-order',
+        Message: message, 
+        Url: url,
+        Watched: false,
+      };
+     await this.setNotifications(notification)
     }
   }
-  async setStorageNotification(Id, IDBranch, IDSaleOrder, Type, Name, Code, Message, Url) {
-    let notification = {
-      Id: Id,
-      IDBranch: IDBranch,
-      IDSaleOrder: IDSaleOrder,
-      Type: Type,
-      Name: Name,
-      Code: Code,
-      Message: Message,
-      Url: Url,
-      Watched: false,
-    };
-    const notifications = await this.env.getStorage('Notifications').then((result) => {
-      if (result) {
-        return result;
-      } else {
-        return [];
+
+
+
+   async setNotifications(item,lasted = false) {
+    if (
+      this.notifications.some(
+        (d) =>
+          d.Id == item.Id &&
+          d.IDBranch == item.IDBranch &&
+          d.IDSaleOrder == item.IDSaleOrder &&
+          d.Type == item.Type &&
+          d.Name == item.Name &&
+          d.Code == item.Code &&
+          d.Message ==item.Message &&
+          d.Url == item.Url &&
+          !d.Watched
+      )
+    ){
+      if(lasted){
+        let index =  this.notifications.findIndex((d) =>
+          d.Id == item.Id &&
+          d.IDBranch == item.IDBranch &&
+          d.IDSaleOrder == item.IDSaleOrder &&
+          d.Type == item.Type &&
+          d.Name == item.Name &&
+          d.Code == item.Code &&
+          d.Message == item.Message &&
+          d.Url ==item.Url &&
+          !d.Watched)
+        if(index != -1){
+          this.notifications.splice(index, 1);
+          this.notifications.unshift(item);
+          await this.env.setStorage('Notifications', this.notifications);
+        } 
+      } 
+    }
+      else {
+        this.notifications.unshift(item)
+        await this.env.setStorage('Notifications', this.notifications);
       }
-    });
-    notifications.unshift(notification);
-    this.env.setStorage('Notifications', notifications);
-    this.notifications.unshift(notification);
-  }
+  
+
+}
+
 
   goToNofication(i, j) {
     this.notifications[j].Watched = true;
