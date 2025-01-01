@@ -264,16 +264,19 @@ export class POSOrderDetailPage extends PageBase {
       let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
       this.env.showMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning', value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Yêu cầu phục vụ',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: value.Id,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: value.IDSaleOrder,
+        Type:'Support',
+        Name: 'Yêu cầu phục vụ',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+        Watched: false,
+      };
+
+      this.setNotifications(notification,true);
     }
   }
 
@@ -284,16 +287,19 @@ export class POSOrderDetailPage extends PageBase {
       this.env.showMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning', value.Tables[0].TableName);
       let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-      this.setStorageNotification(
-        null,
-        value.IDBranch,
-        data.id,
-        'Support',
-        'Yêu cầu tính tiền',
-        'pos-order',
-        message,
-        url,
-      );
+      let notification = {
+        Id: value.Id,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: value.IDSaleOrder,
+        Type:'Support',
+        Name: 'Yêu cầu tính tiền',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+        Watched: false,
+      };
+
+      this.setNotifications(notification,true);
     }
   }
 
@@ -396,7 +402,7 @@ export class POSOrderDetailPage extends PageBase {
       });
   }
 
-  loadedData(event?: any, ignoredFromGroup?: boolean): void {
+  async loadedData(event?: any, ignoredFromGroup?: boolean) {
     super.loadedData(event, ignoredFromGroup);
     if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
       this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
@@ -422,14 +428,16 @@ export class POSOrderDetailPage extends PageBase {
     this.loadOrder();
     this.contactSearch();
     this.cdr.detectChanges();
-    this.getStorageNotifications();
+    await this.getStorageNotifications();
     this.CheckPOSNewOrderLines();
   }
 
-  getStorageNotifications() {
-    this.env.getStorage('Notifications').then((result) => {
+  async getStorageNotifications() {
+    await this.env.getStorage('Notifications').then(async(result) => {
       if (result?.length > 0) {
-        this.notifications = result.filter((n) => !n.Watched);
+        this.notifications = [...result.filter((n) => !n.Watched && n.IDBranch == this.env.selectedBranch)];
+        let a=  this.notifications;
+        console.log(a);
       }
     });
   }
@@ -438,9 +446,25 @@ export class POSOrderDetailPage extends PageBase {
     this.pageProvider.commonService
       .connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', this.query)
       .toPromise()
-      .then((results: any) => {
+      .then(async (results: any) => {
         if (results) {
-          this.setNotifications(results);
+          let orderNotification = this.notifications.filter(d=> !results.map(s=>s.Id).includes(d.IDSaleOrder) && d.Type == 'Order' && d.Code == 'pos-order');
+          orderNotification.forEach(o => {
+            let index = this.notifications.indexOf(o);
+            this.notifications.splice(index, 1);
+          });
+          await results.forEach(async (r) => {// kiểm tra noti cũ có số order line chưa gửi bếp khác với DB thì update
+            let oldNotis = this.notifications.filter((n) => n.IDSaleOrder == r.Id && n.Type == 'Order' && n.Code == 'pos-order');
+           await oldNotis.forEach(async (oldNoti) => {
+              if(oldNoti.NewOrderLineCount != r.NewOrderLineCount){
+                let index = this.notifications.indexOf(oldNoti);
+                this.notifications.splice(index, 1);
+              }
+            });
+            
+          }
+        );
+          this.setNotifiOrder(results);
         }
       })
       .catch((err) => {
@@ -450,38 +474,95 @@ export class POSOrderDetailPage extends PageBase {
       });
   }
 
-  setNotifications(items) {
-    if (items.length > 0) {
-      items.forEach((o) => {
-        let message = 'Bàn ' + o.Tables[0]?.TableName + ' có ' + o.NewOrderLineCount + ' món chưa gửi bếp';
-        let url = 'pos-order/' + o.Id + '/' + o.Tables[0].IDTable;
-        this.setStorageNotification(null, o.IDBranch, o.Id, 'Order', 'Đơn hàng', 'pos-order', message, url);
-      });
+  async setNotifiOrder(items){
+    for (let item of items) {
+      let url = 'pos-order/' + item.Id + '/' + item.Tables[0].IDTable;
+      let message = 'Bàn ' + item.Tables[0]?.TableName + ' có ' + item.NewOrderLineCount + ' món chưa gửi bếp';
+
+      let notification = {
+        Id: item.Id,
+        IDBranch: item.IDBranch,
+        IDSaleOrder: item.Id,
+        Type:'Order',
+        Name:'Đơn hàng',
+        Code: 'pos-order',
+        Message: message, 
+        Url: url,
+        NewOrderLineCount : item.NewOrderLineCount,
+        Watched: false,
+      };
+     await this.setNotifications(notification)
     }
   }
-  async setStorageNotification(Id, IDBranch, IDSaleOrder, Type, Name, Code, Message, Url) {
-    let notification = {
-      Id: Id,
-      IDBranch: IDBranch,
-      IDSaleOrder: IDSaleOrder,
-      Type: Type,
-      Name: Name,
-      Code: Code,
-      Message: Message,
-      Url: Url,
-      Watched: false,
-    };
-    const notifications = await this.env.getStorage('Notifications').then((result) => {
-      if (result) {
-        return result;
-      } else {
-        return [];
+
+  async setNotifications(item,lasted = false) {
+    let isExistedNoti =  this.notifications.some(
+      (d) =>
+        d.Id == item.Id &&
+        d.IDBranch == item.IDBranch &&
+        d.IDSaleOrder == item.IDSaleOrder &&
+        d.Type == item.Type &&
+        d.Name == item.Name &&
+        d.Code == item.Code &&
+        d.Message ==item.Message &&
+        d.Url == item.Url &&
+        !d.Watched
+    )
+    if (isExistedNoti){
+      if(lasted){
+        let index =  this.notifications.findIndex((d) =>
+          d.Id == item.Id &&
+          d.IDBranch == item.IDBranch &&
+          d.IDSaleOrder == item.IDSaleOrder &&
+          d.Type == item.Type &&
+          d.Name == item.Name &&
+          d.Code == item.Code &&
+          d.Message == item.Message &&
+          d.Url ==item.Url &&
+          !d.Watched)
+        if(index != -1){
+          this.notifications.splice(index, 1);
+          this.notifications.unshift(item);
+          await this.env.setStorage('Notifications', this.notifications);
+        } 
       }
-    });
-    notifications.unshift(notification);
-    this.env.setStorage('Notifications', notifications);
-    this.notifications.unshift(notification);
-  }
+    }
+    else {
+      this.notifications.unshift(item)
+      await this.env.setStorage('Notifications', this.notifications);
+    }
+  
+
+}
+
+  // async setStorageNotification(Id, IDBranch, IDSaleOrder, Type, Name, Code, Message, Url) {
+  //   let notification = {
+  //     Id: Id,
+  //     IDBranch: IDBranch,
+  //     IDSaleOrder: IDSaleOrder,
+  //     Type: Type,
+  //     Name: Name,
+  //     Code: Code,
+  //     Message: Message,
+  //     Url: Url,
+  //     Watched: false,
+  //   };
+  //   const notifications = await this.env.getStorage('Notifications').then((result) => {
+  //     if (result) {
+  //       return result;
+  //     } else {
+  //       return [];
+  //     }
+  //   });
+  //   if(notifications.some(d=> d.Id ==notification.Id && d.IDBranch == notification.IDBranch &&
+  //     d.IDSaleOrder == notification.IDSaleOrder && d.Type == notification.Type && d.Name == notification.Name && d.Code == notification.Code && d.Message == notification.Message && d.Url == notification.Url
+  //   )){
+  //     return;
+  //   }
+  //   notifications.unshift(notification);
+  //   this.env.setStorage('Notifications', notifications);
+  //   this.notifications.unshift(notification);
+  // }
 
   async goToNofication(i, j) {
     this.notifications[j].Watched = true;
@@ -783,7 +864,6 @@ export class POSOrderDetailPage extends PageBase {
 
       if (data.SetDone) {
         changed.Status = 'Done';
-        changed.IDStatus = 114;
       }
 
       this.setOrderValue(changed, true);
@@ -1393,7 +1473,8 @@ export class POSOrderDetailPage extends PageBase {
         this.item.IDBranch == 174 || //W-Cafe
         this.item.IDBranch == 17 || //The Log
         this.item.IDBranch == 416 || //Gem Cafe && set menu  && line._item.IDMenu == 218
-        this.item.IDBranch == 864 //TEST
+        this.item.IDBranch == 864 ||//TEST
+        this.env.branchList.find(d=>d.Id == this.item.IDBranch)?.Code == '145'  //phindily code 145
       ) {
         line._serviceCharge = 5;
       }
@@ -1793,7 +1874,7 @@ export class POSOrderDetailPage extends PageBase {
 
   async saveChange() {
     let submitItem = this.getDirtyValues(this.formGroup);
-    this.saveChange2();
+    return this.saveChange2();
   }
 
   savedChange(savedItem?: any, form?: FormGroup<any>): void {
@@ -2054,7 +2135,6 @@ export class POSOrderDetailPage extends PageBase {
           });
           changed.OrderLines = this.item.OrderLines;
           changed.Status = 'Done';
-          changed.IDStatus = 114;
           this.setOrderValue(changed, true, true);
         });
     } else if (this.item.Debt > 0) {
@@ -2069,7 +2149,6 @@ export class POSOrderDetailPage extends PageBase {
           });
           changed.OrderLines = this.item.OrderLines;
           changed.Status = 'Done';
-          changed.IDStatus = 114;
           this.setOrderValue(changed, true, true);
         })
         .catch((_) => {});
@@ -2081,7 +2160,6 @@ export class POSOrderDetailPage extends PageBase {
       });
       changed.OrderLines = this.item.OrderLines;
       changed.Status = 'Done';
-      changed.IDStatus = 114;
       this.setOrderValue(changed, true, true);
     }
   }
