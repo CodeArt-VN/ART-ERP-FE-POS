@@ -406,7 +406,7 @@ export class POSOrderPage extends PageBase {
     super.loadedData(event);
     this.env.getStorage('Notifications').then((result) => {
       if (result?.length > 0) {
-        this.notifications = result.filter((n) => !n.Watched);
+        this.notifications = result.filter((n) => !n.Watched && n.IDBranch == this.env.selectedBranch);
       }
     });
     this.CheckPOSNewOrderLines();
@@ -416,8 +416,24 @@ export class POSOrderPage extends PageBase {
     this.pageProvider.commonService
       .connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', this.query)
       .toPromise()
-      .then((results: any) => {
+      .then(async (results: any) => {
         if (results) {
+          let orderNotification = this.notifications.filter(d=> !results.map(s=>s.Id).includes(d.IDSaleOrder) && d.Type == 'Order' && d.Code == 'pos-order');
+          orderNotification.forEach(o => {
+            let index = this.notifications.indexOf(o);
+            this.notifications.splice(index, 1);
+          });
+          await results.forEach(async (r) => {// kiểm tra noti cũ có số order line chưa gửi bếp khác với DB thì update
+            let oldNotis = this.notifications.filter((n) => n.IDSaleOrder == r.Id && n.Type == 'Order' && n.Code == 'pos-order');
+           await oldNotis.forEach(async (oldNoti) => {
+              if(oldNoti.NewOrderLineCount != r.NewOrderLineCount){
+                let index = this.notifications.indexOf(oldNoti);
+                this.notifications.splice(index, 1);
+              }
+            });
+            
+          }
+        );
           this.setNotifiOrder(results);
         }
       })
@@ -695,35 +711,30 @@ export class POSOrderPage extends PageBase {
       let notification = {
         Id: item.Id,
         IDBranch: item.IDBranch,
-        IDSaleOrder: item.IDSaleOrder,
+        IDSaleOrder: item.Id,
         Type:'Order',
         Name:'Đơn hàng',
         Code: 'pos-order',
         Message: message, 
         Url: url,
+        NewOrderLineCount : item.NewOrderLineCount,
         Watched: false,
       };
      await this.setNotifications(notification)
     }
   }
 
-
-
    async setNotifications(item,lasted = false) {
-    if (
-      this.notifications.some(
-        (d) =>
-          d.Id == item.Id &&
-          d.IDBranch == item.IDBranch &&
-          d.IDSaleOrder == item.IDSaleOrder &&
-          d.Type == item.Type &&
-          d.Name == item.Name &&
-          d.Code == item.Code &&
-          d.Message ==item.Message &&
-          d.Url == item.Url &&
-          !d.Watched
-      )
-    ){
+    let isExistedNoti =  this.notifications.some(
+      (d) =>d.Id == item.Id &&  d.IDBranch == item.IDBranch &&    
+        d.IDSaleOrder == item.IDSaleOrder &&
+        d.Type == item.Type &&
+        d.Name == item.Name &&
+        d.Code == item.Code &&
+        d.Message ==item.Message &&
+        d.Url == item.Url &&
+        !d.Watched)
+    if(isExistedNoti) {
       if(lasted){
         let index =  this.notifications.findIndex((d) =>
           d.Id == item.Id &&
@@ -742,10 +753,10 @@ export class POSOrderPage extends PageBase {
         } 
       } 
     }
-      else {
-        this.notifications.unshift(item)
-        await this.env.setStorage('Notifications', this.notifications);
-      }
+    else {
+      this.notifications.unshift(item)
+      await this.env.setStorage('Notifications', this.notifications);
+    }
   
 
 }
