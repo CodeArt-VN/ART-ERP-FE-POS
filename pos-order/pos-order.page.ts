@@ -418,22 +418,25 @@ export class POSOrderPage extends PageBase {
       .toPromise()
       .then(async (results: any) => {
         if (results) {
-          let orderNotification = this.notifications.filter(d=> !results.map(s=>s.Id).includes(d.IDSaleOrder) && d.Type == 'Order' && d.Code == 'pos-order');
-          orderNotification.forEach(o => {
+          let orderNotification = this.notifications.filter(
+            (d) => !results.map((s) => s.Id).includes(d.IDSaleOrder) && (d.Type == 'Remind order' || d.Type == 'Order') && d.Code == 'pos-order',
+          );
+          orderNotification.forEach((o) => {
             let index = this.notifications.indexOf(o);
             this.notifications.splice(index, 1);
           });
-          await results.forEach(async (r) => {// kiểm tra noti cũ có số order line chưa gửi bếp khác với DB thì update
-            let oldNotis = this.notifications.filter((n) => n.IDSaleOrder == r.Id && n.Type == 'Order' && n.Code == 'pos-order');
-           await oldNotis.forEach(async (oldNoti) => {
-              if(oldNoti.NewOrderLineCount != r.NewOrderLineCount){
-                let index = this.notifications.indexOf(oldNoti);
-                this.notifications.splice(index, 1);
-              }
+          await results.forEach(async (r) => {
+            // kiểm tra noti cũ có số order line chưa gửi bếp khác với DB thì update
+            let oldNotis = this.notifications.filter(
+              (n) => n.IDSaleOrder == r.Id && n.Type == 'Remind order' && n.Code == 'pos-order',
+            );
+            await oldNotis.forEach(async (oldNoti) => {
+                if (oldNoti.NewOrderLineCount != r.NewOrderLineCount) {
+                  let index = this.notifications.indexOf(oldNoti);
+                  this.notifications.splice(index, 1);
+                }
             });
-            
-          }
-        );
+          });
           this.setNotifiOrder(results);
         }
       })
@@ -702,8 +705,7 @@ export class POSOrderPage extends PageBase {
     }
   }
 
-  async setNotifiOrder(items){
-
+  async setNotifiOrder(items) {
     for (let item of items) {
       let url = 'pos-order/' + item.Id + '/' + item.Tables[0].IDTable;
       let message = 'Bàn ' + item.Tables[0]?.TableName + ' có ' + item.NewOrderLineCount + ' món chưa gửi bếp';
@@ -712,15 +714,15 @@ export class POSOrderPage extends PageBase {
         Id: item.Id,
         IDBranch: item.IDBranch,
         IDSaleOrder: item.Id,
-        Type:'Order',
-        Name:'Đơn hàng',
+        Type: 'Remind order',
+        Name: 'Đơn hàng',
         Code: 'pos-order',
-        Message: message, 
+        Message: message,
         Url: url,
-        NewOrderLineCount : item.NewOrderLineCount,
+        NewOrderLineCount: item.NewOrderLineCount,
         Watched: false,
       };
-     await this.setNotifications(notification)
+      await this.setNotifications(notification);
     }
   }
 

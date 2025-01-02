@@ -230,11 +230,29 @@ export class POSOrderDetailPage extends PageBase {
       this.getStorageNotifications();
     }
   }
-  private notifyOrder(data) {
-    if (data.id == this.item?.Id) {
+  private async notifyOrder(data) {
+    const value = JSON.parse(data.value);
+    if (this.env.selectedBranch == value.IDBranch) {
+      let message = 'Khách bàn ' + value.Tables[0].TableName + ' Gọi món';
+      this.env.showMessage(message, 'warning');
+      let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
+      let notification = {
+        Id: null,
+        IDBranch: value.IDBranch,
+        IDSaleOrder: data.id,
+        Type: 'Order',
+        Name: 'Đơn hàng',
+        Code: 'pos-order',
+        Message: message,
+        Url: url,
+      };
+      await this.setNotifications(notification, true);
+      // this.refresh();
+    }
+    if(data.id == this.item?.Id){
+      //this.CheckPOSNewOrderLines();
       this.refresh();
-    } else {
-      this.getStorageNotifications();
+
     }
   }
   private notifyLockOrder(data) {
@@ -448,13 +466,16 @@ export class POSOrderDetailPage extends PageBase {
       .toPromise()
       .then(async (results: any) => {
         if (results) {
-          let orderNotification = this.notifications.filter(d=> !results.map(s=>s.Id).includes(d.IDSaleOrder) && d.Type == 'Order' && d.Code == 'pos-order');
+          let orderNotification = this.notifications.filter(
+            (d) => !results.map((s) => s.Id).includes(d.IDSaleOrder)
+             && (d.Type == 'Remind order' || d.Type == 'Order') && d.Code == 'pos-order',
+          );
           orderNotification.forEach(o => {
             let index = this.notifications.indexOf(o);
             this.notifications.splice(index, 1);
           });
           await results.forEach(async (r) => {// kiểm tra noti cũ có số order line chưa gửi bếp khác với DB thì update
-            let oldNotis = this.notifications.filter((n) => n.IDSaleOrder == r.Id && n.Type == 'Order' && n.Code == 'pos-order');
+            let oldNotis = this.notifications.filter((n) => n.IDSaleOrder == r.Id && n.Type == 'Remind order' && n.Code == 'pos-order');
            await oldNotis.forEach(async (oldNoti) => {
               if(oldNoti.NewOrderLineCount != r.NewOrderLineCount){
                 let index = this.notifications.indexOf(oldNoti);
@@ -483,7 +504,7 @@ export class POSOrderDetailPage extends PageBase {
         Id: item.Id,
         IDBranch: item.IDBranch,
         IDSaleOrder: item.Id,
-        Type:'Order',
+        Type:'Remind order',
         Name:'Đơn hàng',
         Code: 'pos-order',
         Message: message, 
