@@ -407,9 +407,16 @@ export class POSOrderPage extends PageBase {
     this.env.getStorage('Notifications').then((result) => {
       if (result?.length > 0) {
         this.notifications = result.filter((n) => !n.Watched && n.IDBranch == this.env.selectedBranch);
+        console.log('Notificationns: ' , this.notifications);
       }
     });
+
+    //Load danh sách promotion khi truy cập vào trang , promotion sẽ được gắn vào biến promotionService.promotionList
+    this.promotionService.getPromotionList().then((result) => {
+      console.log(this.promotionService.promotionList);
+    });
     this.CheckPOSNewOrderLines();
+
   }
 
   private CheckPOSNewOrderLines() {

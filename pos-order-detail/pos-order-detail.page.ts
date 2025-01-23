@@ -16,32 +16,26 @@ import {
   SYS_ConfigProvider,
   SYS_PrinterProvider,
 } from 'src/app/services/static/services.service';
-import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
-import { CommonService } from 'src/app/services/core/common.service';
-import { lib } from 'src/app/services/static/global-functions';
-import { concat, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
-import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
+import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 
-import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
-import * as qz from 'qz-tray';
-import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
+import QRCode from 'qrcode';
+import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { printData, PrintingService } from 'src/app/services/printing.service';
+import { ApiSetting } from 'src/app/services/static/api-setting';
 import { environment } from 'src/environments/environment';
-import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
+import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
-import { ApiSetting } from 'src/app/services/static/api-setting';
-import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
-import QRCode from 'qrcode';
-import { printData, PrintingService } from 'src/app/services/printing.service';
-import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
+import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
+import { PromotionService } from 'src/app/services/promotion.service';
 
 @Component({
-    selector: 'app-pos-order-detail',
-    templateUrl: './pos-order-detail.page.html',
-    styleUrls: ['./pos-order-detail.page.scss'],
-    standalone: false
+  selector: 'app-pos-order-detail',
+  templateUrl: './pos-order-detail.page.html',
+  styleUrls: ['./pos-order-detail.page.scss'],
+  standalone: false,
 })
 export class POSOrderDetailPage extends PageBase {
   @ViewChild('numberOfGuestsInput') numberOfGuestsInput: ElementRef;
@@ -101,6 +95,7 @@ export class POSOrderDetailPage extends PageBase {
     public cdr: ChangeDetectorRef,
     public loadingController: LoadingController,
     public commonService: CommonService,
+    private promotionService: PromotionService,
   ) {
     super();
     this.pageConfig.isDetailPage = true;
@@ -1441,8 +1436,8 @@ export class POSOrderDetailPage extends PageBase {
   //Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về.
   private calcOrder() {
     this.Discount = {
-      Amount: this.item.OriginalTotalDiscount,
-      Percent: (this.item.OriginalTotalDiscount * 100) / this.item.OriginalTotalBeforeDiscount,
+      Amount: 0, //this.item.OriginalTotalDiscount,
+      Percent: 0, // (this.item.OriginalTotalDiscount * 100) / this.item.OriginalTotalBeforeDiscount,
     };
 
     this.item._TotalQuantity = this.item.OrderLines?.map((x) => x.Quantity).reduce((a, b) => +a + +b, 0);
@@ -1882,7 +1877,7 @@ export class POSOrderDetailPage extends PageBase {
       if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id)
         form.controls.Id.setValue(savedItem.Id);
 
-      if (form.controls.IDContact.value != savedItem.IDContact) this.changedIDAddress(savedItem._Customer);
+      // if (form.controls.IDContact.value != savedItem.IDContact) this.changedIDAddress(savedItem._Customer);
 
       if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
         this.id = savedItem.Id;
@@ -1891,9 +1886,45 @@ export class POSOrderDetailPage extends PageBase {
       }
 
       this.item = savedItem;
+
+      // tại đây sẽ kiểm tra các promotion AutoApply
+      // Nếu có promotion nào thoả điều kiện thì sẽ apply vào order rồi load lại order
+      //
+      if (this.promotionService.promotionList) {
+        let query = {
+          IDSaleOrder: this.item.Id,
+          IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+        };
+        this.promotionProvider.commonService
+          .connect('POST', 'PR/Program/ApplyVoucher/', query)
+          .toPromise()
+          .then((result: any) => {
+            console.log('Apply Promotion');
+          });
+      }
+
+      // await this.env.getStorage('promotions').then(async (promotions) => {
+      //   if (promotions) {
+      //     promotions.forEach(async (promotion) => {
+      //       if (promotion.IsAutoApply) {
+      //         await this.promotionProvider.commonService
+      //           .connect('POST', 'PR/Program/ApplyVoucher/', {
+      //             IDProgram: promotion.Id,
+      //             IDSaleOrder: this.item.Id,
+      //           })
+      //           .toPromise()
+      //           .then((result: any) => {
+      //             console.log('Apply Promotion');
+      //           });
+      //       }
+      //     });
+      //     this.loadedData();
+      //   } else {
+      //     this.loadedData();
+      //   }
+      // });
     }
     this.loadedData();
-
     this.submitAttempt = false;
     this.env.showMessage('Saving completed!', 'success');
 
