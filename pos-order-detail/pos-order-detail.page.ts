@@ -105,6 +105,8 @@ export class POSOrderDetailPage extends PageBase {
     super();
     this.pageConfig.isDetailPage = true;
     this.pageConfig.isShowFeature = true;
+    this.pageConfig.ShowDelete = false;
+    this.pageConfig.ShowArchive = false;
     this.idTable = this.route.snapshot?.paramMap?.get('table');
     this.idTable = typeof this.idTable == 'string' ? parseInt(this.idTable) : this.idTable;
     this.formGroup = formBuilder.group({

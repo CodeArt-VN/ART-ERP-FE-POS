@@ -38,6 +38,7 @@ export class POSWorkOrderPage extends PageBase {
     public location: Location,
   ) {
     super();
+    this.pageConfig.ShowFeature = true;
   }
 
   preLoadData(event?: any): void {
