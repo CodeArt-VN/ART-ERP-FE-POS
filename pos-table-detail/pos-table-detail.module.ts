@@ -7,14 +7,14 @@ import { ShareModule } from 'src/app/share.module';
 import { POSTableDetailPage } from './pos-table-detail.page';
 
 const routes: Routes = [
-  {
-    path: '',
-    component: POSTableDetailPage,
-  },
+	{
+		path: '',
+		component: POSTableDetailPage,
+	},
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
-  declarations: [POSTableDetailPage],
+	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
+	declarations: [POSTableDetailPage],
 })
 export class POSTableDetailPageModule {}

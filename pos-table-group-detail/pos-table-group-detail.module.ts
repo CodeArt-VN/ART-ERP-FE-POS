@@ -7,14 +7,14 @@ import { ShareModule } from 'src/app/share.module';
 import { POSTableGroupDetailPage } from './pos-table-group-detail.page';
 
 const routes: Routes = [
-  {
-    path: '',
-    component: POSTableGroupDetailPage,
-  },
+	{
+		path: '',
+		component: POSTableGroupDetailPage,
+	},
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
-  declarations: [POSTableGroupDetailPage],
+	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
+	declarations: [POSTableGroupDetailPage],
 })
 export class POSTableGroupDetailPageModule {}

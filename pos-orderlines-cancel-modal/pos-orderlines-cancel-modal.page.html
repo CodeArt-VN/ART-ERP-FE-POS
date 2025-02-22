@@ -1,40 +1,39 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>{{'Cancellation reason' | translate}}</ion-title>
-    <ion-buttons slot="primary">
-      <ion-button (click)="dismiss()" title="{{'Close' | translate}}" color="medium">
-        <ion-icon slot="icon-only" name="close"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
+	<ion-toolbar>
+		<ion-title>{{'Cancellation reason' | translate}}</ion-title>
+		<ion-buttons slot="primary">
+			<ion-button (click)="dismiss()" title="{{'Close' | translate}}" color="medium">
+				<ion-icon slot="icon-only" name="close"></ion-icon>
+			</ion-button>
+		</ion-buttons>
+	</ion-toolbar>
 </ion-header>
 <ion-content appScrollbarTheme>
-  <div class="ion-padding">
-    <ion-text color="warning">
-      <ion-icon color="danger" name="alert-circle-outline" class="cancel-message-icon"></ion-icon>
-      {{'Please select a reason for cancellation. For this reason, you will cancel all products included in the order
-      and cannot be changed afterwards.' | translate}}
-    </ion-text>
-  </div>
-  <ion-list>
-    <ion-radio-group [(ngModel)]="item">
-      <ion-item *ngFor="let t of typeList">
-        <ion-radio slot="start" aria-label="Danger" color="danger" class="radio-icon" [value]="t" mode="md"></ion-radio>
-        <ion-label style="white-space: normal">{{t.Name}}</ion-label>
-      </ion-item>
-      <ion-item *ngIf="item?.Code == 'Other'">
-        <ion-textarea
-          class="c-text-area ion-text-left"
-          [(ngModel)]="item.CancelNote"
-          autoGrow
-          placeholder="{{'Please enter reason for cancellation...' | translate}}"
-        ></ion-textarea>
-      </ion-item>
-    </ion-radio-group>
-  </ion-list>
+	<div class="ion-padding">
+		<ion-text color="warning">
+			<ion-icon color="danger" name="alert-circle-outline" class="cancel-message-icon"></ion-icon>
+			{{'Please select a reason for cancellation. For this reason, you will cancel all products included in the order and cannot be changed afterwards.' | translate}}
+		</ion-text>
+	</div>
+	<ion-list>
+		<ion-radio-group [(ngModel)]="item">
+			<ion-item *ngFor="let t of typeList">
+				<ion-radio slot="start" aria-label="Danger" color="danger" class="radio-icon" [value]="t" mode="md"></ion-radio>
+				<ion-label style="white-space: normal">{{t.Name}}</ion-label>
+			</ion-item>
+			<ion-item *ngIf="item?.Code == 'Other'">
+				<ion-textarea
+					class="c-text-area ion-text-left"
+					[(ngModel)]="item.CancelNote"
+					autoGrow
+					placeholder="{{'Please enter reason for cancellation...' | translate}}"
+				></ion-textarea>
+			</ion-item>
+		</ion-radio-group>
+	</ion-list>
 </ion-content>
 <ion-footer>
-  <ion-toolbar>
-    <ion-button color="danger" (click)="dismiss('confirm')" expand="block">{{'Agree' | translate}}</ion-button>
-  </ion-toolbar>
+	<ion-toolbar>
+		<ion-button color="danger" (click)="dismiss('confirm')" expand="block">{{'Agree' | translate}}</ion-button>
+	</ion-toolbar>
 </ion-footer>

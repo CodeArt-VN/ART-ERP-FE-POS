@@ -7,14 +7,14 @@ import { ShareModule } from 'src/app/share.module';
 import { POSMemoDetailPage } from './pos-memo-detail.page';
 
 const routes: Routes = [
-  {
-    path: '',
-    component: POSMemoDetailPage,
-  },
+	{
+		path: '',
+		component: POSMemoDetailPage,
+	},
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
-  declarations: [POSMemoDetailPage],
+	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
+	declarations: [POSMemoDetailPage],
 })
 export class POSMemoDetailPageModule {}

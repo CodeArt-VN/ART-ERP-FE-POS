@@ -1,44 +1,44 @@
 <ion-content appScrollbarTheme class="ion-padding">
-  <!-- <img class="logo" (src)="currentBranch.LogoURL" (title)="currentBranch.Name" (error)="$event.src='assets/logos/logo-the-log-hine-wine.png'"> -->
-  <!-- <img class="branch-logo" src="assets/logos/logo-the-log-hine-wine.png" title="The Log - Hide and Wine"> -->
-  <!-- <img class="branch-logo" src="{{currentBranch?.LogoURL}}" title="{{currentBranch?.ShortName}}"> -->
-  <div class="slide-holder">
-    <!-- Scanning Slides Tab -->
-    <swiper-container pager="true" #slides [options]="slideOptsDefault" (init)="getSliders(slides)">
-      <swiper-slide *ngFor="let i of SlidingCard">
-        <div class="slide-view">
-          <div class="logo" *ngIf="i.Logo">
-            <img [src]="i.Logo" #img />
-          </div>
-          <div class="splash" *ngIf="i.Splash">
-            <img [src]="i.Splash" #img />
-          </div>
-          <div class="content">
-            <div class="header">
-              <ion-text>{{i.Header | translate}}</ion-text>
-            </div>
-            <div class="remark">{{i.Remark | translate}}</div>
-            <div class="note" *ngIf="i.Note">
-              <div>{{i.Note.Note1 | translate}}</div>
-              <div>{{i.Note.Note2 | translate}}</div>
-              <div>{{i.Note.Note3 | translate}}</div>
-              <div>{{i.Note.Note31 | translate}}</div>
-              <div>{{i.Note.Note32 | translate}}</div>
-              <div>&#8205;</div>
-              <div>{{i.Note.Note4 | translate}}</div>
-              <div>{{i.Note.Note5 | translate}}</div>
-            </div>
-          </div>
-        </div>
-      </swiper-slide>
-    </swiper-container>
+	<!-- <img class="logo" (src)="currentBranch.LogoURL" (title)="currentBranch.Name" (error)="$event.src='assets/logos/logo-the-log-hine-wine.png'"> -->
+	<!-- <img class="branch-logo" src="assets/logos/logo-the-log-hine-wine.png" title="The Log - Hide and Wine"> -->
+	<!-- <img class="branch-logo" src="{{currentBranch?.LogoURL}}" title="{{currentBranch?.ShortName}}"> -->
+	<div class="slide-holder">
+		<!-- Scanning Slides Tab -->
+		<swiper-container pager="true" #slides [options]="slideOptsDefault" (init)="getSliders(slides)">
+			<swiper-slide *ngFor="let i of SlidingCard">
+				<div class="slide-view">
+					<div class="logo" *ngIf="i.Logo">
+						<img [src]="i.Logo" #img />
+					</div>
+					<div class="splash" *ngIf="i.Splash">
+						<img [src]="i.Splash" #img />
+					</div>
+					<div class="content">
+						<div class="header">
+							<ion-text>{{i.Header | translate}}</ion-text>
+						</div>
+						<div class="remark">{{i.Remark | translate}}</div>
+						<div class="note" *ngIf="i.Note">
+							<div>{{i.Note.Note1 | translate}}</div>
+							<div>{{i.Note.Note2 | translate}}</div>
+							<div>{{i.Note.Note3 | translate}}</div>
+							<div>{{i.Note.Note31 | translate}}</div>
+							<div>{{i.Note.Note32 | translate}}</div>
+							<div>&#8205;</div>
+							<div>{{i.Note.Note4 | translate}}</div>
+							<div>{{i.Note.Note5 | translate}}</div>
+						</div>
+					</div>
+				</div>
+			</swiper-slide>
+		</swiper-container>
 
-    <ion-row class="sticky-btn">
-      <ion-col>
-        <div class="c-control ion-text-center">
-          <ion-button expand="block" (click)="closeWelcome()">{{'T1694' | translate}}</ion-button>
-        </div>
-      </ion-col>
-    </ion-row>
-  </div>
+		<ion-row class="sticky-btn">
+			<ion-col>
+				<div class="c-control ion-text-center">
+					<ion-button expand="block" (click)="closeWelcome()">{{'T1694' | translate}}</ion-button>
+				</div>
+			</ion-col>
+		</ion-row>
+	</div>
 </ion-content>

@@ -7,14 +7,14 @@ import { ShareModule } from 'src/app/share.module';
 import { POSKitchenDetailPage } from './pos-kitchen-detail.page';
 
 const routes: Routes = [
-  {
-    path: '',
-    component: POSKitchenDetailPage,
-  },
+	{
+		path: '',
+		component: POSKitchenDetailPage,
+	},
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
-  declarations: [POSKitchenDetailPage],
+	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, RouterModule.forChild(routes)],
+	declarations: [POSKitchenDetailPage],
 })
 export class POSKitchenDetailPageModule {}

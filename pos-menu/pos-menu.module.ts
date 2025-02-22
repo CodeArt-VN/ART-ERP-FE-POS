@@ -7,13 +7,7 @@ import { POSMenuPage } from './pos-menu.page';
 import { ShareModule } from 'src/app/share.module';
 
 @NgModule({
-  imports: [
-    IonicModule,
-    CommonModule,
-    FormsModule,
-    ShareModule,
-    RouterModule.forChild([{ path: '', component: POSMenuPage }]),
-  ],
-  declarations: [POSMenuPage],
+	imports: [IonicModule, CommonModule, FormsModule, ShareModule, RouterModule.forChild([{ path: '', component: POSMenuPage }])],
+	declarations: [POSMenuPage],
 })
 export class POSMenuPageModule {}

@@ -4,23 +4,23 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { POSChangeTableModalPage } from './pos-change-table-modal.page';
 
 describe('POSChangeTableModalPage', () => {
-  let component: POSChangeTableModalPage;
-  let fixture: ComponentFixture<POSChangeTableModalPage>;
+	let component: POSChangeTableModalPage;
+	let fixture: ComponentFixture<POSChangeTableModalPage>;
 
-  beforeEach(async(() => {
-    TestBed.configureTestingModule({
-      declarations: [POSChangeTableModalPage],
-      schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    }).compileComponents();
-  }));
+	beforeEach(async(() => {
+		TestBed.configureTestingModule({
+			declarations: [POSChangeTableModalPage],
+			schemas: [CUSTOM_ELEMENTS_SCHEMA],
+		}).compileComponents();
+	}));
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(POSChangeTableModalPage);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(POSChangeTableModalPage);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

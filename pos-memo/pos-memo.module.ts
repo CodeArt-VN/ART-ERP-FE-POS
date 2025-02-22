@@ -7,13 +7,7 @@ import { POSMemoPage } from './pos-memo.page';
 import { ShareModule } from 'src/app/share.module';
 
 @NgModule({
-  imports: [
-    IonicModule,
-    CommonModule,
-    FormsModule,
-    ShareModule,
-    RouterModule.forChild([{ path: '', component: POSMemoPage }]),
-  ],
-  declarations: [POSMemoPage],
+	imports: [IonicModule, CommonModule, FormsModule, ShareModule, RouterModule.forChild([{ path: '', component: POSMemoPage }])],
+	declarations: [POSMemoPage],
 })
 export class POSMemoPageModule {}

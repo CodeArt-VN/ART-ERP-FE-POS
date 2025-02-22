@@ -1,102 +1,102 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>{{item.Name??"Thêm bàn"}}</ion-title>
+	<ion-toolbar>
+		<ion-title>{{item.Name??"Thêm bàn"}}</ion-title>
 
-    <ion-buttons slot="primary">
-      <ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModal()">
-        <ion-icon slot="icon-only" name="close"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
+		<ion-buttons slot="primary">
+			<ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModal()">
+				<ion-icon slot="icon-only" name="close"></ion-icon>
+			</ion-button>
+		</ion-buttons>
+	</ion-toolbar>
 </ion-header>
 <ion-content appScrollbarTheme class="ion-padding" fullscreen>
-  <form [formGroup]="formGroup">
-    <ion-grid fixed>
-      <ion-row class="hr-group">
-        <ion-col size="12" size-sm size-xl="12">
-          <div class="c-control" *ngIf="item.Id">
-            <label class="c-label" for="Id">{{'Id' | translate}}</label>
-            <input class="c-input" id="Id" formControlName="Id" type="number" />
-          </div>
-          <div class="c-control">
-            <label class="c-label" for="IDTableGroup"
-              >{{'Khu vực / Dãy bàn' | translate}}
-              <span
-                *ngIf="!formGroup.controls.IDTableGroup.valid && !formGroup.controls.IDTableGroup.pending && (formGroup.controls.IDTableGroup.dirty || submitAttempt)"
-                ion-text
-                color="danger"
-                >(*)</span
-              >
-            </label>
-            <select (change)="saveChange()" class="c-input c-dropdown" formControlName="IDTableGroup">
-              <option *ngFor="let t of tableGroupList" [value]="t.Id">{{t.Name}}</option>
-            </select>
-          </div>
-          <div class="c-control">
-            <label class="c-label" for="Code"
-              >{{'Code' | translate}}
-              <span
-                *ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)"
-                ion-text
-                color="danger"
-                >(*)</span
-              >
-            </label>
-            <input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text" />
-          </div>
-          <div class="c-control">
-            <label class="c-label" for="Name"
-              >{{'Name' | translate}}
-              <span
-                *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)"
-                ion-text
-                color="danger"
-                >(*)</span
-              >
-            </label>
-            <input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text" />
-          </div>
-          <div class="c-control">
-            <div class="c-input" style="margin-top: 7px">
-              <ion-label>{{'Cho phép khách hàng đặt món' | translate}}</ion-label>
-              <span class="ion-float-right">
-                <ion-toggle (ionChange)="saveChange()" formControlName="IsAllowCustomerOrder"></ion-toggle>
-              </span>
-            </div>
-          </div>
-          <div class="c-control">
-            <div class="c-input" style="margin-top: 7px">
-              <ion-label>{{'Cho phép nhiều đơn hàng' | translate}}</ion-label>
-              <span class="ion-float-right">
-                <ion-toggle (ionChange)="saveChange()" formControlName="IsAllowMultipleOrder"></ion-toggle>
-              </span>
-            </div>
-          </div>
-        </ion-col>
-        <!-- <ion-col size="12" size-sm size-xl="4">
+	<form [formGroup]="formGroup">
+		<ion-grid fixed>
+			<ion-row class="hr-group">
+				<ion-col size="12" size-sm size-xl="12">
+					<div class="c-control" *ngIf="item.Id">
+						<label class="c-label" for="Id">{{'Id' | translate}}</label>
+						<input class="c-input" id="Id" formControlName="Id" type="number" />
+					</div>
+					<div class="c-control">
+						<label class="c-label" for="IDTableGroup"
+							>{{'Khu vực / Dãy bàn' | translate}}
+							<span
+								*ngIf="!formGroup.controls.IDTableGroup.valid && !formGroup.controls.IDTableGroup.pending && (formGroup.controls.IDTableGroup.dirty || submitAttempt)"
+								ion-text
+								color="danger"
+								>(*)</span
+							>
+						</label>
+						<select (change)="saveChange()" class="c-input c-dropdown" formControlName="IDTableGroup">
+							<option *ngFor="let t of tableGroupList" [value]="t.Id">{{t.Name}}</option>
+						</select>
+					</div>
+					<div class="c-control">
+						<label class="c-label" for="Code"
+							>{{'Code' | translate}}
+							<span
+								*ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)"
+								ion-text
+								color="danger"
+								>(*)</span
+							>
+						</label>
+						<input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text" />
+					</div>
+					<div class="c-control">
+						<label class="c-label" for="Name"
+							>{{'Name' | translate}}
+							<span
+								*ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)"
+								ion-text
+								color="danger"
+								>(*)</span
+							>
+						</label>
+						<input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text" />
+					</div>
+					<div class="c-control">
+						<div class="c-input" style="margin-top: 7px">
+							<ion-label>{{'Cho phép khách hàng đặt món' | translate}}</ion-label>
+							<span class="ion-float-right">
+								<ion-toggle (ionChange)="saveChange()" formControlName="IsAllowCustomerOrder"></ion-toggle>
+							</span>
+						</div>
+					</div>
+					<div class="c-control">
+						<div class="c-input" style="margin-top: 7px">
+							<ion-label>{{'Cho phép nhiều đơn hàng' | translate}}</ion-label>
+							<span class="ion-float-right">
+								<ion-toggle (ionChange)="saveChange()" formControlName="IsAllowMultipleOrder"></ion-toggle>
+							</span>
+						</div>
+					</div>
+				</ion-col>
+				<!-- <ion-col size="12" size-sm size-xl="4">
 
 
                 </ion-col> -->
-      </ion-row>
-      <ion-row class="hr-group">
-        <ion-col size="12" size-sm="12" size-md="12" size-xl="3">
-          <ion-list-header class="ion-no-padding">
-            <ion-label color="primary">{{'QR Code'| translate}}</ion-label>
-          </ion-list-header>
-        </ion-col>
+			</ion-row>
+			<ion-row class="hr-group">
+				<ion-col size="12" size-sm="12" size-md="12" size-xl="3">
+					<ion-list-header class="ion-no-padding">
+						<ion-label color="primary">{{'QR Code'| translate}}</ion-label>
+					</ion-list-header>
+				</ion-col>
 
-        <ion-col size="12" size-sm size-xl="4">
-          <div class="c-control">
-            <label class="c-label" for="QRC">{{'Mã QR' | translate}}</label>
-            <div class="QRCODE">
-              <img class="qrc" [src]="item.QRC" />
-            </div>
-            <div style="text-align: center">
-              <small>http://beta.inholdings.vn/#/pos-welcome/{{item?.Id}}</small>
-            </div>
-          </div>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
-  </form>
+				<ion-col size="12" size-sm size-xl="4">
+					<div class="c-control">
+						<label class="c-label" for="QRC">{{'Mã QR' | translate}}</label>
+						<div class="QRCODE">
+							<img class="qrc" [src]="item.QRC" />
+						</div>
+						<div style="text-align: center">
+							<small>http://beta.inholdings.vn/#/pos-welcome/{{item?.Id}}</small>
+						</div>
+					</div>
+				</ion-col>
+			</ion-row>
+		</ion-grid>
+	</form>
 </ion-content>
