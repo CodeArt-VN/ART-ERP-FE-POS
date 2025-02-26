@@ -489,7 +489,7 @@
 			</div>
 		</form>
 
-		<div class="functions-list" *ngIf="!(item.Status === 'Merged' || item.Status === 'Splitted' || item.Status === 'Cancelled')">
+		<div class="functions-list" *ngIf="!(item.Status === 'Merged' || item.Status === 'Splitted' || item.Status === 'Canceled')">
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap">
 					<ion-col *ngIf="pageConfig.canEdit && pageConfig.systemConfig.IsAutoSave">
@@ -604,7 +604,7 @@
 										<ion-button
 											[disabled]="i.IsDisabled"
 											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
-											[title]="(i.BookedQuantity && i.Status != 'Cancelled')? i.BookedQuantity: '+'"
+											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
 											class="ion-float-right add-to-cart-btn"
 											size="small"
 											(click)="addToCart(i, u.Id)"

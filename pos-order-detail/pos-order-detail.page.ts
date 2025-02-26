@@ -59,7 +59,7 @@ export class POSOrderDetailPage extends PageBase {
 	soDetailStatusList = [];
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
 	noLockLineStatusList = ['New', 'Waiting'];
-	checkDoneLineStatusList = ['Done', 'Cancelled', 'Returned'];
+	checkDoneLineStatusList = ['Done', 'Canceled', 'Returned'];
 	kitchenQuery = 'all';
 	kitchenList = [];
 	OrderAdditionTypeList = [];
@@ -2268,7 +2268,7 @@ Done
 
 1210
 Đã hủy
-Cancelled
+Canceled
 
 
 
@@ -2300,7 +2300,7 @@ Done
 
 1307
 Đã hủy
-Cancelled
+Canceled
 
 1308
 Đã đổi trả

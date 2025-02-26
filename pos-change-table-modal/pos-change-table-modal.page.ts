@@ -31,7 +31,7 @@ export class POSChangeTableModalPage extends PageBase {
 	initTablesIds = [];
 	orderedTables = [];
 	tables = [];
-	checkBillStatus = ['Splitted', 'Merged', 'Done', 'Cancelled'];
+	checkBillStatus = ['Splitted', 'Merged', 'Done', 'Canceled'];
 	checkSplitMergeStatus = ['Splitted', 'Merged'];
 	isMerging = false;
 	buttonText = 'Chuyển bàn';

@@ -30,7 +30,7 @@ import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-m
 export class POSOrderPage extends PageBase {
 	tableGroupList = [];
 	soStatusList = [];
-	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered']; //NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCancelled
+	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered']; //NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCanceled
 	segmentView = 'all';
 	orderCounter = 0;
 	numberOfGuestCounter = 0;

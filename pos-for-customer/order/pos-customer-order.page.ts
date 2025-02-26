@@ -797,7 +797,7 @@ export class POSCustomerOrderPage extends PageBase {
 				})
 				.catch((_) => {});
 		}
-		if (this.item.Status == 'Cancelled') {
+		if (this.item.Status == 'Canceled') {
 			this.env.showAlert('Đơn hàng này đã hủy!');
 		}
 		if (this.item.Status == 'Confirmed') {
@@ -1307,7 +1307,7 @@ export class POSCustomerOrderPage extends PageBase {
 			subHeader = 'Đơn hàng đã chia';
 			message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
 		}
-		if (status == 'Cancelled') {
+		if (status == 'Canceled') {
 			subHeader = 'Đơn hàng đã hủy';
 			message = 'Không thể thao tác trên đơn hàng này. Vui lòng chọn bàn phía dưới để đi đến đơn hàng của bạn';
 		}

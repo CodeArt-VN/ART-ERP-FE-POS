@@ -127,10 +127,10 @@
                         <ion-text slot="start">{{'Remaining' | translate}}</ion-text>                                                                                                                                 
                         <ion-label slot="end" color="primary">{{DebtAmount | number: '1.0-0'}} đ</ion-label>
                     </ion-item>                 
-                    <div *ngIf="DebtAmount > 0 && item.Status != 'Cancelled' " class="c-control ion-text-center">                          
+                    <div *ngIf="DebtAmount > 0 && item.Status != 'Canceled' " class="c-control ion-text-center">                          
                         <ion-button color="success" (click)="toPayment()" expand="block">Thanh toán</ion-button>                                                         
                     </div>                    
-                    <div *ngIf="item.Status != 'Done' && item.Status != 'Cancelled'" class="c-control ion-text-center">                          
+                    <div *ngIf="item.Status != 'Done' && item.Status != 'Canceled'" class="c-control ion-text-center">                          
                         <ion-button color="danger" (click)="doneOrder()" expand="block">Hoàn tất</ion-button>                                                         
                     </div>               
                 </ion-col> -->
