@@ -65,6 +65,7 @@ export class POSMenuDetailPage extends PageBase {
 
 			IsDisabled: [false],
 			Lines: this.formBuilder.array([]),
+			DeletedLines : [[]]
 		});
 	}
 	segmentView = 's1';
@@ -72,7 +73,7 @@ export class POSMenuDetailPage extends PageBase {
 		this.segmentView = ev.detail.value;
 	}
 	preLoadData(event?: any): void {
-		Promise.all([this.kitchenProvider.read({ IDBranch: this.env.selectedBranch,Skip: 0, Take: 5000, })]).then((values) => {
+		Promise.all([this.kitchenProvider.read({ IDBranch: this.env.selectedBranch, Skip: 0, Take: 5000 })]).then((values) => {
 			this.kitchenList = values[0]['data'];
 			super.preLoadData(event);
 		});
@@ -105,9 +106,8 @@ export class POSMenuDetailPage extends PageBase {
 	// }
 
 	loadedData(event) {
-		this.setLines();
-		this.itemSearch();
 		super.loadedData(event);
+		this.setLines();
 		if (this.item.Image != null) {
 			this.Image = environment.posImagesServer + this.item.Image;
 		}
@@ -152,132 +152,32 @@ export class POSMenuDetailPage extends PageBase {
 
 	addItemLine(line) {
 		// let data = this.item.Lines.find((d) => d.IDItem == line.Id);
-
-		let searchInput$ = new Subject<string>();
 		let groups = <FormArray>this.formGroup.controls.Lines;
 		let group = this.formBuilder.group({
 			_IDItemDataSource: this.buildSelectDataSource((term) => {
-				return this.itemProvider.commonService.connect('GET', 'WMS/Item/SearchPOSItem', {
+				return this.itemProvider.search({
 					SortBy: ['Id_desc'],
 					Take: 20,
 					Skip: 0,
 					Term: term,
 				});
 			}),
-			// _ItemSearchLoading: [false],
-			// _ItemSearchInput: [searchInput$],
-			// _ItemDataSource: [
-			// 	searchInput$.pipe(
-			// 		distinctUntilChanged(),
-			// 		tap(() => group.controls._ItemSearchLoading.setValue(true)),
-			// 		switchMap((term) =>
-			// 			this.itemProvider.commonService.connect('GET', 'WMS/Item/SearchPOSItem', { Take: 20, Skip: 0, Keyword: term }).pipe(
-			// 				catchError(() => of([])),
-			// 				tap(() => group.controls._ItemSearchLoading.setValue(false))
-			// 			)
-			// 		)
-			// 	),
-			// ],
-			_UoMs: [line.UoMs ? line.UoMs : ''],
+
 			IDMenu: [this.id],
 			Id: [line?.Id],
 			Name: [line?.Name],
 			Code: [line?.Code],
 			IDItem: [line?.IDItem, Validators.required],
 			IDKitchen: [line?.IDKitchen],
-			IDUoM: [line?.UoMs?.find((d) => d.Id == line?.SalesUoM)?.Id || null],
-			UoMPrice: [line?.UoMPrice],
-			// Image: new FormControl({
-			// 	value: data?.Image ? data.Image : '',
-			// 	disabled: false,
-			// }),
-			// Quantity: [line.Quantity],
-			// Remark: [line.Remark],
+
 			Sort: [line?.Sort],
+			IsChecked: [false],
 			IsDisabled: [line?.IsDisabled],
 		});
-		if(line?._Item) group.get('_IDItemDataSource').value.selected.push(line?._Item);
+		if (line?._Item) group.get('_IDItemDataSource').value.selected.push(line?._Item);
 		group.get('_IDItemDataSource').value.initSearch();
 		groups.push(group);
 		// this.changedIDItem(group, line);
-	}
-
-	itemList$;
-	itemListLoading = false;
-	itemListInput$ = new Subject<string>();
-	itemListSelected = [];
-	itemSearch() {
-		this.itemListLoading = false;
-		this.itemList$ = concat(
-			of(this.itemListSelected),
-			this.itemListInput$.pipe(
-				distinctUntilChanged(),
-				tap(() => (this.itemListLoading = true)),
-				switchMap((term) =>
-					this.itemProvider.search({ Take: 20, Skip: 0, Term: term, AllUoM: true }).pipe(
-						catchError(() => of([])), // empty list on error
-						tap(() => (this.itemListLoading = false))
-					)
-				)
-			)
-		);
-	}
-
-	changedIDItem(group, e, submit = false) {
-		if (e) {
-			group.controls._UoMs.setValue(e.UoMs);
-			group.controls.IDItem.setValue(e.Id);
-			group.controls.IDItem.markAsDirty();
-			if (e.SalesUoM) {
-				group.controls.IDUoM.setValue(e.SalesUoM);
-				group.controls.IDUoM.markAsDirty();
-			}
-			// group.controls.IDUoM.disable(); //Currently Disabled
-
-			// this.changedIDUoM(group, e, submit);
-		} else {
-			group.controls.IDItem.setValue(null);
-			group.controls.IDUoM.setValue(null);
-		}
-		if (submit) {
-			this.saveChange2();
-		}
-	}
-
-	saveItemChange(item) {
-		let savingItem;
-		let index = this.menuItemList.findIndex((i) => i.Id == item.Id);
-
-		if (index == -1) {
-			savingItem = {
-				IDMenu: this.id,
-				IDItem: item.Id,
-				IDKitchen: null,
-			};
-		} else {
-			let data = this.menuDetailList.find((d) => d.IDItem == item.Id);
-
-			savingItem = {
-				Id: data.Id,
-				IDMenu: this.id,
-				IDItem: item.Id,
-				IDKitchen: data.IDKitchen,
-			};
-		}
-
-		this.menuDetailProvider.save(savingItem).then((savedData: any) => {
-			if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
-				this.menuDetailList.push(savedData);
-				let line = this.formGroup['controls']['Lines']['value'].find((l) => l.IDItem == savedData.IDItem);
-				line.Id = savedData.Id;
-
-				let index = this.formGroup['controls']['Lines']['value'].findIndex((l) => l.IDItem == savedData.IDItem);
-				this.formGroup['controls']['Lines']['controls'][index]['controls']['Id'].setValue(savedData.Id);
-
-				this.menuItemList.push(item);
-			}
-			this.env.showMessage('Saving completed!', 'success');
-		});
 	}
 
 	toogleKitchenSet(group, kit?) {
@@ -288,53 +188,42 @@ export class POSMenuDetailPage extends PageBase {
 		group.controls.IDKitchen.markAsDirty();
 		this.saveChange2();
 	}
-	lock(index) {
+	lock(g) {
 		let groups = <FormArray>this.formGroup.controls.Lines;
-		let isDisable = !groups.controls[index]['controls'].IsDisabled.value;
-		groups.controls[index]['controls'].IsDisabled.setValue(isDisable);
+		let isDisable = !g.controls.IsDisabled.value;
+		g.controls.IsDisabled.setValue(isDisable);
 
-		this.menuDetailProvider.disable([{ Id: groups.controls[index]['controls'].Id.value }], isDisable).then((resp) => {
+		this.menuDetailProvider.disable([{ Id: g.controls.Id.value }], isDisable).then((resp) => {
 			console.log(resp);
 			this.env.showMessage('Saved change!', 'success');
 		});
 	}
-	removeItemLine(index, permanentlyRemove = true) {
-		this.alertCtrl
-			.create({
-				header: 'Xóa sản phẩm',
-				//subHeader: '---',
-				message: 'Bạn có chắc muốn xóa sản phẩm này?',
-				buttons: [
-					{
-						text: 'Không',
-						role: 'cancel',
-					},
-					{
-						text: 'Đồng ý xóa',
-						cssClass: 'danger-btn',
-						handler: () => {
-							let groups = <FormArray>this.formGroup.controls.Lines;
-							let Ids = [];
-							Ids.push({
-								Id: groups.controls[index]['controls'].Id.value,
-							});
-							// this.removedItems.push({ Id: groups.controls[index]['controls'].Id.value });
 
-							if (permanentlyRemove) {
-								this.menuDetailProvider.delete(Ids).then((resp) => {
-									groups.removeAt(index);
-									this.env.showMessage('Deleted!', 'success');
+	removeLine(index) {
+			let groups = <FormArray>this.formGroup.controls.Lines;
+			let group = groups.controls[index];
+			if (group.get('Id').value) {
+				this.env
+					.showPrompt('Bạn có chắc muốn xóa sản phẩm?', null, 'Xóa sản phẩm')
+					.then((_) => {
+						let Ids = [];
+						Ids.push(groups.controls[index].get('Id').value);
+						// this.removeItem.emit(Ids);
+						if (Ids && Ids.length > 0) {
+							this.formGroup.get('DeletedLines').setValue(Ids);
+							this.formGroup.get('DeletedLines').markAsDirty();
+							//this.item.DeletedLines = Ids;
+							this.saveChange().then((_) => {
+								Ids.forEach((id) => {
+									let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+									if (index >= 0) groups.removeAt(index);
 								});
-							}
-						},
-					},
-				],
-			})
-			.then((alert) => {
-				alert.present();
-			});
-	}
-
+							});
+						}
+					})
+					.catch((_) => {});
+			} else groups.removeAt(index);
+		}
 	doReorder(ev, groups) {
 		groups = ev.detail.complete(groups);
 		for (let i = 0; i < groups.length; i++) {
@@ -372,12 +261,81 @@ export class POSMenuDetailPage extends PageBase {
 		if (this.item.Lines?.length > 0) {
 			let newIds = new Set(this.item.Lines.map((i) => i.Id));
 			const diff = [...newIds].filter((item) => !idsBeforeSaving.has(item));
-			if (diff?.length > 0) {
+			if (diff?.length == 1) {
 				groups.controls
 					.find((d) => !d.get('Id').value)
 					?.get('Id')
 					.setValue(diff[0]);
 			}
+			else if(diff?.length >1){
+				this.loadedData(null);
+			}
 		}
 	}
+	selectedLines = new FormArray([]);
+	isAllChecked = false;
+	toggleSelectAll() {
+		this.isAllChecked = !this.isAllChecked;
+		if (!this.pageConfig.canEdit) return;
+		let groups = <FormArray>this.formGroup.controls.Lines;
+		if (!this.isAllChecked) {
+			this.selectedLines = new FormArray([]);
+		}
+		groups.controls.forEach((i) => {
+			i.get('IsChecked').setValue(this.isAllChecked);
+			i.get('IsChecked').markAsPristine();
+
+			if (this.isAllChecked) this.selectedLines.push(i);
+		});
+	}
+		removeSelectedItems() {
+			let groups = <FormArray>this.formGroup.controls.Lines;
+			if(this.selectedLines.controls.some(g=> g.get('Id').value)){
+				this.env
+					.showPrompt({ code: 'ACTION_DELETE_MESSAGE', value: { value: this.selectedLines.length } }, null, {
+						code: 'ACTION_DELETE_MESSAGE',
+						value: { value: this.selectedLines.length },
+					})
+					.then((_) => {
+						let Ids = this.selectedLines.controls.map((fg) => fg.get('Id').value);
+						// this.removeItem.emit(Ids);
+						if (Ids && Ids.length > 0) {
+							this.formGroup.get('DeletedLines').setValue(Ids);
+							this.formGroup.get('DeletedLines').markAsDirty();
+							//this.item.DeletedLines = Ids;
+							this.saveChange().then((_) => {
+								Ids.forEach((id) => {
+									let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+									if (index >= 0) groups.removeAt(index);
+								});
+							});
+						}
+						this.selectedLines = new FormArray([]);
+	
+					})
+					.catch((_) => {});
+			}
+			else if(this.selectedLines.controls.length>0){
+				this.selectedLines.controls.map((fg) => fg.get('Id').value).forEach((id) => {
+						let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+						if (index >= 0) groups.removeAt(index);
+				});
+				this.selectedLines = new FormArray([]);
+	
+			}
+			else{
+				this.env.showMessage('Please select at least one item to remove', 'warning');
+			}
+		}
+	
+	changeSelection(i, e = null) {
+		if (i.get('IsChecked').value) {
+			this.selectedLines.push(i);
+		} else {
+			let index = this.selectedLines.getRawValue().findIndex((d) => d.Id == i.get('Id').value);
+			this.selectedLines.removeAt(index);
+		}
+		i.get('IsChecked').markAsPristine();
+	}
+
 }

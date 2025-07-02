@@ -41,7 +41,6 @@
 					<ion-segment-button value="s2">
 						<ion-label>{{'Product' | translate}}</ion-label>
 					</ion-segment-button>
-
 				</ion-segment>
 			</ion-toolbar>
 
@@ -62,10 +61,9 @@
                                             <label class="c-label" for="Id">{{'Id' | translate}}</label>
                                             <input class="c-input" id="Id" formControlName="Id" type="number">
                                         </div> -->
-										<app-form-control (change)="saveChange()"[field]="{id:'Code', label:'Code', type:'text', form:formGroup}"></app-form-control>
-										<app-form-control (change)="saveChange()"[field]="{id:'Name', label:'Name', type:'text', form:formGroup}"></app-form-control>
-										<app-form-control (change)="saveChange()"[field]="{id:'Sort', label:'Sort', type:'number', form:formGroup}"></app-form-control>
-										
+										<app-form-control (change)="saveChange()" [field]="{id:'Code', label:'Code', type:'text', form:formGroup}"></app-form-control>
+										<app-form-control (change)="saveChange()" [field]="{id:'Name', label:'Name', type:'text', form:formGroup}"></app-form-control>
+										<app-form-control (change)="saveChange()" [field]="{id:'Sort', label:'Sort', type:'number', form:formGroup}"></app-form-control>
 									</ion-col>
 									<!-- <ion-col size="12" size-sm size-xl="4">
 
@@ -80,112 +78,93 @@
 					<div id="pos-menu-detail" style="position: absolute"></div>
 					<form [formGroup]="formGroup">
 						<ng-container formArrayName="Lines">
-							<div class="table-contain">
-								<section class="table" style="min-width: 1270px">
-									<header class="bold" style="padding-right: 0">
-										<div class="col-checkbox cell" *ngIf="pageConfig.canEdit"></div>
-										<div class="col-checkbox cell" *ngIf="pageConfig.canEdit"></div>
-										<div class="col-id cell">{{'STT' | translate}}</div>
-										<div class="col-name cell">{{'Tên sản phẩm' | translate}}</div>
-										<div class="col-uom cell">{{'Unit' | translate}}</div>
-										<!-- <div class="col-image cell">URL Hình ảnh</div> -->
-										<div class="col-kit cell">{{'Bếp' | translate}}</div>
-										<div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
-									</header>
-									<ion-reorder-group (ionItemReorder)="doReorder($event, formGroup.get('Lines')['controls'])" [disabled]="!pageConfig.canEdit">
-										<ng-container *ngFor="let g of formGroup.get('Lines')['controls']; let idx = index;">
-											<ng-container [formGroup]="g">
-												<div class="row">
-													<ion-reorder slot="start"></ion-reorder>
-													<div class="col-checkbox cell" *ngIf="pageConfig.canEdit">
-														<input (click)="changeSelection(g, $event)" class="c-checkbox" type="checkbox" />
-													</div>
-													<div class="col-id cell">{{idx+1}}</div>
-													<div class="col-name cell">
-														<app-input-control (change)="changedIDItem(g, $event, true)"[field]="{id:'IDItem', label:'Item', type:'ng-select-item',dataSource:g.controls._IDItemDataSource.value, bindLabel:'Name', bindValue:'Id', form:g}"></app-input-control>
-														<!-- <ng-select
-															formControlName="IDItem"
-															appendTo="#pos-menu-detail"
-															class="c-input"
-															[clearable]="false"
-															(change)="changedIDItem(g, $event, true)"
-															[labelForId]="'IDItem'+idx"
-															[items]="g.controls._ItemDataSource.value | async"
-															[typeahead]="g.controls._ItemSearchInput.value"
-															[loading]="g.controls._ItemSearchLoading.value"
-															[virtualScroll]="true"
-															bindLabel="Name"
-															bindValue="Id"
-															placeholder="{{'Search for name or product code' | translate}}"
-														>
-															<ng-template ng-label-tmp let-i="item">
-																<b *ngIf="i.Code" [title]="i.Id"> {{i.Code}} </b>
-																{{i.Name}}
-															</ng-template>
-															<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-																<div *ngIf="i">
-																	<div>
-																		<span>{{i.Name}}</span>
-																	</div>
-																	<small
-																		>#<b><span class="important" [ngOptionHighlight]="search">{{i.Id}} - {{i.Code}}</span></b></small
-																	>
-																</div>
-															</ng-template>
-														</ng-select> -->
-													</div>
-													<div class="col-uom cell">
-														<app-input-control (change)="saveChange(g, $event, true)"[field]="{id:'IDUoM', label:'UoM', type:'ng-select',dataSource:g.controls._UoMs.value, bindLabel:'Name', bindValue:'Id', form:g}"></app-input-control>
-													</div>
-
-													<div class="col-kit cell">
-														<ng-container *ngFor="let k of kitchenList">
-															<ion-button
-																[disabled]="!pageConfig.canEdit || submitAttempt"
-																[fill]="k.Id == (g.controls.IDKitchen.value)  ? 'solid' : 'outline'"
-																expand="block"
-																size="small"
-																(click)="toogleKitchenSet(g, k)"
-															>
-																{{k.Name}}
-															</ion-button>
-														</ng-container>
-													</div>
-
-													<div class="col-del cell" *ngIf="pageConfig.canEdit" (click)="lock(idx)">
-														<ion-icon
-															[color]="g.controls.IsDisabled.value ? 'danger':'success' "
-															class="min-btn"
-															[name]=" g.controls.IsDisabled.value ? 'bag-remove-outline':'bag-check-outline' "
-														></ion-icon>
-													</div>
-													<div class="col-del cell" *ngIf="pageConfig.canEdit" (click)="removeItemLine(idx, true)">
-														<ion-icon color="danger" class="min-btn" name="trash-outline"></ion-icon>
-													</div>
-												</div>
-											</ng-container>
+							<app-data-table [rows]="formGroup.get('Lines')['controls']" [showSpinner]="pageConfig.showSpinner">
+								<datatable-empty-message subMessage="Please click add new to start...">
+									<ng-template datatable-empty-message-template>
+										<div>
+											<ion-button *ngIf="formGroup.controls.Id.value != null" size="small" (click)="addItemLine({}, true)">
+												<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+												{{ 'Add product' | translate }}
+											</ion-button>
+										</div>
+									</ng-template>
+								</datatable-empty-message>
+								<datatable-column [checkbox]="true" property="value" *ngIf="pageConfig.canEdit">
+									<ng-template datatable-header-template>
+										<input class="c-checkbox" type="checkbox" (change)="toggleSelectAll()" [checked]="isAllSelected" />
+									</ng-template>
+									<ng-template let-g="row" datatable-cell-template>
+										<app-input-control
+											(change)="changeSelection(g)"
+											[field]="{ id: 'IsChecked', label: 'Checked', type: 'checkbox', form: g }"
+										></app-input-control>
+									</ng-template>
+								</datatable-column>
+								<datatable-column class="col-id" name="No." property="#"></datatable-column>
+								<datatable-column class="col-name item-name" name="Items" property="value">
+									<ng-template let-g="row" datatable-cell-template>
+										<app-input-control
+											[field]="{ id: 'IDItem', label: 'Item', type: 'ng-select-item', form: g,
+										dataSource: g.get('_IDItemDataSource').value,
+										bindValue: 'Id',
+										bindLabel: 'Name',
+										clearable: true,
+										placeholder: 'Type to search...',
+										appendTo: '#pos-menu-detail', }"
+											(change)="saveChange()"
+										></app-input-control>
+									</ng-template>
+								</datatable-column>
+								<datatable-column class="col-kit" name="Kitchen" property="value">
+									<ng-template let-g="row" datatable-cell-template>
+										<ng-container *ngFor="let k of kitchenList">
+											<ion-button
+												[disabled]="!pageConfig.canEdit || submitAttempt"
+												[fill]="k.Id == (g.controls.IDKitchen.value)  ? 'solid' : 'outline'"
+												expand="block"
+												size="small"
+												(click)="toogleKitchenSet(g, k)"
+											>
+												{{k.Name}}
+											</ion-button>
 										</ng-container>
-									</ion-reorder-group>
-									<div class="row" *ngIf="pageConfig.canEdit && formGroup.valid">
-										<div class="col-id cell" *ngIf="pageConfig.canEdit" (click)="addItemLine({_Item:null, IDMenu: item.Id, Id: 0, UoMs: [], Sort: null })">
-											<ion-icon class="min-btn" title="{{'Add product' | translate}}" name="add-circle-outline"></ion-icon>
-										</div>
-										<div class="col-id cell" *ngIf="!pageConfig.canEdit"></div>
-										<div class="col-remark cell">
-											<div class="col-remark cell">
-												<b *ngIf="pageConfig.canEdit" (click)="addItemLine({_Item:null, IDMenu: item.Id, Id: 0, UoMs: [], Sort: null })"
-													>{{'Thêm sản phẩm' | translate}}</b
-												>
-											</div>
-										</div>
-										<div class="col-uom cell">
-											<div style="height: 35px"></div>
-										</div>
-									</div>
-								</section>
-							</div>
+									</ng-template>
+								</datatable-column>
+								<datatable-column class="col-del" name="" property="value" *ngIf="pageConfig.canEdit">
+									<ng-template let-g="row" let-idx="idx" datatable-cell-template>
+										<ion-icon
+											size="large"
+											[title]="g.controls.IsDisabled.value?'Locked':'Lock item'"
+											(click)="lock(g)"
+											[color]="g.controls.IsDisabled.value ? 'danger':'success' "
+											class="min-btn"
+											[name]=" g.controls.IsDisabled.value ? 'bag-remove-outline':'bag-check-outline' "
+										></ion-icon>
+									</ng-template>
+								</datatable-column>
+								<datatable-column class="col-del" name="" property="value" *ngIf="pageConfig.canEdit">
+									<ng-template datatable-header-template>
+										<ion-icon
+											color="danger"
+											class="min-btn clickable"
+											title="{{ 'SELECTED_ITEMS' | translate: { COUNT: selectedLines.controls?.length } }}"
+											name="trash-outline"
+											(click)="removeSelectedItems()"
+										></ion-icon>
+									</ng-template>
+									<ng-template let-g="row" let-idx="idx" datatable-cell-template>
+										<ion-icon color="danger" class="min-btn clickable" name="trash-outline" (click)="removeLine(idx)"></ion-icon>
+									</ng-template>
+								</datatable-column>
+							</app-data-table>
 						</ng-container>
 					</form>
+					<div class="ion-padding" *ngIf="pageConfig.canEdit && !formGroup.invalid">
+						<ion-button fill="clear" size="small" (click)="addItemLine({}, true)">
+							<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+							{{ 'Add product' | translate }}
+						</ion-button>
+					</div>
 				</div>
 			</div>
 		</div>
