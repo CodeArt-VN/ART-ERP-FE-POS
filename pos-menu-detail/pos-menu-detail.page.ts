@@ -164,7 +164,7 @@ export class POSMenuDetailPage extends PageBase {
 					distinctUntilChanged(),
 					tap(() => group.controls._ItemSearchLoading.setValue(true)),
 					switchMap((term) =>
-						this.itemProvider.search({ Take: 20, Skip: 0, Keyword: term }).pipe(
+						this.itemProvider.commonService.connect('GET','WMS/Item/SearchPOSItem',{ Take: 20, Skip: 0, Keyword: term }).pipe(
 							catchError(() => of([])),
 							tap(() => group.controls._ItemSearchLoading.setValue(false))
 						)
