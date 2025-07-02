@@ -53,7 +53,6 @@ export class POSMenuDetailPage extends PageBase {
 			Name: ['', Validators.required],
 			Sort: [''],
 
-			_Item: new FormControl({ value: '', disabled: false }),
 			// Id: new FormControl({ value: 0, disabled: true }),
 			IDItem: [''],
 
@@ -72,33 +71,38 @@ export class POSMenuDetailPage extends PageBase {
 	segmentChanged(ev: any) {
 		this.segmentView = ev.detail.value;
 	}
-
-	loadData(event) {
-		this.menuItemList = [];
-		Promise.all([this.kitchenProvider.read({ Skip: 0, Take: 5000 }), this.menuDetailProvider.read({ IDMenu: this.id, IsDisable: '' })]).then((values) => {
+	preLoadData(event?: any): void {
+		Promise.all([this.kitchenProvider.read({ IDBranch: this.env.selectedBranch,Skip: 0, Take: 5000, })]).then((values) => {
 			this.kitchenList = values[0]['data'];
-			this.menuDetailList = values[1]['data'];
-
-			let counter = 0;
-			this.menuDetailList.forEach((e) => {
-				Promise.all([this.itemProvider.search({ Id: e.IDItem, AllUoM: true }).toPromise()]).then((values) => {
-					let data = values[0][0];
-					if (data) {
-						this.menuItemList.push(data);
-					}
-
-					if (counter == this.menuDetailList.length - 1) {
-						super.loadData(event);
-					}
-					counter++;
-				});
-			});
-
-			if (this.menuDetailList.length == 0) {
-				super.loadData(event);
-			}
+			super.preLoadData(event);
 		});
 	}
+	// loadData(event) {
+	// 	this.menuItemList = [];
+	// 	Promise.all([this.kitchenProvider.read({ Skip: 0, Take: 5000 }), this.menuDetailProvider.read({ IDMenu: this.id, IsDisable: '' })]).then((values) => {
+	// 		this.kitchenList = values[0]['data'];
+	// 		this.menuDetailList = values[1]['data'];
+
+	// 		let counter = 0;
+	// 		this.menuDetailList.forEach((e) => {
+	// 			Promise.all([this.itemProvider.search({ Id: e.IDItem, AllUoM: true }).toPromise()]).then((values) => {
+	// 				let data = values[0][0];
+	// 				if (data) {
+	// 					this.menuItemList.push(data);
+	// 				}
+
+	// 				if (counter == this.menuDetailList.length - 1) {
+	// 					super.loadData(event);
+	// 				}
+	// 				counter++;
+	// 			});
+	// 		});
+
+	// 		if (this.menuDetailList.length == 0) {
+	// 			super.loadData(event);
+	// 		}
+	// 	});
+	// }
 
 	loadedData(event) {
 		this.setLines();
@@ -108,6 +112,7 @@ export class POSMenuDetailPage extends PageBase {
 			this.Image = environment.posImagesServer + this.item.Image;
 		}
 	}
+
 	onFileSelected = (event) => {
 		if (event.target.files.length == 0) {
 			return;
@@ -131,10 +136,11 @@ export class POSMenuDetailPage extends PageBase {
 	setLines() {
 		this.formGroup.controls.Lines = new FormArray([]);
 
-		if (this.menuItemList.length) {
-			this.menuItemList.forEach((i) => {
+		if (this.item?.Lines?.length) {
+			const sortedLines = this.item?.Lines?.slice().sort((a, b) => a.Sort - b.Sort);
+			sortedLines.forEach((i) => {
 				this.addItemLine(i);
-				this.toogleKitchenSet(i);
+				// this.toogleKitchenSet(i);
 			});
 		}
 
@@ -145,62 +151,55 @@ export class POSMenuDetailPage extends PageBase {
 	}
 
 	addItemLine(line) {
-		let stdCost = 0;
-		if (line.UoMs) {
-			let sUoM = line.UoMs.find((d) => d.Id == line.IDUoM);
-			let cost = sUoM?.PriceList.find((d) => d.Type == 'StdCostPriceList');
-			if (cost) stdCost = cost.Price;
-		}
-
-		let data = this.menuDetailList.find((d) => d.IDItem == line.Id);
+		// let data = this.item.Lines.find((d) => d.IDItem == line.Id);
 
 		let searchInput$ = new Subject<string>();
 		let groups = <FormArray>this.formGroup.controls.Lines;
 		let group = this.formBuilder.group({
-			_ItemSearchLoading: [false],
-			_ItemSearchInput: [searchInput$],
-			_ItemDataSource: [
-				searchInput$.pipe(
-					distinctUntilChanged(),
-					tap(() => group.controls._ItemSearchLoading.setValue(true)),
-					switchMap((term) =>
-						this.itemProvider.commonService.connect('GET','WMS/Item/SearchPOSItem',{ Take: 20, Skip: 0, Keyword: term }).pipe(
-							catchError(() => of([])),
-							tap(() => group.controls._ItemSearchLoading.setValue(false))
-						)
-					)
-				),
-			],
+			_IDItemDataSource: this.buildSelectDataSource((term) => {
+				return this.itemProvider.commonService.connect('GET', 'WMS/Item/SearchPOSItem', {
+					SortBy: ['Id_desc'],
+					Take: 20,
+					Skip: 0,
+					Term: term,
+				});
+			}),
+			// _ItemSearchLoading: [false],
+			// _ItemSearchInput: [searchInput$],
+			// _ItemDataSource: [
+			// 	searchInput$.pipe(
+			// 		distinctUntilChanged(),
+			// 		tap(() => group.controls._ItemSearchLoading.setValue(true)),
+			// 		switchMap((term) =>
+			// 			this.itemProvider.commonService.connect('GET', 'WMS/Item/SearchPOSItem', { Take: 20, Skip: 0, Keyword: term }).pipe(
+			// 				catchError(() => of([])),
+			// 				tap(() => group.controls._ItemSearchLoading.setValue(false))
+			// 			)
+			// 		)
+			// 	),
+			// ],
 			_UoMs: [line.UoMs ? line.UoMs : ''],
-			_Item: [line, Validators.required],
-
-			StdCost: new FormControl({ value: stdCost, disabled: true }),
-			// TotalPrice: new FormControl({ value: 0, disabled: true }),
-			// TotalStdCost: new FormControl({ value: 0, disabled: true }),
-
 			IDMenu: [this.id],
-			Id: [data ? data.Id : 0],
-			Name: [line.Name ? line.Name : line._Item?.Name],
-			IDItem: [line.Id, Validators.required],
-			IDKitchen: [data ? data.IDKitchen : null],
-			IDUoM: new FormControl({
-				value: line.SalesUoM,
-				required: false,
-				disabled: false,
-			}),
-			UoMPrice: [line.UoMPrice],
-			Image: new FormControl({
-				value: data?.Image ? data.Image : '',
-				disabled: false,
-			}),
+			Id: [line?.Id],
+			Name: [line?.Name],
+			Code: [line?.Code],
+			IDItem: [line?.IDItem, Validators.required],
+			IDKitchen: [line?.IDKitchen],
+			IDUoM: [line?.UoMs?.find((d) => d.Id == line?.SalesUoM)?.Id || null],
+			UoMPrice: [line?.UoMPrice],
+			// Image: new FormControl({
+			// 	value: data?.Image ? data.Image : '',
+			// 	disabled: false,
+			// }),
 			// Quantity: [line.Quantity],
 			// Remark: [line.Remark],
-			Sort: [data ? data.Sort : null],
-			IsDisabled: [data?.IsDisabled],
+			Sort: [line?.Sort],
+			IsDisabled: [line?.IsDisabled],
 		});
-
+		if(line?._Item) group.get('_IDItemDataSource').value.selected.push(line?._Item);
+		group.get('_IDItemDataSource').value.initSearch();
 		groups.push(group);
-		this.changedIDItem(group, line);
+		// this.changedIDItem(group, line);
 	}
 
 	itemList$;
@@ -229,48 +228,23 @@ export class POSMenuDetailPage extends PageBase {
 			group.controls._UoMs.setValue(e.UoMs);
 			group.controls.IDItem.setValue(e.Id);
 			group.controls.IDItem.markAsDirty();
-			group.controls.IDUoM.setValue(e.SalesUoM);
-
-			if (this.pageConfig.canEdit) {
-				group.controls._Item.enable();
-				group.controls.IDUoM.enable();
-				group.controls.Image.enable();
-			} else {
-				group.controls._Item.disable();
-				group.controls.IDUoM.disable();
-				group.controls.Image.disable();
+			if (e.SalesUoM) {
+				group.controls.IDUoM.setValue(e.SalesUoM);
+				group.controls.IDUoM.markAsDirty();
 			}
-
 			// group.controls.IDUoM.disable(); //Currently Disabled
 
-			this.changedIDUoM(group, e, submit);
+			// this.changedIDUoM(group, e, submit);
+		} else {
+			group.controls.IDItem.setValue(null);
+			group.controls.IDUoM.setValue(null);
+		}
+		if (submit) {
+			this.saveChange2();
 		}
 	}
 
-	changedIDUoM(group, e, submit) {
-		let selectedUoM = group.controls._UoMs.value.find((d) => d.Id == group.controls.IDUoM.value);
-		if (selectedUoM) {
-			let cost = selectedUoM.PriceList.find((d) => d.Type == 'StdCostPriceList');
-			if (cost) {
-				group.controls.StdCost.setValue(cost.Price);
-			} else {
-				group.controls.StdCost.setValue(0);
-			}
-
-			let price = selectedUoM.PriceList.find((d) => d.Type == 'PriceList');
-			if (price) {
-				group.controls.UoMPrice.setValue(price.Price);
-			} else {
-				group.controls.UoMPrice.setValue(0);
-			}
-
-			group.controls.UoMPrice.markAsDirty();
-
-			if (submit) this.saveItemChange(e);
-		}
-	}
-
-	async saveItemChange(item) {
+	saveItemChange(item) {
 		let savingItem;
 		let index = this.menuItemList.findIndex((i) => i.Id == item.Id);
 
@@ -306,59 +280,13 @@ export class POSMenuDetailPage extends PageBase {
 		});
 	}
 
-	toogleKitchenSet(item, kit?) {
-		let data = this.menuDetailList.find((d) => d.IDItem == item.Id);
-
-		if (kit) {
-			let line = this.formGroup['controls']['Lines']['value'].find((l) => l.IDItem == data.IDItem);
-
-			if (line.IDKitchen != kit.Id) {
-				line.IDKitchen = kit.Id;
-				data.IDKitchen = kit.Id;
-
-				let savingItem = {
-					Id: data.Id,
-					IDMenu: this.id,
-					IDItem: item.Id,
-					IDKitchen: data.IDKitchen,
-				};
-
-				this.menuDetailProvider
-					.save(savingItem)
-					.then((savedData: any) => {
-						if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
-							this.menuDetailList.push(savedData);
-						}
-						this.env.showMessage('Saving completed!', 'success');
-					})
-					.catch((err) => {
-						this.env.showMessage(err, 'danger');
-					});
-			} else {
-				// Unselect
-				line.IDKitchen = null;
-				data.IDKitchen = null;
-
-				let savingItem = {
-					Id: data.Id,
-					IDMenu: this.id,
-					IDItem: item.Id,
-					IDKitchen: null,
-				};
-
-				this.menuDetailProvider
-					.save(savingItem)
-					.then((savedData: any) => {
-						if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
-							this.menuDetailList.push(savedData);
-						}
-						this.env.showMessage('Saving completed!', 'success');
-					})
-					.catch((err) => {
-						this.env.showMessage(err, 'danger');
-					});
-			}
-		}
+	toogleKitchenSet(group, kit?) {
+		// let data = this.menuDetailList.find((d) => d.IDItem == item.Id);
+		if (group.controls.IDKitchen.value == kit.Id) {
+			group.controls.IDKitchen.setValue(null);
+		} else group.controls.IDKitchen.setValue(kit.Id);
+		group.controls.IDKitchen.markAsDirty();
+		this.saveChange2();
 	}
 	lock(index) {
 		let groups = <FormArray>this.formGroup.controls.Lines;
@@ -414,30 +342,7 @@ export class POSMenuDetailPage extends PageBase {
 			g.controls.Sort.setValue(i + 1);
 			g.controls.Sort.markAsDirty();
 		}
-
-		let counter = 0;
-		let max = this.formGroup.controls.Lines.value.length;
-		this.submitAttempt = true;
-
-		this.formGroup.controls.Lines.value.forEach((i) => {
-			let savingItem = {
-				Id: i.Id,
-				Sort: i.Sort,
-			};
-			this.menuDetailProvider
-				.save(savingItem)
-				.then((savedData: any) => {
-					if (counter == max - 1) {
-						this.env.showMessage('Saving completed!', 'success');
-						this.submitAttempt = false;
-					}
-					counter++;
-				})
-				.catch((err) => {
-					this.env.showMessage(err, 'danger');
-					this.submitAttempt = false;
-				});
-		});
+		this.saveChange();
 	}
 
 	// saveImageURL(ev) {
@@ -457,5 +362,22 @@ export class POSMenuDetailPage extends PageBase {
 
 	async saveChange() {
 		super.saveChange2();
+	}
+
+	savedChange(savedItem = null, form = this.formGroup) {
+		super.savedChange(savedItem, form);
+		let groups = <FormArray>this.formGroup.controls.Lines;
+		let idsBeforeSaving = new Set(groups.controls.map((g) => g.get('Id').value));
+		this.item = savedItem;
+		if (this.item.Lines?.length > 0) {
+			let newIds = new Set(this.item.Lines.map((i) => i.Id));
+			const diff = [...newIds].filter((item) => !idsBeforeSaving.has(item));
+			if (diff?.length > 0) {
+				groups.controls
+					.find((d) => !d.get('Id').value)
+					?.get('Id')
+					.setValue(diff[0]);
+			}
+		}
 	}
 }

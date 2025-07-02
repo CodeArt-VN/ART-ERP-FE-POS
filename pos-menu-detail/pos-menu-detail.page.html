@@ -41,6 +41,7 @@
 					<ion-segment-button value="s2">
 						<ion-label>{{'Product' | translate}}</ion-label>
 					</ion-segment-button>
+
 				</ion-segment>
 			</ion-toolbar>
 
@@ -61,42 +62,10 @@
                                             <label class="c-label" for="Id">{{'Id' | translate}}</label>
                                             <input class="c-input" id="Id" formControlName="Id" type="number">
                                         </div> -->
-										<div class="c-control">
-											<label class="c-label" for="Code"
-												>{{'Code' | translate}}
-												<span
-													*ngIf="!formGroup.controls.Code.valid && !formGroup.controls.Code.pending && (formGroup.controls.Code.dirty || submitAttempt)"
-													ion-text
-													color="danger"
-													>(*)</span
-												>
-											</label>
-											<input (change)="saveChange()" class="c-input" id="Code" formControlName="Code" type="text" />
-										</div>
-										<div class="c-control">
-											<label class="c-label" for="Name"
-												>{{'Name' | translate}}
-												<span
-													*ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)"
-													ion-text
-													color="danger"
-													>(*)</span
-												>
-											</label>
-											<input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text" />
-										</div>
-										<div class="c-control">
-											<label class="c-label" for="Sort"
-												>{{'Sort' | translate}}
-												<span
-													*ngIf="!formGroup.controls.Sort.valid && !formGroup.controls.Sort.pending && (formGroup.controls.Sort.dirty || submitAttempt)"
-													ion-text
-													color="danger"
-													>(*)</span
-												>
-											</label>
-											<input class="c-input" id="Sort" (change)="saveChange();" formControlName="Sort" type="number" />
-										</div>
+										<app-form-control (change)="saveChange()"[field]="{id:'Code', label:'Code', type:'text', form:formGroup}"></app-form-control>
+										<app-form-control (change)="saveChange()"[field]="{id:'Name', label:'Name', type:'text', form:formGroup}"></app-form-control>
+										<app-form-control (change)="saveChange()"[field]="{id:'Sort', label:'Sort', type:'number', form:formGroup}"></app-form-control>
+										
 									</ion-col>
 									<!-- <ion-col size="12" size-sm size-xl="4">
 
@@ -122,7 +91,6 @@
 										<!-- <div class="col-image cell">URL Hình ảnh</div> -->
 										<div class="col-kit cell">{{'Bếp' | translate}}</div>
 										<div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
-										<div class="col-del cell" *ngIf="pageConfig.canEdit"></div>
 									</header>
 									<ion-reorder-group (ionItemReorder)="doReorder($event, formGroup.get('Lines')['controls'])" [disabled]="!pageConfig.canEdit">
 										<ng-container *ngFor="let g of formGroup.get('Lines')['controls']; let idx = index;">
@@ -134,8 +102,9 @@
 													</div>
 													<div class="col-id cell">{{idx+1}}</div>
 													<div class="col-name cell">
-														<ng-select
-															formControlName="_Item"
+														<app-input-control (change)="changedIDItem(g, $event, true)"[field]="{id:'IDItem', label:'Item', type:'ng-select-item',dataSource:g.controls._IDItemDataSource.value, bindLabel:'Name', bindValue:'Id', form:g}"></app-input-control>
+														<!-- <ng-select
+															formControlName="IDItem"
 															appendTo="#pos-menu-detail"
 															class="c-input"
 															[clearable]="false"
@@ -146,6 +115,7 @@
 															[loading]="g.controls._ItemSearchLoading.value"
 															[virtualScroll]="true"
 															bindLabel="Name"
+															bindValue="Id"
 															placeholder="{{'Search for name or product code' | translate}}"
 														>
 															<ng-template ng-label-tmp let-i="item">
@@ -162,44 +132,20 @@
 																	>
 																</div>
 															</ng-template>
-														</ng-select>
+														</ng-select> -->
 													</div>
 													<div class="col-uom cell">
-														<!-- <select formControlName="IDUoM" [attr.disabled]="(!pageConfig.canEdit || submitAttempt)?'':null" class="c-input c-dropdown" (change)="changedIDUoM(g)">
-                                                                <option *ngFor="let t of g.controls._UoMs.value" [value]="t.Id">
-                                                                    {{t.Name}}
-                                                                </option>
-                                                            </select> -->
-
-														<ng-select
-															[clearable]="true"
-															class="c-input"
-															labelForId="IDUoM"
-															formControlName="IDUoM"
-															(change)="changedIDUoM(g, formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], true)"
-															[items]="g.controls._UoMs.value"
-															bindLabel="Name"
-															bindValue="Id"
-															placeholder="Chọn đơn vị"
-														>
-															<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-																<div *ngIf="i">
-																	<div>
-																		<b [ngOptionHighlight]="search">{{i.Name}}</b>
-																	</div>
-																</div>
-															</ng-template>
-														</ng-select>
+														<app-input-control (change)="saveChange(g, $event, true)"[field]="{id:'IDUoM', label:'UoM', type:'ng-select',dataSource:g.controls._UoMs.value, bindLabel:'Name', bindValue:'Id', form:g}"></app-input-control>
 													</div>
 
 													<div class="col-kit cell">
 														<ng-container *ngFor="let k of kitchenList">
 															<ion-button
 																[disabled]="!pageConfig.canEdit || submitAttempt"
-																[fill]="k.Id == (formGroup['controls']['Lines']['controls'][idx]['value']['IDKitchen'])  ? 'solid' : 'outline'"
+																[fill]="k.Id == (g.controls.IDKitchen.value)  ? 'solid' : 'outline'"
 																expand="block"
 																size="small"
-																(click)="toogleKitchenSet(formGroup.get('Lines')['controls'][idx]['controls']['_Item']['value'], k)"
+																(click)="toogleKitchenSet(g, k)"
 															>
 																{{k.Name}}
 															</ion-button>
@@ -220,7 +166,7 @@
 											</ng-container>
 										</ng-container>
 									</ion-reorder-group>
-									<div class="row" *ngIf="pageConfig.canEdit">
+									<div class="row" *ngIf="pageConfig.canEdit && formGroup.valid">
 										<div class="col-id cell" *ngIf="pageConfig.canEdit" (click)="addItemLine({_Item:null, IDMenu: item.Id, Id: 0, UoMs: [], Sort: null })">
 											<ion-icon class="min-btn" title="{{'Add product' | translate}}" name="add-circle-outline"></ion-icon>
 										</div>
