@@ -30,7 +30,8 @@
 	min-height: calc(100vh - 385px);
 }
 
-.table-contain {
+::ng-deep {
+app-data-table {
 	max-width: 1440px;
 	margin: auto;
 
@@ -86,7 +87,8 @@
 
 	.col-kit {
 		min-width: 200px;
-		max-width: fit-content;
+		max-width: 300px;
+		margin-right:8px;
 		justify-content: flex-start;
 		.c-input {
 			text-align: right;
@@ -137,7 +139,7 @@
 		background: linear-gradient(180deg, var(--main-background-top), var(--main-background-top));
 	}
 }
-
+}
 .select-profile-picture {
 	position: absolute;
 	top: 0;

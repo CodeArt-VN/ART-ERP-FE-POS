@@ -53,7 +53,6 @@ export class POSMenuDetailPage extends PageBase {
 			Name: ['', Validators.required],
 			Sort: [''],
 
-			_Item: new FormControl({ value: '', disabled: false }),
 			// Id: new FormControl({ value: 0, disabled: true }),
 			IDItem: [''],
 
@@ -66,48 +65,54 @@ export class POSMenuDetailPage extends PageBase {
 
 			IsDisabled: [false],
 			Lines: this.formBuilder.array([]),
+			DeletedLines : [[]]
 		});
 	}
 	segmentView = 's1';
 	segmentChanged(ev: any) {
 		this.segmentView = ev.detail.value;
 	}
-
-	loadData(event) {
-		this.menuItemList = [];
-		Promise.all([this.kitchenProvider.read({ Skip: 0, Take: 5000 }), this.menuDetailProvider.read({ IDMenu: this.id, IsDisable: '' })]).then((values) => {
+	preLoadData(event?: any): void {
+		Promise.all([this.kitchenProvider.read({ IDBranch: this.env.selectedBranch, Skip: 0, Take: 5000 })]).then((values) => {
 			this.kitchenList = values[0]['data'];
-			this.menuDetailList = values[1]['data'];
-
-			let counter = 0;
-			this.menuDetailList.forEach((e) => {
-				Promise.all([this.itemProvider.search({ Id: e.IDItem, AllUoM: true }).toPromise()]).then((values) => {
-					let data = values[0][0];
-					if (data) {
-						this.menuItemList.push(data);
-					}
-
-					if (counter == this.menuDetailList.length - 1) {
-						super.loadData(event);
-					}
-					counter++;
-				});
-			});
-
-			if (this.menuDetailList.length == 0) {
-				super.loadData(event);
-			}
+			super.preLoadData(event);
 		});
 	}
+	// loadData(event) {
+	// 	this.menuItemList = [];
+	// 	Promise.all([this.kitchenProvider.read({ Skip: 0, Take: 5000 }), this.menuDetailProvider.read({ IDMenu: this.id, IsDisable: '' })]).then((values) => {
+	// 		this.kitchenList = values[0]['data'];
+	// 		this.menuDetailList = values[1]['data'];
+
+	// 		let counter = 0;
+	// 		this.menuDetailList.forEach((e) => {
+	// 			Promise.all([this.itemProvider.search({ Id: e.IDItem, AllUoM: true }).toPromise()]).then((values) => {
+	// 				let data = values[0][0];
+	// 				if (data) {
+	// 					this.menuItemList.push(data);
+	// 				}
+
+	// 				if (counter == this.menuDetailList.length - 1) {
+	// 					super.loadData(event);
+	// 				}
+	// 				counter++;
+	// 			});
+	// 		});
+
+	// 		if (this.menuDetailList.length == 0) {
+	// 			super.loadData(event);
+	// 		}
+	// 	});
+	// }
 
 	loadedData(event) {
-		this.setLines();
-		this.itemSearch();
 		super.loadedData(event);
+		this.setLines();
 		if (this.item.Image != null) {
 			this.Image = environment.posImagesServer + this.item.Image;
 		}
 	}
+
 	onFileSelected = (event) => {
 		if (event.target.files.length == 0) {
 			return;
@@ -131,10 +136,11 @@ export class POSMenuDetailPage extends PageBase {
 	setLines() {
 		this.formGroup.controls.Lines = new FormArray([]);
 
-		if (this.menuItemList.length) {
-			this.menuItemList.forEach((i) => {
+		if (this.item?.Lines?.length) {
+			const sortedLines = this.item?.Lines?.slice().sort((a, b) => a.Sort - b.Sort);
+			sortedLines.forEach((i) => {
 				this.addItemLine(i);
-				this.toogleKitchenSet(i);
+				// this.toogleKitchenSet(i);
 			});
 		}
 
@@ -145,268 +151,79 @@ export class POSMenuDetailPage extends PageBase {
 	}
 
 	addItemLine(line) {
-		let stdCost = 0;
-		if (line.UoMs) {
-			let sUoM = line.UoMs.find((d) => d.Id == line.IDUoM);
-			let cost = sUoM?.PriceList.find((d) => d.Type == 'StdCostPriceList');
-			if (cost) stdCost = cost.Price;
-		}
-
-		let data = this.menuDetailList.find((d) => d.IDItem == line.Id);
-
-		let searchInput$ = new Subject<string>();
+		// let data = this.item.Lines.find((d) => d.IDItem == line.Id);
 		let groups = <FormArray>this.formGroup.controls.Lines;
 		let group = this.formBuilder.group({
-			_ItemSearchLoading: [false],
-			_ItemSearchInput: [searchInput$],
-			_ItemDataSource: [
-				searchInput$.pipe(
-					distinctUntilChanged(),
-					tap(() => group.controls._ItemSearchLoading.setValue(true)),
-					switchMap((term) =>
-						this.itemProvider.commonService.connect('GET','WMS/Item/SearchPOSItem',{ Take: 20, Skip: 0, Keyword: term }).pipe(
-							catchError(() => of([])),
-							tap(() => group.controls._ItemSearchLoading.setValue(false))
-						)
-					)
-				),
-			],
-			_UoMs: [line.UoMs ? line.UoMs : ''],
-			_Item: [line, Validators.required],
-
-			StdCost: new FormControl({ value: stdCost, disabled: true }),
-			// TotalPrice: new FormControl({ value: 0, disabled: true }),
-			// TotalStdCost: new FormControl({ value: 0, disabled: true }),
+			_IDItemDataSource: this.buildSelectDataSource((term) => {
+				return this.itemProvider.search({
+					SortBy: ['Id_desc'],
+					Take: 20,
+					Skip: 0,
+					Term: term,
+				});
+			}),
 
 			IDMenu: [this.id],
-			Id: [data ? data.Id : 0],
-			Name: [line.Name ? line.Name : line._Item?.Name],
-			IDItem: [line.Id, Validators.required],
-			IDKitchen: [data ? data.IDKitchen : null],
-			IDUoM: new FormControl({
-				value: line.SalesUoM,
-				required: false,
-				disabled: false,
-			}),
-			UoMPrice: [line.UoMPrice],
-			Image: new FormControl({
-				value: data?.Image ? data.Image : '',
-				disabled: false,
-			}),
-			// Quantity: [line.Quantity],
-			// Remark: [line.Remark],
-			Sort: [data ? data.Sort : null],
-			IsDisabled: [data?.IsDisabled],
-		});
+			Id: [line?.Id],
+			Name: [line?.Name],
+			Code: [line?.Code],
+			IDItem: [line?.IDItem, Validators.required],
+			IDKitchen: [line?.IDKitchen],
 
+			Sort: [line?.Sort],
+			IsChecked: [false],
+			IsDisabled: [line?.IsDisabled],
+		});
+		if (line?._Item) group.get('_IDItemDataSource').value.selected.push(line?._Item);
+		group.get('_IDItemDataSource').value.initSearch();
 		groups.push(group);
-		this.changedIDItem(group, line);
+		// this.changedIDItem(group, line);
 	}
 
-	itemList$;
-	itemListLoading = false;
-	itemListInput$ = new Subject<string>();
-	itemListSelected = [];
-	itemSearch() {
-		this.itemListLoading = false;
-		this.itemList$ = concat(
-			of(this.itemListSelected),
-			this.itemListInput$.pipe(
-				distinctUntilChanged(),
-				tap(() => (this.itemListLoading = true)),
-				switchMap((term) =>
-					this.itemProvider.search({ Take: 20, Skip: 0, Term: term, AllUoM: true }).pipe(
-						catchError(() => of([])), // empty list on error
-						tap(() => (this.itemListLoading = false))
-					)
-				)
-			)
-		);
+	toogleKitchenSet(group, kit?) {
+		// let data = this.menuDetailList.find((d) => d.IDItem == item.Id);
+		if (group.controls.IDKitchen.value == kit.Id) {
+			group.controls.IDKitchen.setValue(null);
+		} else group.controls.IDKitchen.setValue(kit.Id);
+		group.controls.IDKitchen.markAsDirty();
+		this.saveChange2();
 	}
-
-	changedIDItem(group, e, submit = false) {
-		if (e) {
-			group.controls._UoMs.setValue(e.UoMs);
-			group.controls.IDItem.setValue(e.Id);
-			group.controls.IDItem.markAsDirty();
-			group.controls.IDUoM.setValue(e.SalesUoM);
-
-			if (this.pageConfig.canEdit) {
-				group.controls._Item.enable();
-				group.controls.IDUoM.enable();
-				group.controls.Image.enable();
-			} else {
-				group.controls._Item.disable();
-				group.controls.IDUoM.disable();
-				group.controls.Image.disable();
-			}
-
-			// group.controls.IDUoM.disable(); //Currently Disabled
-
-			this.changedIDUoM(group, e, submit);
-		}
-	}
-
-	changedIDUoM(group, e, submit) {
-		let selectedUoM = group.controls._UoMs.value.find((d) => d.Id == group.controls.IDUoM.value);
-		if (selectedUoM) {
-			let cost = selectedUoM.PriceList.find((d) => d.Type == 'StdCostPriceList');
-			if (cost) {
-				group.controls.StdCost.setValue(cost.Price);
-			} else {
-				group.controls.StdCost.setValue(0);
-			}
-
-			let price = selectedUoM.PriceList.find((d) => d.Type == 'PriceList');
-			if (price) {
-				group.controls.UoMPrice.setValue(price.Price);
-			} else {
-				group.controls.UoMPrice.setValue(0);
-			}
-
-			group.controls.UoMPrice.markAsDirty();
-
-			if (submit) this.saveItemChange(e);
-		}
-	}
-
-	async saveItemChange(item) {
-		let savingItem;
-		let index = this.menuItemList.findIndex((i) => i.Id == item.Id);
-
-		if (index == -1) {
-			savingItem = {
-				IDMenu: this.id,
-				IDItem: item.Id,
-				IDKitchen: null,
-			};
-		} else {
-			let data = this.menuDetailList.find((d) => d.IDItem == item.Id);
-
-			savingItem = {
-				Id: data.Id,
-				IDMenu: this.id,
-				IDItem: item.Id,
-				IDKitchen: data.IDKitchen,
-			};
-		}
-
-		this.menuDetailProvider.save(savingItem).then((savedData: any) => {
-			if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
-				this.menuDetailList.push(savedData);
-				let line = this.formGroup['controls']['Lines']['value'].find((l) => l.IDItem == savedData.IDItem);
-				line.Id = savedData.Id;
-
-				let index = this.formGroup['controls']['Lines']['value'].findIndex((l) => l.IDItem == savedData.IDItem);
-				this.formGroup['controls']['Lines']['controls'][index]['controls']['Id'].setValue(savedData.Id);
-
-				this.menuItemList.push(item);
-			}
-			this.env.showMessage('Saving completed!', 'success');
-		});
-	}
-
-	toogleKitchenSet(item, kit?) {
-		let data = this.menuDetailList.find((d) => d.IDItem == item.Id);
-
-		if (kit) {
-			let line = this.formGroup['controls']['Lines']['value'].find((l) => l.IDItem == data.IDItem);
-
-			if (line.IDKitchen != kit.Id) {
-				line.IDKitchen = kit.Id;
-				data.IDKitchen = kit.Id;
-
-				let savingItem = {
-					Id: data.Id,
-					IDMenu: this.id,
-					IDItem: item.Id,
-					IDKitchen: data.IDKitchen,
-				};
-
-				this.menuDetailProvider
-					.save(savingItem)
-					.then((savedData: any) => {
-						if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
-							this.menuDetailList.push(savedData);
-						}
-						this.env.showMessage('Saving completed!', 'success');
-					})
-					.catch((err) => {
-						this.env.showMessage(err, 'danger');
-					});
-			} else {
-				// Unselect
-				line.IDKitchen = null;
-				data.IDKitchen = null;
-
-				let savingItem = {
-					Id: data.Id,
-					IDMenu: this.id,
-					IDItem: item.Id,
-					IDKitchen: null,
-				};
-
-				this.menuDetailProvider
-					.save(savingItem)
-					.then((savedData: any) => {
-						if (this.menuDetailList.findIndex((i) => i.Id == savedData.Id) == -1) {
-							this.menuDetailList.push(savedData);
-						}
-						this.env.showMessage('Saving completed!', 'success');
-					})
-					.catch((err) => {
-						this.env.showMessage(err, 'danger');
-					});
-			}
-		}
-	}
-	lock(index) {
+	lock(g) {
 		let groups = <FormArray>this.formGroup.controls.Lines;
-		let isDisable = !groups.controls[index]['controls'].IsDisabled.value;
-		groups.controls[index]['controls'].IsDisabled.setValue(isDisable);
+		let isDisable = !g.controls.IsDisabled.value;
+		g.controls.IsDisabled.setValue(isDisable);
 
-		this.menuDetailProvider.disable([{ Id: groups.controls[index]['controls'].Id.value }], isDisable).then((resp) => {
+		this.menuDetailProvider.disable([{ Id: g.controls.Id.value }], isDisable).then((resp) => {
 			console.log(resp);
 			this.env.showMessage('Saved change!', 'success');
 		});
 	}
-	removeItemLine(index, permanentlyRemove = true) {
-		this.alertCtrl
-			.create({
-				header: 'Xóa sản phẩm',
-				//subHeader: '---',
-				message: 'Bạn có chắc muốn xóa sản phẩm này?',
-				buttons: [
-					{
-						text: 'Không',
-						role: 'cancel',
-					},
-					{
-						text: 'Đồng ý xóa',
-						cssClass: 'danger-btn',
-						handler: () => {
-							let groups = <FormArray>this.formGroup.controls.Lines;
-							let Ids = [];
-							Ids.push({
-								Id: groups.controls[index]['controls'].Id.value,
-							});
-							// this.removedItems.push({ Id: groups.controls[index]['controls'].Id.value });
 
-							if (permanentlyRemove) {
-								this.menuDetailProvider.delete(Ids).then((resp) => {
-									groups.removeAt(index);
-									this.env.showMessage('Deleted!', 'success');
+	removeLine(index) {
+			let groups = <FormArray>this.formGroup.controls.Lines;
+			let group = groups.controls[index];
+			if (group.get('Id').value) {
+				this.env
+					.showPrompt('Bạn có chắc muốn xóa sản phẩm?', null, 'Xóa sản phẩm')
+					.then((_) => {
+						let Ids = [];
+						Ids.push(groups.controls[index].get('Id').value);
+						// this.removeItem.emit(Ids);
+						if (Ids && Ids.length > 0) {
+							this.formGroup.get('DeletedLines').setValue(Ids);
+							this.formGroup.get('DeletedLines').markAsDirty();
+							//this.item.DeletedLines = Ids;
+							this.saveChange().then((_) => {
+								Ids.forEach((id) => {
+									let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+									if (index >= 0) groups.removeAt(index);
 								});
-							}
-						},
-					},
-				],
-			})
-			.then((alert) => {
-				alert.present();
-			});
-	}
-
+							});
+						}
+					})
+					.catch((_) => {});
+			} else groups.removeAt(index);
+		}
 	doReorder(ev, groups) {
 		groups = ev.detail.complete(groups);
 		for (let i = 0; i < groups.length; i++) {
@@ -414,30 +231,7 @@ export class POSMenuDetailPage extends PageBase {
 			g.controls.Sort.setValue(i + 1);
 			g.controls.Sort.markAsDirty();
 		}
-
-		let counter = 0;
-		let max = this.formGroup.controls.Lines.value.length;
-		this.submitAttempt = true;
-
-		this.formGroup.controls.Lines.value.forEach((i) => {
-			let savingItem = {
-				Id: i.Id,
-				Sort: i.Sort,
-			};
-			this.menuDetailProvider
-				.save(savingItem)
-				.then((savedData: any) => {
-					if (counter == max - 1) {
-						this.env.showMessage('Saving completed!', 'success');
-						this.submitAttempt = false;
-					}
-					counter++;
-				})
-				.catch((err) => {
-					this.env.showMessage(err, 'danger');
-					this.submitAttempt = false;
-				});
-		});
+		this.saveChange();
 	}
 
 	// saveImageURL(ev) {
@@ -458,4 +252,90 @@ export class POSMenuDetailPage extends PageBase {
 	async saveChange() {
 		super.saveChange2();
 	}
+
+	savedChange(savedItem = null, form = this.formGroup) {
+		super.savedChange(savedItem, form);
+		let groups = <FormArray>this.formGroup.controls.Lines;
+		let idsBeforeSaving = new Set(groups.controls.map((g) => g.get('Id').value));
+		this.item = savedItem;
+		if (this.item.Lines?.length > 0) {
+			let newIds = new Set(this.item.Lines.map((i) => i.Id));
+			const diff = [...newIds].filter((item) => !idsBeforeSaving.has(item));
+			if (diff?.length == 1) {
+				groups.controls
+					.find((d) => !d.get('Id').value)
+					?.get('Id')
+					.setValue(diff[0]);
+			}
+			else if(diff?.length >1){
+				this.loadedData(null);
+			}
+		}
+	}
+	selectedLines = new FormArray([]);
+	isAllChecked = false;
+	toggleSelectAll() {
+		this.isAllChecked = !this.isAllChecked;
+		if (!this.pageConfig.canEdit) return;
+		let groups = <FormArray>this.formGroup.controls.Lines;
+		if (!this.isAllChecked) {
+			this.selectedLines = new FormArray([]);
+		}
+		groups.controls.forEach((i) => {
+			i.get('IsChecked').setValue(this.isAllChecked);
+			i.get('IsChecked').markAsPristine();
+
+			if (this.isAllChecked) this.selectedLines.push(i);
+		});
+	}
+		removeSelectedItems() {
+			let groups = <FormArray>this.formGroup.controls.Lines;
+			if(this.selectedLines.controls.some(g=> g.get('Id').value)){
+				this.env
+					.showPrompt({ code: 'ACTION_DELETE_MESSAGE', value: { value: this.selectedLines.length } }, null, {
+						code: 'ACTION_DELETE_MESSAGE',
+						value: { value: this.selectedLines.length },
+					})
+					.then((_) => {
+						let Ids = this.selectedLines.controls.map((fg) => fg.get('Id').value);
+						// this.removeItem.emit(Ids);
+						if (Ids && Ids.length > 0) {
+							this.formGroup.get('DeletedLines').setValue(Ids);
+							this.formGroup.get('DeletedLines').markAsDirty();
+							//this.item.DeletedLines = Ids;
+							this.saveChange().then((_) => {
+								Ids.forEach((id) => {
+									let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+									if (index >= 0) groups.removeAt(index);
+								});
+							});
+						}
+						this.selectedLines = new FormArray([]);
+	
+					})
+					.catch((_) => {});
+			}
+			else if(this.selectedLines.controls.length>0){
+				this.selectedLines.controls.map((fg) => fg.get('Id').value).forEach((id) => {
+						let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+						if (index >= 0) groups.removeAt(index);
+				});
+				this.selectedLines = new FormArray([]);
+	
+			}
+			else{
+				this.env.showMessage('Please select at least one item to remove', 'warning');
+			}
+		}
+	
+	changeSelection(i, e = null) {
+		if (i.get('IsChecked').value) {
+			this.selectedLines.push(i);
+		} else {
+			let index = this.selectedLines.getRawValue().findIndex((d) => d.Id == i.get('Id').value);
+			this.selectedLines.removeAt(index);
+		}
+		i.get('IsChecked').markAsPristine();
+	}
+
 }
