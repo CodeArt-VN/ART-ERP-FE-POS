@@ -24,6 +24,9 @@ export const POSRoutes: Routes = [
   
     { path: 'pos-welcome/:id', loadChildren: () => import('./pos-for-customer/welcome/pos-welcome.module').then(m => m.POSWelcomePageModule) },
     { path: 'pos-customer-order/:id/:table', loadChildren: () => import('./pos-for-customer/order/pos-customer-order.module').then(m => m.POSCustomerOrderPageModule) },
+  
+    { path: 'pos-booking', loadChildren: () => import('./pos-booking/pos-booking.module').then(m => m.PosBookingPageModule) },
+    { path: 'pos-booking/:id', loadChildren: () => import('./pos-booking-detail/pos-booking-detail.module').then(m => m.PosBookingDetailPageModule) },
    
     { path: 'printer', loadChildren: () => import('./printer/printer.module').then(m => m.PrinterPageModule) },
    { path: 'printer/:id', loadChildren: () => import('./printer-detail/printer-detail.module').then(m => m.PrinterDetailPageModule) },
