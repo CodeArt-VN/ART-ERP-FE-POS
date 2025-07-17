@@ -27,4 +27,10 @@ export class POSMenuPage extends PageBase {
 	) {
 		super();
 	}
+
+	preLoadData(event?: any): void {
+		this.query.IDBranch = this.env.selectedBranch;
+		this.query.Take = 5000;
+		super.preLoadData(event);
+	}
 }

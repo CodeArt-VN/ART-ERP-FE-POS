@@ -52,8 +52,14 @@
 								<ion-row class="hr-group">
 									<ion-col class="img-holder" size="12" size-xl="4">
 										<div class="avatar">
-											<img [src]="Image" />
-											<input type="file" class="select-profile-picture" (change)="onFileSelected($event)" accept="image/*" />
+											<div class="avatar-content">
+												<img [src]="Image" />		
+												<div class="image-upload">
+													<ion-icon color="primary" size="large" slot="icon-only" name="cloud-upload-outline" (click)="onClickUpload(true, this.item?.Id)"> </ion-icon>
+													<ion-label> {{'Upload image' | translate}}</ion-label>
+												</div>
+											</div>
+														
 										</div>
 									</ion-col>
 									<ion-col size="12" size-xl="8">
@@ -156,6 +162,18 @@
 										<ion-icon color="danger" class="min-btn clickable" name="trash-outline" (click)="removeLine(idx)"></ion-icon>
 									</ng-template>
 								</datatable-column>
+								<datatable-column class="col-icon large" name="Image" property="value">
+									<ng-template let-g="row" let-idx="idx" datatable-cell-template>
+										<div class="img-wrapper">
+											<ion-img  slot="start" #img [src]="g.controls.Image?.value" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>				
+										</div>
+									</ng-template>
+								</datatable-column>
+								<datatable-column class="col-code" name="Upload" property="value" *ngIf="pageConfig.canEdit">
+									<ng-template let-g="row" let-idx="idx" datatable-cell-template>										
+										<ion-icon color="primary"  class="min-btn clickable" name="cloud-upload-outline" *ngIf="pageConfig.canEdit && g.controls.Id?.value > 0" (click)="onClickUpload(false, g.controls.Id?.value)"></ion-icon>
+									</ng-template>
+								</datatable-column>
 							</app-data-table>
 						</ng-container>
 					</form>
@@ -169,5 +187,6 @@
 			</div>
 		</div>
 	</div>
+	<input type="file" #uploadImage class="hide-all" (change)="onFileSelected($event)" accept="image/*" />
 	<app-page-message [itemsLength]="item? 1: 0" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 </ion-content>
