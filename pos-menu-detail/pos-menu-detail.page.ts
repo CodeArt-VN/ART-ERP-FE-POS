@@ -1,13 +1,11 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { NavController, LoadingController, AlertController, PopoverController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
 import { POS_KitchenProvider, POS_MenuDetailProvider, POS_MenuProvider, WMS_ItemProvider } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl, FormArray } from '@angular/forms';
-import { CommonService } from 'src/app/services/core/common.service';
-import { concat, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { CommonService } from 'src/app/services/core/common.service';;
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { environment } from 'src/environments/environment';
 
@@ -113,26 +111,53 @@ export class POSMenuDetailPage extends PageBase {
 		}
 	}
 
+	@ViewChild('uploadImage') uploadImage: any;
+	uploadContext = {
+		isParent: true,
+		id: null
+	};
+	onClickUpload(isParent: boolean, id: number) {
+		this.uploadContext = { isParent, id };
+		this.uploadImage.nativeElement.value = ''; // reset
+		this.uploadImage.nativeElement.click();
+	}
+
 	onFileSelected = (event) => {
-		if (event.target.files.length == 0) {
+		if (event.target.files.length == 0 && !this.uploadContext) {
 			return;
 		}
-		let id = this.item.Id;
+
+		let apiDomain = this.uploadContext.isParent ? 'POS/Menu/UploadPOSMenuIcons/' : 'POS/Menu/UploadPOSMenuDetailIcons/';
+		let id = this.uploadContext.id;
 		let apiPath = {
 			method: 'UPLOAD',
 			url: function () {
-				return ApiSetting.apiDomain('POS/Menu/UploadPOSMenuIcons/') + id;
+				return ApiSetting.apiDomain(apiDomain) + id;
 			},
 		};
+		
 		this.commonService.upload(apiPath, event.target.files[0]).then((result: any) => {
 			if (result != null) {
 				this.env.showMessage('upload thành công', 'success');
-				this.Image = environment.posImagesServer + result;
+				const envImage = environment.posImagesServer + result
+				if(this.uploadContext.isParent) {
+					this.Image = envImage;
+				}else {
+					let groups = <FormArray>this.formGroup.controls.Lines;
+					let group = groups.controls.find((g) => g.get('Id').value == id);
+					if (group) {
+						group.get('Image').setValue(envImage);
+						//group.get('Image').markAsDirty();
+					}
+				}
+
 			} else {
 				this.env.showMessage('upload thất bại', 'success');
 			}
 		});
 	};
+
+	
 	setLines() {
 		this.formGroup.controls.Lines = new FormArray([]);
 
@@ -173,6 +198,7 @@ export class POSMenuDetailPage extends PageBase {
 			Sort: [line?.Sort],
 			IsChecked: [false],
 			IsDisabled: [line?.IsDisabled],
+			Image: environment.posImagesServer + [line?.Image]
 		});
 		if (line?._Item) group.get('_IDItemDataSource').value.selected.push(line?._Item);
 		group.get('_IDItemDataSource').value.initSearch();
