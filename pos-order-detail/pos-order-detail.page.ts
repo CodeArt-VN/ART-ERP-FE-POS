@@ -55,6 +55,7 @@ export class POSOrderDetailPage extends PageBase {
 	paymentList = [];
 	paymentTypeList = [];
 	paymentStatusList = [];
+	printerList = [];
 	soStatusList = []; //Show on bill
 	soDetailStatusList = [];
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered'];
@@ -391,6 +392,7 @@ export class POSOrderDetailPage extends PageBase {
 			}),
 			this.env.getType('PaymentType'),
 			this.env.getStatus('PaymentStatus'),
+			this.printerProvider.read({IDBranch:this.env.selectedBranch}),
 		])
 			.then((values: any) => {
 				this.pageConfig.systemConfig = {};
@@ -414,6 +416,7 @@ export class POSOrderDetailPage extends PageBase {
 
 				this.paymentTypeList = values[6];
 				this.paymentStatusList = values[7];
+				this.printerList = values[8]?.data;
 				super.preLoadData(event);
 			})
 			.catch((err) => {
@@ -1132,24 +1135,40 @@ export class POSOrderDetailPage extends PageBase {
 				this.submitAttempt = false;
 				return;
 			}
-
+			let t = this.printData.undeliveredItems;
 			const newKitchenList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item._item?.Kitchen?.Name, item._item?.Kitchen])).values()];
 			this.kitchenList = newKitchenList;
-			for (let index = 0; index < newKitchenList.length; index++) {
-				await this.setKitchenID(newKitchenList[index].Id);
-
-				//    this.qzPrint('bill')
-				let printerInfo = newKitchenList[index]['Printer'];
-				let printing = this.qzPrint('bill', printerInfo.Code);
-				if (index + 1 == newKitchenList.length && printing) {
-					resolve(printing);
-				}
-				// let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
-				// if (index + 1 == newKitchenList.length && result) {
-				//   resolve(result);
-				// }
+			let printers = [];
+			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
+				await this.setKitchenID(kitchen.Id);
+				let printer = this.printerList.find(d=> d.Code == kitchen.Printer?.Code);
+				if(printer)printers.push(printer);
+				
 			}
-			this.QZCheckData(false, true, false);
+
+			this.qzPrint('bill', printers)
+				.then((f) => {})
+				.catch((err) => {
+					console.log(err);
+					this.env.showMessage(err,'danger');
+				})
+				.finally(() => {
+					this.QZCheckData(false, true, false);
+				});
+
+			// for (let index = 0; index < newKitchenList.length; index++) {
+			// 	await this.setKitchenID(newKitchenList[index].Id);
+			// 	//    this.qzPrint('bill')
+			// 	let printerInfo = newKitchenList[index]['Printer'];
+			// 	let printing = this.qzPrint('bill', printerInfo.Code);
+			// 	if (index + 1 == newKitchenList.length && printing) {
+			// 		resolve(printing);
+			// 	}
+			// 	// let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
+			// 	// if (index + 1 == newKitchenList.length && result) {
+			// 	//   resolve(result);
+			// 	// }
+			// }
 		});
 	}
 
@@ -1372,25 +1391,37 @@ export class POSOrderDetailPage extends PageBase {
 	printerCodeList = [];
 	dataList = [];
 
-	qzPrint(id, printer) {
+	qzPrint(id, printers) {
 		return new Promise((resolve, reject) => {
 			let content = document.getElementById(id);
 			//let ele = this.printingService.applyAllStyles(content);
-			let data: printData = {
-				content: content.outerHTML,
-				type: 'html',
-				options: {
-					printer: printer,
+			let optionPrinters = printers.map((printer) => {
+				return {
+					printer: printer.Code,
+					host:printer.Host,
+					port: printer.Port,
+					isSecure : printer.IsSecure,
 					// tray: '1',
 					jobName: `PrintJob_${new Date().toISOString()}`,
 					copies: 1,
 					//orientation: 'landscape',
 					duplex: 'duplex',
 					//  autoStyle:content
-				},
+				};
+			});
+			let data: printData = {
+				content: content.outerHTML,
+				type: 'html',
+				options: optionPrinters,
 			};
-			this.printingService.print(data);
-			resolve(true);
+			this.printingService
+				.print(data)
+				.then((s) => {
+					resolve(s);
+				})
+				.catch((err) => {
+					reject(err);
+				});
 		});
 	}
 	////PRIVATE METHODS
