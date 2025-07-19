@@ -28,9 +28,6 @@ export const POSRoutes: Routes = [
     { path: 'pos-booking', loadChildren: () => import('./pos-booking/pos-booking.module').then(m => m.PosBookingPageModule) },
     { path: 'pos-booking/:id', loadChildren: () => import('./pos-booking-detail/pos-booking-detail.module').then(m => m.PosBookingDetailPageModule) },
    
-    { path: 'printer', loadChildren: () => import('./printer/printer.module').then(m => m.PrinterPageModule) },
-   { path: 'printer/:id', loadChildren: () => import('./printer-detail/printer-detail.module').then(m => m.PrinterDetailPageModule) },
-  
     // { path: 'pos-table', loadChildren: () => import('./pos-table/pos-table.module').then(m => m.TablePageModule), canActivate: [AuthGuard] },
     // { path: 'pos-menu', loadChildren: () => import('./pos-menu/pos-menu.module').then(m => m.TablePageModule), canActivate: [AuthGuard] },
   
