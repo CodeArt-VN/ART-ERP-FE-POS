@@ -33,10 +33,10 @@
 
 		<datatable-column class="col-code" name="Table" property="RegisteredTable">
 			<ng-template let-i="row" datatable-cell-template>
-				<ng-container *ngIf="i._isArray">
-					<span class="regis">{{i._table}}</span>
+				<ng-container *ngIf="i._tables != '' ">
+					<span class="regis">{{i._tables}}</span>
 				</ng-container>
-				<span *ngIf="!i._isArray && i.RegisteredTable" class="regis">{{i.RegisteredTable}}</span>
+				<span *ngIf="i._tables == '' && i.RegisteredTable" class="regis">{{i.RegisteredTable}}</span>
 			</ng-template>
 		</datatable-column>
 

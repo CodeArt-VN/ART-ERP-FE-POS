@@ -1,5 +1,9 @@
 <ion-header>
-	<app-toolbar [page]="this"></app-toolbar>
+	<app-toolbar [page]="this">
+		<ion-button  title="{{'Close' | translate}}" color="secondary" (click)="closeModal()">
+			<ion-icon slot="icon-only" name="close"></ion-icon>
+		</ion-button>
+	</app-toolbar>
 	<!-- <ion-toolbar>
     <ion-title>{{item?.Name??"Thêm Nhóm Bàn"}}</ion-title>
     <ion-buttons slot="primary">
