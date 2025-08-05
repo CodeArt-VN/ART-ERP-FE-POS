@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { NavController, ModalController, AlertController, LoadingController, PopoverController } from '@ionic/angular';
 import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
@@ -31,6 +31,8 @@ export class POSTablePage extends PageBase {
 		public navCtrl: NavController
 	) {
 		super();
+		this.pageConfig.ShowAdd = false;
+		this.pageConfig.ShowAddNew = true;
 	}
 
 	preLoadData(event?: any): void {
@@ -129,5 +131,12 @@ export class POSTablePage extends PageBase {
 	removeSelectedItems(): void {
 		super.removeSelectedItems();
 		this.loadedData();
+	}
+
+	isOpenAddNewPopover = false;
+	@ViewChild('addNewPopover') addNewPopover!: HTMLIonPopoverElement;
+	presentAddNewPopover(e) {
+		this.addNewPopover.event = e;
+		this.isOpenAddNewPopover = !this.isOpenAddNewPopover;
 	}
 }
