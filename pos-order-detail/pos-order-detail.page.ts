@@ -47,6 +47,7 @@ export class POSOrderDetailPage extends PageBase {
 	@ViewChild('numberOfGuestsInput') numberOfGuestsInput: ElementRef;
 	isOpenMemoModal = false;
 	AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
+	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png'; //No image for menu item
 	segmentView = 'all';
 	idTable: any; //Default table
 	tableList = [];
