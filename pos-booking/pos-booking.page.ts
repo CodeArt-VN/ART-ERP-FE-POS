@@ -39,19 +39,14 @@ export class PosBookingPage extends PageBase {
 	numberOfReal = 0;
 	numberOfKid = 0;
 	numberOfForeigner = 0;
-
 	preLoadData(event) {
 		let today = lib.dateFormat(new Date(), 'yyyy-mm-dd');
-		// if (!this.sort.Id) {
-		//     this.sort.Id = 'Id';
-		//     this.sortToggle('Id', true);
-		// }
+		this.query.IDBranch = this.env.selectedBranch;
 		this.query.PartyDate = today;
 		this.query.Status = '';
 		this.query.TypeOfParty = '';
 		this.query.CustomerGroup = '';
 		this.query.CustomerType = '';
-
 		Promise.all([this.env.getStatus('AttendanceBooking'), this.env.getType('PartyMenu'), this.env.getType('AttendanceGroup'), this.env.getType('AttendanceType')]).then(
 			(values: any) => {
 				if (values.length) {
