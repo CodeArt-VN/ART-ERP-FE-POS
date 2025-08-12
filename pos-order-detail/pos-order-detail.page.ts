@@ -1142,19 +1142,34 @@ export class POSOrderDetailPage extends PageBase {
 			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
 				await this.setKitchenID(kitchen.Id);
 				let printer = this.printerList.find(d=> d.Code == kitchen.Printer?.Code);
-				if(printer)printers.push(printer);
-				
-			}
 
-			this.qzPrint('bill', printers)
-				.then((f) => {})
+				this.qzPrint('bill', [printer])
+				.then((f) => {
+
+				})
 				.catch((err) => {
 					console.log(err);
 					this.env.showMessage(err,'danger');
 				})
 				.finally(() => {
-					this.QZCheckData(false, true, false);
 				});
+				// if(printer)printers.push(printer);
+				
+			}
+
+			this.qzPrint('bill', printers)
+				.then((f) => {
+
+				})
+				.catch((err) => {
+					console.log(err);
+					this.env.showMessage(err + '','danger');
+				})
+				.finally(() => {
+				});
+			this.QZCheckData(false, true, false).then(r=> resolve(true)).catch(err=>{
+				reject(false);
+			});
 
 			// for (let index = 0; index < newKitchenList.length; index++) {
 			// 	await this.setKitchenID(newKitchenList[index].Id);
@@ -1223,7 +1238,7 @@ export class POSOrderDetailPage extends PageBase {
 						await this.setKitchenID(kitchenPrinter.Id);
 						let LineID = ItemsForKitchen[index].Id;
 						let printerInfo = kitchenPrinter['Printer'];
-						let printing = this.qzPrint('bill-item-each-' + LineID, printerInfo.Code);
+						let printing = this.qzPrint('bill-item-each-' + LineID,[printerInfo]);
 						if (index + 1 == ItemsForKitchen.length && printing) {
 							resolve(printing);
 						}
@@ -1278,7 +1293,7 @@ export class POSOrderDetailPage extends PageBase {
 				await this.setKitchenID('all');
 
 				let printerInfo = newTerminalList[index]['Printer'];
-				let printing = this.qzPrint('bill', printerInfo.Code);
+				let printing = this.qzPrint('bill', [printerInfo]);
 				if (printing) {
 					this.QZCheckData(receipt, !receipt, sendEachItem);
 					resolve(true);
