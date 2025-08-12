@@ -26,7 +26,7 @@
 			<datatable-column class="col-name" name="Printer name" property="PrinterName">
 				<ng-template let-i="row" datatable-cell-template>
 					<div [routerLink]="['/printer/'+i.IDPrinter]">
-						<ion-text color="dark">{{i.Name}}</ion-text>
+						<ion-text color="dark">{{i.PrinterName}}</ion-text>
 					</div>
 				</ng-template>
 
