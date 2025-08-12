@@ -22,7 +22,9 @@ export class POSMenuDetailPage extends PageBase {
 
 	//removedItem
 	removedItems = [];
-	Image = 'assets/pos-icons/POS-Item-demo.png';
+	Image;
+	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png';
+	
 	constructor(
 		public pageProvider: POS_MenuProvider,
 		public menuDetailProvider: POS_MenuDetailProvider,

@@ -3,7 +3,7 @@
 	display: flex;
 	text-align: center;
 
-	img {
+	.img {
 		border-radius: 6px;
 		width: 100%;
 		max-width: 200px;
@@ -182,7 +182,7 @@
 	align-items: center;
 }
 
-.avatar-content img {
+.avatar-content .img {
 	width: 100%;
 	height: 200px;
 	object-fit: contain;

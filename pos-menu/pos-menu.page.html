@@ -52,7 +52,7 @@
 					</div>
 					<div (click)="nav('pos-menu/'+i.Id,'forward')" class="col-id cell">{{i.Id}}</div>
 					<div (click)="nav('pos-menu/'+i.Id,'forward')" class="col-code cell">
-						<img class="img-menu" [src]="i.Image? ImagesServer + i.Image : 'assets/pos-icons/POS-Item-demo.png'" />
+						<ion-img class="img-menu" #img [src]="i.Image? ImagesServer + i.Image : noImage" (ionError)="img.src = noImage" />
 					</div>
 					<div (click)="nav('pos-menu/'+i.Id,'forward')" class="col-name cell">{{i.Name}}</div>
 				</div>

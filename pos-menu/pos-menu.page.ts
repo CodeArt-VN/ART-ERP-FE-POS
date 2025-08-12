@@ -27,7 +27,7 @@ export class POSMenuPage extends PageBase {
 	) {
 		super();
 	}
-
+	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png';
 	preLoadData(event?: any): void {
 		this.query.IDBranch = this.env.selectedBranch;
 		this.query.Take = 5000;
