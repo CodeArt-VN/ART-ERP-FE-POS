@@ -38,7 +38,7 @@ export class POSMemoModalPage extends PageBase {
 		Promise.all([this.getMeno(forceReload)]).then((values: any) => {
 			this.items = values[0];
 			this.GroupType = [...new Set(this.items.map((item) => item.Type))];
-			this.LineType = Array.from(this.item._item.Code)[0];
+			this.LineType = Array.from(this.item._Item.Code)[0];
 			this.loadedData();
 		});
 	}
