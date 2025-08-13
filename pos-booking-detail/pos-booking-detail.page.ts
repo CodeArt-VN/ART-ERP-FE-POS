@@ -101,12 +101,31 @@ export class PosBookingDetailPage extends PageBase {
 		}
 	}
 
+	changePhone() {
+		let phone = this.formGroup.get('Phone').value;
+		if (!phone) return;
+		if (/[^0-9+\s]/.test(phone) || phone.length > 12) {
+			this.env.showMessage('Please only enter the phone number (max 12 number), do not enter other characters', 'warning');
+			phone = phone.replace(/[^0-9+\s]/g, '').substring(0, 12);
+			this.formGroup.get('Phone').markAsPristine();
+		} else {
+			this.formGroup.get('Phone').setValue(phone);
+			this.formGroup.get('Phone').markAsDirty();
+			this.saveChange();
+		}
+	
+	}
+	/* todo ở branch tổng ko load được danh sách bàn đã chọn */
 	segmentView = 's1';
 	segmentChanged(ev: any) {
 		this.segmentView = ev.detail.value;
 	}
 
 	async saveChange() {
+		if(this.formGroup.get('IDBranch').value == null) {
+			this.formGroup.get('IDBranch').setValue(this.env.selectedBranch);
+			this.formGroup.controls.ForeignerNo.markAsDirty();
+		}
 		if (this.formGroup.controls._RegisteredTable.value) {
 			this.formGroup.controls.RegisteredTable.setValue(JSON.stringify(this.formGroup.controls._RegisteredTable.value));
 			this.formGroup.controls.RegisteredTable.markAsDirty();
