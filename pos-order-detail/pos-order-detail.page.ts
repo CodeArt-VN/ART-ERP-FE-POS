@@ -382,7 +382,6 @@ export class POSOrderDetailPage extends PageBase {
 			'POSEnableTemporaryPayment',
 			'POSEnablePrintTemporaryBill',
 			'POSAutoPrintBillAtSettle',
-
 		];
 
 		let forceReload = event === 'force';
@@ -458,6 +457,7 @@ export class POSOrderDetailPage extends PageBase {
 		this.cdr.detectChanges();
 		await this.getStorageNotifications();
 		this.CheckPOSNewOrderLines();
+		this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 	}
 
 	async getStorageNotifications() {
@@ -655,6 +655,7 @@ export class POSOrderDetailPage extends PageBase {
 			.reduce((a, b) => +a + +b, 0);
 	}
 
+	canSaveOrder = false;
 	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '') {
 		if (item.IsDisabled) {
 			return;
@@ -799,6 +800,7 @@ export class POSOrderDetailPage extends PageBase {
 				}
 			}
 		}
+		this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 	}
 
 	async openQuickMemo(line) {
@@ -1081,9 +1083,8 @@ export class POSOrderDetailPage extends PageBase {
 										});
 									}
 
-							
 									this.refresh();
-												this.submitAttempt = false;
+									this.submitAttempt = false;
 								})
 								.catch((err) => {
 									this.submitAttempt = false;
@@ -1098,20 +1099,6 @@ export class POSOrderDetailPage extends PageBase {
 	saveOrderData() {
 		let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
 
-		// if (this.promotionService.promotionList) {
-		// 	let query = {
-		// 		IDSaleOrder: this.item.Id,
-		// 		IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-		// 	};
-		// 	this.pageProvider.commonService
-		// 		.connect('POST', 'PR/Program/ApplyVoucher/', query)
-		// 		.toPromise()
-		// 		.then((result: any) => {
-		// 			// console.log('Apply Promotion');
-					
-		// 		});
-		// }
-		
 		this.env
 			.showPrompt(message, null, 'Thông báo')
 			.then(async (_) => {
@@ -1123,6 +1110,17 @@ export class POSOrderDetailPage extends PageBase {
 						this.submitAttempt = false;
 						await this.sendKitchen();
 						await this.sendKitchenEachItem();
+						if (this.promotionService.promotionList) {
+							let query = {
+								IDSaleOrder: this.item.Id,
+								IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+							};
+							this.pageProvider.commonService
+								.connect('POST', 'PR/Program/ApplyVoucher/', query)
+								.toPromise()
+								.then((result: any) => {
+								});
+						}
 					});
 				}
 			})
@@ -1169,9 +1167,9 @@ export class POSOrderDetailPage extends PageBase {
 			// let allSameHost = hosts.length > 0 && hosts.every(h => h === hosts[0]);
 			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
 				await this.setKitchenID(kitchen.Id);
-				let printer = this.printerList.find(d=> d.Code == kitchen.Printer?.Code);
-				if(printer){
-					await this.printPrepare('bill', [printer],kitchen.Id);
+				let printer = this.printerList.find((d) => d.Code == kitchen.Printer?.Code);
+				if (printer) {
+					await this.printPrepare('bill', [printer], kitchen.Id);
 					// else this.printPrepare('bill', [printer])
 				}
 				// .then((f) => {
@@ -1184,7 +1182,6 @@ export class POSOrderDetailPage extends PageBase {
 				// .finally(() => {
 				// });
 				// if(printer)printers.push(printer);
-				
 			}
 
 			// this.qzPrint('bill', printers)
@@ -1197,9 +1194,11 @@ export class POSOrderDetailPage extends PageBase {
 			// 	})
 			// 	.finally(() => {
 			// 	});
-			this.checkData(false, true, false).then(r=> resolve(true)).catch(err=>{
-				reject(false);
-			});
+			this.checkData(false, true, false)
+				.then((r) => resolve(true))
+				.catch((err) => {
+					reject(false);
+				});
 		});
 	}
 
@@ -1254,7 +1253,7 @@ export class POSOrderDetailPage extends PageBase {
 						await this.setKitchenID(kitchenPrinter.Id);
 						let LineID = ItemsForKitchen[index].Id;
 						let printerInfo = kitchenPrinter['Printer'];
-						let printing = this.printPrepare('bill-item-each-' + LineID,[printerInfo]);
+						let printing = this.printPrepare('bill-item-each-' + LineID, [printerInfo]);
 						if (index + 1 == ItemsForKitchen.length && printing) {
 							resolve(printing);
 						}
@@ -1337,14 +1336,6 @@ export class POSOrderDetailPage extends PageBase {
 			Code: 'TemporaryBill',
 			Debt: Debt,
 		};
-
-		this.pageProvider.commonService
-			.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
-			.toPromise()
-			.then((savedItem: any) => {
-				// this.refresh();
-			});
-
 		if (this.printData.undeliveredItems.length > 0) {
 			let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục gửi bếp và tạm tính?';
 			this.env
@@ -1422,7 +1413,7 @@ export class POSOrderDetailPage extends PageBase {
 	printerCodeList = [];
 	dataList = [];
 
-	printPrepare(id, printers,kitchen= '') {
+	printPrepare(id, printers, kitchen = '') {
 		return new Promise((resolve, reject) => {
 			let content = document.getElementById(id);
 			//let ele = this.printingService.applyAllStyles(content);
@@ -1433,7 +1424,7 @@ export class POSOrderDetailPage extends PageBase {
 					port: printer.Port,
 					isSecure: printer.IsSecure,
 					// tray: '1',
-					jobName: printer.Code + '-'+kitchen+'-' +this.item.Id ,
+					jobName: printer.Code + '-' + kitchen + '-' + this.item.Id,
 					copies: 1,
 					//orientation: 'landscape',
 					duplex: 'duplex',
@@ -1917,7 +1908,6 @@ export class POSOrderDetailPage extends PageBase {
 			}
 
 			this.item = savedItem;
-
 		}
 
 		this.loadedData();

@@ -511,7 +511,7 @@
 							fill="outline"
 							expand="block"
 							(click)="saveOrderData()"
-							[disabled]="submitAttempt"
+							[disabled]="!canSaveOrder"
 						>
 							{{'Save' | translate}}
 						</ion-button>
