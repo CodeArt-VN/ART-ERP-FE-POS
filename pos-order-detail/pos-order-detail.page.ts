@@ -59,7 +59,7 @@ export class POSOrderDetailPage extends PageBase {
 	printerList = [];
 	soStatusList = []; //Show on bill
 	soDetailStatusList = [];
-	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered','TemporaryBill'];
+	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];
 	noLockLineStatusList = ['New', 'Waiting'];
 	checkDoneLineStatusList = ['Done', 'Canceled', 'Returned'];
 	kitchenQuery = 'all';
@@ -1107,16 +1107,17 @@ export class POSOrderDetailPage extends PageBase {
 				if (this.item.Id) {
 					await this.sendKitchen();
 					if (this.promotionService.promotionList) {
-							let query = {
-								IDSaleOrder: this.item.Id,
-								IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-							};
-							this.pageProvider.commonService
-								.connect('POST', 'PR/Program/ApplyVoucher/', query)
-								.toPromise()
-								.then((result: any) => {
-								});
-						}
+						let query = {
+							IDSaleOrder: this.item.Id,
+							IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+						};
+						this.pageProvider.commonService
+							.connect('POST', 'PR/Program/ApplyVoucher/', query)
+							.toPromise()
+							.then((result: any) => {
+								this.refresh();
+							});
+					}
 				} else {
 					this.saveChange().then(async () => {
 						this.submitAttempt = false;
@@ -1130,6 +1131,7 @@ export class POSOrderDetailPage extends PageBase {
 								.connect('POST', 'PR/Program/ApplyVoucher/', query)
 								.toPromise()
 								.then((result: any) => {
+									this.refresh();
 								});
 						}
 					});
