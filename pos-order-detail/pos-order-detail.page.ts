@@ -1181,28 +1181,28 @@ export class POSOrderDetailPage extends PageBase {
 			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
 				await this.setKitchenID(kitchen.Id);
 				let printer = this.printerList.find((d) => d.Code == kitchen.Printer?.Code);
-				if(!printer) continue;
+				if (!printer) continue;
 				if (kitchen.IsPrintList) {
 					await this.printPrepare('bill', [printer], kitchen.Id);
-						// else this.printPrepare('bill', [printer])
+					// else this.printPrepare('bill', [printer])
 				}
 				if (kitchen.IsPrintOneByOne) {
-					for(let i of t.filter(d=> d._IDKitchen == kitchen.Id)){
+					for (let i of t.filter((d) => d._IDKitchen == kitchen.Id)) {
 						await this.setItemQuery(i.IDItem);
 						// let printing = this.printPrepare('bill-item-each-' + i.Id, [printerInfo]);
 						await this.printPrepare('bill-item-each-' + i.Id, [printer], kitchen.Id);
 					}
 				}
-				
 			}
-			this.checkData(false, true, false)
+		
+			this.checkData(false, true, true)
 				.then((r) => resolve(true))
 				.catch((err) => {
 					reject(false);
 				});
 		});
 	}
-
+	
 	haveFoodItems = false;
 
 	async sendPrint(Status?, receipt = true, sendEachItem = false) {
