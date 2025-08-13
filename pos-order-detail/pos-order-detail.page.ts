@@ -1150,7 +1150,7 @@ export class POSOrderDetailPage extends PageBase {
 				await this.setKitchenID(kitchen.Id);
 				let printer = this.printerList.find(d=> d.Code == kitchen.Printer?.Code);
 				if(printer){
-					await this.printPrepare('bill', [printer]);
+					await this.printPrepare('bill', [printer],kitchen.Id);
 					// else this.printPrepare('bill', [printer])
 				}
 				// .then((f) => {
@@ -1401,7 +1401,7 @@ export class POSOrderDetailPage extends PageBase {
 	printerCodeList = [];
 	dataList = [];
 
-	printPrepare(id, printers) {
+	printPrepare(id, printers,kitchen= '') {
 		return new Promise((resolve, reject) => {
 			let content = document.getElementById(id);
 			//let ele = this.printingService.applyAllStyles(content);
@@ -1412,7 +1412,7 @@ export class POSOrderDetailPage extends PageBase {
 					port: printer.Port,
 					isSecure : printer.IsSecure,
 					// tray: '1',
-					jobName: `PrintJob_${new Date().toISOString()}`,
+					jobName: printer.Code + '-'+kitchen+'-' +this.item.Id ,
 					copies: 1,
 					//orientation: 'landscape',
 					duplex: 'duplex',
