@@ -58,7 +58,6 @@ export class POSOrderPage extends PageBase {
 		this.pageConfig.ShowSearch = false;
 		this.pageConfig.ShowImport = false;
 		this.pageConfig.ShowArchive = false;
-		this.promotionService.getPromotions();
 	}
 	ngOnInit() {
 		this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
@@ -400,7 +399,7 @@ export class POSOrderPage extends PageBase {
 				this.checkTable(o, tid);
 			});
 		});
-
+		
 		super.loadedData(event);
 		this.env.getStorage('Notifications').then((result) => {
 			if (result?.length > 0) {
@@ -408,6 +407,7 @@ export class POSOrderPage extends PageBase {
 			}
 		});
 		this.CheckPOSNewOrderLines();
+		this.promotionService.getPromotions();
 	}
 
 	private CheckPOSNewOrderLines() {

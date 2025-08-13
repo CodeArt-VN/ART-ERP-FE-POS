@@ -1080,19 +1080,7 @@ export class POSOrderDetailPage extends PageBase {
 										});
 									}
 
-									// if (this.promotionService.promotionList) {
-									// 	let query = {
-									// 		IDSaleOrder: this.item.Id,
-									// 		IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-									// 	};
-									// 	this.pageProvider.commonService
-									// 		.connect('POST', 'PR/Program/ApplyVoucher/', query)
-									// 		.toPromise()
-									// 		.then((result: any) => {
-									// 			// console.log('Apply Promotion');
-												
-									// 		});
-									// }
+							
 									this.refresh();
 												this.submitAttempt = false;
 								})
@@ -1108,18 +1096,21 @@ export class POSOrderDetailPage extends PageBase {
 
 	saveOrderData() {
 		let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
-		if (this.promotionService.promotionList) {
-			let query = {
-				IDSaleOrder: this.item.Id,
-				IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-			};
-			this.pageProvider.commonService
-				.connect('POST', 'PR/Program/ApplyVoucher/', query)
-				.toPromise()
-				.then((result: any) => {
-					console.log('Apply Promotion');
-				});
-		}
+
+		// if (this.promotionService.promotionList) {
+		// 	let query = {
+		// 		IDSaleOrder: this.item.Id,
+		// 		IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+		// 	};
+		// 	this.pageProvider.commonService
+		// 		.connect('POST', 'PR/Program/ApplyVoucher/', query)
+		// 		.toPromise()
+		// 		.then((result: any) => {
+		// 			// console.log('Apply Promotion');
+					
+		// 		});
+		// }
+		
 		this.env
 			.showPrompt(message, null, 'Thông báo')
 			.then(async (_) => {
@@ -1917,18 +1908,6 @@ export class POSOrderDetailPage extends PageBase {
 
 			this.item = savedItem;
 
-			if (this.promotionService.promotionList) {
-				let query = {
-					IDSaleOrder: this.item.Id,
-					IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-				};
-				this.pageProvider.commonService
-					.connect('POST', 'PR/Program/ApplyVoucher/', query)
-					.toPromise()
-					.then((result: any) => {
-						console.log('Apply Promotion');
-					});
-			}
 		}
 
 		this.loadedData();
