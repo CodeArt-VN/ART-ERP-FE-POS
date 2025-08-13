@@ -1,7 +1,10 @@
-import { Component } from '@angular/core';
-import { LoadingController, ModalController } from '@ionic/angular';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { AlertController, LoadingController, ModalController, NavController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { EnvService } from 'src/app/services/core/env.service';
+import { PromotionService } from 'src/app/services/promotion.service';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { PR_ProgramItemProvider, PR_ProgramPartnerProvider, PR_ProgramProvider, SALE_OrderDeductionProvider } from 'src/app/services/static/services.service';
 
@@ -21,22 +24,32 @@ export class POSVoucherModalPage extends PageBase {
 		public deductionProvider: SALE_OrderDeductionProvider,
 		public env: EnvService,
 		public modalController: ModalController,
-		public loadingController: LoadingController
+		public loadingController: LoadingController,
+		public promotionService: PromotionService,
+		public navCtrl: NavController,
+		public route: ActivatedRoute,
+		public alertCtrl: AlertController,
+		public formBuilder: FormBuilder,
+		public cdr: ChangeDetectorRef
 	) {
 		super();
 	}
 	loadData(event?: any): void {
-		let date = new Date();
-		date.setHours(0, 0, 0, 0);
-		Object.assign(this.query, {
-			IsPublic: true,
-			IsDeleted: false,
-			BetweenDate: date,
-			Type: 'Voucher',
-			CanUse: true,
-			Status: 'Approved',
-		});
-		super.loadData();
+		// let date = new Date();
+		// date.setHours(0, 0, 0, 0);
+		// Object.assign(this.query, {
+		// 	IsPublic: true,
+		// 	IsDeleted: false,
+		// 	BetweenDate: date,
+		// 	Type: 'Voucher',
+		// 	CanUse: true,
+		// 	Status: 'Approved',
+		// });
+		// super.loadData();
+		this.items = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply);
+		console.log('items: ', this.items);
+
+		this.loadedData();
 	}
 
 	loadedData(event?: any, ignoredFromGroup?: boolean): void {
@@ -46,9 +59,9 @@ export class POSVoucherModalPage extends PageBase {
 	loadProgram() {
 		this.items.forEach((i) => {
 			i.Used = false;
-			let find = this.item.Deductions.find((p) => p.IDProgram == i.Id);
-			if (find) {
-				i.Used = true;
+			let find = this.item.Deductions.filter((p) => p.IDProgram == i.Id);
+			if (find && find.length > 0) {
+				if (i.MaxUsagePerCustomer < find.length) i.Used = true;
 			}
 			if (i.IsByPercent == true) {
 				i.Value = (i.Value * this.item.OriginalTotalBeforeDiscount) / 100;
@@ -94,8 +107,8 @@ export class POSVoucherModalPage extends PageBase {
 		}
 	}
 	async applyVoucher(line) {
-		let count = this.item.Deductions.filter((d) => d.Type == 'Voucher').length;
-		if (count < 2) {
+		// let count = this.item.Deductions.filter((d) => d.Type == 'Voucher').length;
+		// if (count < 2) {
 			let apiPath = {
 				method: 'POST',
 				url: function () {
@@ -105,7 +118,7 @@ export class POSVoucherModalPage extends PageBase {
 			new Promise((resolve, reject) => {
 				this.pageProvider.commonService
 					.connect(apiPath.method, apiPath.url(), {
-						IDProgram: line.Id,
+						IDPrograms: [line.Id],
 						IDSaleOrder: this.item.Id,
 					})
 					.toPromise()
@@ -118,8 +131,8 @@ export class POSVoucherModalPage extends PageBase {
 						this.env.showMessage(err.error.Message, 'danger');
 					});
 			});
-		} else {
-			this.env.showMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
-		}
+		// } else {
+		// 	this.env.showMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
+		// }
 	}
 }

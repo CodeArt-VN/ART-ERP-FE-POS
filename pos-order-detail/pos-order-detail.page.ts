@@ -36,6 +36,7 @@ import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
 import { printData, PrintingService } from 'src/app/services/printing.service';
 import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { PromotionService } from 'src/app/services/promotion.service';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -102,7 +103,8 @@ export class POSOrderDetailPage extends PageBase {
 		public formBuilder: FormBuilder,
 		public cdr: ChangeDetectorRef,
 		public loadingController: LoadingController,
-		public commonService: CommonService
+		public commonService: CommonService,
+		public promotionService: PromotionService
 	) {
 		super();
 		this.pageConfig.isDetailPage = true;
@@ -178,6 +180,8 @@ export class POSOrderDetailPage extends PageBase {
 			// OriginalTotalAfterDiscount
 			// OriginalDiscountFromSalesman
 		});
+
+		console.log('PR List: ', this.promotionService.promotionList);
 	}
 
 	////EVENTS
@@ -393,7 +397,7 @@ export class POSOrderDetailPage extends PageBase {
 			}),
 			this.env.getType('PaymentType'),
 			this.env.getStatus('PaymentStatus'),
-			this.printerProvider.read({IDBranch:this.env.selectedBranch}),
+			this.printerProvider.read({ IDBranch: this.env.selectedBranch }),
 		])
 			.then((values: any) => {
 				this.pageConfig.systemConfig = {};
@@ -1075,8 +1079,22 @@ export class POSOrderDetailPage extends PageBase {
 											Code: publishEventCode,
 										});
 									}
+
+									// if (this.promotionService.promotionList) {
+									// 	let query = {
+									// 		IDSaleOrder: this.item.Id,
+									// 		IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+									// 	};
+									// 	this.pageProvider.commonService
+									// 		.connect('POST', 'PR/Program/ApplyVoucher/', query)
+									// 		.toPromise()
+									// 		.then((result: any) => {
+									// 			// console.log('Apply Promotion');
+												
+									// 		});
+									// }
 									this.refresh();
-									this.submitAttempt = false;
+												this.submitAttempt = false;
 								})
 								.catch((err) => {
 									this.submitAttempt = false;
@@ -1090,6 +1108,18 @@ export class POSOrderDetailPage extends PageBase {
 
 	saveOrderData() {
 		let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
+		if (this.promotionService.promotionList) {
+			let query = {
+				IDSaleOrder: this.item.Id,
+				IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+			};
+			this.pageProvider.commonService
+				.connect('POST', 'PR/Program/ApplyVoucher/', query)
+				.toPromise()
+				.then((result: any) => {
+					console.log('Apply Promotion');
+				});
+		}
 		this.env
 			.showPrompt(message, null, 'Thông báo')
 			.then(async (_) => {
@@ -1142,16 +1172,15 @@ export class POSOrderDetailPage extends PageBase {
 			let printers = [];
 			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
 				await this.setKitchenID(kitchen.Id);
-				let printer = this.printerList.find(d=> d.Code == kitchen.Printer?.Code);
-				if(printer)printers.push(printer);
-				
+				let printer = this.printerList.find((d) => d.Code == kitchen.Printer?.Code);
+				if (printer) printers.push(printer);
 			}
 
 			this.qzPrint('bill', printers)
 				.then((f) => {})
 				.catch((err) => {
 					console.log(err);
-					this.env.showMessage(err,'danger');
+					this.env.showMessage(err, 'danger');
 				})
 				.finally(() => {
 					this.QZCheckData(false, true, false);
@@ -1399,9 +1428,9 @@ export class POSOrderDetailPage extends PageBase {
 			let optionPrinters = printers.map((printer) => {
 				return {
 					printer: printer.Code,
-					host:printer.Host,
+					host: printer.Host,
 					port: printer.Port,
-					isSecure : printer.IsSecure,
+					isSecure: printer.IsSecure,
 					// tray: '1',
 					jobName: `PrintJob_${new Date().toISOString()}`,
 					copies: 1,
@@ -1468,8 +1497,8 @@ export class POSOrderDetailPage extends PageBase {
 	//Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về.
 	private calcOrder() {
 		this.Discount = {
-			Amount: this.item.OriginalTotalDiscount,
-			Percent: (this.item.OriginalTotalDiscount * 100) / this.item.OriginalTotalBeforeDiscount,
+			Amount: 0, //this.item.OriginalTotalDiscount,
+			Percent: 0, // (this.item.OriginalTotalDiscount * 100) / this.item.OriginalTotalBeforeDiscount,
 		};
 
 		this.item._TotalQuantity = this.item.OrderLines?.map((x) => x.Quantity).reduce((a, b) => +a + +b, 0);
@@ -1887,7 +1916,21 @@ export class POSOrderDetailPage extends PageBase {
 			}
 
 			this.item = savedItem;
+
+			if (this.promotionService.promotionList) {
+				let query = {
+					IDSaleOrder: this.item.Id,
+					IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+				};
+				this.pageProvider.commonService
+					.connect('POST', 'PR/Program/ApplyVoucher/', query)
+					.toPromise()
+					.then((result: any) => {
+						console.log('Apply Promotion');
+					});
+			}
 		}
+
 		this.loadedData();
 
 		this.submitAttempt = false;
@@ -1974,6 +2017,7 @@ export class POSOrderDetailPage extends PageBase {
 					IDContact: address.Id,
 					IDAddress: address.IDAddress,
 				},
+				true,
 				true
 			);
 			this.item._Customer = address;
@@ -2146,6 +2190,7 @@ export class POSOrderDetailPage extends PageBase {
 				.connect(apiPath.method, apiPath.url(), {
 					IDProgram: p.Id,
 					IDSaleOrder: this.item.Id,
+					IDDeduction: p.IDDeduction,
 				})
 				.toPromise()
 				.then((savedItem: any) => {

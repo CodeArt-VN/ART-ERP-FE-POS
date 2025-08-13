@@ -20,6 +20,7 @@ import { lib } from 'src/app/services/static/global-functions';
 import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
+import { PromotionService } from 'src/app/services/promotion.service';
 
 @Component({
 	selector: 'app-pos-order',
@@ -48,7 +49,8 @@ export class POSOrderPage extends PageBase {
 		public env: EnvService,
 		public navCtrl: NavController,
 		public location: Location,
-		public commonService: CommonService
+		public commonService: CommonService,
+		public promotionService : PromotionService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -56,6 +58,7 @@ export class POSOrderPage extends PageBase {
 		this.pageConfig.ShowSearch = false;
 		this.pageConfig.ShowImport = false;
 		this.pageConfig.ShowArchive = false;
+		this.promotionService.getPromotions();
 	}
 	ngOnInit() {
 		this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
