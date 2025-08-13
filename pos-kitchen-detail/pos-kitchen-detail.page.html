@@ -17,22 +17,9 @@
 										</ion-list-header>
 									</ion-col>
 									<ion-col size="12" size-sm size-md="8" size-xl="6">
-										<div class="c-control" *ngIf="item.Id">
-											<label class="c-label" for="Id">{{'Id' | translate}}</label>
-											<input class="c-input" id="Id" formControlName="Id" type="number" />
-										</div>
-										<div class="c-control">
-											<label class="c-label" for="Name"
-												>{{'Name' | translate}}
-												<span
-													*ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)"
-													ion-text
-													color="danger"
-													>(*)</span
-												>
-											</label>
-											<input class="c-input" id="Name" (change)="saveChange();" formControlName="Name" type="text" />
-										</div>
+										<app-form-control (change)="saveChange()" [field]="{id:'Name',label:'Name',type:'span-text',form:formGroup}"></app-form-control>
+
+										<app-form-control (change)="saveChange()" [field]="{id:'Name',label:'Name',type:'text',form:formGroup}"></app-form-control>
 									</ion-col>
 								</ion-row>
 
@@ -43,57 +30,13 @@
 										</ion-list-header>
 									</ion-col>
 									<ion-col size="12" size-sm size-md="8" size-xl="6">
-										<div class="c-control">
-											<label class="c-label" for="IDPrinter"
-												>{{'Printer' | translate}}
-												<span
-													*ngIf="!formGroup.controls.IDPrinter.valid && !formGroup.controls.IDPrinter.pending && (formGroup.controls.IDPrinter.dirty || submitAttempt)"
-													ion-text
-													color="danger"
-													>(*)</span
-												>
-											</label>
-											<ng-select
-												class="c-input"
-												(change)="saveChange();"
-												labelForId="IDPrinter"
-												formControlName="IDPrinter"
-												[items]="IDPrinterList"
-												bindLabel="Name"
-												bindValue="Id"
-												placeholder="{{'Search' | translate}}"
-											>
-												<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-													<div *ngIf="i">
-														<div>
-															<span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span>
-															<span [ngOptionHighlight]="search">{{i.Name}}</span>
-														</div>
-													</div>
-												</ng-template>
-											</ng-select>
-										</div>
-
-										<div class="c-control">
-											<label class="c-label" for="Remark"
-												>{{'Description' | translate}}
-												<span
-													*ngIf="!formGroup.controls.Remark.valid && !formGroup.controls.Remark.pending && (formGroup.controls.Remark.dirty || submitAttempt)"
-													ion-text
-													color="danger"
-													>(*)</span
-												>
-											</label>
-											<textarea
-												[readonly]="!(pageConfig.canEdit || pageConfig.canAdd)"
-												(change)="saveChange()"
-												rows="3"
-												class="c-input"
-												id="Remark"
-												formControlName="Remark"
-												type="textarea"
-											></textarea>
-										</div>
+										<app-form-control
+											(change)="saveChange()"
+											[field]="{id:'IDPrinter',label:'Printer',type:'ng-select', dataSource:IDPrinterList, bindLabel:'Name', bindValue:'Id',form:formGroup}"
+										></app-form-control>
+										<app-form-control (change)="saveChange()" [field]="{id:'IsPrintList',label:'Print list',type:'checkbox',form:formGroup}"></app-form-control>
+										<app-form-control (change)="saveChange()" [field]="{id:'IsPrintOneByOne',label:'Print one by one',type:'checkbox',form:formGroup}"></app-form-control>
+										<app-form-control (change)="saveChange()" [field]="{id:'Remark',label:'Description',type:'textarea',form:formGroup}"></app-form-control>
 									</ion-col>
 								</ion-row>
 							</form>
