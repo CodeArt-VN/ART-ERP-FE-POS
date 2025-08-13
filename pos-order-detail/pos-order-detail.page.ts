@@ -25,8 +25,6 @@ import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
 import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
-import * as qz from 'qz-tray';
-import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
@@ -36,6 +34,7 @@ import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
 import { printData, PrintingService } from 'src/app/services/printing.service';
 import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { POSService } from '../pos-service';
 import { PromotionService } from 'src/app/services/promotion.service';
 
 @Component({
@@ -80,6 +79,7 @@ export class POSOrderDetailPage extends PageBase {
 	notifications = [];
 
 	constructor(
+		public posService: POSService,
 		public pageProvider: SALE_OrderProvider,
 		public programProvider: PR_ProgramProvider,
 		public deductionProvider: SALE_OrderDeductionProvider,
@@ -382,6 +382,7 @@ export class POSOrderDetailPage extends PageBase {
 			'POSEnableTemporaryPayment',
 			'POSEnablePrintTemporaryBill',
 			'POSAutoPrintBillAtSettle',
+
 		];
 
 		let forceReload = event === 'force';
@@ -1160,36 +1161,45 @@ export class POSOrderDetailPage extends PageBase {
 			let t = this.printData.undeliveredItems;
 			const newKitchenList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item._item?.Kitchen?.Name, item._item?.Kitchen])).values()];
 			this.kitchenList = newKitchenList;
-			let printers = [];
+			// let hosts = newKitchenList
+			// 	.filter(k => k.Printer && k.Printer.Host) // chỉ lấy printer có host
+			// 	.map(k => k.Printer.Host);
+
+			// // Kiểm tra tất cả có host giống nhau
+			// let allSameHost = hosts.length > 0 && hosts.every(h => h === hosts[0]);
 			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
 				await this.setKitchenID(kitchen.Id);
-				let printer = this.printerList.find((d) => d.Code == kitchen.Printer?.Code);
-				if (printer) printers.push(printer);
+				let printer = this.printerList.find(d=> d.Code == kitchen.Printer?.Code);
+				if(printer){
+					await this.printPrepare('bill', [printer],kitchen.Id);
+					// else this.printPrepare('bill', [printer])
+				}
+				// .then((f) => {
+
+				// })
+				// .catch((err) => {
+				// 	console.log(err);
+				// 	this.env.showMessage(err,'danger');
+				// })
+				// .finally(() => {
+				// });
+				// if(printer)printers.push(printer);
+				
 			}
 
-			this.qzPrint('bill', printers)
-				.then((f) => {})
-				.catch((err) => {
-					console.log(err);
-					this.env.showMessage(err, 'danger');
-				})
-				.finally(() => {
-					this.QZCheckData(false, true, false);
-				});
+			// this.qzPrint('bill', printers)
+			// 	.then((f) => {
 
-			// for (let index = 0; index < newKitchenList.length; index++) {
-			// 	await this.setKitchenID(newKitchenList[index].Id);
-			// 	//    this.qzPrint('bill')
-			// 	let printerInfo = newKitchenList[index]['Printer'];
-			// 	let printing = this.qzPrint('bill', printerInfo.Code);
-			// 	if (index + 1 == newKitchenList.length && printing) {
-			// 		resolve(printing);
-			// 	}
-			// 	// let result = this.setupPrinting(printerInfo, object, false, times, false, newKitchenList.length);
-			// 	// if (index + 1 == newKitchenList.length && result) {
-			// 	//   resolve(result);
-			// 	// }
-			// }
+			// 	})
+			// 	.catch((err) => {
+			// 		console.log(err);
+			// 		this.env.showMessage(err + '','danger');
+			// 	})
+			// 	.finally(() => {
+			// 	});
+			this.checkData(false, true, false).then(r=> resolve(true)).catch(err=>{
+				reject(false);
+			});
 		});
 	}
 
@@ -1244,18 +1254,18 @@ export class POSOrderDetailPage extends PageBase {
 						await this.setKitchenID(kitchenPrinter.Id);
 						let LineID = ItemsForKitchen[index].Id;
 						let printerInfo = kitchenPrinter['Printer'];
-						let printing = this.qzPrint('bill-item-each-' + LineID, printerInfo.Code);
+						let printing = this.printPrepare('bill-item-each-' + LineID,[printerInfo]);
 						if (index + 1 == ItemsForKitchen.length && printing) {
 							resolve(printing);
 						}
 					}
-					this.QZCheckData(false, true, true);
+					this.checkData(false, true, true);
 				}
 			}
 			if (!this.haveFoodItems) {
 				this.submitAttempt = false; // Không có item nào thuộc là food;
 				console.log('Không có item nào thuộc là food');
-				this.QZCheckData(false, true, true).then((result) => {
+				this.checkData(false, true, true).then((result) => {
 					resolve(result);
 				});
 			}
@@ -1299,9 +1309,9 @@ export class POSOrderDetailPage extends PageBase {
 				await this.setKitchenID('all');
 
 				let printerInfo = newTerminalList[index]['Printer'];
-				let printing = this.qzPrint('bill', printerInfo.Code);
+				let printing = this.printPrepare('bill', [printerInfo]);
 				if (printing) {
-					this.QZCheckData(receipt, !receipt, sendEachItem);
+					this.checkData(receipt, !receipt, sendEachItem);
 					resolve(true);
 				}
 			}
@@ -1412,7 +1422,7 @@ export class POSOrderDetailPage extends PageBase {
 	printerCodeList = [];
 	dataList = [];
 
-	qzPrint(id, printers) {
+	printPrepare(id, printers,kitchen= '') {
 		return new Promise((resolve, reject) => {
 			let content = document.getElementById(id);
 			//let ele = this.printingService.applyAllStyles(content);
@@ -1423,7 +1433,7 @@ export class POSOrderDetailPage extends PageBase {
 					port: printer.Port,
 					isSecure: printer.IsSecure,
 					// tray: '1',
-					jobName: `PrintJob_${new Date().toISOString()}`,
+					jobName: printer.Code + '-'+kitchen+'-' +this.item.Id ,
 					copies: 1,
 					//orientation: 'landscape',
 					duplex: 'duplex',
@@ -1915,12 +1925,12 @@ export class POSOrderDetailPage extends PageBase {
 		this.submitAttempt = false;
 		this.env.showMessage('Saving completed!', 'success');
 
-		if (savedItem.Status == 'Done') {
-			this.sendPrint(savedItem.Status, true);
-		}
-		if (savedItem.Status == 'TemporaryBill' && this.pageConfig.systemConfig.POSEnableTemporaryPayment && this.pageConfig.systemConfig.POSEnablePrintTemporaryBill) {
-			this.sendPrint();
-		}
+		// if (savedItem.Status == 'Done') {
+		// 	this.sendPrint(savedItem.Status, true);
+		// }
+		// if (savedItem.Status == 'TemporaryBill' && this.pageConfig.systemConfig.POSEnableTemporaryPayment && this.pageConfig.systemConfig.POSEnablePrintTemporaryBill) {
+		// 	this.sendPrint();
+		// }
 	}
 
 	getPromotionProgram() {
@@ -2193,7 +2203,7 @@ export class POSOrderDetailPage extends PageBase {
 		});
 	}
 
-	async QZCheckData(receipt = true, saveData = true, sendEachItem = false) {
+	async checkData(receipt = true, saveData = true, sendEachItem = false) {
 		return new Promise(async (resolve, reject) => {
 			if (!receipt && saveData && sendEachItem) {
 				let undelivered = [];
