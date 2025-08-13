@@ -1106,7 +1106,6 @@ export class POSOrderDetailPage extends PageBase {
 			.then(async (_) => {
 				if (this.item.Id) {
 					await this.sendKitchen();
-					await this.sendKitchenEachItem();
 					if (this.promotionService.promotionList) {
 							let query = {
 								IDSaleOrder: this.item.Id,
@@ -1122,7 +1121,6 @@ export class POSOrderDetailPage extends PageBase {
 					this.saveChange().then(async () => {
 						this.submitAttempt = false;
 						await this.sendKitchen();
-						await this.sendKitchenEachItem();
 						if (this.promotionService.promotionList) {
 							let query = {
 								IDSaleOrder: this.item.Id,
