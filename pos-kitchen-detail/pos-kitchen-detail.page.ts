@@ -38,6 +38,8 @@ export class POSKitchenDetailPage extends PageBase {
 			Name: ['', Validators.required],
 			Remark: [''],
 			IDPrinter: [''],
+			IsPrintList:[true],
+			IsPrintOneByOne:[false]
 		});
 	}
 	preLoadData(event?: any): void {
@@ -47,7 +49,12 @@ export class POSKitchenDetailPage extends PageBase {
 		});
 		super.preLoadData(event);
 	}
-
+	loadedData(event?: any, ignoredFromGroup?: boolean): void {
+		super.loadedData(event);
+		if(!this.item.Id){
+			this.formGroup.get('IsPrintList').markAsDirty();
+		}
+	}
 	segmentView = 's1';
 	segmentChanged(ev: any) {
 		this.segmentView = ev.detail.value;

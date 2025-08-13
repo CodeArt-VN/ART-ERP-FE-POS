@@ -63,6 +63,7 @@ export class POSOrderDetailPage extends PageBase {
 	noLockLineStatusList = ['New', 'Waiting'];
 	checkDoneLineStatusList = ['Done', 'Canceled', 'Returned'];
 	kitchenQuery = 'all';
+	itemQuery = 'all';
 	kitchenList = [];
 	OrderAdditionTypeList = [];
 	OrderDeductionTypeList = [];
@@ -378,7 +379,6 @@ export class POSOrderDetailPage extends PageBase {
 			'POSEnableTemporaryPayment',
 			'POSEnablePrintTemporaryBill',
 			'POSAutoPrintBillAtSettle',
-
 		];
 
 		let forceReload = event === 'force';
@@ -394,7 +394,7 @@ export class POSOrderDetailPage extends PageBase {
 			}),
 			this.env.getType('PaymentType'),
 			this.env.getStatus('PaymentStatus'),
-			this.printerProvider.read({IDBranch:this.env.selectedBranch}),
+			this.printerProvider.read({ IDBranch: this.env.selectedBranch }),
 		])
 			.then((values: any) => {
 				this.pageConfig.systemConfig = {};
@@ -1091,17 +1091,17 @@ export class POSOrderDetailPage extends PageBase {
 
 	saveOrderData() {
 		let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
+		console.log(this.item);
+
 		this.env
 			.showPrompt(message, null, 'Thông báo')
 			.then(async (_) => {
 				if (this.item.Id) {
 					await this.sendKitchen();
-					await this.sendKitchenEachItem();
 				} else {
 					this.saveChange().then(async () => {
 						this.submitAttempt = false;
 						await this.sendKitchen();
-						await this.sendKitchenEachItem();
 					});
 				}
 			})
@@ -1148,108 +1148,30 @@ export class POSOrderDetailPage extends PageBase {
 			// let allSameHost = hosts.length > 0 && hosts.every(h => h === hosts[0]);
 			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
 				await this.setKitchenID(kitchen.Id);
-				let printer = this.printerList.find(d=> d.Code == kitchen.Printer?.Code);
-				if(printer){
-					await this.printPrepare('bill', [printer],kitchen.Id);
-					// else this.printPrepare('bill', [printer])
+				let printer = this.printerList.find((d) => d.Code == kitchen.Printer?.Code);
+				if(!printer) continue;
+				if (kitchen.IsPrintList) {
+					await this.printPrepare('bill', [printer], kitchen.Id);
+						// else this.printPrepare('bill', [printer])
 				}
-				// .then((f) => {
-
-				// })
-				// .catch((err) => {
-				// 	console.log(err);
-				// 	this.env.showMessage(err,'danger');
-				// })
-				// .finally(() => {
-				// });
-				// if(printer)printers.push(printer);
+				if (kitchen.IsPrintOneByOne) {
+					for(let i of t.filter(d=> d._IDKitchen == kitchen.Id)){
+						await this.setItemQuery(i.IDItem);
+						// let printing = this.printPrepare('bill-item-each-' + i.Id, [printerInfo]);
+						await this.printPrepare('bill-item-each-' + i.Id, [printer], kitchen.Id);
+					}
+				}
 				
 			}
-
-			// this.qzPrint('bill', printers)
-			// 	.then((f) => {
-
-			// 	})
-			// 	.catch((err) => {
-			// 		console.log(err);
-			// 		this.env.showMessage(err + '','danger');
-			// 	})
-			// 	.finally(() => {
-			// 	});
-			this.checkData(false, true, false).then(r=> resolve(true)).catch(err=>{
-				reject(false);
-			});
+			this.checkData(false, true, false)
+				.then((r) => resolve(true))
+				.catch((err) => {
+					reject(false);
+				});
 		});
 	}
 
 	haveFoodItems = false;
-	async sendKitchenEachItem() {
-		return new Promise(async (resolve, reject) => {
-			if (this.submitAttempt) return;
-			this.submitAttempt = true;
-			let times = 1; // Số lần in phiếu; Nếu là 2, in 2 lần;
-			this.printData.undeliveredItems = [];
-
-			this.item.IDOwner = this.env.user.StaffID;
-			this.item.OrderLines.forEach((e) => {
-				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
-				e._IDKitchen = e._item?.Kitchen.Id;
-				if (e._undeliveredQuantity > 0) {
-					// e.Status = 'Serving';
-					this.printData.undeliveredItems.push(e);
-				}
-				if (e.Remark) {
-					e.Remark = e.Remark.toString();
-				}
-			});
-
-			if (this.printData.undeliveredItems.length == 0) {
-				this.env.showMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
-				this.submitAttempt = false;
-				resolve(true);
-				return;
-			}
-
-			// Flow để in Type == Food và trường hợp có máy in nhiều chỗ.
-			// Lọc ra List A (ItemsForKitchen) : mảng các items là Foods.
-			// Lọc ra List B (newKitchenList2) : Các máy in để in cho List A.
-			// Vòng lặp qua list A >> thiết lập View (SetKitchenID) và  chọn máy in phù hợp để mapping lại với nhau.
-			// >> có được cặp dữ liệu hình ảnh cần thiết, và vị trí máy in tương ứng.
-
-			const IDItemGroupList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item['_item']['IDItemGroup'], item._item.IDItemGroup])).values()];
-			for (let index = 0; index < IDItemGroupList.length; index++) {
-				const element = IDItemGroupList[index];
-				if (element == 193) {
-					// Type == Food only (IDItemGroup == 193);
-					this.haveFoodItems = true;
-					let ItemsForKitchen = this.printData.undeliveredItems.filter((i) => i._item.IDItemGroup == element);
-
-					const newKitchenList2 = [...new Map(ItemsForKitchen.map((item: any) => [item['_item']['Kitchen']['Name'], item._item.Kitchen])).values()];
-					this.kitchenList = newKitchenList2;
-
-					for (let index = 0; index < ItemsForKitchen.length; index++) {
-						let kitchenPrinter = newKitchenList2.find((p) => p.Id == ItemsForKitchen[index]._IDKitchen);
-
-						await this.setKitchenID(kitchenPrinter.Id);
-						let LineID = ItemsForKitchen[index].Id;
-						let printerInfo = kitchenPrinter['Printer'];
-						let printing = this.printPrepare('bill-item-each-' + LineID,[printerInfo]);
-						if (index + 1 == ItemsForKitchen.length && printing) {
-							resolve(printing);
-						}
-					}
-					this.checkData(false, true, true);
-				}
-			}
-			if (!this.haveFoodItems) {
-				this.submitAttempt = false; // Không có item nào thuộc là food;
-				console.log('Không có item nào thuộc là food');
-				this.checkData(false, true, true).then((result) => {
-					resolve(result);
-				});
-			}
-		});
-	}
 
 	async sendPrint(Status?, receipt = true, sendEachItem = false) {
 		return new Promise(async (resolve, reject) => {
@@ -1286,6 +1208,7 @@ export class POSOrderDetailPage extends PageBase {
 				}
 
 				await this.setKitchenID('all');
+				await this.setItemQuery('all');
 
 				let printerInfo = newTerminalList[index]['Printer'];
 				let printing = this.printPrepare('bill', [printerInfo]);
@@ -1330,7 +1253,6 @@ export class POSOrderDetailPage extends PageBase {
 				.showPrompt(message, null, 'Thông báo')
 				.then(async (_) => {
 					await this.sendKitchen();
-					await this.sendKitchenEachItem();
 
 					const Debt = this.item.Debt;
 					let postDTO = {
@@ -1401,18 +1323,18 @@ export class POSOrderDetailPage extends PageBase {
 	printerCodeList = [];
 	dataList = [];
 
-	printPrepare(id, printers,kitchen= '') {
+	printPrepare(id, printers, kitchen = '') {
 		return new Promise((resolve, reject) => {
 			let content = document.getElementById(id);
 			//let ele = this.printingService.applyAllStyles(content);
 			let optionPrinters = printers.map((printer) => {
 				return {
 					printer: printer.Code,
-					host:printer.Host,
+					host: printer.Host,
 					port: printer.Port,
-					isSecure : printer.IsSecure,
+					isSecure: printer.IsSecure,
 					// tray: '1',
-					jobName: printer.Code + '-'+kitchen+'-' +this.item.Id ,
+					jobName: printer.Code + '-' + kitchen + '-' + this.item.Id,
 					copies: 1,
 					//orientation: 'landscape',
 					duplex: 'duplex',
@@ -2174,6 +2096,15 @@ export class POSOrderDetailPage extends PageBase {
 			this.kitchenQuery = value;
 			setTimeout(() => {
 				resolve(this.kitchenQuery);
+			}, ms);
+		});
+	}
+
+	async setItemQuery(value, ms = 1) {
+		return new Promise((resolve, reject) => {
+			this.itemQuery = value;
+			setTimeout(() => {
+				resolve(this.itemQuery);
 			}, ms);
 		});
 	}
