@@ -25,8 +25,6 @@ import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
 import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
-import * as qz from 'qz-tray';
-import { KJUR, KEYUTIL, stob64, hextorstr } from 'jsrsasign';
 import { environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
@@ -36,6 +34,7 @@ import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
 import { printData, PrintingService } from 'src/app/services/printing.service';
 import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { POSService } from '../pos-service';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -79,6 +78,7 @@ export class POSOrderDetailPage extends PageBase {
 	notifications = [];
 
 	constructor(
+		public posService: POSService,
 		public pageProvider: SALE_OrderProvider,
 		public programProvider: PR_ProgramProvider,
 		public deductionProvider: SALE_OrderDeductionProvider,

@@ -814,10 +814,12 @@
 }
 
 .linear-blue-btn {
-	--background: linear-gradient(190deg, rgb(11, 31, 60) 10%, rgb(43, 88, 147) 85%);
-	--background-hover: linear-gradient(190deg, rgb(11, 31, 60) 40%, rgb(43, 88, 147) 100%);
-	--background-activated: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
-	--background-focused: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
+	--background: var(--ion-color-warning);
+	--color: var(--ion-color-warining-contrast);
+	// --background: linear-gradient(190deg, rgb(11, 31, 60) 10%, rgb(43, 88, 147) 85%);
+	// --background-hover: linear-gradient(190deg, rgb(11, 31, 60) 40%, rgb(43, 88, 147) 100%);
+	// --background-activated: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
+	// --background-focused: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
 }
 
 .table-info-top {
