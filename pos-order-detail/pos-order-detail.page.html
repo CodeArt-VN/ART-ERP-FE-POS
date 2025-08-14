@@ -511,7 +511,7 @@
 							fill="outline"
 							expand="block"
 							(click)="saveOrderData()"
-							[disabled]="submitAttempt"
+							[disabled]="!canSaveOrder"
 						>
 							{{'Save' | translate}}
 						</ion-button>
@@ -914,7 +914,7 @@
 
 	<!-- Kitchen Dishes Printing -->
 	<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
-		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}; let idx = index">
+		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery,'IDItem': itemQuery}; let idx = index">
 			<div [id]="'bill-item-each-'+o.Id" class="bill" style="overflow: auto; width: 72mm">
 				<div class="receipt giao-nhan" style="overflow: auto">
 					<section class="sheet rpt p1">
