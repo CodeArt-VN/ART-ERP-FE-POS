@@ -415,63 +415,22 @@
 							</div>
 						</div>
 						<div class="c-control">
-							<!-- (change)="saveChange();" -->
-							<input
-								#numberOfGuestsInput
-								style="text-align: left"
-								class="c-input no-check-dirty"
-								formControlName="NumberOfGuests"
-								
-								placeholder="{{'Customer Qty' | translate}}"
-							/>
-						</div>
-						<div class="c-control">
-							<!-- (change)="changeTable();" -->
-
-							<ng-select
-								appendTo="#pos-order-detail-page"
-								style="text-align: left; height: auto"
-								class="c-input no-check-dirty"
-								formControlName="Tables"
-								[multiple]="true"
-								[closeOnSelect]="false"
-								[items]="tableList"
-								bindLabel="Name"
-								bindValue="Id"
-								placeholder="{{'Select Table' | translate}}"
-							>
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div *ngIf="i">
-										<div>
-											<span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span>
-											<span [ngOptionHighlight]="search">{{i.Name}}</span>
-										</div>
-									</div>
-								</ng-template>
-							</ng-select>
+							<app-input-control
+								(change)="setOrderValue([])"
+								[field]="{id:'NumberOfGuests', label:'NumberOfGuests', type:'number',form:formGroup}"
+							></app-input-control>
 						</div>
 
 						<div class="c-control">
-							<ng-select
-								appendTo="#pos-order-detail-page"
-								class="c-input no-check-dirty"
-								formControlName="Status"
-								labelForId="Status"
-								[multiple]="false"
-								[clearable]="false"
-								[items]="soStatusList"
-								bindLabel="Name"
-								bindValue="Code"
-								placeholder="{{'Status' | translate}}"
+							<app-input-control
+								(change)="setOrderValue([])"
+								style="text-align: left; min-height: 3.8rem; height: auto"
+								[field]="{id:'Tables',label:'Tables',type:'ng-select',dataSource:tableList,clearable:true,bindLabel:'Name',bindValue:'Id',multiple:true,placeholder:'Select Table', form: formGroup,appendTo:'#pos-order-detail-page'}"
 							>
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div>
-										<span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span>
-										<span [ngOptionHighlight]="search">{{i.Name}}</span>
-									</div>
-								</ng-template>
-							</ng-select>
+							</app-input-control>
 						</div>
+						<app-form-control [field]="{id:'Status', type : 'ng-select-status', form : formGroup,  dataSource: soStatusList, bindLabel:'Name',  bindValue: 'Code'}">
+						</app-form-control>
 						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
 							<label for=""></label>
 							<ion-button
