@@ -196,7 +196,6 @@ export class POSOrderDetailPage extends PageBase {
 			}
 		});
 
-
 		super.ngOnInit();
 	}
 	ngOnDestroy() {
@@ -443,8 +442,7 @@ export class POSOrderDetailPage extends PageBase {
 		this.cdr.detectChanges();
 		// await this.getStorageNotifications();
 		this.CheckPOSNewOrderLines();
-		
-		
+
 		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 	}
 
@@ -1226,8 +1224,6 @@ export class POSOrderDetailPage extends PageBase {
 			if (printJobs.length > 0) {
 				this.printingService.printJobsWithProgress(printJobs).subscribe({
 					next: ({ job, result }) => {
-						console.log(`Job  done`, job, result);
-						console.log(doneCount);
 						doneCount++;
 						job.options
 							.map((s) => s.jobName)
@@ -1267,7 +1263,8 @@ export class POSOrderDetailPage extends PageBase {
 								}
 							});
 						if (doneCount == printJobs.length) {
-							checkItemNotPrint();
+							if(itemNotPrint.length==0) this.setOrderValue({ Status :'Scheduled' }, false, true);
+							else checkItemNotPrint();
 						}
 					},
 					complete: () => console.log('Tất cả jobs đã hoàn tất'),
@@ -1350,10 +1347,9 @@ export class POSOrderDetailPage extends PageBase {
 
 				let printerInfo = newTerminalList[index]['Printer'];
 				let printing = this.printPrepare('bill', [printerInfo]);
-				if (printing) {
-					this.checkData(receipt, !receipt, sendEachItem);
-					resolve(true);
-				}
+				this.printingService.print([printing]);
+				this.checkData(receipt, !receipt, sendEachItem);
+				resolve(true);
 			}
 		});
 	}
