@@ -190,9 +190,9 @@ export class POSOrderDetailPage extends PageBase {
 				case 'app:networkStatusChange':
 					this.checkNetworkChange(data);
 					break;
-				// case 'app:POSOrderFromStaff':
-				// 	this.notifyOrderFromStaff(data);
-				// 	break;
+				case 'app:POSOrderFromStaff':
+					this.notifyOrderFromStaff(data);
+					break;
 			}
 		});
 
@@ -231,7 +231,7 @@ export class POSOrderDetailPage extends PageBase {
 		}
 		if (data.id == this.item?.Id) {
 			//this.CheckPOSNewOrderLines();
-			this.refresh();
+			this.refresh('load');
 		}
 	}
 
@@ -239,7 +239,7 @@ export class POSOrderDetailPage extends PageBase {
 		const value = JSON.parse(data.value);
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 		if (index != -1) {
-			this.refresh();
+			this.refresh('load');
 		} else {
 			this.getStorageNotifications();
 		}
@@ -260,7 +260,7 @@ export class POSOrderDetailPage extends PageBase {
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 		if (index != -1) {
 			// this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
-			this.refresh();
+			this.refresh('load');
 		} else {
 			this.getStorageNotifications();
 		}
@@ -622,7 +622,12 @@ export class POSOrderDetailPage extends PageBase {
 	}
 
 	refresh(event?: any): void {
-		this.preLoadData('force');
+		if(!event)this.preLoadData('force');
+		else this.debounce(() => {
+					super.refresh();
+				}, 1000);
+		 
+
 	}
 
 	segmentFilterDishes = 'New';
