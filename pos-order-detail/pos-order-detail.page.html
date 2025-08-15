@@ -485,7 +485,7 @@
 					</ion-col>
 					<ion-col *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !pageConfig.systemConfig.POSEnableTemporaryPayment">
 						<ion-button
-							*ngIf="canSaveOrder"
+							*ngIf="canSaveOrder && pageConfig.systemConfig.POSEnableTemporaryPayment"
 							class="gr-btn-order"
 							[color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' "
 							fill="outline"
@@ -494,7 +494,7 @@
 						>
 							{{'Save' | translate}}
 						</ion-button>
-						<ion-button *ngIf="!canSaveOrder" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id"> In phiếu </ion-button>
+						<ion-button *ngIf="!canSaveOrder || !pageConfig.systemConfig.POSEnableTemporaryPayment" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id"> In phiếu </ion-button>
 					</ion-col>
 				</ion-row>
 				<ion-row *ngIf="( item && pageConfig.canEdit && !pageConfig.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap">
