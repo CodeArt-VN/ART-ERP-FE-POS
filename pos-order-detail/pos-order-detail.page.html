@@ -415,22 +415,24 @@
 							</div>
 						</div>
 						<div class="c-control">
+							<!-- (change)="saveChange();" -->
 							<input
 								#numberOfGuestsInput
-								style="text-align: left; "
+								style="text-align: left"
 								class="c-input no-check-dirty"
 								formControlName="NumberOfGuests"
-								(change)="saveChange();"
+								
 								placeholder="{{'Customer Qty' | translate}}"
 							/>
 						</div>
 						<div class="c-control">
+							<!-- (change)="changeTable();" -->
+
 							<ng-select
 								appendTo="#pos-order-detail-page"
 								style="text-align: left; height: auto"
 								class="c-input no-check-dirty"
 								formControlName="Tables"
-								(change)="changeTable();"
 								[multiple]="true"
 								[closeOnSelect]="false"
 								[items]="tableList"
@@ -548,12 +550,7 @@
 	<div class="no-print menu-holder">
 		<div class="menu-group-list">
 			<div class="menu-group" *ngIf="dealList.length" [style]="{order:0}" (click)="segmentChanged('all'); query.Keyword ='deals'">
-				<ion-img
-					#img
-					[src]="noImage"
-					(ionError)="img.src = noImage"
-					[ngClass]="{selected: query.Keyword == 'deals'}"
-				></ion-img>
+				<ion-img #img [src]="noImage" (ionError)="img.src = noImage" [ngClass]="{selected: query.Keyword == 'deals'}"></ion-img>
 				<ion-label>DEAL</ion-label>
 			</div>
 			<div class="menu-group" [style]="{order:(i==0 && g.Id==0) ? -1:''}" *ngFor="let g of menuList;let i = index" (click)="segmentChanged(g.Id); query.Keyword =''">

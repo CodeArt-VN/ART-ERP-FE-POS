@@ -50,7 +50,7 @@ export class POSOrderPage extends PageBase {
 		public navCtrl: NavController,
 		public location: Location,
 		public commonService: CommonService,
-		public promotionService : PromotionService
+		public promotionService: PromotionService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -92,11 +92,15 @@ export class POSOrderPage extends PageBase {
 				case 'app:POSOrderMergedFromStaff':
 					this.notifyMergedOrderFromStaff(data);
 					break;
+				case 'app:POSOrderFromStaff':
+					this.notifyOrderFromStaff(data);
+					break;
 			}
 		});
 
 		super.ngOnInit();
 	}
+
 	private notifyPayment(data) {
 		const value = JSON.parse(data.value);
 		if (this.env.selectedBranch == value.IDBranch && value.IDStaff == 0) {
@@ -190,22 +194,22 @@ export class POSOrderPage extends PageBase {
 	private notifyLockOrderFromStaff(data) {
 		const value = JSON.parse(data.value);
 		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Order');
-			let message = 'Nhân viên đã khóa đơn bàn ' + value.Tables[0].TableName;
-			this.env.showMessage('Nhân viên đã khóa đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
+			// this.playAudio('Order');
+			// let message = 'Nhân viên đã khóa đơn bàn ' + value.Tables[0].TableName;
+			// this.env.showMessage('Nhân viên đã khóa đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
+			// let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
 
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Khóa đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
+			// let notification = {
+			// 	Id: null,
+			// 	IDBranch: value.IDBranch,
+			// 	IDSaleOrder: data.id,
+			// 	Type: 'Support',
+			// 	Name: 'Khóa đơn hàng',
+			// 	Code: 'pos-order',
+			// 	Message: message,
+			// 	Url: url,
+			// };
+			// this.setNotifications(notification, true);
 			this.refresh();
 		}
 	}
@@ -235,21 +239,21 @@ export class POSOrderPage extends PageBase {
 	private notifyUnlockOrderFromStaff(data) {
 		const value = JSON.parse(data.value);
 		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Order');
-			let message = 'Nhân viên đã mở đơn bàn ' + value.Tables[0].TableName;
-			this.env.showMessage('Nhân viên đã mở đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Mở khóa đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
+			// this.playAudio('Order');
+			// let message = 'Nhân viên đã mở đơn bàn ' + value.Tables[0].TableName;
+			// this.env.showMessage('Nhân viên đã mở đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
+			// let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
+			// let notification = {
+			// 	Id: null,
+			// 	IDBranch: value.IDBranch,
+			// 	IDSaleOrder: data.id,
+			// 	Type: 'Support',
+			// 	Name: 'Mở khóa đơn hàng',
+			// 	Code: 'pos-order',
+			// 	Message: message,
+			// 	Url: url,
+			// };
+			// this.setNotifications(notification, true);
 			this.refresh();
 		}
 	}
@@ -297,6 +301,30 @@ export class POSOrderPage extends PageBase {
 			};
 			this.setNotifications(notification, true);
 
+			this.refresh();
+		}
+	}
+
+	private notifyOrderFromStaff(data) {
+		const value = JSON.parse(data.value);
+		console.log(value);
+
+		if (this.env.selectedBranch == value.IDBranch) {
+			// this.playAudio('Order');
+			// let message = 'Nhân viên đã thêm món mới đơn bàn ' + value.Tables[0].TableName;
+			// // this.env.showMessage('Nhân viên đã thêm món mới đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
+			// let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
+			// let notification = {
+			// 	Id: null,
+			// 	IDBranch: value.IDBranch,
+			// 	IDSaleOrder: data.id,
+			// 	Type: 'Support',
+			// 	Name: 'Thêm món',
+			// 	Code: 'pos-order',
+			// 	Message: message,
+			// 	Url: url,
+			// };
+			// this.setNotifications(notification, true);
 			this.refresh();
 		}
 	}
@@ -399,7 +427,7 @@ export class POSOrderPage extends PageBase {
 				this.checkTable(o, tid);
 			});
 		});
-		
+
 		super.loadedData(event);
 		this.env.getStorage('Notifications').then((result) => {
 			if (result?.length > 0) {

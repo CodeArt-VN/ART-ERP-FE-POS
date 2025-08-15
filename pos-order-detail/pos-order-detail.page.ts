@@ -222,8 +222,12 @@ export class POSOrderDetailPage extends PageBase {
 				case 'app:networkStatusChange':
 					this.checkNetworkChange(data);
 					break;
+				// case 'app:POSOrderFromStaff':
+				// 	this.notifyOrderFromStaff(data);
+				// 	break;
 			}
 		});
+
 
 		super.ngOnInit();
 	}
@@ -263,11 +267,22 @@ export class POSOrderDetailPage extends PageBase {
 			this.refresh();
 		}
 	}
+
+	private notifyOrderFromStaff(data) {
+		const value = JSON.parse(data.value);
+		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
+		if (index != -1) {
+			this.refresh();
+		} else {
+			this.getStorageNotifications();
+		}
+	}
+
 	private notifyLockOrder(data) {
 		const value = JSON.parse(data.value);
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 		if (index != -1) {
-			this.env.showMessage('Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.', 'warning');
+			// this.env.showMessage('Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.', 'warning');
 			this.refresh();
 		} else {
 			this.getStorageNotifications();
@@ -277,7 +292,7 @@ export class POSOrderDetailPage extends PageBase {
 		const value = JSON.parse(data.value);
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 		if (index != -1) {
-			this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
+			// this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
 			this.refresh();
 		} else {
 			this.getStorageNotifications();
@@ -430,7 +445,11 @@ export class POSOrderDetailPage extends PageBase {
 			});
 	}
 
-	async loadedData(event?: any, ignoredFromGroup?: boolean) {
+	loadedData(event?: any, ignoredFromGroup?: boolean) {
+		this.formGroup.valueChanges.subscribe(() => {
+			const controls = this.formGroup.controls;
+			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+		});
 		super.loadedData(event, ignoredFromGroup);
 		if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
 			this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
@@ -443,11 +462,8 @@ export class POSOrderDetailPage extends PageBase {
 			this.getDefaultPrinter();
 		} else {
 			this.patchOrderValue();
-			this.getPayments().finally(() => {
-				this.getDefaultPrinter().finally(() => {
-					this.getQRPayment();
-				});
-			});
+			this.getPayments();
+			this.getDefaultPrinter();
 			this.getPromotionProgram();
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
@@ -456,9 +472,11 @@ export class POSOrderDetailPage extends PageBase {
 		this.loadOrder();
 		this.contactSearch();
 		this.cdr.detectChanges();
-		await this.getStorageNotifications();
+		// await this.getStorageNotifications();
 		this.CheckPOSNewOrderLines();
-		this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
+		
+		
+		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 	}
 
 	async getStorageNotifications() {
@@ -678,7 +696,7 @@ export class POSOrderDetailPage extends PageBase {
 			return;
 		}
 
-		if (!this.pageConfig.canEdit) {
+		if (!this.pageConfig.canEdit || this.item.Status == 'TemporaryBill') {
 			this.env.showMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
 			return;
 		}
@@ -801,7 +819,6 @@ export class POSOrderDetailPage extends PageBase {
 				}
 			}
 		}
-		this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 	}
 
 	async openQuickMemo(line) {
@@ -1194,7 +1211,7 @@ export class POSOrderDetailPage extends PageBase {
 					}
 				}
 			}
-		
+
 			this.checkData(false, true, true)
 				.then((r) => resolve(true))
 				.catch((err) => {
@@ -1202,7 +1219,7 @@ export class POSOrderDetailPage extends PageBase {
 				});
 		});
 	}
-	
+
 	haveFoodItems = false;
 
 	async sendPrint(Status?, receipt = true, sendEachItem = false) {
@@ -1289,7 +1306,7 @@ export class POSOrderDetailPage extends PageBase {
 						.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
 						.toPromise()
 						.then((savedItem: any) => {
-							// this.refresh();
+							this.getQRPayment(savedItem);
 						});
 				})
 				.catch((_) => {});
@@ -1305,19 +1322,13 @@ export class POSOrderDetailPage extends PageBase {
 				.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
 				.toPromise()
 				.then((savedItem: any) => {
-					// this.refresh();
+					this.getQRPayment(savedItem);
 				});
 		}
 	}
 
-	getQRPayment() {
-		if (this.paymentList.length) {
-			this.VietQRCode = null;
-			let payment = this.paymentList.find((p) => p.IncomingPayment.Remark == 'VietQR-AutoGen' && p.IncomingPayment.Status == 'Processing')?.IncomingPayment;
-			if (this.item.Status == 'TemporaryBill' && payment) {
-				this.GenQRCode(payment.Code);
-			}
-		}
+	getQRPayment(payment) {
+		if (payment) this.GenQRCode(payment.Code);
 	}
 
 	VietQRCode;
@@ -1811,7 +1822,7 @@ export class POSOrderDetailPage extends PageBase {
 			}
 		}
 		this.calcOrder();
-
+		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 		if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && this.pageConfig.systemConfig.IsAutoSave) {
 			if (instantly) this.saveChange();
 			else
