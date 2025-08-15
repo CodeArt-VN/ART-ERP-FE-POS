@@ -1091,26 +1091,10 @@ export class POSOrderDetailPage extends PageBase {
 			promise = this.env.showPrompt(message, null, 'Thông báo');
 		} else promise = Promise.resolve(true);
 		promise
-			.then(async (_) => {
+			.then((_) => {
 				if (this.item.Id) {
-					// this.setOrderValue()
-					await this.sendKitchen();
-					if (this.promotionService.promotionList) {
-						let query = {
-							IDSaleOrder: this.item.Id,
-							IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-						};
-						this.pageProvider.commonService
-							.connect('POST', 'PR/Program/ApplyVoucher/', query)
-							.toPromise()
-							.then((result: any) => {
-								this.refresh();
-							});
-					}
-				} else {
-					this.saveChange().then(async () => {
-						this.submitAttempt = false;
-						await this.sendKitchen();
+					this.saveChange().then(() => {
+						this.sendKitchen();
 						if (this.promotionService.promotionList) {
 							let query = {
 								IDSaleOrder: this.item.Id,
@@ -1120,7 +1104,23 @@ export class POSOrderDetailPage extends PageBase {
 								.connect('POST', 'PR/Program/ApplyVoucher/', query)
 								.toPromise()
 								.then((result: any) => {
-									this.refresh();
+									this.refresh('load');
+								});
+						}
+					});
+				} else {
+					this.saveChange().then(() => {
+						this.sendKitchen();
+						if (this.promotionService.promotionList) {
+							let query = {
+								IDSaleOrder: this.item.Id,
+								IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
+							};
+							this.pageProvider.commonService
+								.connect('POST', 'PR/Program/ApplyVoucher/', query)
+								.toPromise()
+								.then((result: any) => {
+									this.refresh('load');
 								});
 						}
 					});
@@ -1271,11 +1271,14 @@ export class POSOrderDetailPage extends PageBase {
 								}
 							});
 						if (doneCount == printJobs.length) {
-							if(itemNotPrint.length==0) this.setOrderValue({ Status :'Scheduled' }, false, true);
+							if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
 							else checkItemNotPrint();
 						}
 					},
-					complete: () =>  {this.sendKitchenAttempt = false; console.log('Tất cả jobs đã hoàn tất')},
+					complete: () => {
+						this.sendKitchenAttempt = false;
+						console.log('Tất cả jobs đã hoàn tất');
+					},
 				});
 			} else checkItemNotPrint();
 		});
