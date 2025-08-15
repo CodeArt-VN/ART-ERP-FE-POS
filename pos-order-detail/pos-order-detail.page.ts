@@ -621,13 +621,28 @@ export class POSOrderDetailPage extends PageBase {
 		});
 	}
 
+	// refreshAttemp = false;
 	refresh(event?: any): void {
-		if(!event)this.preLoadData('force');
-		else this.debounce(() => {
-					super.refresh();
-				}, 1000);
-		 
-
+		// if (this.refreshAttemp) return;
+		// this.refreshAttemp = true;
+		// if (this.formGroup.dirty) {
+		// 	console.log('dirty');
+		// 	this.env.showPrompt('This order have not been saved yet, Do you want to save?', '', 'Please save order!').then(() => {
+		// 		this.saveOrderData();
+		// 		this.debounce(() => {
+		// 			super.refresh();
+		// 			this.refreshAttemp = false;
+		// 		}, 2000);
+		// 	});
+		// } else 
+			if (!event) {
+			this.preLoadData('force');
+			// this.refreshAttemp = false;
+		} else
+			this.debounce(() => {
+				super.refresh();
+				// this.refreshAttemp = false;
+			}, 1000);
 	}
 
 	segmentFilterDishes = 'New';
@@ -1083,62 +1098,20 @@ export class POSOrderDetailPage extends PageBase {
 		}
 	}
 
-	saveOrderData() {
-		let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
-		let promise = new Promise((resolve, reject) => {});
-		console.log(this.item);
+	checkItemNotSendKitchen() {
 		if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
-			promise = this.env.showPrompt(message, null, 'Thông báo');
-		} else promise = Promise.resolve(true);
-		promise
-			.then((_) => {
-				if (this.item.Id) {
-					this.saveChange().then(() => {
-						this.sendKitchen();
-						if (this.promotionService.promotionList) {
-							let query = {
-								IDSaleOrder: this.item.Id,
-								IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-							};
-							this.pageProvider.commonService
-								.connect('POST', 'PR/Program/ApplyVoucher/', query)
-								.toPromise()
-								.then((result: any) => {
-									this.refresh('load');
-								});
-						}
-					});
-				} else {
-					this.saveChange().then(() => {
-						this.sendKitchen();
-						if (this.promotionService.promotionList) {
-							let query = {
-								IDSaleOrder: this.item.Id,
-								IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-							};
-							this.pageProvider.commonService
-								.connect('POST', 'PR/Program/ApplyVoucher/', query)
-								.toPromise()
-								.then((result: any) => {
-									this.refresh('load');
-								});
-						}
-					});
-				}
-			})
-			.catch((_) => {
-				this.saveChange();
-			});
+			this.env.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo').then(() => this.sendKitchen());
+		}
+	}
+	saveOrderData() {
+		this.setOrderValue({}, true);
+		this.checkItemNotSendKitchen();
 	}
 	sendKitchenAttempt = false;
 	async sendKitchen() {
 		return new Promise(async (resolve, reject) => {
 			this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
-			if (this.sendKitchenAttempt) {
-				this.env.showMessage('Printers were busy, please try again!','warning');
-				return;
-			}
-			this.sendKitchenAttempt = true;
+
 			this.printData.undeliveredItems = [];
 			this.item.OrderLines.forEach((e) => {
 				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
@@ -1156,131 +1129,140 @@ export class POSOrderDetailPage extends PageBase {
 				this.submitAttempt = false;
 				return;
 			}
+			if (this.sendKitchenAttempt) {
+				this.env.showMessage('Printers were busy, please try again!', 'warning');
+				return;
+			}
+			this.sendKitchenAttempt = true;
 			let t = this.printData.undeliveredItems;
 			const newKitchenIDList = [...new Set(t.map((g) => g._IDKitchen))];
 			const newKitchenList = this.kitchenList.filter((d) => newKitchenIDList.includes(d.Id));
 
 			let itemNotPrint = [];
 			let printJobs: printData[] = [];
-
-			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
-				await this.setKitchenID(kitchen.Id);
-				if (!kitchen._Printer) {
-					itemNotPrint = t
-						.filter((d) => d._IDKitchen == kitchen.Id)
-						.map((e) => ({
-							Id: e.Id,
-							ShippedQuantity: e.Quantity,
-							IDUoM: e.IDUoM,
-							Status: e.Status,
-							ItemName: e._item.Name, // để hiển thị item ko in đc
-						}));
-					t = t.filter((d) => d._IDKitchen != kitchen.Id);
-					continue;
-				}
-				if (kitchen.IsPrintList) {
-					let jobName = `${kitchen.Id} | ${new Date().toISOString()}`;
-					let data = this.printPrepare('bill', [kitchen._Printer], jobName);
-					printJobs.push(data);
-				}
-				if (kitchen.IsPrintOneByOne) {
-					for (let i of t.filter((d) => d._IDKitchen == kitchen.Id)) {
-						await this.setItemQuery(i.IDItem);
-						let idJob = `${kitchen.Id}_${i.Id}_${i.IDUoM} | ${new Date().toISOString()}`;
-						let data = this.printPrepare('bill-item-each-' + i.Id, [kitchen._Printer], idJob);
-						printJobs.push(data);
-					}
-				}
-			}
-			let doneCount = 0;
-			const checkItemNotPrint = () => {
-				if (itemNotPrint.length == 0) {
-					this.submitAttempt = false;
-					return;
-				}
-				this.env
-					.showPrompt(
-						{ code: 'Items cannot print: {{value}}, do you want to change these items to serving!', value: itemNotPrint.map((i) => i.ItemName) },
-						'',
-						'Items printing error!',
-						'Ok',
-						"Don't send"
-					)
-					.then(() => {
-						this.checkData(false, true, true)
-							.then((r) => resolve(true))
-							.catch((err) => {
-								reject(false);
-							});
-					})
-					.catch((err) => {
-						let saveList = [];
-						itemNotPrint.forEach((e) => {
-							let line = {
+			try {
+				for (let kitchen of newKitchenList.filter((d) => d.Id)) {
+					await this.setKitchenID(kitchen.Id);
+					if (!kitchen._Printer) {
+						itemNotPrint = t
+							.filter((d) => d._IDKitchen == kitchen.Id)
+							.map((e) => ({
 								Id: e.Id,
 								ShippedQuantity: e.Quantity,
 								IDUoM: e.IDUoM,
 								Status: e.Status,
-							};
-							saveList.push(line);
-						});
-						this.submitAttempt = false;
-						this.setOrderValue({ OrderLines: saveList }, false, true);
-					});
-			};
-
-			if (printJobs.length > 0) {
-				this.printingService.printJobsWithProgress(printJobs).subscribe({
-					next: ({ job, result }) => {
-						doneCount++;
-						job.options
-							.map((s) => s.jobName)
-							.forEach((s) => {
-								const [idsPart, timestamp] = s.split('|').map((s) => s.trim());
-								const [idKitchen, id, IDUoM] = idsPart.split('_');
-								if (idKitchen && !id && !IDUoM) {
-									let saveList = t
-										.filter((d) => d._IDKitchen == idKitchen)
-										.map((e) => ({
-											Id: e.Id,
-											ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
-											IDUoM: e.IDUoM,
-											Status: result.status == 'success' ? 'Serving' : e.Status,
-											ItemName: e._item.Name, // để hiển thị item ko in đc
-										}));
-									
-									if (result.status == 'success') this.setOrderValue({ OrderLines: saveList }, false, true);
-									else saveList.forEach((g) => itemNotPrint.push(g));
-									// Xóa hết các món của bếp này
-									t = t.filter((d) => d._IDKitchen != idKitchen);
-								} else {
-									let e = t.find((d) => d._IDKitchen == idKitchen && d.Id == id && d.IDUoM == IDUoM);
-									if (e) {
-										let line = {
-											Id: e.Id,
-											ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
-											IDUoM: e.IDUoM,
-											Status: result.status == 'success' ? e.Status : 'Serving',
-											ItemName: e._item.Name, // để hiển thị item ko in đc
-										};
-										if (result.status == 'success') this.setOrderValue({ OrderLines: [line] }, false, true);
-										else itemNotPrint.push(line);
-										// Xóa item vừa in
-										t = t.filter((d) => !(d._IDKitchen == idKitchen && d.Id == id && d.IDItem == IDUoM));
-									}
-								}
-							});
-						if (doneCount == printJobs.length) {
-							if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
-							else checkItemNotPrint();
+								ItemName: e._item.Name, // để hiển thị item ko in đc
+							}));
+						t = t.filter((d) => d._IDKitchen != kitchen.Id);
+						continue;
+					}
+					if (kitchen.IsPrintList) {
+						let jobName = `${kitchen.Id} | ${new Date().toISOString()}`;
+						let data = this.printPrepare('bill', [kitchen._Printer], jobName);
+						printJobs.push(data);
+					}
+					if (kitchen.IsPrintOneByOne) {
+						for (let i of t.filter((d) => d._IDKitchen == kitchen.Id)) {
+							await this.setItemQuery(i.IDItem);
+							let idJob = `${kitchen.Id}_${i.Id}_${i.IDUoM} | ${new Date().toISOString()}`;
+							let data = this.printPrepare('bill-item-each-' + i.Id, [kitchen._Printer], idJob);
+							printJobs.push(data);
 						}
-					},
-					complete: () => {
-						this.sendKitchenAttempt = false;
-						console.log('Tất cả jobs đã hoàn tất');
-					},
-				});
-			} else checkItemNotPrint();
+					}
+				}
+				let doneCount = 0;
+				const checkItemNotPrint = () => {
+					if (itemNotPrint.length == 0) {
+						this.submitAttempt = false;
+						return;
+					}
+					this.env
+						.showPrompt(
+							{ code: 'Items cannot print: {{value}}, do you want to change these items to serving!', value: itemNotPrint.map((i) => i.ItemName) },
+							'',
+							'Items printing error!',
+							'Ok',
+							"Don't send"
+						)
+						.then(() => {
+							this.checkData(false, true, true)
+								.then((r) => resolve(true))
+								.catch((err) => {
+									reject(false);
+								});
+						})
+						.catch((err) => {
+							let saveList = [];
+							itemNotPrint.forEach((e) => {
+								let line = {
+									Id: e.Id,
+									ShippedQuantity: e.Quantity,
+									IDUoM: e.IDUoM,
+									Status: e.Status,
+								};
+								saveList.push(line);
+							});
+							this.submitAttempt = false;
+							this.setOrderValue({ OrderLines: saveList }, false, true);
+						});
+				};
+
+				if (printJobs.length > 0) {
+					this.printingService.printJobsWithProgress(printJobs).subscribe({
+						next: ({ job, result }) => {
+							doneCount++;
+							job.options
+								.map((s) => s.jobName)
+								.forEach((s) => {
+									const [idsPart, timestamp] = s.split('|').map((s) => s.trim());
+									const [idKitchen, id, IDUoM] = idsPart.split('_');
+									if (idKitchen && !id && !IDUoM) {
+										let saveList = t
+											.filter((d) => d._IDKitchen == idKitchen)
+											.map((e) => ({
+												Id: e.Id,
+												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
+												IDUoM: e.IDUoM,
+												Status: result.status == 'success' ? 'Serving' : e.Status,
+												ItemName: e._item.Name, // để hiển thị item ko in đc
+											}));
+
+										if (result.status == 'success') this.setOrderValue({ OrderLines: saveList }, false, true);
+										else saveList.forEach((g) => itemNotPrint.push(g));
+										// Xóa hết các món của bếp này
+										t = t.filter((d) => d._IDKitchen != idKitchen);
+									} else {
+										let e = t.find((d) => d._IDKitchen == idKitchen && d.Id == id && d.IDUoM == IDUoM);
+										if (e) {
+											let line = {
+												Id: e.Id,
+												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
+												IDUoM: e.IDUoM,
+												Status: result.status == 'success' ? e.Status : 'Serving',
+												ItemName: e._item.Name, // để hiển thị item ko in đc
+											};
+											if (result.status == 'success') this.setOrderValue({ OrderLines: [line] }, false, true);
+											else itemNotPrint.push(line);
+											// Xóa item vừa in
+											t = t.filter((d) => !(d._IDKitchen == idKitchen && d.Id == id && d.IDItem == IDUoM));
+										}
+									}
+								});
+							if (doneCount == printJobs.length) {
+								if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
+								else checkItemNotPrint();
+							}
+						},
+						complete: () => {
+							this.sendKitchenAttempt = false;
+							console.log('Tất cả jobs đã hoàn tất');
+						},
+					});
+				} else checkItemNotPrint();
+			} catch (e) {
+				console.log(e);
+				this.sendKitchenAttempt = false;
+			}
 		});
 	}
 	printPrepare(element, printers, jobName = '') {
@@ -1378,49 +1360,19 @@ export class POSOrderDetailPage extends PageBase {
 	}
 
 	async lockOrder() {
+		this.checkItemNotSendKitchen();
 		const Debt = this.item.Debt;
 		let postDTO = {
 			Id: this.item.Id,
 			Code: 'TemporaryBill',
 			Debt: Debt,
 		};
-		if (this.printData.undeliveredItems.length > 0) {
-			let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục gửi bếp và tạm tính?';
-			this.env
-				.showPrompt(message, null, 'Thông báo')
-				.then(async (_) => {
-					await this.sendKitchen();
-
-					const Debt = this.item.Debt;
-					let postDTO = {
-						Id: this.item.Id,
-						Code: 'TemporaryBill',
-						Debt: Debt,
-					};
-
-					this.pageProvider.commonService
-						.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
-						.toPromise()
-						.then((savedItem: any) => {
-							this.getQRPayment(savedItem);
-						});
-				})
-				.catch((_) => {});
-		} else {
-			const Debt = this.item.Debt;
-			let postDTO = {
-				Id: this.item.Id,
-				Code: 'TemporaryBill',
-				Debt: Debt,
-			};
-
-			this.pageProvider.commonService
-				.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
-				.toPromise()
-				.then((savedItem: any) => {
-					this.getQRPayment(savedItem);
-				});
-		}
+		this.pageProvider.commonService
+			.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
+			.toPromise()
+			.then((savedItem: any) => {
+				this.getQRPayment(savedItem);
+			});
 	}
 
 	getQRPayment(payment) {
