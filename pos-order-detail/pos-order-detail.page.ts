@@ -1125,12 +1125,15 @@ export class POSOrderDetailPage extends PageBase {
 				this.saveChange();
 			});
 	}
-
+	sendKitchenAttempt = false;
 	async sendKitchen() {
 		return new Promise(async (resolve, reject) => {
 			this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
-			if (this.submitAttempt) return;
-			this.submitAttempt = true;
+			if (this.sendKitchenAttempt) {
+				this.env.showMessage('Printers were busy, please try again!','warning');
+				return;
+			}
+			this.sendKitchenAttempt = true;
 			this.printData.undeliveredItems = [];
 			this.item.OrderLines.forEach((e) => {
 				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
@@ -1240,7 +1243,7 @@ export class POSOrderDetailPage extends PageBase {
 											Status: result.status == 'success' ? 'Serving' : e.Status,
 											ItemName: e._item.Name, // để hiển thị item ko in đc
 										}));
-
+									
 									if (result.status == 'success') this.setOrderValue({ OrderLines: saveList }, false, true);
 									else saveList.forEach((g) => itemNotPrint.push(g));
 									// Xóa hết các món của bếp này
@@ -1267,7 +1270,7 @@ export class POSOrderDetailPage extends PageBase {
 							else checkItemNotPrint();
 						}
 					},
-					complete: () => console.log('Tất cả jobs đã hoàn tất'),
+					complete: () =>  {this.sendKitchenAttempt = false; console.log('Tất cả jobs đã hoàn tất')},
 				});
 			} else checkItemNotPrint();
 		});
