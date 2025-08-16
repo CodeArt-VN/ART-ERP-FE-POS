@@ -355,7 +355,13 @@
 									</ng-template>
 								</ion-modal>
 							</ion-item>
-							<ng-select
+							<app-input-control
+								(change)="changedIDAddress($event)"
+								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, appendTo:'#pos-order-detail-page'}"
+							>
+							</app-input-control>
+
+							<!-- <ng-select
 								appendTo="#pos-order-detail-page"
 								style="text-align: left"
 								class="c-input"
