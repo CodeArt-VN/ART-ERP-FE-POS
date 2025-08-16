@@ -398,10 +398,6 @@ export class POSOrderDetailPage extends PageBase {
 
 				this.dealList = values[4];
 
-				if (this.pageConfig.systemConfig.SODefaultBusinessPartner) {
-					this.contactListSelected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
-				}
-
 				this.paymentTypeList = values[6];
 				this.paymentStatusList = values[7];
 				this.kitchenList = values[8]?.data;
@@ -414,6 +410,7 @@ export class POSOrderDetailPage extends PageBase {
 	}
 
 	loadedData(event?: any, ignoredFromGroup?: boolean) {
+		this._contactDataSource.selected = [];
 		this.formGroup.valueChanges.subscribe(() => {
 			const controls = this.formGroup.controls;
 			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
@@ -437,8 +434,14 @@ export class POSOrderDetailPage extends PageBase {
 				this.getStaffInfo(this.item._Customer.Code);
 			}
 		}
+		if (this.pageConfig.systemConfig.SODefaultBusinessPartner) {
+			this._contactDataSource.selected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
+		}
+		if (this.item._Customer && !this._contactDataSource.selected?.some((d) => d.Id == this.item._Customer.Id)) {
+			this._contactDataSource.selected.push(this.item._Customer);
+		}
 		this.loadOrder();
-		this.contactSearch();
+		this._contactDataSource.initSearch();
 		this.cdr.detectChanges();
 		// await this.getStorageNotifications();
 		this.CheckPOSNewOrderLines();
@@ -761,6 +764,7 @@ export class POSOrderDetailPage extends PageBase {
 					OrderLines: [
 						{
 							Id: line.Id,
+							Code: line.Code,
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
 						},
@@ -777,6 +781,7 @@ export class POSOrderDetailPage extends PageBase {
 								OrderLines: [
 									{
 										Id: line.Id,
+										Code: line.Code,
 										IDUoM: line.IDUoM,
 										Quantity: line.Quantity,
 									},
@@ -794,6 +799,7 @@ export class POSOrderDetailPage extends PageBase {
 									OrderLines: [
 										{
 											Id: line.Id,
+											Code: line.Code,
 											IDUoM: line.IDUoM,
 											Quantity: line.Quantity,
 										},
@@ -832,7 +838,8 @@ export class POSOrderDetailPage extends PageBase {
 		if (role == 'confirm') {
 			line.Remark = data ? data.toString() : null;
 			this.setOrderValue({
-				OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }],
+										
+				OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM,Code : line.Code, Remark: line.Remark }],
 			});
 		}
 	}
@@ -884,6 +891,7 @@ export class POSOrderDetailPage extends PageBase {
 						line.ReturnedQuantity = 0;
 						changed.OrderLines.push({
 							Id: line.Id,
+							Code : line.Code,
 							IDUoM: line.IDUoM,
 							ShippedQuantity: line.ShippedQuantity,
 							ReturnedQuantity: 0,
@@ -1158,14 +1166,14 @@ export class POSOrderDetailPage extends PageBase {
 						continue;
 					}
 					if (kitchen.IsPrintList) {
-						let jobName = `${kitchen.Id} | ${new Date().toISOString()}`;
+						let jobName = `${kitchen.Id}_${this.item?.Id} | ${new Date().toISOString()}`;
 						let data = this.printPrepare('bill', [kitchen._Printer], jobName);
 						printJobs.push(data);
 					}
 					if (kitchen.IsPrintOneByOne) {
 						for (let i of t.filter((d) => d._IDKitchen == kitchen.Id)) {
 							await this.setItemQuery(i.IDItem);
-							let idJob = `${kitchen.Id}_${i.Id}_${i.IDUoM} | ${new Date().toISOString()}`;
+							let idJob = `${kitchen.Id}_${this.item?.Id}_${i.Code} | ${new Date().toISOString()}`;
 							let data = this.printPrepare('bill-item-each-' + i.Id, [kitchen._Printer], idJob);
 							printJobs.push(data);
 						}
@@ -1212,15 +1220,13 @@ export class POSOrderDetailPage extends PageBase {
 				if (printJobs.length > 0) {
 					this.printingService.printJobsWithProgress(printJobs).subscribe({
 						next: ({ job, result }) => {
-							this.submitAttempt = false;
-
 							doneCount++;
 							job.options
 								.map((s) => s.jobName)
 								.forEach((s) => {
 									const [idsPart, timestamp] = s.split('|').map((s) => s.trim());
-									const [idKitchen, id, IDUoM] = idsPart.split('_');
-									if (idKitchen && !id && !IDUoM) {
+									const [idKitchen, IDSO, code] = idsPart.split('_');
+									if (idKitchen && !code) {
 										let saveList = t
 											.filter((d) => d._IDKitchen == idKitchen)
 											.map((e) => ({
@@ -1237,7 +1243,7 @@ export class POSOrderDetailPage extends PageBase {
 										// Xóa hết các món của bếp này
 										t = t.filter((d) => d._IDKitchen != idKitchen);
 									} else {
-										let e = t.find((d) => d._IDKitchen == idKitchen && d.Id == id && d.IDUoM == IDUoM);
+										let e = t.find((d) => d._IDKitchen == idKitchen && d.Code == code );
 										if (e) {
 											let line = {
 												Id: e.Id,
@@ -1250,7 +1256,7 @@ export class POSOrderDetailPage extends PageBase {
 											if (result.status == 'success') this.setOrderValue({ OrderLines: [line] }, false, true);
 											else itemNotPrint.push(line);
 											// Xóa item vừa in
-											t = t.filter((d) => !(d._IDKitchen == idKitchen && d.Id == id && d.IDItem == IDUoM));
+											t = t.filter((d) => !(d._IDKitchen == idKitchen && d.Code == code));
 										}
 									}
 								});
@@ -1446,9 +1452,6 @@ export class POSOrderDetailPage extends PageBase {
 			this.pageConfig.canEdit = true;
 		}
 
-		if (this.item._Customer) {
-			this.contactListSelected.push(this.item._Customer);
-		}
 		this.UpdatePrice();
 		this.calcOrder();
 	}
@@ -1911,35 +1914,14 @@ export class POSOrderDetailPage extends PageBase {
 	changeTable() {
 		this.saveSO();
 	}
-
-	contactList$;
-	contactListLoading = false;
-	contactListInput$ = new Subject<string>();
-	contactListSelected = [];
-	contactSelected = null;
-	contactSearch() {
-		this.contactListLoading = false;
-		this.contactList$ = concat(
-			of(this.contactListSelected),
-			this.contactListInput$.pipe(
-				distinctUntilChanged(),
-				tap(() => (this.contactListLoading = true)),
-				switchMap((term) =>
-					this.contactProvider
-						.search({
-							Take: 20,
-							Skip: 0,
-							SkipMCP: true,
-							Term: term ? term : 'BP:' + this.item.IDContact,
-						})
-						.pipe(
-							catchError(() => of([])), // empty list on error
-							tap(() => (this.contactListLoading = false))
-						)
-				)
-			)
-		);
-	}
+	_contactDataSource = this.buildSelectDataSource((term) => {
+		return this.contactProvider.search({
+			Take: 20,
+			Skip: 0,
+			SkipMCP: true,
+			Term: term ? term : 'BP:' + this.item?.IDContact,
+		});
+	});
 
 	async addContact() {
 		const modal = await this.modalController.create({
@@ -1952,13 +1934,17 @@ export class POSOrderDetailPage extends PageBase {
 		await modal.present();
 		const { data } = await modal.onWillDismiss();
 		if (data) {
+			this.setOrderValue({
+				// IDContact: data.IDAddress,
+				IDAddress: data.IDAddress,
+			});
+			this.formGroup.get('IDAddress').setValue(data.IDAddress);
 			this.changedIDAddress(data);
-			this.contactListSelected.push(data);
-			this.contactListSelected = [...this.contactListSelected];
-			this.contactSearch();
+			this._contactDataSource.selected.push(data);
+			this._contactDataSource.selected = [...this._contactDataSource.selected];
+			this._contactDataSource.initSearch();
 		}
 	}
-
 	changedIDAddress(address) {
 		if (address) {
 			this.Staff = null;
@@ -2174,7 +2160,7 @@ export class POSOrderDetailPage extends PageBase {
 					if (e.Quantity != e.ShippedQuantity) {
 						undelivered.push({
 							Id: e.Id,
-							Code:e.Code,
+							Code: e.Code,
 							ShippedQuantity: e.Quantity,
 							IDUoM: e.IDUoM,
 							Status: 'Serving',
@@ -2235,10 +2221,9 @@ export class POSOrderDetailPage extends PageBase {
 					address.Address = address['Addresses'][0];
 
 					this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
-
-					this.contactListSelected.push(address);
+					this._contactDataSource.selected.push(address);
 					this.changedIDAddress(address);
-					this.contactSearch();
+					this._contactDataSource.initSearch();
 					this.cdr.detectChanges();
 					this.saveChange();
 				});
