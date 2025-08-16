@@ -2174,6 +2174,7 @@ export class POSOrderDetailPage extends PageBase {
 					if (e.Quantity != e.ShippedQuantity) {
 						undelivered.push({
 							Id: e.Id,
+							Code:e.Code,
 							ShippedQuantity: e.Quantity,
 							IDUoM: e.IDUoM,
 							Status: 'Serving',
