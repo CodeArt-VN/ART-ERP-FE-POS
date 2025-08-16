@@ -416,7 +416,7 @@ export class POSOrderDetailPage extends PageBase {
 	loadedData(event?: any, ignoredFromGroup?: boolean) {
 		this.formGroup.valueChanges.subscribe(() => {
 			const controls = this.formGroup.controls;
-			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
 		});
 		super.loadedData(event, ignoredFromGroup);
 		if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
@@ -634,8 +634,8 @@ export class POSOrderDetailPage extends PageBase {
 		// 			this.refreshAttemp = false;
 		// 		}, 2000);
 		// 	});
-		// } else 
-			if (!event) {
+		// } else
+		if (!event) {
 			this.preLoadData('force');
 			// this.refreshAttemp = false;
 		} else
@@ -1127,7 +1127,6 @@ export class POSOrderDetailPage extends PageBase {
 
 			if (this.printData.undeliveredItems.length == 0) {
 				if (this.pageConfig.systemConfig.IsAutoSave) this.env.showMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
-				this.submitAttempt = false;
 				return;
 			}
 			if (this.sendKitchenAttempt) {
@@ -1149,6 +1148,7 @@ export class POSOrderDetailPage extends PageBase {
 							.filter((d) => d._IDKitchen == kitchen.Id)
 							.map((e) => ({
 								Id: e.Id,
+								Code: e.Code,
 								ShippedQuantity: e.Quantity,
 								IDUoM: e.IDUoM,
 								Status: e.Status,
@@ -1197,6 +1197,7 @@ export class POSOrderDetailPage extends PageBase {
 							itemNotPrint.forEach((e) => {
 								let line = {
 									Id: e.Id,
+									Code: e.Code,
 									ShippedQuantity: e.Quantity,
 									IDUoM: e.IDUoM,
 									Status: e.Status,
@@ -1211,6 +1212,8 @@ export class POSOrderDetailPage extends PageBase {
 				if (printJobs.length > 0) {
 					this.printingService.printJobsWithProgress(printJobs).subscribe({
 						next: ({ job, result }) => {
+							this.submitAttempt = false;
+
 							doneCount++;
 							job.options
 								.map((s) => s.jobName)
@@ -1222,6 +1225,7 @@ export class POSOrderDetailPage extends PageBase {
 											.filter((d) => d._IDKitchen == idKitchen)
 											.map((e) => ({
 												Id: e.Id,
+												Code: e.Code,
 												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
 												IDUoM: e.IDUoM,
 												Status: result.status == 'success' ? 'Serving' : e.Status,
@@ -1237,6 +1241,7 @@ export class POSOrderDetailPage extends PageBase {
 										if (e) {
 											let line = {
 												Id: e.Id,
+												Code: e.Code,
 												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
 												IDUoM: e.IDUoM,
 												Status: result.status == 'success' ? e.Status : 'Serving',
@@ -1284,7 +1289,7 @@ export class POSOrderDetailPage extends PageBase {
 			};
 		});
 		let data: printData = {
-			content: content.outerHTML,
+			content: content?.outerHTML,
 			type: 'html',
 			options: optionPrinters,
 		};
@@ -1341,7 +1346,8 @@ export class POSOrderDetailPage extends PageBase {
 
 				let printerInfo = newTerminalList[index]['Printer'];
 				let printing = this.printPrepare('bill', [printerInfo]);
-				this.printingService.print([printing]);
+				lastValueFrom(this.printingService.printJobsWithProgress([printing]));
+				// this.printingService.print([printing]);
 				this.checkData(receipt, !receipt, sendEachItem);
 				resolve(true);
 			}
@@ -1708,10 +1714,10 @@ export class POSOrderDetailPage extends PageBase {
 		let group = this.formBuilder.group({
 			IDOrder: [line.IDOrder],
 			Id: new FormControl({ value: line.Id, disabled: true }),
+			Code: [line.Code],
 
 			Type: [line.Type],
 			Status: new FormControl({ value: line.Status, disabled: true }),
-
 			IDItem: [line.IDItem, Validators.required],
 			IDTax: [line.IDTax],
 			TaxRate: [line.TaxRate],
@@ -1791,7 +1797,7 @@ export class POSOrderDetailPage extends PageBase {
 				for (const line of data[c]) {
 					let idx = -1;
 					if (c == 'OrderLines') {
-						idx = this.item[c].findIndex((d) => d.Id == line.Id && d.IDUoM == line.IDUoM);
+						idx = this.item[c].findIndex((d) => d.Code == line.Code && d.IDUoM == line.IDUoM);
 					}
 					//Remove Order line
 					if (line.Quantity < 1) {
@@ -1854,6 +1860,7 @@ export class POSOrderDetailPage extends PageBase {
 		}
 	}
 
+	alwaysReturnProps = ['Id', 'IDBranch', 'Code'];
 	async saveChange() {
 		let submitItem = this.getDirtyValues(this.formGroup);
 		return this.saveChange2();
