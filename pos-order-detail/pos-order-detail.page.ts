@@ -1782,7 +1782,7 @@ export class POSOrderDetailPage extends PageBase {
 		});
 		groups.push(group);
 	}
-
+	delay = 1000;
 	setOrderValue(data, forceSave = false, autoSave = null) {
 		for (const c in data) {
 			if (c == 'OrderLines' || c == 'OrderLines') {
@@ -1843,14 +1843,13 @@ export class POSOrderDetailPage extends PageBase {
 		} else {
 			if (autoSave === null) autoSave = this.pageConfig.systemConfig.IsAutoSave;
 			if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && autoSave) {
-				let delay = 1000;
-				// Nếu đang submit thì chờ thêm 1 giây
 				if (this.submitAttempt) {
-					delay += 1000; // tổng cộng 2 giây
+					this.delay += 1000;
 				}
 				this.debounce(() => {
+					this.delay = 1000; // reset
 					this.saveChange();
-				}, delay);
+				}, this.delay);
 			}
 		}
 	}
