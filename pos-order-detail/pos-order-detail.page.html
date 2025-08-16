@@ -355,58 +355,11 @@
 									</ng-template>
 								</ion-modal>
 							</ion-item>
-							<ng-select
-								appendTo="#pos-order-detail-page"
-								style="text-align: left"
-								class="c-input"
+							<app-input-control
 								(change)="changedIDAddress($event)"
-								#IDAddress
-								labelForId="IDAddress"
-								formControlName="IDAddress"
-								[items]="contactList$ | async"
-								[clearable]="false"
-								[typeahead]="contactListInput$"
-								[loading]="contactListLoading"
-								[virtualScroll]="true"
-								bindLabel="Name"
-								bindValue="IDAddress"
-								placeholder="{{'Search for name, code or phone number' | translate}}"
+								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
 							>
-								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
-									{{i.Name}}
-									<small *ngIf="a">
-										<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
-										<span *ngIf="a.Ward">, {{a.Ward}}</span>
-										<span *ngIf="a.District">, {{a.District}}</span>
-										<span *ngIf="a.Province">, {{a.Province}}</span>
-									</small>
-								</ng-template>
-								<ng-template ng-option-tmp let-i="item" let-a="item.Address" let-search="searchTerm">
-									<div *ngIf="i">
-										<div>
-											<span [ngOptionHighlight]="search">{{i.Name}}</span>
-											<span *ngIf="i.WorkPhone">
-												|
-												<small>
-													<b [ngOptionHighlight]="search">{{i.WorkPhone}}</b>
-												</small></span
-											>
-										</div>
-										<small *ngIf="a">
-											<b *ngIf="i.Code"><span class="important" [ngOptionHighlight]="search">{{i.Code}}</span></b>
-											<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
-											<span *ngIf="a.Ward">, {{a.Ward}}</span>
-											<span *ngIf="a.District">, {{a.District}}</span>
-											<span *ngIf="a.Province">, {{a.Province}}</span>
-											<br *ngIf="a.AddressLine2 || a.Contact" />
-											<span *ngIf="a.AddressLine2">{{a.AddressLine2}}</span>
-											<span *ngIf="a.Contact"> | {{'Contact' | translate}}: {{a.Contact}}</span>
-											<span *ngIf="a.Phone1"> - {{a.Phone1}}</span>
-											<span *ngIf="a.Phone2"> - {{a.Phone2}}</span>
-										</small>
-									</div>
-								</ng-template>
-							</ng-select>
+							</app-input-control>
 							<div class="text-right" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
 								<ion-button [disabled]="submitAttempt" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="addContact()">
 									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
