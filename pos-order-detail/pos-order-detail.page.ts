@@ -838,8 +838,7 @@ export class POSOrderDetailPage extends PageBase {
 		if (role == 'confirm') {
 			line.Remark = data ? data.toString() : null;
 			this.setOrderValue({
-										
-				OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM,Code : line.Code, Remark: line.Remark }],
+				OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Code: line.Code, Remark: line.Remark }],
 			});
 		}
 	}
@@ -891,7 +890,7 @@ export class POSOrderDetailPage extends PageBase {
 						line.ReturnedQuantity = 0;
 						changed.OrderLines.push({
 							Id: line.Id,
-							Code : line.Code,
+							Code: line.Code,
 							IDUoM: line.IDUoM,
 							ShippedQuantity: line.ShippedQuantity,
 							ReturnedQuantity: 0,
@@ -1119,9 +1118,10 @@ export class POSOrderDetailPage extends PageBase {
 	sendKitchenAttempt = false;
 	async sendKitchen() {
 		return new Promise(async (resolve, reject) => {
-			this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
+			let printData:any ={};
+			printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
 
-			this.printData.undeliveredItems = [];
+			printData.undeliveredItems = [];
 			this.item.OrderLines.forEach((e) => {
 				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
 				e._IDKitchen = e._item?.IDKitchen;
@@ -1129,11 +1129,11 @@ export class POSOrderDetailPage extends PageBase {
 					e.Remark = e.Remark.toString();
 				}
 				if (e._undeliveredQuantity > 0) {
-					this.printData.undeliveredItems.push(e);
+					printData.undeliveredItems.push(e);
 				}
 			});
 
-			if (this.printData.undeliveredItems.length == 0) {
+			if (printData.undeliveredItems.length == 0) {
 				if (this.pageConfig.systemConfig.IsAutoSave) this.env.showMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
 				return;
 			}
@@ -1142,7 +1142,7 @@ export class POSOrderDetailPage extends PageBase {
 				return;
 			}
 			this.sendKitchenAttempt = true;
-			let t = this.printData.undeliveredItems;
+			let t = printData.undeliveredItems;
 			const newKitchenIDList = [...new Set(t.map((g) => g._IDKitchen))];
 			const newKitchenList = this.kitchenList.filter((d) => newKitchenIDList.includes(d.Id));
 
@@ -1221,6 +1221,7 @@ export class POSOrderDetailPage extends PageBase {
 					this.printingService.printJobsWithProgress(printJobs).subscribe({
 						next: ({ job, result }) => {
 							doneCount++;
+							this.submitAttempt = false;
 							job.options
 								.map((s) => s.jobName)
 								.forEach((s) => {
@@ -1243,14 +1244,14 @@ export class POSOrderDetailPage extends PageBase {
 										// Xóa hết các món của bếp này
 										t = t.filter((d) => d._IDKitchen != idKitchen);
 									} else {
-										let e = t.find((d) => d._IDKitchen == idKitchen && d.Code == code );
+										let e = t.find((d) => d._IDKitchen == idKitchen && d.Code == code);
 										if (e) {
 											let line = {
 												Id: e.Id,
 												Code: e.Code,
 												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
 												IDUoM: e.IDUoM,
-												Status: result.status == 'success' ? e.Status : 'Serving',
+												Status: result.status == 'success' ? 'Serving': e.Status,
 												ItemName: e._item.Name, // để hiển thị item ko in đc
 											};
 											if (result.status == 'success') this.setOrderValue({ OrderLines: [line] }, false, true);
@@ -1264,7 +1265,7 @@ export class POSOrderDetailPage extends PageBase {
 								if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
 								else checkItemNotPrint();
 							}
-						},
+						},  
 						complete: () => {
 							this.sendKitchenAttempt = false;
 							console.log('Tất cả jobs đã hoàn tất');
@@ -1852,9 +1853,9 @@ export class POSOrderDetailPage extends PageBase {
 		} else {
 			if (autoSave === null) autoSave = this.pageConfig.systemConfig.IsAutoSave;
 			if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && autoSave) {
-				if (this.submitAttempt) {
-					this.delay += 1000;
-				}
+				// if (this.submitAttempt) {
+				// 	this.delay += 1000;
+				// }
 				this.debounce(() => {
 					this.delay = 1000; // reset
 					this.saveChange();
