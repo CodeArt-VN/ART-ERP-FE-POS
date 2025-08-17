@@ -502,17 +502,19 @@
 				&::before {
 					content: attr(title);
 					position: absolute;
-					right: 8px;
+					right: 10px;
 					z-index: 1;
-					top: 5px;
-					font-size: 10px;
-					font-weight: bold;
-					width: 16px;
+					top: 4px;
+					font-size: 14px;
+					width: auto;
 					height: 16px;
 					line-height: 16px;
 					border-radius: 10px;
 					display: block;
 					opacity: 0.9;
+				}
+				ion-icon{
+					margin-bottom: -4px;
 				}
 			}
 		}
