@@ -355,58 +355,11 @@
 									</ng-template>
 								</ion-modal>
 							</ion-item>
-							<ng-select
-								appendTo="#pos-order-detail-page"
-								style="text-align: left"
-								class="c-input"
+							<app-input-control
 								(change)="changedIDAddress($event)"
-								#IDAddress
-								labelForId="IDAddress"
-								formControlName="IDAddress"
-								[items]="contactList$ | async"
-								[clearable]="false"
-								[typeahead]="contactListInput$"
-								[loading]="contactListLoading"
-								[virtualScroll]="true"
-								bindLabel="Name"
-								bindValue="IDAddress"
-								placeholder="{{'Search for name, code or phone number' | translate}}"
+								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
 							>
-								<ng-template ng-label-tmp let-i="item" let-a="item.Address">
-									{{i.Name}}
-									<small *ngIf="a">
-										<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
-										<span *ngIf="a.Ward">, {{a.Ward}}</span>
-										<span *ngIf="a.District">, {{a.District}}</span>
-										<span *ngIf="a.Province">, {{a.Province}}</span>
-									</small>
-								</ng-template>
-								<ng-template ng-option-tmp let-i="item" let-a="item.Address" let-search="searchTerm">
-									<div *ngIf="i">
-										<div>
-											<span [ngOptionHighlight]="search">{{i.Name}}</span>
-											<span *ngIf="i.WorkPhone">
-												|
-												<small>
-													<b [ngOptionHighlight]="search">{{i.WorkPhone}}</b>
-												</small></span
-											>
-										</div>
-										<small *ngIf="a">
-											<b *ngIf="i.Code"><span class="important" [ngOptionHighlight]="search">{{i.Code}}</span></b>
-											<span *ngIf="a.AddressLine1"> | {{a.AddressLine1}}</span>
-											<span *ngIf="a.Ward">, {{a.Ward}}</span>
-											<span *ngIf="a.District">, {{a.District}}</span>
-											<span *ngIf="a.Province">, {{a.Province}}</span>
-											<br *ngIf="a.AddressLine2 || a.Contact" />
-											<span *ngIf="a.AddressLine2">{{a.AddressLine2}}</span>
-											<span *ngIf="a.Contact"> | {{'Contact' | translate}}: {{a.Contact}}</span>
-											<span *ngIf="a.Phone1"> - {{a.Phone1}}</span>
-											<span *ngIf="a.Phone2"> - {{a.Phone2}}</span>
-										</small>
-									</div>
-								</ng-template>
-							</ng-select>
+							</app-input-control>
 							<div class="text-right" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
 								<ion-button [disabled]="submitAttempt" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="addContact()">
 									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
@@ -415,61 +368,22 @@
 							</div>
 						</div>
 						<div class="c-control">
-							<input
-								#numberOfGuestsInput
-								style="text-align: left; "
-								class="c-input no-check-dirty"
-								formControlName="NumberOfGuests"
-								(change)="saveChange();"
-								placeholder="{{'Customer Qty' | translate}}"
-							/>
-						</div>
-						<div class="c-control">
-							<ng-select
-								appendTo="#pos-order-detail-page"
-								style="text-align: left; height: auto"
-								class="c-input no-check-dirty"
-								formControlName="Tables"
-								(change)="changeTable();"
-								[multiple]="true"
-								[closeOnSelect]="false"
-								[items]="tableList"
-								bindLabel="Name"
-								bindValue="Id"
-								placeholder="{{'Select Table' | translate}}"
-							>
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div *ngIf="i">
-										<div>
-											<span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span>
-											<span [ngOptionHighlight]="search">{{i.Name}}</span>
-										</div>
-									</div>
-								</ng-template>
-							</ng-select>
+							<app-input-control
+								(change)="setOrderValue([])"
+								[field]="{id:'NumberOfGuests', label:'NumberOfGuests', type:'number',form:formGroup}"
+							></app-input-control>
 						</div>
 
 						<div class="c-control">
-							<ng-select
-								appendTo="#pos-order-detail-page"
-								class="c-input no-check-dirty"
-								formControlName="Status"
-								labelForId="Status"
-								[multiple]="false"
-								[clearable]="false"
-								[items]="soStatusList"
-								bindLabel="Name"
-								bindValue="Code"
-								placeholder="{{'Status' | translate}}"
+							<app-input-control
+								(change)="setOrderValue([])"
+								style="text-align: left; min-height: 3.8rem; height: auto"
+								[field]="{id:'Tables',label:'Tables',type:'ng-select',dataSource:tableList,clearable:true,bindLabel:'Name',bindValue:'Id',multiple:true,placeholder:'Select Table', form: formGroup,appendTo:'#pos-order-detail-page'}"
 							>
-								<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-									<div>
-										<span *ngFor="let l of i.levels">&nbsp;&nbsp;&nbsp;</span>
-										<span [ngOptionHighlight]="search">{{i.Name}}</span>
-									</div>
-								</ng-template>
-							</ng-select>
+							</app-input-control>
 						</div>
+						<app-form-control [field]="{id:'Status', type : 'ng-select-status', form : formGroup,  dataSource: soStatusList, bindLabel:'Name',  bindValue: 'Code'}">
+						</app-form-control>
 						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
 							<label for=""></label>
 							<ion-button
@@ -523,7 +437,17 @@
 						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitAttempt || !item.Id"> Tạm tính tiền </ion-button>
 					</ion-col>
 					<ion-col *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !pageConfig.systemConfig.POSEnableTemporaryPayment">
-						<ion-button color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id"> In phiếu </ion-button>
+						<ion-button
+							*ngIf="canSaveOrder && pageConfig.systemConfig.POSEnableTemporaryPayment"
+							class="gr-btn-order"
+							[color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' "
+							fill="outline"
+							expand="block"
+							(click)="saveOrderData()"
+						>
+							{{'Save' | translate}}
+						</ion-button>
+						<ion-button *ngIf="!canSaveOrder || !pageConfig.systemConfig.POSEnableTemporaryPayment" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id"> In phiếu </ion-button>
 					</ion-col>
 				</ion-row>
 				<ion-row *ngIf="( item && pageConfig.canEdit && !pageConfig.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap">
@@ -548,12 +472,7 @@
 	<div class="no-print menu-holder">
 		<div class="menu-group-list">
 			<div class="menu-group" *ngIf="dealList.length" [style]="{order:0}" (click)="segmentChanged('all'); query.Keyword ='deals'">
-				<ion-img
-					#img
-					[src]="noImage"
-					(ionError)="img.src = noImage"
-					[ngClass]="{selected: query.Keyword == 'deals'}"
-				></ion-img>
+				<ion-img #img [src]="noImage" (ionError)="img.src = noImage" [ngClass]="{selected: query.Keyword == 'deals'}"></ion-img>
 				<ion-label>DEAL</ion-label>
 			</div>
 			<div class="menu-group" [style]="{order:(i==0 && g.Id==0) ? -1:''}" *ngFor="let g of menuList;let i = index" (click)="segmentChanged(g.Id); query.Keyword =''">

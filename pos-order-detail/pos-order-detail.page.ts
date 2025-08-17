@@ -6,6 +6,7 @@ import { EnvService } from 'src/app/services/core/env.service';
 import {
 	CRM_ContactProvider,
 	HRM_StaffProvider,
+	POS_KitchenProvider,
 	POS_MenuProvider,
 	POS_TableGroupProvider,
 	POS_TableProvider,
@@ -19,8 +20,8 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { concat, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, concat, firstValueFrom, lastValueFrom, Observable, of, Subject } from 'rxjs';
+import { catchError, distinctUntilChanged, filter, switchMap, take, tap, toArray } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
@@ -36,6 +37,7 @@ import { printData, PrintingService } from 'src/app/services/printing.service';
 import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
 import { POSService } from '../pos-service';
 import { PromotionService } from 'src/app/services/promotion.service';
+import { CanComponentDeactivate } from './deactivate-guard';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -43,7 +45,7 @@ import { PromotionService } from 'src/app/services/promotion.service';
 	styleUrls: ['./pos-order-detail.page.scss'],
 	standalone: false,
 })
-export class POSOrderDetailPage extends PageBase {
+export class POSOrderDetailPage extends PageBase implements CanComponentDeactivate {
 	@ViewChild('numberOfGuestsInput') numberOfGuestsInput: ElementRef;
 	isOpenMemoModal = false;
 	AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
@@ -56,7 +58,6 @@ export class POSOrderDetailPage extends PageBase {
 	paymentList = [];
 	paymentTypeList = [];
 	paymentStatusList = [];
-	printerList = [];
 	soStatusList = []; //Show on bill
 	soDetailStatusList = [];
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];
@@ -83,6 +84,7 @@ export class POSOrderDetailPage extends PageBase {
 		public posService: POSService,
 		public pageProvider: SALE_OrderProvider,
 		public programProvider: PR_ProgramProvider,
+		public kitchenProvider: POS_KitchenProvider,
 		public deductionProvider: SALE_OrderDeductionProvider,
 		public menuProvider: POS_MenuProvider,
 		public tableGroupProvider: POS_TableGroupProvider,
@@ -112,6 +114,7 @@ export class POSOrderDetailPage extends PageBase {
 		this.pageConfig.isShowFeature = true;
 		this.pageConfig.ShowDelete = false;
 		this.pageConfig.ShowArchive = false;
+		this.pageConfig.canChangeBranch = false;
 		this.idTable = this.route.snapshot?.paramMap?.get('table');
 		this.idTable = typeof this.idTable == 'string' ? parseInt(this.idTable) : this.idTable;
 		this.formGroup = formBuilder.group({
@@ -146,40 +149,6 @@ export class POSOrderDetailPage extends PageBase {
 				value: null,
 				disabled: true,
 			}),
-
-			// ExpectedDeliveryDate
-			// PaymentMethod
-			// ProductDimensions
-			// ProductWeight
-			// TaxRate
-
-			// TotalBeforeDiscount
-			// Promotion
-			// Discount1
-			// Discount2
-			// DiscountByItem
-			// DiscountByGroup
-			// DiscountByOrder
-			// DiscountByLine
-			// TotalDiscount
-			// TotalAfterDiscount
-			// Tax
-			// TotalAfterTax
-			// DiscountFromSalesman
-
-			// OriginalTotalBeforeDiscount
-			// OriginalPromotion
-			// OriginalDiscount1
-			// OriginalDiscount2
-			// OriginalDiscountByItem
-			// OriginalDiscountByGroup
-			// OriginalDiscountByOrder
-			// OriginalDiscountByLine
-			// OriginalTotalDiscount
-			// OriginalTax
-			// OriginalTotalAfterTax
-			// OriginalTotalAfterDiscount
-			// OriginalDiscountFromSalesman
 		});
 
 		console.log('PR List: ', this.promotionService.promotionList);
@@ -222,6 +191,9 @@ export class POSOrderDetailPage extends PageBase {
 				case 'app:networkStatusChange':
 					this.checkNetworkChange(data);
 					break;
+				case 'app:POSOrderFromStaff':
+					this.notifyOrderFromStaff(data);
+					break;
 			}
 		});
 
@@ -231,6 +203,21 @@ export class POSOrderDetailPage extends PageBase {
 		this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
 		super.ngOnDestroy();
 	}
+
+	canDeactivate(): Promise<boolean> {
+		if (this.formGroup.controls.OrderLines.dirty || (this.formGroup.dirty && this.item.Id)) {
+			return this.env
+				.showPrompt('This order has not been saved yet, do you want to save?', '', 'Please save order!')
+				.then(() => {
+					this.saveOrderData();
+					return false; // ở lại trang
+				})
+				.catch(() => {
+					return true; // back
+				});
+		}
+	}
+
 	private notifyPayment(data) {
 		const value = JSON.parse(data.value);
 		if (value.IDSaleOrder == this.item?.Id) {
@@ -260,14 +247,25 @@ export class POSOrderDetailPage extends PageBase {
 		}
 		if (data.id == this.item?.Id) {
 			//this.CheckPOSNewOrderLines();
-			this.refresh();
+			this.refresh('load');
 		}
 	}
+
+	private notifyOrderFromStaff(data) {
+		const value = JSON.parse(data.value);
+		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
+		if (index != -1) {
+			this.refresh('load');
+		} else {
+			this.getStorageNotifications();
+		}
+	}
+
 	private notifyLockOrder(data) {
 		const value = JSON.parse(data.value);
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 		if (index != -1) {
-			this.env.showMessage('Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.', 'warning');
+			// this.env.showMessage('Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.', 'warning');
 			this.refresh();
 		} else {
 			this.getStorageNotifications();
@@ -277,8 +275,8 @@ export class POSOrderDetailPage extends PageBase {
 		const value = JSON.parse(data.value);
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 		if (index != -1) {
-			this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
-			this.refresh();
+			// this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
+			this.refresh('load');
 		} else {
 			this.getStorageNotifications();
 		}
@@ -333,7 +331,7 @@ export class POSOrderDetailPage extends PageBase {
 		const value = JSON.parse(data.value);
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 		if (index != -1) {
-			this.env.showMessage('Đơn hàng đã được chia.', 'warning');
+			this.env.showMessage('The order has been split.', 'warning');
 			this.refresh();
 		} else {
 			this.getStorageNotifications();
@@ -345,7 +343,7 @@ export class POSOrderDetailPage extends PageBase {
 		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
 
 		if (index != -1) {
-			this.env.showMessage('Đơn hàng đã được gộp.', 'warning');
+			this.env.showMessage('The order has been merged.', 'warning');
 			this.refresh();
 		} else {
 			this.getStorageNotifications();
@@ -362,7 +360,7 @@ export class POSOrderDetailPage extends PageBase {
 					.toPromise()
 					.then((lastModifiedDate) => {
 						if (lastModifiedDate > this.item.ModifiedDate) {
-							this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.', 'danger');
+							this.env.showMessage('Order information has changed, the order will be updated.', 'danger');
 							this.refresh();
 						}
 					})
@@ -398,7 +396,7 @@ export class POSOrderDetailPage extends PageBase {
 			}),
 			this.env.getType('PaymentType'),
 			this.env.getStatus('PaymentStatus'),
-			this.printerProvider.read({ IDBranch: this.env.selectedBranch }),
+			this.kitchenProvider.read({ IDBranch: this.env.selectedBranch }),
 		])
 			.then((values: any) => {
 				this.pageConfig.systemConfig = {};
@@ -416,21 +414,23 @@ export class POSOrderDetailPage extends PageBase {
 
 				this.dealList = values[4];
 
-				if (this.pageConfig.systemConfig.SODefaultBusinessPartner) {
-					this.contactListSelected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
-				}
-
 				this.paymentTypeList = values[6];
 				this.paymentStatusList = values[7];
-				this.printerList = values[8]?.data;
+				this.kitchenList = values[8]?.data;
 				super.preLoadData(event);
 			})
 			.catch((err) => {
-				this.loadedData();
+				this.env.showErrorMessage(err);
+				this.loadedData(event);
 			});
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
+		this._contactDataSource.selected = [];
+		this.formGroup.valueChanges.subscribe(() => {
+			const controls = this.formGroup.controls;
+			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+		});
 		super.loadedData(event, ignoredFromGroup);
 		if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
 			this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
@@ -443,22 +443,26 @@ export class POSOrderDetailPage extends PageBase {
 			this.getDefaultPrinter();
 		} else {
 			this.patchOrderValue();
-			this.getPayments().finally(() => {
-				this.getDefaultPrinter().finally(() => {
-					this.getQRPayment();
-				});
-			});
+			this.getPayments();
+			this.getDefaultPrinter();
 			this.getPromotionProgram();
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
 			}
 		}
+		if (this.pageConfig.systemConfig.SODefaultBusinessPartner) {
+			this._contactDataSource.selected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
+		}
+		if (this.item._Customer && !this._contactDataSource.selected?.some((d) => d.Id == this.item._Customer.Id)) {
+			this._contactDataSource.selected.push(this.item._Customer);
+		}
 		this.loadOrder();
-		this.contactSearch();
+		this._contactDataSource.initSearch();
 		this.cdr.detectChanges();
-		await this.getStorageNotifications();
+		// await this.getStorageNotifications();
 		this.CheckPOSNewOrderLines();
-		this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
+
+		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 	}
 
 	async getStorageNotifications() {
@@ -636,8 +640,28 @@ export class POSOrderDetailPage extends PageBase {
 		});
 	}
 
+	// refreshAttemp = false;
 	refresh(event?: any): void {
-		this.preLoadData('force');
+		// if (this.refreshAttemp) return;
+		// this.refreshAttemp = true;
+		// if (this.formGroup.dirty) {
+		// 	console.log('dirty');
+		// 	this.env.showPrompt('This order have not been saved yet, Do you want to save?', '', 'Please save order!').then(() => {
+		// 		this.saveOrderData();
+		// 		this.debounce(() => {
+		// 			super.refresh();
+		// 			this.refreshAttemp = false;
+		// 		}, 2000);
+		// 	});
+		// } else
+		if (!event) {
+			this.preLoadData('force');
+			// this.refreshAttemp = false;
+		} else
+			this.debounce(() => {
+				super.refresh();
+				// this.refreshAttemp = false;
+			}, 1000);
 	}
 
 	segmentFilterDishes = 'New';
@@ -674,17 +698,17 @@ export class POSOrderDetailPage extends PageBase {
 		}
 
 		if (!this.pageConfig.canAdd) {
-			this.env.showMessage('Bạn không có quyền thêm sản phẩm!', 'warning');
+			this.env.showMessage('You do not have permission to add products!', 'warning');
 			return;
 		}
 
-		if (!this.pageConfig.canEdit) {
-			this.env.showMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+		if (!this.pageConfig.canEdit || this.item.Status == 'TemporaryBill') {
+			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
 			return;
 		}
 
 		if (this.item.Tables == null || this.item.Tables.length == 0) {
-			this.env.showMessage('Vui lòng chọn bàn trước khi thêm món!', 'warning');
+			this.env.showMessage('Please select a table before adding items!', 'warning');
 			return;
 		}
 
@@ -707,6 +731,7 @@ export class POSOrderDetailPage extends PageBase {
 			line = {
 				IDOrder: this.item.Id,
 				Id: 0,
+				Code: lib.generateUID(this.env.user.Id),
 				Type: 'TableService',
 				Status: 'New',
 
@@ -746,7 +771,7 @@ export class POSOrderDetailPage extends PageBase {
 						})
 						.catch((_) => {});
 				} else {
-					this.env.showMessage('Item đã chuyển Bar/Bếp');
+					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
 				}
 			} else if (line.Quantity + quantity > 0) {
@@ -755,6 +780,7 @@ export class POSOrderDetailPage extends PageBase {
 					OrderLines: [
 						{
 							Id: line.Id,
+							Code: line.Code,
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
 						},
@@ -771,6 +797,7 @@ export class POSOrderDetailPage extends PageBase {
 								OrderLines: [
 									{
 										Id: line.Id,
+										Code: line.Code,
 										IDUoM: line.IDUoM,
 										Quantity: line.Quantity,
 									},
@@ -788,6 +815,7 @@ export class POSOrderDetailPage extends PageBase {
 									OrderLines: [
 										{
 											Id: line.Id,
+											Code: line.Code,
 											IDUoM: line.IDUoM,
 											Quantity: line.Quantity,
 										},
@@ -796,19 +824,18 @@ export class POSOrderDetailPage extends PageBase {
 							})
 							.catch((_) => {});
 					} else {
-						this.env.showMessage('Tài khoản chưa được cấp quyền xóa sản phẩm!', 'warning');
+						this.env.showMessage('This account does not have permission to delete products!', 'warning');
 					}
 				}
 			}
 		}
-		this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 	}
 
 	async openQuickMemo(line) {
 		if (this.submitAttempt) return;
 		if (line.Status != 'New') return;
 		if (this.item.Status == 'TemporaryBill') {
-			this.env.showMessage('Đơn hàng đã khóa, không thể chỉnh sửa hoặc thêm món!', 'warning');
+			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
 			return;
 		}
 
@@ -826,12 +853,9 @@ export class POSOrderDetailPage extends PageBase {
 
 		if (role == 'confirm') {
 			line.Remark = data ? data.toString() : null;
-			this.setOrderValue(
-				{
-					OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }],
-				},
-				true
-			);
+			this.setOrderValue({
+				OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Code: line.Code, Remark: line.Remark }],
+			});
 		}
 	}
 
@@ -882,6 +906,7 @@ export class POSOrderDetailPage extends PageBase {
 						line.ReturnedQuantity = 0;
 						changed.OrderLines.push({
 							Id: line.Id,
+							Code: line.Code,
 							IDUoM: line.IDUoM,
 							ShippedQuantity: line.ShippedQuantity,
 							ReturnedQuantity: 0,
@@ -963,15 +988,15 @@ export class POSOrderDetailPage extends PageBase {
 
 	InvoiceRequired() {
 		if (this.pageConfig.canEdit == false) {
-			this.env.showMessage('Đơn hàng đã khóa không thể chỉnh sửa', 'warning');
+			this.env.showMessage('The order is locked and cannot be edited', 'warning');
 			return false;
 		}
 		if (!this.item._Customer) {
-			this.env.showMessage('Vui lòng chọn khách hàng', 'warning');
+			this.env.showMessage('Please select a customer', 'warning');
 			return false;
 		}
 		if (this.item._Customer.Id == 922) {
-			this.env.showMessage('Không thể xuất hóa đơn cho khách lẻ', 'warning');
+			this.env.showMessage('Cannot issue invoice for walk-in customer', 'warning');
 			return false;
 		}
 		if (this.item.IsInvoiceRequired == false) {
@@ -1007,7 +1032,7 @@ export class POSOrderDetailPage extends PageBase {
 	async openCancellationReason(line = null, quantity = null) {
 		if (this.submitAttempt) return;
 		if (this.item.Received > 0) {
-			this.env.showMessage('Đơn hàng đã thanh toán không thể hủy, vui lòng hoàn tiền lại để hủy đơn hàng này!', 'warning');
+			this.env.showMessage('Paid order cannot be canceled, please refund before canceling this order!', 'warning');
 			return false;
 		}
 
@@ -1097,114 +1122,215 @@ export class POSOrderDetailPage extends PageBase {
 		}
 	}
 
-	saveOrderData() {
-		let message = 'Bạn có muốn in đơn gửi bar/bếp ?';
-		console.log(this.item);
-
-		this.env
-			.showPrompt(message, null, 'Thông báo')
-			.then(async (_) => {
-				if (this.item.Id) {
-					await this.sendKitchen();
-					if (this.promotionService.promotionList) {
-						let query = {
-							IDSaleOrder: this.item.Id,
-							IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-						};
-						this.pageProvider.commonService
-							.connect('POST', 'PR/Program/ApplyVoucher/', query)
-							.toPromise()
-							.then((result: any) => {
-								this.refresh();
-							});
-					}
-				} else {
-					this.saveChange().then(async () => {
-						this.submitAttempt = false;
-						await this.sendKitchen();
-						if (this.promotionService.promotionList) {
-							let query = {
-								IDSaleOrder: this.item.Id,
-								IDPrograms: this.promotionService.promotionList.filter((d) => d.IsAutoApply).map((o) => o.Id),
-							};
-							this.pageProvider.commonService
-								.connect('POST', 'PR/Program/ApplyVoucher/', query)
-								.toPromise()
-								.then((result: any) => {
-									this.refresh();
-								});
-						}
-					});
-				}
-			})
-			.catch((_) => {
-				this.saveChange();
-			});
+	checkItemNotSendKitchen() {
+		if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
+			this.env.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo').then(() => this.sendKitchen());
+		}
 	}
-
+	saveOrderData() {
+		if (this.formGroup.dirty || !this.item.Id) this.setOrderValue({}, false, true);
+		this.checkItemNotSendKitchen();
+		//this.saveChange().then(() => this.checkItemNotSendKitchen());
+	}
+	sendKitchenAttempt = false;
 	async sendKitchen() {
 		return new Promise(async (resolve, reject) => {
-			this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
-			// console.log(lib.dateFormat(new Date(), "hh:MM:ss") + '  ' + new Date().getMilliseconds()); // For Testing
-			if (this.submitAttempt) return;
-			this.submitAttempt = true;
-			let times = 2; // Số lần in phiếu; Nếu là 2, in 2 lần;
-			// this.qzPrint('bill')
-			this.printData.undeliveredItems = [];
+			let printData: any = {};
+			printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
 
+			printData.undeliveredItems = [];
 			this.item.OrderLines.forEach((e) => {
 				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
-				e._IDKitchen = e._item?.Kitchen.Id;
+				e._IDKitchen = e._item?.IDKitchen;
 				if (e.Remark) {
 					e.Remark = e.Remark.toString();
 				}
 				if (e._undeliveredQuantity > 0) {
-					// e.Status = 'Serving';
-					this.printData.undeliveredItems.push(e);
+					printData.undeliveredItems.push(e);
 				}
 			});
 
-			if (this.printData.undeliveredItems.length == 0) {
-				this.env.showMessage('Không có sản phẩm mới cần gửi đơn!', 'success');
-				this.submitAttempt = false;
+			if (printData.undeliveredItems.length == 0) {
+				if (this.pageConfig.systemConfig.IsAutoSave) this.env.showMessage('No new product needs to be sent!', 'success');
 				return;
 			}
-			let t = this.printData.undeliveredItems;
-			const newKitchenList = [...new Map(this.printData.undeliveredItems.map((item: any) => [item._item?.Kitchen?.Name, item._item?.Kitchen])).values()];
-			this.kitchenList = newKitchenList;
-			// let hosts = newKitchenList
-			// 	.filter(k => k.Printer && k.Printer.Host) // chỉ lấy printer có host
-			// 	.map(k => k.Printer.Host);
+			if (this.sendKitchenAttempt) {
+				this.env.showMessage('Printers were busy, please try again!', 'warning');
+				return;
+			}
+			this.sendKitchenAttempt = true;
+			let printItems = printData.undeliveredItems;
+			const newKitchenIDList = [...new Set(printItems.map((g) => g._IDKitchen))];
+			const newKitchenList = this.kitchenList.filter((d) => newKitchenIDList.includes(d.Id));
 
-			// // Kiểm tra tất cả có host giống nhau
-			// let allSameHost = hosts.length > 0 && hosts.every(h => h === hosts[0]);
-			for (let kitchen of newKitchenList.filter((d) => d.Id)) {
-				await this.setKitchenID(kitchen.Id);
-				let printer = this.printerList.find((d) => d.Code == kitchen.Printer?.Code);
-				if (!printer) continue;
-				if (kitchen.IsPrintList) {
-					await this.printPrepare('bill', [printer], kitchen.Id);
-					// else this.printPrepare('bill', [printer])
-				}
-				if (kitchen.IsPrintOneByOne) {
-					for (let i of t.filter((d) => d._IDKitchen == kitchen.Id)) {
-						await this.setItemQuery(i.IDItem);
-						// let printing = this.printPrepare('bill-item-each-' + i.Id, [printerInfo]);
-						await this.printPrepare('bill-item-each-' + i.Id, [printer], kitchen.Id);
+			let itemNotPrint = [];
+			let printJobs: printData[] = [];
+			try {
+				for (let kitchen of newKitchenList.filter((d) => d.Id)) {
+					await this.setKitchenID(kitchen.Id);
+					if (!kitchen._Printer) {
+						itemNotPrint = printItems
+							.filter((d) => d._IDKitchen == kitchen.Id)
+							.map((e) => ({
+								Id: e.Id,
+								Code: e.Code,
+								ShippedQuantity: e.Quantity,
+								IDUoM: e.IDUoM,
+								Status: e.Status,
+								ItemName: e._item.Name, // để hiển thị item ko in đc
+							}));
+						printItems = printItems.filter((d) => d._IDKitchen != kitchen.Id);
+						continue;
+					}
+					if (kitchen.IsPrintList) {
+						let jobName = `${kitchen.Id}_${this.item?.Id} | ${new Date().toISOString()}`;
+						let data = this.printPrepare('bill', [kitchen._Printer], jobName);
+						printJobs.push(data);
+					}
+					if (kitchen.IsPrintOneByOne) {
+						for (let i of printItems.filter((d) => d._IDKitchen == kitchen.Id)) {
+							await this.setItemQuery(i.IDItem);
+							let idJob = `${kitchen.Id}_${this.item?.Id}_${i.Code} | ${new Date().toISOString()}`;
+							let data = this.printPrepare('bill-item-each-' + i.Id, [kitchen._Printer], idJob);
+							printJobs.push(data);
+						}
 					}
 				}
+				let doneCount = 0;
+				const checkItemNotPrint = () => {
+					if (itemNotPrint.length == 0) {
+						this.submitAttempt = false;
+						return;
+					}
+					this.env
+						.showPrompt(
+							{ code: 'Items cannot print: {{value}}, do you want to change these items to serving!', value: itemNotPrint.map((i) => i.ItemName) },
+							'',
+							'Items printing error!',
+							'Ok',
+							"Don't send"
+						)
+						.then(() => {
+							this.checkData(false, true, true)
+								.then((r) => resolve(true))
+								.catch((err) => {
+									reject(false);
+								});
+						})
+						.catch((err) => {
+							let saveList = [];
+							itemNotPrint.forEach((e) => {
+								let line = {
+									Id: e.Id,
+									Code: e.Code,
+									ShippedQuantity: e.Quantity,
+									IDUoM: e.IDUoM,
+									Status: e.Status,
+								};
+								saveList.push(line);
+							});
+							this.submitAttempt = false;
+							this.setOrderValue({ OrderLines: saveList }, false, true);
+						});
+				};
+
+				if (printJobs.length > 0) {
+					this.printingService.printJobsWithProgress(printJobs).subscribe({
+						next: ({ job, result }) => {
+							doneCount++;
+							this.submitAttempt = false;
+							job.options
+								.map((s) => s.jobName)
+								.forEach((s) => {
+									const [idsPart, timestamp] = s.split('|').map((s) => s.trim());
+									const [idKitchen, IDSO, code] = idsPart.split('_');
+									if (idKitchen && !code) {
+										let saveList = printItems
+											.filter((d) => d._IDKitchen == idKitchen)
+											.map((e) => ({
+												Id: e.Id,
+												Code: e.Code,
+												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
+												IDUoM: e.IDUoM,
+												Status: result.status == 'success' ? 'Serving' : e.Status,
+												ItemName: e._item.Name, // để hiển thị item ko in đc
+											}));
+
+										if (result.status == 'success') this.setOrderValue({ OrderLines: saveList }, false, true);
+										else saveList.forEach((g) => itemNotPrint.push(g));
+										// Xóa hết các món của bếp này
+										printItems = printItems.filter((d) => d._IDKitchen != idKitchen);
+									} else {
+										let e = printItems.find((d) => d._IDKitchen == idKitchen && d.Code == code);
+										if (e) {
+											let line = {
+												Id: e.Id,
+												Code: e.Code,
+												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
+												IDUoM: e.IDUoM,
+												Status: result.status == 'success' ? 'Serving' : e.Status,
+												ItemName: e._item.Name, // để hiển thị item ko in đc
+											};
+											if (result.status == 'success') this.setOrderValue({ OrderLines: [line] }, false, true);
+											else itemNotPrint.push(line);
+											// Xóa item vừa in
+											printItems = printItems.filter((d) => !(d._IDKitchen == idKitchen && d.Code == code));
+										}
+									}
+								});
+							if (doneCount == printJobs.length) {
+								if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
+								else checkItemNotPrint();
+							}
+						},  
+						complete: () => {
+							this.sendKitchenAttempt = false;
+							console.log('Tất cả jobs đã hoàn tất');
+						},
+					});
+				} else checkItemNotPrint();
+			} catch (e) {
+				console.log(e);
+				this.sendKitchenAttempt = false;
 			}
-		
-			this.checkData(false, true, true)
-				.then((r) => resolve(true))
+		});
+	}
+	printPrepare(element, printers, jobName = '') {
+		let content = document.getElementById(element);
+		//let ele = this.printingService.applyAllStyles(content);
+		let optionPrinters = printers.map((printer) => {
+			return {
+				printer: printer.Code,
+				host: printer.Host,
+				port: printer.Port,
+				isSecure: printer.IsSecure,
+				// tray: '1',
+				jobName: jobName ? jobName : printer.Code + '-' + this.item.Id,
+				copies: 1,
+				//orientation: 'landscape',
+				duplex: 'duplex',
+				//  autoStyle:content
+			};
+		});
+		let data: printData = {
+			content: content?.outerHTML,
+			type: 'html',
+			options: optionPrinters,
+		};
+		return data;
+	}
+	printContent(data: printData[]) {
+		return new Promise((resolve, reject) => {
+			this.printingService
+				.print(data)
+				.then((s) => {
+					resolve(s);
+				})
 				.catch((err) => {
-					reject(false);
+					reject(err);
 				});
 		});
 	}
-	
-	haveFoodItems = false;
-
 	async sendPrint(Status?, receipt = true, sendEachItem = false) {
 		return new Promise(async (resolve, reject) => {
 			this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
@@ -1244,10 +1370,10 @@ export class POSOrderDetailPage extends PageBase {
 
 				let printerInfo = newTerminalList[index]['Printer'];
 				let printing = this.printPrepare('bill', [printerInfo]);
-				if (printing) {
-					this.checkData(receipt, !receipt, sendEachItem);
-					resolve(true);
-				}
+				lastValueFrom(this.printingService.printJobsWithProgress([printing]));
+				// this.printingService.print([printing]);
+				this.checkData(receipt, !receipt, sendEachItem);
+				resolve(true);
 			}
 		});
 	}
@@ -1265,59 +1391,23 @@ export class POSOrderDetailPage extends PageBase {
 	}
 
 	async lockOrder() {
+		this.checkItemNotSendKitchen();
 		const Debt = this.item.Debt;
 		let postDTO = {
 			Id: this.item.Id,
 			Code: 'TemporaryBill',
 			Debt: Debt,
 		};
-		if (this.printData.undeliveredItems.length > 0) {
-			let message = 'Bạn có sản phẩm chưa in gửi bếp. Bạn có muốn tiếp tục gửi bếp và tạm tính?';
-			this.env
-				.showPrompt(message, null, 'Thông báo')
-				.then(async (_) => {
-					await this.sendKitchen();
-
-					const Debt = this.item.Debt;
-					let postDTO = {
-						Id: this.item.Id,
-						Code: 'TemporaryBill',
-						Debt: Debt,
-					};
-
-					this.pageProvider.commonService
-						.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
-						.toPromise()
-						.then((savedItem: any) => {
-							// this.refresh();
-						});
-				})
-				.catch((_) => {});
-		} else {
-			const Debt = this.item.Debt;
-			let postDTO = {
-				Id: this.item.Id,
-				Code: 'TemporaryBill',
-				Debt: Debt,
-			};
-
-			this.pageProvider.commonService
-				.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
-				.toPromise()
-				.then((savedItem: any) => {
-					// this.refresh();
-				});
-		}
+		this.pageProvider.commonService
+			.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
+			.toPromise()
+			.then((savedItem: any) => {
+				this.getQRPayment(savedItem);
+			});
 	}
 
-	getQRPayment() {
-		if (this.paymentList.length) {
-			this.VietQRCode = null;
-			let payment = this.paymentList.find((p) => p.IncomingPayment.Remark == 'VietQR-AutoGen' && p.IncomingPayment.Status == 'Processing')?.IncomingPayment;
-			if (this.item.Status == 'TemporaryBill' && payment) {
-				this.GenQRCode(payment.Code);
-			}
-		}
+	getQRPayment(payment) {
+		if (payment) this.GenQRCode(payment.Code);
 	}
 
 	VietQRCode;
@@ -1347,39 +1437,6 @@ export class POSOrderDetailPage extends PageBase {
 	printerCodeList = [];
 	dataList = [];
 
-	printPrepare(id, printers, kitchen = '') {
-		return new Promise((resolve, reject) => {
-			let content = document.getElementById(id);
-			//let ele = this.printingService.applyAllStyles(content);
-			let optionPrinters = printers.map((printer) => {
-				return {
-					printer: printer.Code,
-					host: printer.Host,
-					port: printer.Port,
-					isSecure: printer.IsSecure,
-					// tray: '1',
-					jobName: printer.Code + '-' + kitchen + '-' + this.item.Id,
-					copies: 1,
-					//orientation: 'landscape',
-					duplex: 'duplex',
-					//  autoStyle:content
-				};
-			});
-			let data: printData = {
-				content: content.outerHTML,
-				type: 'html',
-				options: optionPrinters,
-			};
-			this.printingService
-				.print(data)
-				.then((s) => {
-					resolve(s);
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
-	}
 	////PRIVATE METHODS
 	private UpdatePrice() {
 		this.dealList.forEach((d) => {
@@ -1413,9 +1470,6 @@ export class POSOrderDetailPage extends PageBase {
 			this.pageConfig.canEdit = true;
 		}
 
-		if (this.item._Customer) {
-			this.contactListSelected.push(this.item._Customer);
-		}
 		this.UpdatePrice();
 		this.calcOrder();
 	}
@@ -1681,10 +1735,10 @@ export class POSOrderDetailPage extends PageBase {
 		let group = this.formBuilder.group({
 			IDOrder: [line.IDOrder],
 			Id: new FormControl({ value: line.Id, disabled: true }),
+			Code: [line.Code],
 
 			Type: [line.Type],
 			Status: new FormControl({ value: line.Status, disabled: true }),
-
 			IDItem: [line.IDItem, Validators.required],
 			IDTax: [line.IDTax],
 			TaxRate: [line.TaxRate],
@@ -1755,8 +1809,8 @@ export class POSOrderDetailPage extends PageBase {
 		});
 		groups.push(group);
 	}
-
-	setOrderValue(data, instantly = false, forceSave = false) {
+	delay = 1000;
+	setOrderValue(data, forceSave = false, autoSave = null) {
 		for (const c in data) {
 			if (c == 'OrderLines' || c == 'OrderLines') {
 				let fa = <FormArray>this.formGroup.controls.OrderLines;
@@ -1764,7 +1818,7 @@ export class POSOrderDetailPage extends PageBase {
 				for (const line of data[c]) {
 					let idx = -1;
 					if (c == 'OrderLines') {
-						idx = this.item[c].findIndex((d) => d.Id == line.Id && d.IDUoM == line.IDUoM);
+						idx = this.item[c].findIndex((d) => d.Code == line.Code && d.IDUoM == line.IDUoM);
 					}
 					//Remove Order line
 					if (line.Quantity < 1) {
@@ -1811,19 +1865,23 @@ export class POSOrderDetailPage extends PageBase {
 			}
 		}
 		this.calcOrder();
-
-		if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && this.pageConfig.systemConfig.IsAutoSave) {
-			if (instantly) this.saveChange();
-			else
-				this.debounce(() => {
-					this.saveChange();
-				}, 1000);
-		}
 		if (forceSave) {
 			this.saveChange();
+		} else {
+			if (autoSave === null) autoSave = this.pageConfig.systemConfig.IsAutoSave;
+			if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && autoSave) {
+				if (this.submitAttempt) {
+					this.delay += 1000;
+				}
+				this.debounce(() => {
+					this.delay = 1000; // reset
+					this.saveChange();
+				}, this.delay);
+			}
 		}
 	}
 
+	alwaysReturnProps = ['Id', 'IDBranch', 'Code'];
 	async saveChange() {
 		let submitItem = this.getDirtyValues(this.formGroup);
 		return this.saveChange2();
@@ -1874,35 +1932,14 @@ export class POSOrderDetailPage extends PageBase {
 	changeTable() {
 		this.saveSO();
 	}
-
-	contactList$;
-	contactListLoading = false;
-	contactListInput$ = new Subject<string>();
-	contactListSelected = [];
-	contactSelected = null;
-	contactSearch() {
-		this.contactListLoading = false;
-		this.contactList$ = concat(
-			of(this.contactListSelected),
-			this.contactListInput$.pipe(
-				distinctUntilChanged(),
-				tap(() => (this.contactListLoading = true)),
-				switchMap((term) =>
-					this.contactProvider
-						.search({
-							Take: 20,
-							Skip: 0,
-							SkipMCP: true,
-							Term: term ? term : 'BP:' + this.item.IDContact,
-						})
-						.pipe(
-							catchError(() => of([])), // empty list on error
-							tap(() => (this.contactListLoading = false))
-						)
-				)
-			)
-		);
-	}
+	_contactDataSource = this.buildSelectDataSource((term) => {
+		return this.contactProvider.search({
+			Take: 20,
+			Skip: 0,
+			SkipMCP: true,
+			Term: term ? term : 'BP:' + this.item?.IDContact,
+		});
+	});
 
 	async addContact() {
 		const modal = await this.modalController.create({
@@ -1915,24 +1952,24 @@ export class POSOrderDetailPage extends PageBase {
 		await modal.present();
 		const { data } = await modal.onWillDismiss();
 		if (data) {
+			this.setOrderValue({
+				// IDContact: data.IDAddress,
+				IDAddress: data.IDAddress,
+			});
+			this.formGroup.get('IDAddress').setValue(data.IDAddress);
 			this.changedIDAddress(data);
-			this.contactListSelected.push(data);
-			this.contactListSelected = [...this.contactListSelected];
-			this.contactSearch();
+			this._contactDataSource.selected.push(data);
+			this._contactDataSource.selected = [...this._contactDataSource.selected];
+			this._contactDataSource.initSearch();
 		}
 	}
-
 	changedIDAddress(address) {
 		if (address) {
 			this.Staff = null;
-			this.setOrderValue(
-				{
-					IDContact: address.Id,
-					IDAddress: address.IDAddress,
-				},
-				true,
-				true
-			);
+			this.setOrderValue({
+				IDContact: address.Id,
+				IDAddress: address.IDAddress,
+			});
 			this.item._Customer = address;
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
@@ -1968,22 +2005,20 @@ export class POSOrderDetailPage extends PageBase {
 		}
 
 		if (OriginalDiscountFromSalesman > line.CalcTotalOriginal) {
-			this.env.showMessage('Số tiền tặng không lớn hơn trị giá sản phẩm!', 'danger');
+			this.env.showMessage('Gift amount cannot be greater than the product value!', 'danger');
 			return false;
 		}
-		this.setOrderValue(
-			{
-				OrderLines: [
-					{
-						Id: line.Id,
-						IDUoM: line.IDUoM,
-						Remark: line.Remark,
-						OriginalDiscountFromSalesman: OriginalDiscountFromSalesman,
-					},
-				],
-			},
-			true
-		);
+		this.setOrderValue({
+			OrderLines: [
+				{
+					Id: line.Id,
+					Code: line.Code,
+					IDUoM: line.IDUoM,
+					Remark: line.Remark,
+					OriginalDiscountFromSalesman: OriginalDiscountFromSalesman,
+				},
+			],
+		});
 	}
 
 	private getPayments() {
@@ -2051,6 +2086,7 @@ export class POSOrderDetailPage extends PageBase {
 						line.ReturnedQuantity = 0;
 						changed.OrderLines.push({
 							Id: line.Id,
+							Code: line.Code,
 							IDUoM: line.IDUoM,
 							ShippedQuantity: line.ShippedQuantity,
 							ReturnedQuantity: 0,
@@ -2059,7 +2095,7 @@ export class POSOrderDetailPage extends PageBase {
 				});
 				changed.OrderLines = this.item.OrderLines;
 				changed.Status = 'Done';
-				this.setOrderValue(changed, true, true);
+				this.setOrderValue(changed, true);
 			});
 		} else if (this.item.Debt > 0) {
 			let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
@@ -2073,7 +2109,7 @@ export class POSOrderDetailPage extends PageBase {
 					});
 					changed.OrderLines = this.item.OrderLines;
 					changed.Status = 'Done';
-					this.setOrderValue(changed, true, true);
+					this.setOrderValue(changed, true);
 				})
 				.catch((_) => {});
 		} else {
@@ -2084,7 +2120,7 @@ export class POSOrderDetailPage extends PageBase {
 			});
 			changed.OrderLines = this.item.OrderLines;
 			changed.Status = 'Done';
-			this.setOrderValue(changed, true, true);
+			this.setOrderValue(changed, true);
 		}
 	}
 
@@ -2144,6 +2180,7 @@ export class POSOrderDetailPage extends PageBase {
 					if (e.Quantity != e.ShippedQuantity) {
 						undelivered.push({
 							Id: e.Id,
+							Code: e.Code,
 							ShippedQuantity: e.Quantity,
 							IDUoM: e.IDUoM,
 							Status: 'Serving',
@@ -2152,11 +2189,10 @@ export class POSOrderDetailPage extends PageBase {
 				});
 
 				this.submitAttempt = false;
-				this.setOrderValue({ Status: 'Scheduled', OrderLines: undelivered }, true, true);
+				this.setOrderValue({ Status: 'Scheduled', OrderLines: undelivered }, false, true);
 				resolve(true);
 			}
 
-			this.env.showMessage('Gửi đơn thành công!', 'success');
 			this.submitAttempt = false;
 			this.printData.undeliveredItems = []; //<-- clear;
 			this.printerCodeList = [];
@@ -2205,15 +2241,14 @@ export class POSOrderDetailPage extends PageBase {
 					address.Address = address['Addresses'][0];
 
 					this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
-
-					this.contactListSelected.push(address);
+					this._contactDataSource.selected.push(address);
 					this.changedIDAddress(address);
-					this.contactSearch();
+					this._contactDataSource.initSearch();
 					this.cdr.detectChanges();
 					this.saveChange();
 				});
 			} else {
-				this.env.showMessage('Mã đã hết hạn, vui lòng lấy lại mã nhân viên mới! Thời gian tạo mã QR: {{value}}', 'danger', QRGenTime);
+				this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {{value}}', 'danger', QRGenTime);
 				setTimeout(() => this.scanQRCode(), 0);
 			}
 		} else {

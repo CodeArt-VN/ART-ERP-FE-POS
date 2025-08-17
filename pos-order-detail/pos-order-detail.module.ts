@@ -9,10 +9,12 @@ import { PipesModule } from 'src/app/pipes/pipes.module';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
+import { DeactivateGuard } from './deactivate-guard';
 const routes: Routes = [
 	{
 		path: '',
 		component: POSOrderDetailPage,
+		canDeactivate: [DeactivateGuard],
 	},
 ];
 
