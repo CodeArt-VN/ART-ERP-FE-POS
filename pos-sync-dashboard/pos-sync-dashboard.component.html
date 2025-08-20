@@ -1,0 +1,338 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      <ion-icon name="sync" class="title-icon"></ion-icon>
+      Sync Dashboard
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button 
+        fill="clear" 
+        [color]="isOnline ? 'success' : 'danger'"
+        (click)="triggerManualSync()"
+        [disabled]="isSyncing || !isOnline">
+        <ion-icon 
+          [name]="isSyncing ? 'sync' : (isOnline ? 'cloud-done' : 'cloud-offline')"
+          [class.spinning]="isSyncing"></ion-icon>
+        <ion-label>{{ isOnline ? (isSyncing ? 'Syncing...' : 'Online') : 'Offline' }}</ion-label>
+      </ion-button>
+      <ion-button fill="clear" (click)="toggleAdvancedView()">
+        <ion-icon [name]="showAdvanced ? 'chevron-up' : 'chevron-down'"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Sync Dashboard</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Sync Status Cards -->
+  <div class="stats-grid">
+    <!-- Overall Status -->
+    <ion-card class="stat-card">
+      <ion-card-header>
+        <ion-card-subtitle>Overall Status</ion-card-subtitle>
+        <ion-card-title>
+          <ion-icon 
+            [name]="isOnline ? 'checkmark-circle' : 'alert-circle'" 
+            [color]="isOnline ? 'success' : 'danger'">
+          </ion-icon>
+          {{ isOnline ? 'Connected' : 'Offline' }}
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Last sync: {{ currentStats.lastSyncTime | date:'short' }}</p>
+        <p *ngIf="isSyncing" class="syncing-indicator">
+          <ion-icon name="sync" class="spinning"></ion-icon>
+          Syncing in progress...
+        </p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Success Rate -->
+    <ion-card class="stat-card">
+      <ion-card-header>
+        <ion-card-subtitle>Success Rate</ion-card-subtitle>
+        <ion-card-title [color]="getSuccessRateColor(currentStats.successRate)">
+          {{ (currentStats.successRate * 100).toFixed(1) }}%
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-progress-bar 
+          [value]="currentStats.successRate" 
+          [color]="getSuccessRateColor(currentStats.successRate)">
+        </ion-progress-bar>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Queue Size -->
+    <ion-card class="stat-card" [class.warning]="currentStats.queueSize > 0">
+      <ion-card-header>
+        <ion-card-subtitle>Queue Size</ion-card-subtitle>
+        <ion-card-title [color]="getQueueSizeColor(currentStats.queueSize)">
+          {{ currentStats.queueSize }}
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p *ngIf="currentStats.queueSize === 0">All synced ✅</p>
+        <p *ngIf="currentStats.queueSize > 0">Items pending sync</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Conflicts -->
+    <ion-card class="stat-card" [class.danger]="conflicts.length > 0">
+      <ion-card-header>
+        <ion-card-subtitle>Conflicts</ion-card-subtitle>
+        <ion-card-title [color]="getConflictCountColor(conflicts.length)">
+          {{ conflicts.length }}
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p *ngIf="conflicts.length === 0">No conflicts 🎉</p>
+        <p *ngIf="conflicts.length > 0">Need resolution ⚠️</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Conflicts Section -->
+  <ion-card *ngIf="conflicts.length > 0" class="conflict-card">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="alert-triangle" color="warning"></ion-icon>
+        Sync Conflicts ({{ conflicts.length }})
+      </ion-card-title>
+      <ion-card-subtitle>These conflicts need your attention</ion-card-subtitle>
+    </ion-card-header>
+    
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let conflict of conflicts; trackBy: trackConflictBy" button (click)="openConflictResolver(conflict)">
+          <ion-icon 
+            [name]="getConflictResolutionIcon(conflict.resolution?.strategy || 'USER_CHOICE')" 
+            slot="start" 
+            color="warning">
+          </ion-icon>
+          
+          <ion-label>
+            <h3>{{ conflict.orderCode }}</h3>
+            <p>Field: <strong>{{ conflict.field }}</strong></p>
+            <p class="conflict-preview">
+              Local: {{ formatValue(conflict.localValue) | slice:0:50 }}
+              <span *ngIf="formatValue(conflict.localValue).length > 50">...</span>
+            </p>
+            <p class="conflict-preview">
+              Server: {{ formatValue(conflict.serverValue) | slice:0:50 }}
+              <span *ngIf="formatValue(conflict.serverValue).length > 50">...</span>
+            </p>
+          </ion-label>
+          
+          <ion-badge 
+            slot="end" 
+            [color]="conflict.resolution?.strategy === 'USER_CHOICE' ? 'warning' : 'medium'">
+            {{ conflict.resolution?.strategy || 'MANUAL' }}
+          </ion-badge>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Advanced Statistics (Expandable) -->
+  <ion-card *ngIf="showAdvanced" class="advanced-stats">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="analytics" color="primary"></ion-icon>
+        Advanced Statistics
+      </ion-card-title>
+    </ion-card-header>
+    
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6">
+            <div class="stat-item">
+              <ion-label>
+                <h4>Total Synced</h4>
+                <p class="stat-value">{{ currentStats.totalSynced }}</p>
+              </ion-label>
+            </div>
+          </ion-col>
+          <ion-col size="6">
+            <div class="stat-item">
+              <ion-label>
+                <h4>Total Errors</h4>
+                <p class="stat-value" [class.error]="currentStats.totalErrors > 0">
+                  {{ currentStats.totalErrors }}
+                </p>
+              </ion-label>
+            </div>
+          </ion-col>
+        </ion-row>
+        
+        <ion-row>
+          <ion-col size="6">
+            <div class="stat-item">
+              <ion-label>
+                <h4>Avg Sync Time</h4>
+                <p class="stat-value">{{ formatDuration(currentStats.avgSyncTime) }}</p>
+              </ion-label>
+            </div>
+          </ion-col>
+          <ion-col size="6">
+            <div class="stat-item">
+              <ion-label>
+                <h4>Batches Processed</h4>
+                <p class="stat-value">{{ currentStats.batchesProcessed }}</p>
+              </ion-label>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Sync Queue -->
+  <ion-card *ngIf="queueItems.length > 0" class="queue-card">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="list" color="medium"></ion-icon>
+        Sync Queue ({{ queueItems.length }})
+      </ion-card-title>
+      <ion-card-subtitle>Items waiting to be synced</ion-card-subtitle>
+    </ion-card-header>
+    
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let item of queueItems; trackBy: trackQueueItemBy">
+          <ion-icon 
+            [name]="getOperationIcon(item.operation)" 
+            [color]="getOperationColor(item.operation)" 
+            slot="start">
+          </ion-icon>
+          
+          <ion-label>
+            <h3>{{ item.order.Code }}</h3>
+            <p>{{ item.operation }} • Priority: {{ item.priority }}</p>
+            <p class="queue-timestamp">{{ item.timestamp | date:'short' }}</p>
+            <p *ngIf="item.attempts > 0" class="retry-info">
+              Attempts: {{ item.attempts }}/{{ item.maxAttempts }}
+            </p>
+          </ion-label>
+          
+          <ion-badge 
+            [name]="getPriorityIcon(item.priority)"
+            [color]="getPriorityColor(item.priority)"
+            slot="end">
+            {{ item.priority >= 100 ? 'HIGH' : (item.priority >= 50 ? 'MED' : 'LOW') }}
+          </ion-badge>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <ion-button 
+      expand="block" 
+      fill="outline" 
+      color="primary"
+      (click)="triggerManualSync()"
+      [disabled]="isSyncing || !isOnline">
+      <ion-icon name="refresh" slot="start"></ion-icon>
+      Manual Sync
+    </ion-button>
+    
+    <ion-button 
+      expand="block" 
+      fill="outline" 
+      color="warning"
+      (click)="clearSyncQueue()"
+      [disabled]="queueItems.length === 0">
+      <ion-icon name="trash" slot="start"></ion-icon>
+      Clear Queue
+    </ion-button>
+    
+    <ion-button 
+      expand="block" 
+      fill="outline" 
+      color="medium"
+      (click)="resetStatistics()">
+      <ion-icon name="refresh-circle" slot="start"></ion-icon>
+      Reset Stats
+    </ion-button>
+  </div>
+
+</ion-content>
+
+<!-- Conflict Resolution Modal -->
+<ion-modal [isOpen]="resolveDialogOpen" (willDismiss)="closeConflictDialog()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Resolve Conflict</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeConflictDialog()">
+            <ion-icon name="close"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    
+    <ion-content class="conflict-modal">
+      <div *ngIf="selectedConflict" class="conflict-details">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Order: {{ selectedConflict.orderCode }}</ion-card-subtitle>
+            <ion-card-title>Field: {{ selectedConflict.field }}</ion-card-title>
+          </ion-card-header>
+        </ion-card>
+        
+        <!-- Local Value -->
+        <ion-card class="value-card local">
+          <ion-card-header>
+            <ion-card-title color="primary">
+              <ion-icon name="phone-portrait"></ion-icon>
+              Local Value
+            </ion-card-title>
+            <ion-card-subtitle>Modified: {{ selectedConflict.localModified | date:'short' }}</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <pre>{{ formatValue(selectedConflict.localValue) }}</pre>
+          </ion-card-content>
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="primary"
+            (click)="resolveConflict(selectedConflict, 'LOCAL')">
+            <ion-icon name="checkmark" slot="start"></ion-icon>
+            Choose Local
+          </ion-button>
+        </ion-card>
+        
+        <!-- Server Value -->
+        <ion-card class="value-card server">
+          <ion-card-header>
+            <ion-card-title color="secondary">
+              <ion-icon name="cloud"></ion-icon>
+              Server Value
+            </ion-card-title>
+            <ion-card-subtitle>Modified: {{ selectedConflict.serverModified | date:'short' }}</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <pre>{{ formatValue(selectedConflict.serverValue) }}</pre>
+          </ion-card-content>
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="secondary"
+            (click)="resolveConflict(selectedConflict, 'SERVER')">
+            <ion-icon name="checkmark" slot="start"></ion-icon>
+            Choose Server
+          </ion-button>
+        </ion-card>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

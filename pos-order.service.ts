@@ -5,6 +5,8 @@ import { EnvService } from '../../services/core/env.service';
 import { POS_Order, POS_OrderDetail } from './interface.model';
 import { lib } from '../../services/static/global-functions';
 import { POSSecurityService } from './services/pos-security.service';
+import { POSAdvancedSyncService } from './services/pos-advanced-sync.service';
+import { POSRealtimeSyncService } from './services/pos-realtime-sync.service';
 
 export interface StorageOrderData {
   orders: POS_Order[];
@@ -69,7 +71,9 @@ export class POSOrderService {
 
   constructor(
     public env: EnvService,
-    private posSecurityService: POSSecurityService
+    private posSecurityService: POSSecurityService,
+    private advancedSyncService: POSAdvancedSyncService,
+    private realtimeSyncService: POSRealtimeSyncService
   ) {
     this.initialize();
   }
@@ -135,6 +139,12 @@ export class POSOrderService {
       // Update indexes
       this.updateIndexes(calculatedOrder);
       
+      // Add to sync queue with HIGH priority for new orders
+      this.advancedSyncService.addToSyncQueue(calculatedOrder, 'CREATE', 'HIGH');
+      
+      // Notify realtime sync
+      this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'CREATE');
+      
       console.log('✅ Order created:', calculatedOrder.Code);
       return calculatedOrder;
       
@@ -196,6 +206,12 @@ export class POSOrderService {
       }
       
       this._isDirty.next(true);
+      
+      // Add to sync queue with MEDIUM priority for updates
+      this.advancedSyncService.addToSyncQueue(calculatedOrder, 'UPDATE', 'MEDIUM');
+      
+      // Notify realtime sync
+      this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'UPDATE');
       
       console.log('✅ Order updated:', code);
       return calculatedOrder;
@@ -327,6 +343,15 @@ export class POSOrderService {
       
       // Update main storage
       await this.saveOrdersToMainStorage(filteredOrders);
+      
+      // Add to sync queue with HIGH priority for deletes (need immediate sync)
+      const orderToDelete: POS_Order = currentOrders.find(o => o.Code === code) as POS_Order;
+      if (orderToDelete) {
+        this.advancedSyncService.addToSyncQueue(orderToDelete, 'DELETE', 'HIGH');
+        
+        // Notify realtime sync
+        this.realtimeSyncService.notifyOrderUpdate(orderToDelete, 'DELETE');
+      }
       
       console.log('✅ Order deleted:', code);
       return true;
@@ -1031,6 +1056,63 @@ export class POSOrderService {
    */
   getSecurityService(): POSSecurityService {
     return this.posSecurityService;
+  }
+
+  /**
+   * Get advanced sync service for monitoring
+   */
+  getAdvancedSyncService(): POSAdvancedSyncService {
+    return this.advancedSyncService;
+  }
+
+  /**
+   * Trigger manual sync for all orders
+   */
+  triggerManualSync(): void {
+    console.log('🔄 Manual sync triggered from POS Order Service');
+    this.advancedSyncService.triggerSync('MANUAL_ORDER_SERVICE');
+  }
+
+  /**
+   * Get sync statistics
+   */
+  getSyncStats(): Observable<any> {
+    return this.advancedSyncService.syncStats;
+  }
+
+  /**
+   * Check if sync is currently running
+   */
+  isSyncing(): Observable<boolean> {
+    return this.advancedSyncService.isSyncing;
+  }
+
+  /**
+   * Check network status
+   */
+  isOnline(): Observable<boolean> {
+    return this.advancedSyncService.isOnline;
+  }
+
+  /**
+   * Get realtime sync service
+   */
+  getRealtimeSyncService(): POSRealtimeSyncService {
+    return this.realtimeSyncService;
+  }
+
+  /**
+   * Get realtime sync events
+   */
+  getRealtimeEvents(): Observable<any> {
+    return this.realtimeSyncService.realtimeEvents;
+  }
+
+  /**
+   * Force sync all orders through realtime channel
+   */
+  forceSyncAll(): void {
+    this.realtimeSyncService.forceSyncAll();
   }
 
   /**
