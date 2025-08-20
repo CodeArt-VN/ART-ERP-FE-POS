@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, from } from 'rxjs';
-import { EnvService } from 'src/app/services/core/env.service';
+import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { map, debounceTime } from 'rxjs/operators';
+import { EnvService } from '../../services/core/env.service';
 import { POS_Order, POS_OrderDetail } from './interface.model';
-import { lib } from 'src/app/services/static/global-functions';
+import { lib } from '../../services/static/global-functions';
+import { POSSecurityService } from './services/pos-security.service';
 
 export interface StorageOrderData {
   orders: POS_Order[];
@@ -65,7 +67,10 @@ export class POSOrderService {
     evictions: 0
   };
 
-  constructor(private env: EnvService) {
+  constructor(
+    public env: EnvService,
+    private posSecurityService: POSSecurityService
+  ) {
     this.initialize();
   }
 
@@ -755,40 +760,6 @@ export class POSOrderService {
   }
 
   /**
-   * Emergency cleanup when storage is full
-   */
-  async emergencyCleanup(): Promise<void> {
-    try {
-      console.log('🆘 Emergency cleanup activated');
-      
-      // Keep only the most recent 100 orders
-      const allOrders = this._orders.value;
-      const sortedOrders = allOrders.sort((a, b) => 
-        new Date(b.OrderDate).getTime() - new Date(a.OrderDate).getTime()
-      );
-      
-      const ordersToKeep = sortedOrders.slice(0, 100);
-      const ordersToRemove = sortedOrders.slice(100);
-      
-      // Remove excess orders
-      for (const order of ordersToRemove) {
-        await this.env.setStorage(this.ORDER_PREFIX + order.Code, null);
-        this.orderCache.delete(order.Code);
-      }
-      
-      this._orders.next(ordersToKeep);
-      
-      // Clear and rebuild indexes
-      this.rebuildIndexes(ordersToKeep);
-      
-      console.log(`🆘 Emergency cleanup: Kept ${ordersToKeep.length} most recent orders`);
-      
-    } catch (error) {
-      console.error('❌ Emergency cleanup failed:', error);
-    }
-  }
-
-  /**
    * Rebuild indexes for performance
    */
   private rebuildIndexes(orders: POS_Order[]): void {
@@ -820,5 +791,272 @@ export class POSOrderService {
       size: this.orderCache.size,
       hitRate
     };
+  }
+
+  // ========================
+  // ROBUSTNESS FEATURES (PHASE 3)
+  // ========================
+
+  /**
+   * Create order with retry mechanism and data encryption
+   */
+  async createOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
+    return this.posSecurityService.executeWithRecovery(
+      async () => {
+        // Encrypt sensitive data
+        const encryptedOrder = await this.posSecurityService.encryptSensitiveData(order);
+        return await this.createOrder(encryptedOrder);
+      },
+      'CREATE_ORDER',
+      { maxRetries: 3, retryDelays: [1000, 2000, 4000], backoffMultiplier: 2 }
+    );
+  }
+
+  /**
+   * Update order with retry mechanism
+   */
+  async updateOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
+    return this.posSecurityService.executeWithRecovery(
+      async () => {
+        const encryptedOrder = await this.posSecurityService.encryptSensitiveData(order);
+        await this.createOrder(encryptedOrder);
+        return encryptedOrder;
+      },
+      'UPDATE_ORDER'
+    );
+  }
+
+  /**
+   * Get order with retry mechanism
+   */
+  async getOrderWithRecovery(code: string): Promise<POS_Order | null> {
+    return this.posSecurityService.executeWithRecovery(
+      async () => {
+        let orders: POS_Order[];
+        this.orders$.subscribe(data => orders = data).unsubscribe();
+        return orders.find(order => order.Code === code) || null;
+      },
+      'GET_ORDER'
+    );
+  }
+
+  /**
+   * Bulk save operations with retry
+   */
+  async bulkSaveWithRecovery(orders: POS_Order[]): Promise<void> {
+    const batchSize = 10;
+    const batches = this.chunkArray(orders, batchSize);
+    
+    for (const [index, batch] of batches.entries()) {
+      await this.posSecurityService.executeWithRecovery(
+        async () => {
+          console.log(`📦 Processing batch ${index + 1}/${batches.length} (${batch.length} orders)`);
+          
+          const encryptedBatch = await Promise.all(
+            batch.map(order => this.posSecurityService.encryptSensitiveData(order))
+          );
+          
+          // Save each order in batch
+          for (const order of encryptedBatch) {
+            await this.createOrder(order);
+          }
+        },
+        `BULK_SAVE_BATCH_${index + 1}`,
+        { maxRetries: 2 }
+      );
+    }
+  }
+
+  /**
+   * Get performance and error statistics
+   */
+  getSystemHealth(): {
+    circuitBreakers: Array<{ operation: string; state: string; failures: number }>;
+    operationStats: Array<{ operation: string; stats: any }>;
+    recentErrors: Array<{ type: string; error: any; timestamp: number; operation: string }>;
+    cacheStats: any;
+    storageInfo: { ordersCount: number; lastUpdated: string; cacheHitRate: number };
+  } {
+    let orders: POS_Order[];
+    this.orders$.subscribe(data => orders = data).unsubscribe();
+    
+    return {
+      circuitBreakers: this.posSecurityService.getCircuitBreakerStatus(),
+      operationStats: this.posSecurityService.getAllOperationStats(),
+      recentErrors: this.posSecurityService.getRecentErrors(20),
+      cacheStats: {
+        cacheSize: this.orderCache.size,
+        maxSize: this.MAX_CACHE_SIZE,
+        hitCount: this.cacheStats.hits,
+        missCount: this.cacheStats.misses,
+        hitRate: this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses) || 0
+      },
+      storageInfo: {
+        ordersCount: orders?.length || 0,
+        lastUpdated: new Date().toISOString(),
+        cacheHitRate: this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses) || 0
+      }
+    };
+  }
+
+  /**
+   * Chunk array into smaller batches
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  // ========================
+  // END ROBUSTNESS FEATURES
+  // ========================
+
+  /**
+   * Validate and recover corrupted data
+   */
+  async validateAndRecoverData(): Promise<void> {
+    await this.posSecurityService.executeWithRecovery(
+      async () => {
+        console.log('🔍 Starting data validation and recovery...');
+        
+        // Check localStorage integrity
+        const storageData = await this.env.getStorage(this.STORAGE_KEY);
+        if (!storageData) {
+          console.log('📦 No storage data found, initializing...');
+          await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
+          return;
+        }
+
+        let data;
+        try {
+          data = JSON.parse(storageData);
+        } catch (error) {
+          console.error('❌ Failed to parse storage data:', error);
+          await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
+          return;
+        }
+        
+        if (!data || !Array.isArray(data.orders)) {
+          throw new Error('Invalid storage data structure');
+        }
+        
+        // Validate each order
+        let corruptedCount = 0;
+        let recoveredCount = 0;
+        
+        for (const order of data.orders) {
+          try {
+            this.validateOrderStructure(order);
+          } catch (error) {
+            corruptedCount++;
+            console.warn(`⚠️ Corrupted order detected: ${order.Code}`, error);
+            
+            try {
+              const recoveredOrder = await this.recoverOrder(order);
+              if (recoveredOrder) {
+                recoveredCount++;
+                console.log(`✅ Order recovered: ${order.Code}`);
+              }
+            } catch (recoveryError) {
+              console.error(`❌ Failed to recover order ${order.Code}:`, recoveryError);
+            }
+          }
+        }
+        
+        console.log(`📊 Validation complete: ${corruptedCount} corrupted, ${recoveredCount} recovered`);
+      },
+      'DATA_VALIDATION',
+      { maxRetries: 1 }
+    );
+  }
+
+  /**
+   * Validate order structure
+   */
+  private validateOrderStructure(order: POS_Order): void {
+    const requiredFields = ['Id', 'Code'];
+    
+    for (const field of requiredFields) {
+      if (order[field] === undefined || order[field] === null) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+    
+    if (order.OrderLines) {
+      if (!Array.isArray(order.OrderLines)) {
+        throw new Error('OrderLines must be an array');
+      }
+      
+      for (const line of order.OrderLines) {
+        if (!line.Id || !line.IDItem || typeof line.Quantity !== 'number') {
+          throw new Error('Invalid order line structure');
+        }
+      }
+    }
+  }
+
+  /**
+   * Attempt to recover a corrupted order
+   */
+  private async recoverOrder(corruptedOrder: POS_Order): Promise<POS_Order | null> {
+    try {
+      // Try to fix common issues
+      const fixedOrder = { ...corruptedOrder };
+      
+      // Fix missing required fields
+      if (!fixedOrder.Id) fixedOrder.Id = Date.now(); // Use timestamp as ID
+      if (!fixedOrder.Code) fixedOrder.Code = `RECOVERED_${Date.now()}`;
+      
+      // Fix order lines
+      if (fixedOrder.OrderLines && Array.isArray(fixedOrder.OrderLines)) {
+        fixedOrder.OrderLines = fixedOrder.OrderLines.filter(line => 
+          line && line.Id && line.IDItem && typeof line.Quantity === 'number'
+        );
+      } else {
+        fixedOrder.OrderLines = [];
+      }
+      
+      return fixedOrder;
+    } catch (error) {
+      console.error('Recovery attempt failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get security service for monitoring
+   */
+  getSecurityService(): POSSecurityService {
+    return this.posSecurityService;
+  }
+
+  /**
+   * Emergency cleanup and reset
+   */
+  async emergencyCleanup(): Promise<void> {
+    try {
+      console.log('🚨 Starting emergency cleanup...');
+      
+      // Clear circuit breaker states
+      this.posSecurityService.clearStats();
+      
+      // Clear all caches
+      this.orderCache.clear();
+      this.cacheStats = { hits: 0, misses: 0, evictions: 0 };
+      
+      // Validate and fix storage data
+      await this.validateAndRecoverData();
+      
+      // Trigger data refresh
+      this.loadOrdersFromStorage();
+      
+      console.log('✅ Emergency cleanup completed');
+    } catch (error) {
+      console.error('❌ Emergency cleanup failed:', error);
+      throw error;
+    }
   }
 }
