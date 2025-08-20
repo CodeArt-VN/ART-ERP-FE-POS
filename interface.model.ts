@@ -36,7 +36,7 @@ export interface Kitchen extends POS_Kitchen
 export interface POS_Order extends SALE_Order
 {	
 	_TotalQuantity?: number; //Show on the cart
-
+	IDTable?: number; // Table reference for POS orders
 
 	//Print properties
 	AdditionsAmount?: number; //Show SC on the bill
