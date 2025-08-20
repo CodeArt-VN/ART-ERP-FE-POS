@@ -76,7 +76,6 @@ export class POSEnviromentDataService {
 					// Cache the config
 					this.configCache.set(IDBranch, config);
 					this._systemConfig.next(config);
-					console.log('✅ System config loaded for branch:', IDBranch);
 					resolve(config);
 				})
 				.catch((error) => {
@@ -105,8 +104,6 @@ export class POSEnviromentDataService {
 		if (this.env.selectedBranch) {
 			this.configCache.set(this.env.selectedBranch, updatedConfig);
 		}
-		
-		console.log('✅ Config updated:', key, '=', value);
 	}
 
 	// ========================
@@ -127,7 +124,6 @@ export class POSEnviromentDataService {
 			}
 
 			this._isLoading.next(true);
-			console.log('🔄 Loading environment data for branch:', IDBranch);
 
 			Promise.all([
 				this.getMenu(forceReload),
@@ -140,7 +136,7 @@ export class POSEnviromentDataService {
 				this.getDeal(),
 				this.getSystemConfig(IDBranch)
 			]).then((results: any) => {
-				console.log('✅ All environment data loaded:', results.length, 'items');
+				console.log('✅ Environment data loaded:', results);
 				
 				const dataSource: POS_DataSource = {
 					menuList: results[0],
@@ -187,7 +183,11 @@ export class POSEnviromentDataService {
 	}
 
 	// ========================
-	// Data Loading Methods
+	// Original Methods (Enhanced)
+	// ========================
+
+	// ========================
+	// Original Methods (Enhanced)
 	// ========================
 
 	/**
@@ -201,7 +201,6 @@ export class POSEnviromentDataService {
 				.getStorage(cacheKey)
 				.then((data) => {
 					if (!forceReload && data) {
-						console.log('✅ Menu loaded from cache');
 						resolve(data);
 					} else {
 						this.menuProvider
@@ -240,139 +239,109 @@ export class POSEnviromentDataService {
 	/**
 	 * Get table data with hierarchy
 	 */
-	public getTable(forceReload = false): Promise<any[]> {
+		return new Promise((resolve, reject) => {
+			this.env
+				.getStorage('menuList' + this.env.selectedBranch)
+				.then((data) => {
+					if (!forceReload && data) {
+						resolve(data);
+					} else {
+						this.menuProvider
+							.read({ IDBranch: this.env.selectedBranch })
+							.then((resp) => {
+								let menuList = resp['data'];
+								menuList.forEach((m: any) => {
+									m.menuImage = environment.posImagesServer + (m.Image ? m.Image : 'assets/pos-icons/POS-Item-demo.png');
+									m.Items.forEach((i) => {
+										i.imgPath = environment.posImagesServer + (i.Image ? i.Image : 'assets/pos-icons/POS-Item-demo.png');
+									});
+								});
+								this.env.setStorage('menuList' + this.env.selectedBranch, menuList);
+								resolve(menuList);
+							})
+							.catch((err) => {
+								reject(err);
+							});
+					}
+				})
+				.catch((err) => {
+					reject(err);
+				});
+		});
+	}
+
+	public getTable(forceReload) {
 		return new Promise((resolve, reject) => {
 			this.getTableGroupTree(forceReload)
 				.then((data: any) => {
-					let tableList: any[] = [];
+					let tableList = [];
 
-					data.forEach((g: any) => {
+					data.forEach((g) => {
 						tableList.push({
 							Id: 0,
 							Name: g.Name,
 							levels: [],
 							disabled: true,
 						});
-						if (g.TableList) {
-							g.TableList.forEach((t: any) => {
-								tableList.push({
-									Id: t.Id,
-									Name: t.Name,
-									levels: [{}],
-								});
+						g.TableList.forEach((t) => {
+							tableList.push({
+								Id: t.Id,
+								Name: t.Name,
+								levels: [{}],
 							});
-						}
+						});
 					});
 
-					console.log('✅ Table data processed:', tableList.length, 'items');
 					resolve(tableList);
 				})
 				.catch((err) => {
-					console.error('❌ Failed to get table data:', err);
 					reject(err);
 				});
 		});
 	}
 
-	/**
-	 * Get table group tree with caching
-	 */
-	private getTableGroupTree(forceReload = false): Promise<any[]> {
+	private getTableGroupTree(forceReload) {
 		return new Promise((resolve, reject) => {
-			const cacheKey = 'tableGroup' + this.env.selectedBranch;
-			
 			this.env
-				.getStorage(cacheKey)
+				.getStorage('tableGroup' + this.env.selectedBranch)
 				.then((data) => {
 					if (!forceReload && data) {
-						console.log('✅ Table groups loaded from cache');
 						resolve(data);
 					} else {
 						let query = { IDBranch: this.env.selectedBranch };
-						Promise.all([
-							this.tableGroupProvider.read(query), 
-							this.tableProvider.read(query)
-						])
+						Promise.all([this.tableGroupProvider.read(query), this.tableProvider.read(query)])
 							.then((values) => {
 								let tableGroupList = values[0]['data'];
 								let tableList = values[1]['data'];
 
-								// Group tables by table group
-								tableGroupList.forEach((g: any) => {
-									g.TableList = tableList.filter((d: any) => d.IDTableGroup == g.Id);
+								tableGroupList.forEach((g) => {
+									g.TableList = tableList.filter((d) => d.IDTableGroup == g.Id);
 								});
-								
-								// Cache the processed data
-								this.env.setStorage(cacheKey, tableGroupList);
-								console.log('✅ Table group tree loaded:', tableGroupList.length, 'groups');
+								this.env.setStorage('tableGroup' + this.env.selectedBranch, tableGroupList);
 								resolve(tableGroupList);
 							})
 							.catch((err) => {
-								console.error('❌ Failed to load table groups:', err);
 								reject(err);
 							});
 					}
 				})
 				.catch((err) => {
-					console.error('❌ Failed to get cached table groups:', err);
 					reject(err);
 				});
 		});
 	}
 
-	/**
-	 * Get deals/promotions data
-	 */
-	public getDeal(query: any = null): Promise<any> {
-		return new Promise((resolve, reject) => {
-			this.menuProvider.commonService
-				.connect('GET', 'PR/Deal/ForPOS', query)
-				.toPromise()
-				.then((result: any) => {
-					console.log('✅ Deal data loaded');
-					resolve(result);
-				})
-				.catch((err) => {
-					console.error('❌ Failed to load deals:', err);
-					reject(err);
-				});
-		});
-	}
-
-	// ========================
-	// Cache Management
-	// ========================
-
-	/**
-	 * Clear all caches
-	 */
-	public clearCache(): void {
-		this.configCache.clear();
-		this.dataCache.clear();
-		console.log('✅ Environment data cache cleared');
-	}
-
-	/**
-	 * Clear cache for specific branch
-	 */
-	public clearBranchCache(branchId: number): void {
-		this.configCache.delete(branchId);
-		this.dataCache.delete(branchId);
-		
-		// Clear storage cache as well
-		this.env.setStorage('menuList' + branchId, null);
-		this.env.setStorage('tableGroup' + branchId, null);
-		
-		console.log('✅ Cache cleared for branch:', branchId);
-	}
-
-	/**
-	 * Get cache statistics
-	 */
-	public getCacheStats(): { configEntries: number; dataEntries: number } {
-		return {
-			configEntries: this.configCache.size,
-			dataEntries: this.dataCache.size
-		};
-	}
+	public getDeal(query = null) {
+			return new Promise((resolve, reject) => {
+				this.menuProvider.commonService
+					.connect('GET', 'PR/Deal/ForPOS', query)
+					.toPromise()
+					.then((result: any) => {
+						resolve(result);
+					})
+					.catch((err) => {
+						reject(err);
+					});
+			});
+		}
 }

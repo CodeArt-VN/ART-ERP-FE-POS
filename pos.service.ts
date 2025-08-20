@@ -7,6 +7,7 @@ import { EnvService } from 'src/app/services/core/env.service';
 import { POS_KitchenProvider, POS_TableProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
 import { SYS_ConfigService } from 'src/app/services/system-config.service';
 import { POSEnviromentDataService } from './pos-env-data.service';
+import { POSOrderService } from './pos-order.service';
 
 @Injectable({
 	providedIn: 'root',
@@ -30,7 +31,8 @@ export class POSService extends SALE_OrderProvider {
 		public commonService: CommonService,
 		public sysConfigService: SYS_ConfigService,
 		public dataSourceService: POSEnviromentDataService,
-		public env: EnvService
+		public env: EnvService,
+		public posOrderService: POSOrderService
 	) {
 		super(commonService);
 		this.env?.ready?.then((_) => {
@@ -97,5 +99,66 @@ export class POSService extends SALE_OrderProvider {
 				reject(error);
 			});
 		});
+	}
+
+	// ========================
+	// POS Order Management Facade
+	// ========================
+
+	/**
+	 * Create new POS order
+	 */
+	async createPOSOrder(order: Partial<POS_Order>): Promise<POS_Order> {
+		return this.posOrderService.createOrder(order);
+	}
+
+	/**
+	 * Update POS order
+	 */
+	async updatePOSOrder(code: string, changes: Partial<POS_Order>): Promise<POS_Order> {
+		return this.posOrderService.updateOrder(code, changes);
+	}
+
+	/**
+	 * Get POS order by code
+	 */
+	async getPOSOrder(code: string): Promise<POS_Order | null> {
+		return this.posOrderService.getOrder(code);
+	}
+
+	/**
+	 * Delete POS order
+	 */
+	async deletePOSOrder(code: string): Promise<boolean> {
+		return this.posOrderService.deleteOrder(code);
+	}
+
+	/**
+	 * Get all POS orders
+	 */
+	async getAllPOSOrders(): Promise<POS_Order[]> {
+		return this.posOrderService.getAllOrders();
+	}
+
+	/**
+	 * Set current active order
+	 */
+	setCurrentPOSOrder(code: string): void {
+		this.posOrderService.setCurrentOrder(code);
+	}
+
+	/**
+	 * Get POS orders observables
+	 */
+	get posOrders$(): Observable<POS_Order[]> {
+		return this.posOrderService.orders$;
+	}
+
+	get currentPOSOrder$(): Observable<POS_Order | null> {
+		return this.posOrderService.currentOrder$;
+	}
+
+	get posOrderSyncStatus$(): Observable<'idle' | 'syncing' | 'error'> {
+		return this.posOrderService.syncStatus$;
 	}
 }

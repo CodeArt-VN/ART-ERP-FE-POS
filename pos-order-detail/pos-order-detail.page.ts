@@ -27,6 +27,7 @@ import { POSNotifyService } from '../pos-notify.service';
 import { POSConstants } from '../pos.constants';
 import { POSCartService } from '../pos-cart.service';
 import { POSPrintService } from '../pos-print.service';
+import { POSDiscountService } from '../pos-discount.service';
 
 // Constants
 const PAYMENT_CONFIG = {
@@ -87,21 +88,21 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		return this.posNotifyService;
 	}
 
-	// Discount and promotion getters through cart service
+	// Discount and promotion getters through discount service
 	get Discount() {
-		return this.cartService.getCurrentDiscount();
+		return this.posDiscountService.discount;
 	}
 
 	get promotionAppliedPrograms() {
-		return this.cartService.getAppliedPromotionPrograms();
+		return this.posDiscountService.promotionAppliedPrograms;
 	}
 
 	get OrderAdditionTypeList() {
-		return this.cartService.discountService.orderAdditionTypeList;
+		return this.posDiscountService.orderAdditionTypeList;
 	}
 
 	get OrderDeductionTypeList() {
-		return this.cartService.discountService.orderDeductionTypeList;
+		return this.posDiscountService.orderDeductionTypeList;
 	}
 
 	constructor(
@@ -115,6 +116,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public posNotifyService: POSNotifyService,
 		public posPrintService: POSPrintService,
 		public cartService: POSCartService,
+		public posDiscountService: POSDiscountService,
 
 		public env: EnvService,
 		public navCtrl: NavController,
