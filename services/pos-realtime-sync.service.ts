@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { POSAdvancedSyncService } from './pos-advanced-sync.service';
-import { POSOrderService } from '../pos-order.service';
 import { POS_Order } from '../interface.model';
 
 export interface RealtimeSyncEvent {
@@ -39,8 +38,7 @@ export class POSRealtimeSyncService {
   private messageQueue: WebSocketMessage[] = [];
 
   constructor(
-    private advancedSyncService: POSAdvancedSyncService,
-    private orderService: POSOrderService
+    private advancedSyncService: POSAdvancedSyncService
   ) {
     this.initializeRealtimeSync();
   }
@@ -52,11 +50,6 @@ export class POSRealtimeSyncService {
     this.connect();
     this.setupMessageHandlers();
     this.setupAutoReconnect();
-    
-    // Listen for order changes to broadcast
-    this.orderService.orders$.subscribe(orders => {
-      this.broadcastOrderSync();
-    });
 
     console.log('🔄 Real-time sync service initialized');
   }
@@ -147,13 +140,17 @@ export class POSRealtimeSyncService {
   private async handleOrderSyncRequest(payload: any): Promise<void> {
     console.log('🔄 Server requesting sync for orders:', payload.orderCodes);
     
-    for (const orderCode of payload.orderCodes) {
-      const order = await this.orderService.getOrder(orderCode);
-      if (order) {
-        this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'HIGH');
-      }
-    }
+    // Emit event để POSOrderService có thể handle
+    this.realtimeEvents$.next({
+      type: 'SYNC_STATUS_CHANGED',
+      data: { 
+        status: 'SERVER_SYNC_REQUEST', 
+        orderCodes: payload.orderCodes 
+      },
+      timestamp: new Date()
+    });
     
+    // Trigger sync via advanced sync service
     this.advancedSyncService.triggerSync('SERVER_REQUEST');
   }
 
@@ -189,11 +186,15 @@ export class POSRealtimeSyncService {
   private async handleServerOrderUpdated(payload: any): Promise<void> {
     console.log('📝 Server order updated:', payload.orderCode);
     
-    // Trigger sync to get latest data
-    const order = await this.orderService.getOrder(payload.orderCode);
-    if (order) {
-      this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'MEDIUM');
-    }
+    // Emit event để POSOrderService có thể handle
+    this.realtimeEvents$.next({
+      type: 'SYNC_STATUS_CHANGED',
+      data: { 
+        status: 'SERVER_ORDER_UPDATED', 
+        orderCode: payload.orderCode 
+      },
+      timestamp: new Date()
+    });
   }
 
   /**
@@ -402,6 +403,13 @@ export class POSRealtimeSyncService {
     });
     
     this.advancedSyncService.triggerSync('FORCE_SYNC_ALL');
+  }
+
+  /**
+   * Public method to broadcast order sync (called by POSOrderService)
+   */
+  public triggerOrderSync(): void {
+    this.broadcastOrderSync();
   }
 
   /**
