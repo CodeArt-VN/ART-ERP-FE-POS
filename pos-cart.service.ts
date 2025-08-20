@@ -84,6 +84,9 @@ export class POSCartService {
 			NumberOfGuests: [1, Validators.min(1)],
 			Remark: [''],
 			OrderLines: this.formBuilder.array([]),
+			Tables: [[]],
+			OriginalDiscountFromSalesman: [0],
+			IsInvoiceRequired: [false],
 			TotalBeforeDiscount: [0],
 			TotalDiscount: [0],
 			TotalAfterDiscount: [0],
@@ -526,7 +529,12 @@ export class POSCartService {
 	numberOfGuestsInput: any;
 	isWaitingRefresh: boolean = false;
 	nextSaveData: any;
-	printData: any;
+	printData: any = {
+		undeliveredItems: [], //To track undelivered items to the kitchen
+		printDate: null,
+		currentBranch: null,
+		selectedTables: [],
+	};
 
 	/**
 	 * Get grouped order lines (compatibility method)

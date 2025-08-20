@@ -1,8 +1,8 @@
 <ion-header>
 	<app-toolbar [page]="this">
-		<ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
+		<ion-button color="primary" startTitle *ngIf="printData?.selectedTables?.length" class="ion-hide-sm-down">
 			{{'Table' | translate}}:
-			<span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
+			<span *ngFor="let t of printData?.selectedTables">&nbsp;{{t.Name}} </span>
 		</ion-button>
 
 		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
@@ -10,7 +10,7 @@
 		<ion-button
 			class="cart"
 			title="{{'Cart' | translate}}"
-			[ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}"
+			[ngClass]="{'blink': (printData?.undeliveredItems?.length > 0) && pageConfig.canEdit}"
 			(click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;"
 		>
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
@@ -547,7 +547,7 @@
 											<tr>
 												<td class="title">{{'Table' | translate}}</td>
 												<td>
-													<span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span>
+													<span *ngFor="let t of printData?.selectedTables">{{t.Name}}; </span>
 												</td>
 											</tr>
 											<tr>
@@ -867,7 +867,7 @@
 													<tr>
 														<td class="title" colspan="2" style="font-size: 16px">
 															<ion-text class="bold">{{'Table' | translate}}: </ion-text>
-															<ng-container *ngFor="let t of printData.selectedTables">
+															<ng-container *ngFor="let t of printData?.selectedTables">
 																<ion-text class="bold">{{t.Name}};</ion-text>
 															</ng-container>
 														</td>

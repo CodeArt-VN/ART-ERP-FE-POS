@@ -81,6 +81,57 @@ export class POSOrderService {
   private async initialize(): Promise<void> {
     await this.loadOrdersFromStorage();
     this.setupAutoCleanup();
+    this.setupRealtimeEventHandlers();
+  }
+
+  /**
+   * Setup realtime event handlers to avoid circular dependency
+   */
+  private setupRealtimeEventHandlers(): void {
+    // Listen to realtime events from sync service
+    this.realtimeSyncService.realtimeEvents.subscribe(event => {
+      this.handleRealtimeEvent(event);
+    });
+
+    // Listen to orders changes and broadcast to realtime sync
+    this.orders$.subscribe(orders => {
+      this.broadcastOrderChanges();
+    });
+  }
+
+  /**
+   * Handle realtime sync events
+   */
+  private async handleRealtimeEvent(event: any): Promise<void> {
+    if (event.type === 'SYNC_STATUS_CHANGED') {
+      const { status, orderCodes, orderCode } = event.data;
+      
+      if (status === 'SERVER_SYNC_REQUEST' && orderCodes) {
+        // Handle server sync request
+        for (const code of orderCodes) {
+          const order = await this.getOrder(code);
+          if (order) {
+            this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'HIGH');
+          }
+        }
+      } else if (status === 'SERVER_ORDER_UPDATED' && orderCode) {
+        // Handle server order update
+        const order = await this.getOrder(orderCode);
+        if (order) {
+          this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'MEDIUM');
+        }
+      }
+    }
+  }
+
+  /**
+   * Broadcast order changes to realtime sync
+   */
+  private broadcastOrderChanges(): void {
+    // Use a simple method call instead of dependency injection
+    if (this.realtimeSyncService && typeof this.realtimeSyncService.triggerOrderSync === 'function') {
+      this.realtimeSyncService.triggerOrderSync();
+    }
   }
 
   // ========================
