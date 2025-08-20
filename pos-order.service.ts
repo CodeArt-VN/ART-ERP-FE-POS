@@ -53,11 +53,17 @@ export class POSOrderService {
   public readonly loadingProgress$ = this._loadingProgress.asObservable();
   public readonly isStreamingLoad$ = this._isStreamingLoad.asObservable();
 
-  // Cache for performance
-  private orderCache = new Map<string, { order: POS_Order; timestamp: number; accessCount: number }>();
+  // LRU Cache for performance
+  private orderCache = new Map<string, { order: POS_Order; timestamp: number; hits: number }>();
   private orderIndex = new Map<string, number>(); // Code -> Array index
   private dateIndex = new Map<string, string[]>(); // Date -> Order codes
-  private cacheStats = { hits: 0, misses: 0, evictions: 0 };
+  
+  // Cache statistics
+  private cacheStats = {
+    hits: 0,
+    misses: 0,
+    evictions: 0
+  };
 
   constructor(private env: EnvService) {
     this.initialize();
@@ -202,16 +208,24 @@ export class POSOrderService {
    */
   async getOrder(code: string): Promise<POS_Order | null> {
     try {
-      // Check cache first
+      // Check cache first with LRU logic
       if (this.orderCache.has(code)) {
-        return this.orderCache.get(code)!;
+        const cached = this.orderCache.get(code)!;
+        // Update access statistics
+        cached.hits++;
+        cached.timestamp = Date.now();
+        this.cacheStats.hits++;
+        return cached.order;
       }
+
+      this.cacheStats.misses++;
 
       // Load from storage
       const orderData = await this.env.getStorage(this.ORDER_PREFIX + code);
       if (orderData) {
         const order = JSON.parse(orderData) as POS_Order;
-        this.orderCache.set(code, order);
+        // Store in cache with metadata
+        this.addToCache(code, order);
         return order;
       }
 
@@ -219,6 +233,42 @@ export class POSOrderService {
     } catch (error) {
       console.error('❌ Failed to get order:', error);
       return null;
+    }
+  }
+
+  /**
+   * Add order to LRU cache with eviction
+   */
+  private addToCache(code: string, order: POS_Order): void {
+    // Check cache size and evict if necessary
+    if (this.orderCache.size >= this.MAX_CACHE_SIZE) {
+      this.evictLeastRecentlyUsed();
+    }
+
+    this.orderCache.set(code, {
+      order,
+      timestamp: Date.now(),
+      hits: 1
+    });
+  }
+
+  /**
+   * Evict least recently used item from cache
+   */
+  private evictLeastRecentlyUsed(): void {
+    let oldestKey = '';
+    let oldestTime = Date.now();
+
+    for (const [key, value] of this.orderCache.entries()) {
+      if (value.timestamp < oldestTime) {
+        oldestTime = value.timestamp;
+        oldestKey = key;
+      }
+    }
+
+    if (oldestKey) {
+      this.orderCache.delete(oldestKey);
+      this.cacheStats.evictions++;
     }
   }
 
@@ -397,8 +447,8 @@ export class POSOrderService {
       const orderJson = JSON.stringify(order);
       await this.env.setStorage(this.ORDER_PREFIX + order.Code, orderJson);
       
-      // Update cache
-      this.orderCache.set(order.Code, order);
+      // Update cache using proper method
+      this.addToCache(order.Code, order);
       
       // Update main storage
       const allOrders = this._orders.value;
@@ -485,33 +535,8 @@ export class POSOrderService {
     const cleanupInterval = 4 * 60 * 60 * 1000; // 4 hours
     
     setInterval(() => {
-      this.cleanupOldOrders();
+      this.cleanupOldOrders(1); // Clean orders older than 1 day
     }, cleanupInterval);
-  }
-
-  private async cleanupOldOrders(): Promise<void> {
-    try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 1); // 1 day ago
-      
-      const orders = this._orders.value;
-      const ordersToRemove = orders.filter(order => {
-        const orderDate = new Date(order.OrderDate);
-        return orderDate < cutoffDate && 
-               (order.Status === 'Settled' || order.Status === 'Cancelled');
-      });
-      
-      for (const order of ordersToRemove) {
-        await this.deleteOrder(order.Code);
-      }
-      
-      if (ordersToRemove.length > 0) {
-        console.log('🧹 Cleaned up old orders:', ordersToRemove.length);
-      }
-      
-    } catch (error) {
-      console.error('❌ Cleanup failed:', error);
-    }
   }
 
   // ========================
@@ -664,5 +689,136 @@ export class POSOrderService {
    */
   getLoadingProgress(): { loaded: number; total: number; percentage: number } {
     return this._loadingProgress.value;
+  }
+
+  // ========================
+  // SHARDING & OPTIMIZATION
+  // ========================
+
+  /**
+   * Generate storage key with date-based sharding
+   */
+  private getStorageKey(date: Date, type: 'order' | 'index'): string {
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    return `${type}_${dateStr}`;
+  }
+
+  /**
+   * Background cleanup of old orders
+   */
+  async cleanupOldOrders(daysToKeep: number = 30): Promise<void> {
+    try {
+      console.log('🧹 Starting background cleanup...');
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+      
+      const allOrders = this._orders.value;
+      const ordersBefore = allOrders.length;
+      
+      // Filter orders to keep
+      const ordersToKeep = allOrders.filter(order => {
+        const orderDate = new Date(order.OrderDate);
+        return orderDate >= cutoffDate;
+      });
+      
+      // Get orders to remove
+      const ordersToRemove = allOrders.filter(order => {
+        const orderDate = new Date(order.OrderDate);
+        return orderDate < cutoffDate;
+      });
+      
+      // Remove old orders from storage
+      for (const order of ordersToRemove) {
+        await this.env.setStorage(this.ORDER_PREFIX + order.Code, null);
+        this.orderCache.delete(order.Code);
+        this.orderIndex.delete(order.Code);
+      }
+      
+      // Update reactive state
+      this._orders.next(ordersToKeep);
+      
+      // Update main storage
+      const storageData: StorageOrderData = {
+        orders: ordersToKeep,
+        lastUpdated: new Date().toISOString(),
+        version: this.VERSION
+      };
+      
+      await this.env.setStorage(this.STORAGE_KEY, JSON.stringify(storageData));
+      
+      const removedCount = ordersBefore - ordersToKeep.length;
+      console.log(`✅ Cleanup complete: Removed ${removedCount} old orders (older than ${daysToKeep} days)`);
+      
+    } catch (error) {
+      console.error('❌ Failed to cleanup old orders:', error);
+    }
+  }
+
+  /**
+   * Emergency cleanup when storage is full
+   */
+  async emergencyCleanup(): Promise<void> {
+    try {
+      console.log('🆘 Emergency cleanup activated');
+      
+      // Keep only the most recent 100 orders
+      const allOrders = this._orders.value;
+      const sortedOrders = allOrders.sort((a, b) => 
+        new Date(b.OrderDate).getTime() - new Date(a.OrderDate).getTime()
+      );
+      
+      const ordersToKeep = sortedOrders.slice(0, 100);
+      const ordersToRemove = sortedOrders.slice(100);
+      
+      // Remove excess orders
+      for (const order of ordersToRemove) {
+        await this.env.setStorage(this.ORDER_PREFIX + order.Code, null);
+        this.orderCache.delete(order.Code);
+      }
+      
+      this._orders.next(ordersToKeep);
+      
+      // Clear and rebuild indexes
+      this.rebuildIndexes(ordersToKeep);
+      
+      console.log(`🆘 Emergency cleanup: Kept ${ordersToKeep.length} most recent orders`);
+      
+    } catch (error) {
+      console.error('❌ Emergency cleanup failed:', error);
+    }
+  }
+
+  /**
+   * Rebuild indexes for performance
+   */
+  private rebuildIndexes(orders: POS_Order[]): void {
+    this.orderIndex.clear();
+    this.dateIndex.clear();
+    
+    orders.forEach((order, index) => {
+      // Code index
+      this.orderIndex.set(order.Code, index);
+      
+      // Date index
+      const orderDate = new Date(order.OrderDate).toDateString();
+      if (!this.dateIndex.has(orderDate)) {
+        this.dateIndex.set(orderDate, []);
+      }
+      this.dateIndex.get(orderDate)!.push(order.Code);
+    });
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { hits: number; misses: number; evictions: number; size: number; hitRate: string } {
+    const total = this.cacheStats.hits + this.cacheStats.misses;
+    const hitRate = total > 0 ? ((this.cacheStats.hits / total) * 100).toFixed(1) + '%' : '0%';
+    
+    return {
+      ...this.cacheStats,
+      size: this.orderCache.size,
+      hitRate
+    };
   }
 }
