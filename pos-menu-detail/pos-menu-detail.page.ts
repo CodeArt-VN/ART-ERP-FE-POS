@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
 import { POS_KitchenProvider, POS_MenuDetailProvider, POS_MenuProvider, WMS_ItemProvider } from 'src/app/services/static/services.service';
 import { FormBuilder, Validators, FormControl, FormArray } from '@angular/forms';
-import { CommonService } from 'src/app/services/core/common.service';;
+import { CommonService } from 'src/app/services/core/common.service';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { environment } from 'src/environments/environment';
 
@@ -24,7 +24,7 @@ export class POSMenuDetailPage extends PageBase {
 	removedItems = [];
 	Image;
 	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png';
-	
+
 	constructor(
 		public pageProvider: POS_MenuProvider,
 		public menuDetailProvider: POS_MenuDetailProvider,
@@ -65,7 +65,7 @@ export class POSMenuDetailPage extends PageBase {
 
 			IsDisabled: [false],
 			Lines: this.formBuilder.array([]),
-			DeletedLines : [[]]
+			DeletedLines: [[]],
 		});
 	}
 	segmentView = 's1';
@@ -116,7 +116,7 @@ export class POSMenuDetailPage extends PageBase {
 	@ViewChild('uploadImage') uploadImage: any;
 	uploadContext = {
 		isParent: true,
-		id: null
+		id: null,
 	};
 	onClickUpload(isParent: boolean, id: number) {
 		this.uploadContext = { isParent, id };
@@ -137,14 +137,14 @@ export class POSMenuDetailPage extends PageBase {
 				return ApiSetting.apiDomain(apiDomain) + id;
 			},
 		};
-		
+
 		this.commonService.upload(apiPath, event.target.files[0]).then((result: any) => {
 			if (result != null) {
 				this.env.showMessage('upload thành công', 'success');
-				const envImage = environment.posImagesServer + result
-				if(this.uploadContext.isParent) {
+				const envImage = environment.posImagesServer + result;
+				if (this.uploadContext.isParent) {
 					this.Image = envImage;
-				}else {
+				} else {
 					let groups = <FormArray>this.formGroup.controls.Lines;
 					let group = groups.controls.find((g) => g.get('Id').value == id);
 					if (group) {
@@ -152,14 +152,12 @@ export class POSMenuDetailPage extends PageBase {
 						//group.get('Image').markAsDirty();
 					}
 				}
-
 			} else {
 				this.env.showMessage('upload thất bại', 'success');
 			}
 		});
 	};
 
-	
 	setLines() {
 		this.formGroup.controls.Lines = new FormArray([]);
 
@@ -182,7 +180,9 @@ export class POSMenuDetailPage extends PageBase {
 		let groups = <FormArray>this.formGroup.controls.Lines;
 		let group = this.formBuilder.group({
 			_IDItemDataSource: this.buildSelectDataSource((term) => {
-				return this.itemProvider.search({
+				return this.pageProvider.commonService.connect('GET', 'POS/Menu/ItemSearch/',{
+					// IsVendorSearch: this._IDVendor ? true : false,
+					IsSalesItem: true,
 					SortBy: ['Id_desc'],
 					Take: 20,
 					Skip: 0,
@@ -200,7 +200,7 @@ export class POSMenuDetailPage extends PageBase {
 			Sort: [line?.Sort],
 			IsChecked: [false],
 			IsDisabled: [line?.IsDisabled],
-			Image: environment.posImagesServer + [line?.Image]
+			Image: environment.posImagesServer + [line?.Image],
 		});
 		if (line?._Item) group.get('_IDItemDataSource').value.selected.push(line?._Item);
 		group.get('_IDItemDataSource').value.initSearch();
@@ -228,30 +228,30 @@ export class POSMenuDetailPage extends PageBase {
 	}
 
 	removeLine(index) {
-			let groups = <FormArray>this.formGroup.controls.Lines;
-			let group = groups.controls[index];
-			if (group.get('Id').value) {
-				this.env
-					.showPrompt('Bạn có chắc muốn xóa sản phẩm?', null, 'Xóa sản phẩm')
-					.then((_) => {
-						let Ids = [];
-						Ids.push(groups.controls[index].get('Id').value);
-						// this.removeItem.emit(Ids);
-						if (Ids && Ids.length > 0) {
-							this.formGroup.get('DeletedLines').setValue(Ids);
-							this.formGroup.get('DeletedLines').markAsDirty();
-							//this.item.DeletedLines = Ids;
-							this.saveChange().then((_) => {
-								Ids.forEach((id) => {
-									let index = groups.controls.findIndex((x) => x.get('Id').value == id);
-									if (index >= 0) groups.removeAt(index);
-								});
+		let groups = <FormArray>this.formGroup.controls.Lines;
+		let group = groups.controls[index];
+		if (group.get('Id').value) {
+			this.env
+				.showPrompt('Bạn có chắc muốn xóa sản phẩm?', null, 'Xóa sản phẩm')
+				.then((_) => {
+					let Ids = [];
+					Ids.push(groups.controls[index].get('Id').value);
+					// this.removeItem.emit(Ids);
+					if (Ids && Ids.length > 0) {
+						this.formGroup.get('DeletedLines').setValue(Ids);
+						this.formGroup.get('DeletedLines').markAsDirty();
+						//this.item.DeletedLines = Ids;
+						this.saveChange().then((_) => {
+							Ids.forEach((id) => {
+								let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+								if (index >= 0) groups.removeAt(index);
 							});
-						}
-					})
-					.catch((_) => {});
-			} else groups.removeAt(index);
-		}
+						});
+					}
+				})
+				.catch((_) => {});
+		} else groups.removeAt(index);
+	}
 	doReorder(ev, groups) {
 		groups = ev.detail.complete(groups);
 		for (let i = 0; i < groups.length; i++) {
@@ -294,8 +294,7 @@ export class POSMenuDetailPage extends PageBase {
 					.find((d) => !d.get('Id').value)
 					?.get('Id')
 					.setValue(diff[0]);
-			}
-			else if(diff?.length >1){
+			} else if (diff?.length > 1) {
 				this.loadedData(null);
 			}
 		}
@@ -316,46 +315,44 @@ export class POSMenuDetailPage extends PageBase {
 			if (this.isAllChecked) this.selectedLines.push(i);
 		});
 	}
-		removeSelectedItems() {
-			let groups = <FormArray>this.formGroup.controls.Lines;
-			if(this.selectedLines.controls.some(g=> g.get('Id').value)){
-				this.env
-					.showPrompt({ code: 'ACTION_DELETE_MESSAGE', value: { value: this.selectedLines.length } }, null, {
-						code: 'ACTION_DELETE_MESSAGE',
-						value: { value: this.selectedLines.length },
-					})
-					.then((_) => {
-						let Ids = this.selectedLines.controls.map((fg) => fg.get('Id').value);
-						// this.removeItem.emit(Ids);
-						if (Ids && Ids.length > 0) {
-							this.formGroup.get('DeletedLines').setValue(Ids);
-							this.formGroup.get('DeletedLines').markAsDirty();
-							//this.item.DeletedLines = Ids;
-							this.saveChange().then((_) => {
-								Ids.forEach((id) => {
-									let index = groups.controls.findIndex((x) => x.get('Id').value == id);
-									if (index >= 0) groups.removeAt(index);
-								});
+	removeSelectedItems() {
+		let groups = <FormArray>this.formGroup.controls.Lines;
+		if (this.selectedLines.controls.some((g) => g.get('Id').value)) {
+			this.env
+				.showPrompt({ code: 'ACTION_DELETE_MESSAGE', value: { value: this.selectedLines.length } }, null, {
+					code: 'ACTION_DELETE_MESSAGE',
+					value: { value: this.selectedLines.length },
+				})
+				.then((_) => {
+					let Ids = this.selectedLines.controls.map((fg) => fg.get('Id').value);
+					// this.removeItem.emit(Ids);
+					if (Ids && Ids.length > 0) {
+						this.formGroup.get('DeletedLines').setValue(Ids);
+						this.formGroup.get('DeletedLines').markAsDirty();
+						//this.item.DeletedLines = Ids;
+						this.saveChange().then((_) => {
+							Ids.forEach((id) => {
+								let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+								if (index >= 0) groups.removeAt(index);
 							});
-						}
-						this.selectedLines = new FormArray([]);
-	
-					})
-					.catch((_) => {});
-			}
-			else if(this.selectedLines.controls.length>0){
-				this.selectedLines.controls.map((fg) => fg.get('Id').value).forEach((id) => {
-						let index = groups.controls.findIndex((x) => x.get('Id').value == id);
-						if (index >= 0) groups.removeAt(index);
+						});
+					}
+					this.selectedLines = new FormArray([]);
+				})
+				.catch((_) => {});
+		} else if (this.selectedLines.controls.length > 0) {
+			this.selectedLines.controls
+				.map((fg) => fg.get('Id').value)
+				.forEach((id) => {
+					let index = groups.controls.findIndex((x) => x.get('Id').value == id);
+					if (index >= 0) groups.removeAt(index);
 				});
-				this.selectedLines = new FormArray([]);
-	
-			}
-			else{
-				this.env.showMessage('Please select at least one item to remove', 'warning');
-			}
+			this.selectedLines = new FormArray([]);
+		} else {
+			this.env.showMessage('Please select at least one item to remove', 'warning');
 		}
-	
+	}
+
 	changeSelection(i, e = null) {
 		if (i.get('IsChecked').value) {
 			this.selectedLines.push(i);
@@ -365,5 +362,4 @@ export class POSMenuDetailPage extends PageBase {
 		}
 		i.get('IsChecked').markAsPristine();
 	}
-
 }
