@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
-import { map, debounceTime } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { EnvService } from '../../services/core/env.service';
 import { POS_Order, POS_OrderDetail } from './interface.model';
 import { lib } from '../../services/static/global-functions';
 import { POSSecurityService } from './services/pos-security.service';
 import { POSAdvancedSyncService } from './services/pos-advanced-sync.service';
 import { POSRealtimeSyncService } from './services/pos-realtime-sync.service';
+import { SALE_OrderProvider } from '../../services/static/services.service';
 
 export interface StorageOrderData {
   orders: POS_Order[];
@@ -29,6 +30,9 @@ export class POSOrderService {
   private readonly STORAGE_KEY = 'pos_orders';
   private readonly ORDER_PREFIX = 'pos_order_';
   private readonly VERSION = '1.0';
+  
+  // Add missing property
+  private env: any;
   
   // Performance constants
   private readonly CHUNK_SIZE = 50; // Orders per chunk
@@ -70,12 +74,21 @@ export class POSOrderService {
   };
 
   constructor(
-    public env: EnvService,
-    private posSecurityService: POSSecurityService,
+    private envService: EnvService,
     private advancedSyncService: POSAdvancedSyncService,
-    private realtimeSyncService: POSRealtimeSyncService
+    private realtimeSyncService: POSRealtimeSyncService,
+    private securityService: POSSecurityService,
+    private saleOrderProvider: SALE_OrderProvider
   ) {
-    this.initialize();
+    console.log('🚀 POSOrderService: Constructor initialized');
+    this.env = this.envService;
+    this.initializeService();
+  }
+
+  private initializeService(): void {
+    console.log('🔧 POSOrderService: Initializing service...');
+    this.setupRealtimeEventHandlers();
+    console.log('✅ POSOrderService: Service initialized successfully');
   }
 
   private async initialize(): Promise<void> {
@@ -139,9 +152,27 @@ export class POSOrderService {
   // ========================
 
   /**
-   * Create a new order with unique Code tracking
+   * Update order status - specific method for status changes
    */
-  async createOrder(orderData: Partial<POS_Order>): Promise<POS_Order> {
+  async updateOrderStatus(code: string, status: string, additionalData?: any): Promise<POS_Order> {
+    console.log('🔄 POSOrderService: Updating order status', { code, status });
+    
+    const updateData: Partial<POS_Order> = {
+      Status: status,
+      ModifiedDate: new Date(),
+      ...additionalData
+    };
+    
+    return await this.updateOrder(code, updateData);
+  }
+
+  /**
+   * Create order - overloaded to match SALE_OrderProvider pattern
+   */
+  async createOrder(orderData: Partial<POS_Order>): Promise<POS_Order>;
+  async createOrder(orderData: POS_Order): Promise<POS_Order>;
+  async createOrder(orderData: Partial<POS_Order> | POS_Order): Promise<POS_Order> {
+    console.log('📝 POSOrderService: Creating new order', { orderData });
     this._isLoading.next(true);
     
     try {
@@ -196,8 +227,17 @@ export class POSOrderService {
       // Notify realtime sync
       this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'CREATE');
       
-      console.log('✅ Order created:', calculatedOrder.Code);
-      return calculatedOrder;
+      // Auto-sync to database if online
+      try {
+        const syncedOrder = await this.syncOrderToDatabase(calculatedOrder);
+        console.log('✅ Order created and synced to database:', syncedOrder.Code);
+        return syncedOrder;
+      } catch (syncError) {
+        console.warn('⚠️ Order created locally but database sync failed:', syncError.message);
+        // Mark for later sync
+        this.markOrderForSync(calculatedOrder.Code);
+        return calculatedOrder;
+      }
       
     } catch (error) {
       console.error('❌ Failed to create order:', error);
@@ -211,6 +251,7 @@ export class POSOrderService {
    * Update existing order by Code
    */
   async updateOrder(code: string, changes: Partial<POS_Order>): Promise<POS_Order> {
+    console.log('🔄 POSOrderService: Updating order', { code, changes });
     this._isLoading.next(true);
     
     try {
@@ -264,8 +305,17 @@ export class POSOrderService {
       // Notify realtime sync
       this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'UPDATE');
       
-      console.log('✅ Order updated:', code);
-      return calculatedOrder;
+      // Auto-sync to database if online
+      try {
+        const syncedOrder = await this.syncOrderToDatabase(calculatedOrder);
+        console.log('✅ Order updated and synced to database:', code);
+        return syncedOrder;
+      } catch (syncError) {
+        console.warn('⚠️ Order updated locally but database sync failed:', syncError.message);
+        // Mark for later sync
+        this.markOrderForSync(code);
+        return calculatedOrder;
+      }
       
     } catch (error) {
       console.error('❌ Failed to update order:', error);
@@ -279,6 +329,8 @@ export class POSOrderService {
    * Get order by Code
    */
   async getOrder(code: string): Promise<POS_Order | null> {
+    console.log('🔍 POSOrderService: Getting order', { code });
+    
     try {
       // Check cache first with LRU logic
       if (this.orderCache.has(code)) {
@@ -344,33 +396,13 @@ export class POSOrderService {
     }
   }
 
-  /**
-   * Get all orders from storage
-   */
-  async getAllOrders(): Promise<POS_Order[]> {
-    this._isLoading.next(true);
-    
-    try {
-      const storageData = await this.env.getStorage(this.STORAGE_KEY);
-      if (!storageData) {
-        return [];
-      }
 
-      const data: StorageOrderData = JSON.parse(storageData);
-      return data.orders || [];
-      
-    } catch (error) {
-      console.error('❌ Failed to get all orders:', error);
-      return [];
-    } finally {
-      this._isLoading.next(false);
-    }
-  }
 
   /**
    * Delete order by Code
    */
   async deleteOrder(code: string): Promise<boolean> {
+    console.log('🗑️ POSOrderService: Deleting order', { code });
     this._isLoading.next(true);
     
     try {
@@ -402,6 +434,15 @@ export class POSOrderService {
         
         // Notify realtime sync
         this.realtimeSyncService.notifyOrderUpdate(orderToDelete, 'DELETE');
+        
+        // Try to sync deletion to database immediately
+        try {
+          await this.deleteOrderFromDatabase(orderToDelete);
+          console.log('✅ Order deleted from both local and database:', code);
+        } catch (syncError) {
+          console.warn('⚠️ Order deleted locally but database deletion failed:', syncError.message);
+          // Note: Order is already deleted locally, database cleanup will be handled by sync service
+        }
       }
       
       console.log('✅ Order deleted:', code);
@@ -416,6 +457,495 @@ export class POSOrderService {
   }
 
   // ========================
+  // AUTO SYNC & FETCH MANAGEMENT
+  // ========================
+
+  private readonly LAST_FETCH_KEY = 'pos_orders_last_fetch';
+  private readonly FETCH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+  /**
+   * Ensure data is up to date - called automatically by service
+   */
+  async ensureDataIsUpToDate(forceRefresh: boolean = false): Promise<void> {
+    console.log('🔄 POSOrderService: Ensuring data is up to date', { forceRefresh });
+    
+    try {
+      const shouldFetch = await this.shouldFetchFromServer(forceRefresh);
+      
+      if (shouldFetch) {
+        console.log('📥 Fetching fresh data from server...');
+        await this.fetchAndSyncFromServer();
+      } else {
+        console.log('ℹ️ Local data is up to date');
+      }
+    } catch (error) {
+      console.error('❌ Failed to ensure data is up to date:', error);
+    }
+  }
+
+  /**
+   * Check if we should fetch from server
+   */
+  private async shouldFetchFromServer(forceRefresh: boolean): Promise<boolean> {
+    if (forceRefresh) return true;
+    
+    try {
+      const lastFetchTime = await this.env.getStorage(this.LAST_FETCH_KEY);
+      
+      if (!lastFetchTime) {
+        console.log('🔄 No previous fetch time, need to fetch');
+        return true;
+      }
+      
+      const timeSinceLastFetch = Date.now() - parseInt(lastFetchTime);
+      const shouldFetch = timeSinceLastFetch > this.FETCH_INTERVAL_MS;
+      
+      console.log('⏰ Fetch check:', {
+        lastFetch: new Date(parseInt(lastFetchTime)),
+        timeSince: Math.round(timeSinceLastFetch / 60000) + ' minutes',
+        shouldFetch
+      });
+      
+      return shouldFetch;
+    } catch (error) {
+      console.error('❌ Error checking fetch timing:', error);
+      return true; // Fetch on error to be safe
+    }
+  }
+
+  /**
+   * Fetch orders from server with smart query
+   */
+  private async fetchAndSyncFromServer(): Promise<void> {
+    try {
+      // Get last fetch time for incremental sync
+      const lastFetchTime = await this.env.getStorage(this.LAST_FETCH_KEY);
+      
+      // Build server query
+      const serverQuery: any = {
+        Type: 'POSOrder',
+        Status: JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']),
+        IDBranch: this.env.selectedBranch,
+        Take: 1000, // Large batch for initial sync
+        Skip: 0
+      };
+
+      // Add date range for incremental sync
+      if (lastFetchTime) {
+        // Incremental: fetch orders modified since last fetch
+        const lastFetch = new Date(parseInt(lastFetchTime));
+        // Add some buffer time (5 minutes) to avoid missing updates
+        lastFetch.setMinutes(lastFetch.getMinutes() - 5);
+        serverQuery.ModifiedDateFrom = lastFetch.toISOString();
+        console.log('📅 Incremental sync from:', lastFetch);
+      } else {
+        // Initial: fetch orders from last 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        serverQuery.ModifiedDateFrom = sevenDaysAgo.toISOString();
+        console.log('📅 Initial sync from 7 days ago:', sevenDaysAgo);
+      }
+
+      // Fetch from server
+      const serverResult: any = await this.saleOrderProvider.read(serverQuery, true);
+      
+      if (serverResult && serverResult.data && serverResult.data.length > 0) {
+        console.log('✅ Fetched from server:', serverResult.data.length, 'orders');
+        
+        // Process and merge each order
+        for (const serverOrder of serverResult.data) {
+          await this.mergeServerOrder(serverOrder);
+        }
+        
+        console.log('✅ Server orders merged successfully');
+      } else {
+        console.log('ℹ️ No new orders from server');
+      }
+      
+      // Update last fetch time
+      await this.env.setStorage(this.LAST_FETCH_KEY, Date.now().toString());
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch from server:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Merge server order with local data
+   */
+  private async mergeServerOrder(serverOrder: any): Promise<void> {
+    try {
+      // Transform server order to POS_Order format
+      const posOrder: POS_Order = {
+        ...serverOrder,
+        Code: serverOrder.Code || `ORD-${serverOrder.Id}`,
+        OrderDate: serverOrder.OrderDate || serverOrder.CreatedDate,
+        ModifiedDate: serverOrder.ModifiedDate || new Date(),
+        OrderLines: serverOrder.OrderLines || [],
+        TotalBeforeDiscount: serverOrder.TotalBeforeDiscount || 0,
+        TotalDiscount: serverOrder.TotalDiscount || 0,
+        TotalAfterDiscount: serverOrder.TotalAfterDiscount || serverOrder.CalcTotalOriginal || 0,
+        Tax: serverOrder.Tax || 0,
+        TotalAfterTax: serverOrder.TotalAfterTax || serverOrder.CalcTotalOriginal || 0
+      };
+
+      // Check if order already exists locally
+      const existingOrder = await this.getOrder(posOrder.Code);
+      
+      if (existingOrder) {
+        // Compare modification times
+        const serverModified = new Date(posOrder.ModifiedDate);
+        const localModified = new Date(existingOrder.ModifiedDate);
+        
+        if (serverModified > localModified) {
+          console.log('🔄 Updating order from server:', posOrder.Code);
+          await this.updateOrder(posOrder.Code, posOrder);
+        } else {
+          console.log('ℹ️ Local order is newer, keeping local:', posOrder.Code);
+        }
+      } else {
+        // New order from server
+        console.log('📝 Creating new order from server:', posOrder.Code);
+        await this.createOrder(posOrder);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to merge server order:', error);
+    }
+  }
+
+  /**
+   * Handle SignalR notification of order updates
+   */
+  async handleOrderUpdateNotification(orderData: any): Promise<void> {
+    console.log('🔔 Received order update notification:', orderData);
+    
+    try {
+      if (orderData.IDBranch !== this.env.selectedBranch) {
+        console.log('ℹ️ Order update not for current branch, ignoring');
+        return;
+      }
+
+      // Fetch the specific updated order from server
+      if (orderData.Id) {
+        const updatedOrder = await this.fetchOrderFromDatabase(orderData.Id);
+        if (updatedOrder) {
+          await this.mergeServerOrder(updatedOrder);
+          console.log('✅ Order updated from SignalR notification:', updatedOrder.Code);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to handle order update notification:', error);
+    }
+  }
+
+  /**
+   * Override getAllOrders to ensure data freshness
+   */
+  async getAllOrders(): Promise<POS_Order[]> {
+    console.log('📋 POSOrderService: Getting all orders with auto-sync check');
+    
+    // Ensure data is up to date before returning
+    await this.ensureDataIsUpToDate();
+    
+    try {
+      const storageData = await this.env.getStorage(this.STORAGE_KEY);
+      if (!storageData) {
+        console.log('ℹ️ No local orders found');
+        return [];
+      }
+
+      const data: StorageOrderData = JSON.parse(storageData);
+      return data.orders || [];
+      
+    } catch (error) {
+      console.error('❌ Failed to get all orders:', error);
+      return [];
+    }
+  }
+
+  // ========================
+  // DATABASE SYNC METHODS
+  // ========================
+
+  /**
+   * Sync order to database using SALE_OrderProvider
+   */
+  async syncOrderToDatabase(order: POS_Order): Promise<POS_Order> {
+    console.log('🔄 POSOrderService: Syncing order to database', { code: order.Code });
+    
+    try {
+      // Use SALE_OrderProvider save method (handles both create and update based on Id)
+      const savedOrder = await this.saleOrderProvider.save(order) as POS_Order;
+      
+      console.log('✅ Order synced to database successfully', { code: savedOrder.Code, id: savedOrder.Id });
+      
+      // Update local storage with server response (includes Id for new orders)
+      if (savedOrder.Id !== order.Id) {
+        await this.saveOrderToStorage(savedOrder);
+        
+        // Update reactive state
+        const currentOrders = this._orders.value;
+        const orderIndex = currentOrders.findIndex(o => o.Code === order.Code);
+        if (orderIndex >= 0) {
+          currentOrders[orderIndex] = savedOrder;
+          this._orders.next([...currentOrders]);
+        }
+      }
+      
+      return savedOrder;
+      
+    } catch (error) {
+      console.error('❌ Failed to sync order to database:', error);
+      throw new Error(`Database sync failed: ${error.message || error}`);
+    }
+  }
+
+  /**
+   * Fetch order from database by server Id
+   */
+  async fetchOrderFromDatabase(serverId: number): Promise<POS_Order | null> {
+    console.log('📥 POSOrderService: Fetching order from database', { serverId });
+    
+    try {
+      // Use SALE_OrderProvider getAnItem method
+      const orderData = await this.saleOrderProvider.getAnItem(serverId) as POS_Order;
+      
+      if (orderData) {
+        console.log('✅ Order fetched from database', { code: orderData.Code, id: orderData.Id });
+        return orderData;
+      }
+      
+      return null;
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch order from database:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Search orders from database
+   */
+  async searchOrdersFromDatabase(query: any = {}): Promise<POS_Order[]> {
+    console.log('🔍 POSOrderService: Searching orders from database', { query });
+    
+    try {
+      // Use SALE_OrderProvider read method for search
+      const result = await this.saleOrderProvider.read(query) as { count: number; data: POS_Order[] };
+      
+      console.log('✅ Orders searched from database', { count: result.count });
+      return result.data || [];
+      
+    } catch (error) {
+      console.error('❌ Failed to search orders from database:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Delete order from database
+   */
+  async deleteOrderFromDatabase(order: POS_Order): Promise<boolean> {
+    console.log('🗑️ POSOrderService: Deleting order from database', { code: order.Code, id: order.Id });
+    
+    try {
+      if (!order.Id || order.Id === 0) {
+        console.log('⚠️ Order has no server Id, skipping database deletion');
+        return true; // Local-only order, no need to delete from database
+      }
+      
+      // Use SALE_OrderProvider delete method
+      await this.saleOrderProvider.delete(order);
+      
+      console.log('✅ Order deleted from database successfully');
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Failed to delete order from database:', error);
+      throw new Error(`Database deletion failed: ${error.message || error}`);
+    }
+  }
+
+  /**
+   * Bulk sync multiple orders to database
+   */
+  async bulkSyncToDatabase(orders: POS_Order[]): Promise<POS_Order[]> {
+    console.log('📦 POSOrderService: Bulk syncing orders to database', { count: orders.length });
+    
+    const results: POS_Order[] = [];
+    const errors: string[] = [];
+    
+    for (const order of orders) {
+      try {
+        const syncedOrder = await this.syncOrderToDatabase(order);
+        results.push(syncedOrder);
+      } catch (error) {
+        const errorMsg = `Order ${order.Code}: ${error.message}`;
+        errors.push(errorMsg);
+        console.error('❌ Bulk sync error for order:', order.Code, error);
+      }
+    }
+    
+    if (errors.length > 0) {
+      console.warn('⚠️ Some orders failed to sync:', errors);
+      // Still return successful syncs, let caller handle partial failures
+    }
+    
+    console.log('✅ Bulk sync completed', { successful: results.length, failed: errors.length });
+    return results;
+  }
+
+  /**
+   * Sync orders from database to local storage
+   */
+  async syncFromDatabase(query: any = {}): Promise<void> {
+    console.log('📥 POSOrderService: Syncing orders from database to local');
+    this._isLoading.next(true);
+    this._syncStatus.next('syncing');
+    
+    try {
+      // Fetch orders from database
+      const serverOrders = await this.searchOrdersFromDatabase(query);
+      
+      if (serverOrders.length === 0) {
+        console.log('ℹ️ No orders found on server');
+        this._syncStatus.next('idle');
+        return;
+      }
+      
+      // Get current local orders
+      const localOrders = this._orders.value;
+      
+      // Merge server data with local data (server takes precedence)
+      const mergedOrders = this.mergeOrderData(localOrders, serverOrders);
+      
+      // Save merged data to storage
+      await this.saveOrdersToMainStorage(mergedOrders);
+      
+      // Update reactive state
+      this._orders.next(mergedOrders);
+      
+      // Rebuild indexes
+      this.rebuildIndexes(mergedOrders);
+      
+      console.log('✅ Database sync completed', { 
+        serverOrders: serverOrders.length, 
+        localOrders: localOrders.length,
+        merged: mergedOrders.length 
+      });
+      
+      this._syncStatus.next('idle');
+      
+    } catch (error) {
+      console.error('❌ Failed to sync from database:', error);
+      this._syncStatus.next('error');
+      throw error;
+    } finally {
+      this._isLoading.next(false);
+    }
+  }
+
+  /**
+   * Merge local and server order data
+   */
+  private mergeOrderData(localOrders: POS_Order[], serverOrders: POS_Order[]): POS_Order[] {
+    const mergedMap = new Map<string, POS_Order>();
+    
+    // Add local orders first
+    localOrders.forEach(order => {
+      mergedMap.set(order.Code, order);
+    });
+    
+    // Override with server orders (server data takes precedence)
+    serverOrders.forEach(serverOrder => {
+      const existingOrder = mergedMap.get(serverOrder.Code);
+      
+      if (existingOrder) {
+        // Merge: keep local modifications but prefer server data for synced fields
+        const mergedOrder: POS_Order = {
+          ...existingOrder,
+          ...serverOrder,
+          // Preserve local-only fields that might not exist on server
+          ModifiedDate: new Date(Math.max(
+            new Date(existingOrder.ModifiedDate).getTime(),
+            new Date(serverOrder.ModifiedDate).getTime()
+          ))
+        };
+        mergedMap.set(serverOrder.Code, mergedOrder);
+      } else {
+        // New order from server
+        mergedMap.set(serverOrder.Code, serverOrder);
+      }
+    });
+    
+    return Array.from(mergedMap.values());
+  }
+
+  /**
+   * Check if order needs database sync
+   */
+  isOrderSyncPending(order: POS_Order): boolean {
+    // Order needs sync if:
+    // 1. No Id (new order)
+    // 2. Local ModifiedDate is newer than server sync timestamp
+    // 3. Has pending changes flag
+    
+    return !order.Id || 
+           order.Id === 0 || 
+           (order as any)._needsSync === true ||
+           (order as any)._localChanges === true;
+  }
+
+  /**
+   * Mark order as needing sync
+   */
+  markOrderForSync(code: string): void {
+    const orders = this._orders.value;
+    const orderIndex = orders.findIndex(o => o.Code === code);
+    
+    if (orderIndex >= 0) {
+      const updatedOrder = { 
+        ...orders[orderIndex], 
+        _needsSync: true,
+        _localChanges: true 
+      } as any;
+      
+      orders[orderIndex] = updatedOrder;
+      this._orders.next([...orders]);
+      this._isDirty.next(true);
+    }
+  }
+
+  /**
+   * Get orders pending database sync
+   */
+  getOrdersPendingSync(): POS_Order[] {
+    return this._orders.value.filter(order => this.isOrderSyncPending(order));
+  }
+
+  /**
+   * Auto-sync pending orders to database
+   */
+  async autoSyncPendingOrders(): Promise<void> {
+    const pendingOrders = this.getOrdersPendingSync();
+    
+    if (pendingOrders.length === 0) {
+      console.log('ℹ️ No orders pending sync');
+      return;
+    }
+    
+    console.log(`🔄 Auto-syncing ${pendingOrders.length} pending orders`);
+    
+    try {
+      await this.bulkSyncToDatabase(pendingOrders);
+      console.log('✅ Auto-sync completed');
+    } catch (error) {
+      console.error('❌ Auto-sync failed:', error);
+    }
+  }
+
+  // ========================
   // Business Logic Methods
   // ========================
 
@@ -423,6 +953,8 @@ export class POSOrderService {
    * Calculate order totals and taxes
    */
   private calcOrder(order: POS_Order): POS_Order {
+    console.log('🧮 POSOrderService: Calculating order totals', { orderCode: order.Code, linesCount: order.OrderLines?.length || 0 });
+    
     if (!order.OrderLines || order.OrderLines.length === 0) {
       return {
         ...order,
@@ -877,10 +1409,10 @@ export class POSOrderService {
    * Create order with retry mechanism and data encryption
    */
   async createOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
-    return this.posSecurityService.executeWithRecovery(
+    return this.securityService.executeWithRecovery(
       async () => {
         // Encrypt sensitive data
-        const encryptedOrder = await this.posSecurityService.encryptSensitiveData(order);
+        const encryptedOrder = await this.securityService.encryptSensitiveData(order);
         return await this.createOrder(encryptedOrder);
       },
       'CREATE_ORDER',
@@ -892,9 +1424,9 @@ export class POSOrderService {
    * Update order with retry mechanism
    */
   async updateOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
-    return this.posSecurityService.executeWithRecovery(
+    return this.securityService.executeWithRecovery(
       async () => {
-        const encryptedOrder = await this.posSecurityService.encryptSensitiveData(order);
+        const encryptedOrder = await this.securityService.encryptSensitiveData(order);
         await this.createOrder(encryptedOrder);
         return encryptedOrder;
       },
@@ -906,7 +1438,7 @@ export class POSOrderService {
    * Get order with retry mechanism
    */
   async getOrderWithRecovery(code: string): Promise<POS_Order | null> {
-    return this.posSecurityService.executeWithRecovery(
+    return this.securityService.executeWithRecovery(
       async () => {
         let orders: POS_Order[];
         this.orders$.subscribe(data => orders = data).unsubscribe();
@@ -924,12 +1456,12 @@ export class POSOrderService {
     const batches = this.chunkArray(orders, batchSize);
     
     for (const [index, batch] of batches.entries()) {
-      await this.posSecurityService.executeWithRecovery(
+      await this.securityService.executeWithRecovery(
         async () => {
           console.log(`📦 Processing batch ${index + 1}/${batches.length} (${batch.length} orders)`);
           
           const encryptedBatch = await Promise.all(
-            batch.map(order => this.posSecurityService.encryptSensitiveData(order))
+            batch.map(order => this.securityService.encryptSensitiveData(order))
           );
           
           // Save each order in batch
@@ -957,9 +1489,9 @@ export class POSOrderService {
     this.orders$.subscribe(data => orders = data).unsubscribe();
     
     return {
-      circuitBreakers: this.posSecurityService.getCircuitBreakerStatus(),
-      operationStats: this.posSecurityService.getAllOperationStats(),
-      recentErrors: this.posSecurityService.getRecentErrors(20),
+      circuitBreakers: this.securityService.getCircuitBreakerStatus(),
+      operationStats: this.securityService.getAllOperationStats(),
+      recentErrors: this.securityService.getRecentErrors(20),
       cacheStats: {
         cacheSize: this.orderCache.size,
         maxSize: this.MAX_CACHE_SIZE,
@@ -994,7 +1526,7 @@ export class POSOrderService {
    * Validate and recover corrupted data
    */
   async validateAndRecoverData(): Promise<void> {
-    await this.posSecurityService.executeWithRecovery(
+    await this.securityService.executeWithRecovery(
       async () => {
         console.log('🔍 Starting data validation and recovery...');
         
@@ -1106,7 +1638,7 @@ export class POSOrderService {
    * Get security service for monitoring
    */
   getSecurityService(): POSSecurityService {
-    return this.posSecurityService;
+    return this.securityService;
   }
 
   /**
@@ -1174,7 +1706,7 @@ export class POSOrderService {
       console.log('🚨 Starting emergency cleanup...');
       
       // Clear circuit breaker states
-      this.posSecurityService.clearStats();
+      this.securityService.clearStats();
       
       // Clear all caches
       this.orderCache.clear();

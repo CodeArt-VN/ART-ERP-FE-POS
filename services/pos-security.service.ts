@@ -50,6 +50,7 @@ export class POSSecurityService {
   private readonly MAX_ERROR_LOG_SIZE = 1000;
 
   constructor() {
+    console.log('🚀 POSSecurityService: Constructor initialized');
     this.initializeEncryptionKey();
   }
 
@@ -65,6 +66,12 @@ export class POSSecurityService {
     operationType: string,
     config: Partial<RetryConfig> = {}
   ): Promise<T> {
+    console.log('🔄 POSSecurityService: Executing operation with recovery', { 
+      operationType, 
+      config,
+      circuitBreakerState: this.circuitBreakers.get(operationType)?.state || 'CLOSED'
+    });
+    
     const retryConfig = { ...this.DEFAULT_RETRY_CONFIG, ...config };
     const startTime = Date.now();
     

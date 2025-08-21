@@ -40,6 +40,7 @@ export class POSRealtimeSyncService {
   constructor(
     private advancedSyncService: POSAdvancedSyncService
   ) {
+    console.log('🚀 POSRealtimeSyncService: Constructor initialized');
     this.initializeRealtimeSync();
   }
 
@@ -47,6 +48,7 @@ export class POSRealtimeSyncService {
    * Initialize real-time sync system
    */
   private initializeRealtimeSync(): void {
+    console.log('🔧 POSRealtimeSyncService: Initializing realtime sync...');
     this.connect();
     this.setupMessageHandlers();
     this.setupAutoReconnect();
@@ -58,6 +60,12 @@ export class POSRealtimeSyncService {
    * Connect to WebSocket
    */
   private connect(): void {
+    console.log('🔌 POSRealtimeSyncService: Attempting to connect to WebSocket', {
+      isConnecting: this.isConnecting,
+      currentState: this.webSocket?.readyState,
+      attempts: this.reconnectAttempts
+    });
+    
     if (this.isConnecting || this.webSocket?.readyState === WebSocket.OPEN) {
       return;
     }
