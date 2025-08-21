@@ -41,7 +41,9 @@ export class POSEnviromentDataService {
 		public kitchenProvider: POS_KitchenProvider,
 		public tableGroupProvider: POS_TableGroupProvider,
 		public tableProvider: POS_TableProvider
-	) {}
+	) {
+		console.log('🚀 POSEnviromentDataService: Constructor initialized');
+	}
 
 	// ========================
 	// System Configuration (Moved from POSService)
@@ -51,9 +53,12 @@ export class POSEnviromentDataService {
 	 * Get system configuration for specific branch
 	 */
 	public getSystemConfig(IDBranch: number): Promise<POSConfig> {
+		console.log('⚙️ POSEnviromentDataService: Getting system config', { IDBranch });
+		
 		return new Promise((resolve, reject) => {
 			// Check cache first
 			if (this.configCache.has(IDBranch)) {
+				console.log('💾 Using cached config for branch:', IDBranch);
 				const config = this.configCache.get(IDBranch)!;
 				this._systemConfig.next(config);
 				resolve(config);

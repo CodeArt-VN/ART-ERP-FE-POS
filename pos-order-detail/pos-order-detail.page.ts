@@ -4,7 +4,7 @@ import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
 import { CRM_ContactProvider, HRM_StaffProvider, POS_TerminalProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
-import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 
@@ -28,6 +28,8 @@ import { POSConstants } from '../pos.constants';
 import { POSCartService } from '../pos-cart.service';
 import { POSPrintService } from '../pos-print.service';
 import { POSDiscountService } from '../pos-discount.service';
+import { POSOrderService } from '../pos-order.service';
+import { POSSecurityService } from '../services/pos-security.service';
 
 // Constants
 const PAYMENT_CONFIG = {
@@ -43,14 +45,7 @@ const PAYMENT_CONFIG = {
 	MIN_DEBT_THRESHOLD: 10,
 } as const;
 
-const BRANCH_IDS = {
-	W_CAFE: 174,
-	THE_LOG: 17,
-	CAO_THANG: 765,
-	GEM_CAFE: 416,
-	TEST: 864,
-	PHINDILY_CODE: '145',
-} as const;
+
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -84,25 +79,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	isWaitingRefresh = false;
 
-	get notificationService() {
-		return this.posNotifyService;
-	}
-
 	// Discount and promotion getters through discount service
-	get Discount() {
-		return this.posDiscountService.discount;
-	}
-
 	get promotionAppliedPrograms() {
 		return this.posDiscountService.promotionAppliedPrograms;
-	}
-
-	get OrderAdditionTypeList() {
-		return this.posDiscountService.orderAdditionTypeList;
-	}
-
-	get OrderDeductionTypeList() {
-		return this.posDiscountService.orderDeductionTypeList;
 	}
 
 	constructor(
@@ -117,6 +96,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public posPrintService: POSPrintService,
 		public cartService: POSCartService,
 		public posDiscountService: POSDiscountService,
+		public posOrderService: POSOrderService,
+		public posSecurityService: POSSecurityService,
 
 		public env: EnvService,
 		public navCtrl: NavController,
@@ -473,7 +454,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			return false;
 		}
 
-		return this.apiCallWithRetry(async () => {
+		return this.posSecurityService.executeWithRecovery(async () => {
 			const results: any = await this.printerTerminalProvider.read({
 				IDBranch: this.env.selectedBranch,
 			});
@@ -752,35 +733,26 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 
 			if (!line) {
+				// Cancel entire order using POSOrderService
 				this.env
 					.showPrompt('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
-					.then((_) => {
-						let publishEventCode = this.pageConfig.pageName;
-						if (this.submitAttempt == false) {
+					.then(async (_) => {
+						try {
 							this.submitAttempt = true;
-							cancelData.Type = 'POSOrder';
-							cancelData.Ids = [this.item.Id];
-
-							this.pageProvider.commonService
-								.connect('POST', 'SALE/Order/CancelOrders/', cancelData)
-								.toPromise()
-								.then(() => {
-									if (publishEventCode) {
-										this.env.publishEvent({
-											Code: publishEventCode,
-										});
-									}
-									this.loadData();
-									this.submitAttempt = false;
-									this.nav('/pos-order', 'back');
-								})
-								.catch((err) => {
-									this.submitAttempt = false;
-								});
+							await this.posOrderService.deleteOrder(this.item.Id);
+							
+							this.env.publishEvent({ Code: this.pageConfig.pageName });
+							this.loadData();
+							this.nav('/pos-order', 'back');
+						} catch (error) {
+							this.handleApiError(error, 'Cannot cancel order');
+						} finally {
+							this.submitAttempt = false;
 						}
 					})
 					.catch((_) => {});
 			} else {
+				// Cancel specific line items - keep existing logic for now
 				let cancelData: any = {
 					Code: data.Code,
 					OrderLine: line,
@@ -792,27 +764,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 				this.env
 					.showPrompt('Bạn có chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm')
-					.then((_) => {
-						let publishEventCode = this.pageConfig.pageName;
-						if (this.submitAttempt == false) {
+					.then(async (_) => {
+						try {
 							this.submitAttempt = true;
 
-							this.pageProvider.commonService
+							await this.pageProvider.commonService
 								.connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData)
-								.toPromise()
-								.then(() => {
-									if (publishEventCode) {
-										this.env.publishEvent({
-											Code: publishEventCode,
-										});
-									}
+								.toPromise();
 
-									this.loadData();
-									this.submitAttempt = false;
-								})
-								.catch((err) => {
-									this.submitAttempt = false;
-								});
+							this.env.publishEvent({ Code: this.pageConfig.pageName });
+							this.loadData();
+						} catch (error) {
+							this.handleApiError(error, 'Cannot cancel item');
+						} finally {
+							this.submitAttempt = false;
 						}
 					})
 					.catch((_) => {});
@@ -903,34 +868,25 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.sendKitchenWithPrompt();
 		}
 
-		// 1. OPTIMISTIC UPDATE - Update UI immediately
-		const originalStatus = this.item.Status;
-		const originalLocked = this.item._Locked;
-
-		this.item.Status = status;
-		this.item._Locked = isLocked;
-		this.pageConfig.canEdit = !isLocked;
-		isLocked ? this.formGroup?.disable() : this.formGroup?.enable();
-		this.cdr.detectChanges();
-
-		const postDTO = { Id: this.item.Id, Code: status, Debt: this.item.Debt };
-
 		try {
-			const savedItem = await this.pageProvider.commonService.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO).toPromise();
+			// Use POSOrderService for status toggle
+			const updatedOrder = await this.posOrderService.updateOrder(this.item.Id, { 
+				Status: status
+			});
 
-			// SUCCESS - Handle specific status actions
+			// Update local state
+			this.item.Status = status;
+			this.item._Locked = isLocked;
+			this.pageConfig.canEdit = !isLocked;
+			isLocked ? this.formGroup?.disable() : this.formGroup?.enable();
+			this.cdr.detectChanges();
+
+			// Handle specific status actions
 			if (status === 'TemporaryBill') {
-				this.getQRPayment(savedItem);
+				this.getQRPayment(updatedOrder);
 			}
 		} catch (error) {
-			// FAILURE - Rollback optimistic update
 			console.error('Toggle order status failed:', error);
-
-			this.item.Status = originalStatus;
-			this.item._Locked = originalLocked;
-			this.pageConfig.canEdit = !originalLocked;
-			originalLocked ? this.formGroup?.disable() : this.formGroup?.enable();
-
 			this.env.showMessage('Failed to change order status. Please try again.', 'danger');
 			this.loadData();
 		} finally {
@@ -986,56 +942,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	VietQRCode: string | null = null;
 
 	////PRIVATE METHODS
-
-	// Retry configuration
-	private readonly RETRY_CONFIG = {
-		maxRetries: 3,
-		baseDelay: 1000,
-		backoffMultiplier: 2,
-	};
-
-	/**
-	 * Enhanced API call with retry mechanism and exponential backoff
-	 */
-	private async apiCallWithRetry<T>(apiCall: () => Promise<T>, context: string, maxRetries: number = this.RETRY_CONFIG.maxRetries): Promise<T> {
-		let lastError: any;
-
-		for (let attempt = 1; attempt <= maxRetries; attempt++) {
-			try {
-				return await apiCall();
-			} catch (error) {
-				lastError = error;
-				console.warn(`${context} attempt ${attempt} failed:`, error);
-
-				// Don't retry on final attempt or on certain error types
-				if (attempt === maxRetries || this.isNonRetryableError(error)) {
-					break;
-				}
-
-				// Exponential backoff delay
-				const delay = this.RETRY_CONFIG.baseDelay * Math.pow(this.RETRY_CONFIG.backoffMultiplier, attempt - 1);
-				await this.delay(delay);
-			}
-		}
-
-		throw lastError;
-	}
-
-	/**
-	 * Check if error should not be retried
-	 */
-	private isNonRetryableError(error: any): boolean {
-		// Don't retry on client errors (4xx) or validation errors
-		const status = error?.status || error?.code;
-		return status >= 400 && status < 500;
-	}
-
-	/**
-	 * Promise-based delay utility
-	 */
-	private delay(ms: number): Promise<void> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
 
 	private handleApiError(error: any, message: string = 'Operation failed. Please try again!'): void {
 		console.error(error);
@@ -1093,46 +999,35 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.UpdatePrice();
 	}
 
-	// Legacy delay property - renamed to avoid conflict
-	saveDelay = 1000;
-
+	// State management for save operations
 	nextSaveData = null;
 
-	// Save configuration
-	private saveConfig = {
-		delay: 1000,
-		alwaysReturnProps: ['Id', 'IDBranch', 'Code'],
-	};
-
 	setOrderValue(data, forceSave = false, autoSave = null) {
-		// Sync state with cart service
-		if (this.cartService.formGroup !== this.formGroup) {
-			this.cartService.formGroup = this.formGroup;
-		}
-		if (this.cartService.item !== this.item) {
-			this.cartService.item = this.item;
-		}
-		// Set save callback and other references
-		this.cartService.saveChangeCallback = () => this.saveChange();
-		this.cartService.numberOfGuestsInput = this.numberOfGuestsInput;
-
-		// Sync waiting state
-		this.cartService.isWaitingRefresh = this.isWaitingRefresh;
-		this.cartService.nextSaveData = this.nextSaveData;
-
-		const result = this.cartService.setOrderValue(data, forceSave, autoSave);
-
-		// Sync back the state changes
-		this.isWaitingRefresh = this.cartService.isWaitingRefresh;
-		this.nextSaveData = this.cartService.nextSaveData;
-
-		return result;
+		// Delegate to cart service for order value management
+		return this.cartService.setOrderValue(data, forceSave, autoSave);
 	}
 	async saveChange() {
 		//if(!(this.formGroup.controls.OrderLines.dirty || this.formGroup.dirty)) return;
 		this.isWaitingRefresh = true;
-		console.log('isWaitingRefresh from saveChange');
-		return this.saveChange2();
+		console.log('🔄 POSOrderDetail: Starting save operation via POSOrderService');
+		
+		try {
+			// Use POSOrderService for order operations
+			const orderData = this.formGroup.getRawValue();
+			if (this.item?.Id) {
+				// Update existing order
+				const updatedOrder = await this.posOrderService.updateOrder(this.item.Id, orderData);
+				this.savedChange(updatedOrder, this.formGroup);
+			} else {
+				// Create new order
+				const newOrder = await this.posOrderService.createOrder(orderData);
+				this.savedChange(newOrder, this.formGroup);
+			}
+		} catch (error) {
+			this.handleApiError(error, 'Save operation failed');
+			this.isWaitingRefresh = false;
+			this.submitAttempt = false;
+		}
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
@@ -1243,6 +1138,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			OriginalDiscountFromSalesman = 0;
 		}
 
+		// Use cart service for discount calculation
 		try {
 			const orderData = this.cartService.applySalesmanDiscount(line, OriginalDiscountFromSalesman);
 			this.setOrderValue(orderData);
@@ -1252,49 +1148,55 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	private getPayments() {
-		return new Promise((resolve, reject) => {
-			this.commonService
-				.connect('GET', 'BANK/IncomingPaymentDetail', {
-					IDSaleOrder: this.item.Id,
-				})
-				.toPromise()
-				.then((result: any) => {
-					this.paymentList = result; //.filter(p => p.IncomingPayment.Status == "Success" || p.IncomingPayment.Status == "Processing");
-					this.paymentList.forEach((e) => {
-						e.IncomingPayment._Status = this.posService.dataSource.paymentStatusList.find((s) => s.Code == e.IncomingPayment.Status) || {
-							Code: e.IncomingPayment.Status,
-							Name: e.IncomingPayment.Status,
-							Color: 'danger',
-						};
-						e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.posService.dataSource.paymentTypeList, 'Name', '--', 'Code');
-					});
-					let PaidAmounted = this.paymentList
-						?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false)
-						.map((x) => x.Amount)
-						.reduce((a, b) => +a + +b, 0);
-					let RefundAmount = this.paymentList
-						?.filter((x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true)
-						.map((x) => x.Amount)
-						.reduce((a, b) => +a + +b, 0);
+	private async getPayments() {
+		try {
+			// Use POSSecurityService with error recovery
+			const result: any = await this.posSecurityService.executeWithRecovery(
+				async () => {
+					return await this.commonService
+						.connect('GET', 'BANK/IncomingPaymentDetail', {
+							IDSaleOrder: this.item.Id,
+						})
+						.toPromise();
+				},
+				'Error loading payment information'
+			);
 
-					this.item.Received = PaidAmounted - RefundAmount;
-					this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
-					if (this.item.Debt > 0) {
-						this.item.IsDebt = true;
-					}
+			this.paymentList = result;
+			this.paymentList.forEach((e) => {
+				e.IncomingPayment._Status = this.posService.dataSource.paymentStatusList.find((s) => s.Code == e.IncomingPayment.Status) || {
+					Code: e.IncomingPayment.Status,
+					Name: e.IncomingPayment.Status,
+					Color: 'danger',
+				};
+				e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.posService.dataSource.paymentTypeList, 'Name', '--', 'Code');
+			});
+			
+			let PaidAmounted = this.paymentList
+				?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false)
+				.map((x) => x.Amount)
+				.reduce((a, b) => +a + +b, 0);
+			let RefundAmount = this.paymentList
+				?.filter((x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true)
+				.map((x) => x.Amount)
+				.reduce((a, b) => +a + +b, 0);
 
-					if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < PAYMENT_CONFIG.MIN_DEBT_THRESHOLD && this.item.Status != 'Done') {
-						this.env.showMessage('The order has been paid, the system will automatically close this bill.');
-						this.formGroup.enable();
-						this.doneOrder();
-					}
-					resolve(this.paymentList);
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
+			this.item.Received = PaidAmounted - RefundAmount;
+			this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
+			if (this.item.Debt > 0) {
+				this.item.IsDebt = true;
+			}
+
+			if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < PAYMENT_CONFIG.MIN_DEBT_THRESHOLD && this.item.Status != 'Done') {
+				this.env.showMessage('The order has been paid, the system will automatically close this bill.');
+				this.formGroup.enable();
+				this.doneOrder();
+			}
+			return this.paymentList;
+		} catch (error) {
+			this.handleApiError(error, 'Error loading payment information');
+			throw error;
+		}
 	}
 
 	doneOrder() {

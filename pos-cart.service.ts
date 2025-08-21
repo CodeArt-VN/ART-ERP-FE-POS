@@ -41,6 +41,8 @@ export class POSCartService {
 		private orderService: POSOrderService,
 		public discountService: POSDiscountService
 	) {
+		console.log('🚀 POSCartService: Constructor initialized');
+		
 		// Setup data streams from OrderService
 		this.currentCart$ = this.orderService.currentOrder$;
 		this.isDirty$ = this.orderService.isDirty$;

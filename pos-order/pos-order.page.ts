@@ -21,6 +21,7 @@ import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 import { PromotionService } from 'src/app/services/promotion.service';
+import { POSOrderService } from '../pos-order.service';
 
 @Component({
 	selector: 'app-pos-order',
@@ -50,7 +51,8 @@ export class POSOrderPage extends PageBase {
 		public navCtrl: NavController,
 		public location: Location,
 		public commonService: CommonService,
-		public promotionService: PromotionService
+		public promotionService: PromotionService,
+		public posOrderService: POSOrderService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -379,17 +381,19 @@ export class POSOrderPage extends PageBase {
 		super.ngOnDestroy();
 	}
 	preLoadData(event?: any): void {
+		console.log('🔄 POSOrderPage: PreLoadData triggered', { event });
+		
 		let sysConfigQuery = ['POSAudioCallStaff', 'POSAudioCallToPay', 'POSAudioOrderUpdate', 'POSAudioIncomingPayment'];
 		let forceReload = event === 'force';
 		this.query.Type = 'POSOrder';
 		this.query.Status = JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']);
-
 		this.query.IDBranch = this.env.selectedBranch;
 
 		if (!this.sort.Id) {
 			this.sort.Id = 'Id';
 			this.sortToggle('Id', true);
 		}
+		
 		Promise.all([
 			this.getTableGroupTree(forceReload),
 			this.env.getStatus('POSOrder'),
@@ -407,8 +411,277 @@ export class POSOrderPage extends PageBase {
 				}
 				this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
 			});
+			
+			// Service handles all data initialization internally
 			super.preLoadData(event);
 		});
+	}	/**
+	 * Initialize POS Order data - sync from server if needed
+	 */
+	private async initializePOSOrderData(forceReload: boolean = false): Promise<void> {
+		try {
+			console.log('🔄 Initializing POS Order data...', { forceReload });
+			
+			// Let POSOrderService handle the fetch logic
+			await this.posOrderService.ensureDataIsUpToDate(forceReload);
+			
+			console.log('✅ POS Order data initialization completed');
+		} catch (error) {
+			console.error('❌ Failed to initialize POS Order data:', error);
+		}
+	}	/**
+	 * Fetch orders from server with smart date filtering
+	 */
+	private async fetchOrdersFromServer(forceReload: boolean = false): Promise<void> {
+		try {
+			// Get last fetch timestamp
+			const lastFetchKey = `pos_orders_last_fetch_${this.env.selectedBranch}`;
+			let lastFetchTime: string | null = await this.env.getStorage(lastFetchKey);
+			
+			// If force reload or never fetched, get data from 7 days ago
+			let modifiedDateFrom: string;
+			if (forceReload || !lastFetchTime) {
+				const sevenDaysAgo = new Date();
+				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+				modifiedDateFrom = sevenDaysAgo.toISOString();
+				console.log('🔄 First time or force reload - fetching from 7 days ago');
+			} else {
+				// Fetch from last sync time with small overlap (5 minutes back)
+				const lastFetch = new Date(lastFetchTime);
+				lastFetch.setMinutes(lastFetch.getMinutes() - 5); // 5 minutes overlap
+				modifiedDateFrom = lastFetch.toISOString();
+				console.log('🔄 Incremental fetch from last sync time:', modifiedDateFrom);
+			}
+
+			// Build server query with date filters
+			const serverQuery = {
+				Type: 'POSOrder',
+				Status: this.query.Status || JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']),
+				IDBranch: this.env.selectedBranch,
+				ModifiedDateFrom: modifiedDateFrom,
+				ModifiedDateTo: new Date().toISOString(), // Until now
+				Take: 1000, // Get more data for sync
+				Skip: 0,
+				SortBy: 'ModifiedDate_desc' // Sort by modified date
+			};
+			
+			console.log('� Fetching orders with query:', serverQuery);
+
+			// Fetch from server using original pageProvider
+			const serverResult: any = await this.pageProvider.read(serverQuery, true);
+			
+			if (serverResult && serverResult.data && serverResult.data.length > 0) {
+				console.log('✅ Fetched from server:', serverResult.data.length, 'orders');
+				
+				// Process each order
+				let newOrdersCount = 0;
+				let updatedOrdersCount = 0;
+				
+				for (const serverOrder of serverResult.data) {
+					try {
+						// Check if order exists locally
+						const existingOrder = await this.posOrderService.getOrder(serverOrder.Code || `ORD-${serverOrder.Id}`);
+						
+						// Transform server order to match POS_Order interface
+						const posOrder = {
+							...serverOrder,
+							Code: serverOrder.Code || `ORD-${serverOrder.Id}`,
+							OrderDate: serverOrder.OrderDate || serverOrder.CreatedDate,
+							OrderLines: serverOrder.OrderLines || [],
+							TotalBeforeDiscount: serverOrder.TotalBeforeDiscount || 0,
+							TotalDiscount: serverOrder.TotalDiscount || 0,
+							TotalAfterDiscount: serverOrder.TotalAfterDiscount || serverOrder.CalcTotalOriginal || 0,
+							Tax: serverOrder.Tax || 0,
+							TotalAfterTax: serverOrder.TotalAfterTax || serverOrder.CalcTotalOriginal || 0
+						};
+						
+						if (existingOrder) {
+							// Update existing order
+							await this.posOrderService.updateOrder(posOrder.Code, posOrder);
+							updatedOrdersCount++;
+						} else {
+							// Create new order
+							await this.posOrderService.createOrder(posOrder);
+							newOrdersCount++;
+						}
+					} catch (saveError) {
+						console.warn('⚠️ Failed to save server order to local:', saveError);
+					}
+				}
+				
+				console.log('✅ Orders synced:', { 
+					new: newOrdersCount, 
+					updated: updatedOrdersCount, 
+					total: serverResult.data.length 
+				});
+			} else {
+				console.log('ℹ️ No new/updated orders found on server');
+			}
+			
+			// Update last fetch timestamp
+			const currentTime = new Date().toISOString();
+			await this.env.setStorage(lastFetchKey, currentTime);
+			console.log('✅ Updated last fetch time:', currentTime);
+			
+		} catch (error) {
+			console.error('❌ Failed to fetch from server:', error);
+			throw error;
+		}
+	}
+
+	loadData(event?: any): void {
+		console.log('🔄 POSOrderPage: Loading data using POSOrderService', { event, query: this.query });
+		
+		if (this.pageConfig.isEndOfData) {
+			console.log('ℹ️ End of data reached, skipping load');
+			this.loadedData(event);
+			return;
+		}
+
+		this.parseSort();
+
+		// Simply delegate to service - let service handle all sync logic
+		if (event === 'search') {
+			// Search mode - reset data and search from beginning
+			this.loadDataFromService(0, true, event);
+		} else {
+			// Pagination mode - append data
+			const skip = this.items.length;
+			this.loadDataFromService(skip, false, event);
+		}
+	}
+
+	private async loadDataFromService(skip: number, isSearch: boolean, event?: any): Promise<void> {
+		try {
+			console.log('📊 Loading orders from POSOrderService', { skip, isSearch });
+
+			// Service handles all sync logic internally
+			const allOrders = await this.posOrderService.getAllOrders();
+			
+			// Apply client-side filters to local data
+			let filteredOrders = this.applyClientFilters(allOrders);
+
+			// Apply client-side sorting
+			filteredOrders = this.applyClientSorting(filteredOrders);
+
+			// Apply pagination
+			const take = this.query.Take || 100;
+			const paginatedOrders = filteredOrders.slice(skip, skip + take);
+			
+			console.log('✅ Orders processed:', { 
+				total: allOrders.length, 
+				filtered: filteredOrders.length, 
+				paginated: paginatedOrders.length 
+			});
+
+			// Handle results
+			if (paginatedOrders.length === 0) {
+				this.pageConfig.isEndOfData = true;
+			}
+
+			if (isSearch) {
+				this.items = paginatedOrders;
+			} else {
+				if (paginatedOrders.length > 0) {
+					const firstRow = paginatedOrders[0];
+					if (this.items.findIndex(d => d.Id === firstRow.Id) === -1) {
+						this.items = [...this.items, ...paginatedOrders];
+					}
+				}
+			}
+
+			// Check if we have more data
+			if (skip + take >= filteredOrders.length) {
+				this.pageConfig.isEndOfData = true;
+			}
+
+			this.loadedData(event);
+			
+		} catch (error) {
+			console.error('❌ Failed to load orders from service:', error);
+			
+			// Fallback to original provider
+			this.fallbackToOriginalProvider(skip, isSearch, event);
+		}
+	}
+
+	/**
+	 * Apply client-side filters to orders
+	 */
+	private applyClientFilters(orders: any[]): any[] {
+		return orders.filter(order => {
+			// Filter by branch
+			if (this.env.selectedBranch && order.IDBranch !== this.env.selectedBranch) {
+				return false;
+			}
+			
+			// Filter by status
+			if (this.query.Status) {
+				try {
+					const statusArray = JSON.parse(this.query.Status);
+					if (!statusArray.includes(order.Status)) {
+						return false;
+					}
+				} catch (e) {
+					if (this.query.Status !== order.Status) {
+						return false;
+					}
+				}
+			}
+			
+			// Filter by keyword if provided
+			if (this.query.Keyword) {
+				const keyword = this.query.Keyword.toLowerCase();
+				return (
+					order.Code?.toLowerCase().includes(keyword) ||
+					order.Id?.toString().includes(keyword) ||
+					order.Remark?.toLowerCase().includes(keyword)
+				);
+			}
+			
+			return true;
+		});
+	}
+
+	/**
+	 * Apply client-side sorting to orders
+	 */
+	private applyClientSorting(orders: any[]): any[] {
+		return orders.sort((a, b) => {
+			// Default sort by Id descending (newest first)
+			return (b.Id || 0) - (a.Id || 0);
+		});
+	}
+
+	/**
+	 * Fallback to original provider when service fails
+	 */
+	private async fallbackToOriginalProvider(skip: number, isSearch: boolean, event?: any): Promise<void> {
+		console.log('🔄 Falling back to pageProvider...');
+		try {
+			const fallbackQuery = { ...this.query, Skip: skip };
+			const result: any = await this.pageProvider.read(fallbackQuery, this.pageConfig.forceLoadData);
+			
+			if (result.data.length === 0) {
+				this.pageConfig.isEndOfData = true;
+			}
+			
+			if (isSearch) {
+				this.items = result.data;
+			} else if (result.data.length > 0) {
+				const firstRow = result.data[0];
+				if (this.items.findIndex(d => d.Id === firstRow.Id) === -1) {
+					this.items = [...this.items, ...result.data];
+				}
+			}
+			
+			console.log('✅ Fallback load completed');
+		} catch (fallbackError) {
+			console.error('❌ Fallback also failed:', fallbackError);
+			this.env.showMessage('Cannot load orders. Please try again.', 'danger');
+		}
+		
+		this.loadedData(event);
 	}
 
 	loadedData(event?: any): void {
@@ -438,6 +711,40 @@ export class POSOrderPage extends PageBase {
 		});
 		this.CheckPOSNewOrderLines();
 		this.promotionService.getPromotions();
+		
+		// Debug: Log data status
+		this.debugDataStatus();
+	}
+
+	/**
+	 * Debug method to check data status
+	 */
+	private async debugDataStatus(): Promise<void> {
+		try {
+			const localOrders = await this.posOrderService.getAllOrders();
+			const systemHealth = this.posOrderService.getSystemHealth();
+			
+			console.log('🔍 POS Order Data Status:', {
+				localOrdersCount: localOrders.length,
+				displayedItemsCount: this.items.length,
+				query: this.query,
+				systemHealth: {
+					ordersCount: systemHealth.storageInfo.ordersCount,
+					cacheStats: systemHealth.cacheStats,
+					lastUpdated: systemHealth.storageInfo.lastUpdated
+				}
+			});
+			
+			// Show in console for debugging
+			if (localOrders.length > 0) {
+				console.log('📋 Sample local orders:', localOrders.slice(0, 3));
+			}
+			if (this.items.length > 0) {
+				console.log('📋 Sample displayed items:', this.items.slice(0, 3));
+			}
+		} catch (error) {
+			console.error('❌ Debug data status failed:', error);
+		}
 	}
 
 	private CheckPOSNewOrderLines() {
@@ -515,7 +822,10 @@ export class POSOrderPage extends PageBase {
 	}
 
 	refresh(event?: any): void {
-		if (event === true) {
+		console.log('🔄 POSOrderPage: Refresh triggered', { event });
+		
+		// Service will handle all sync logic internally when we call loadData
+		if (event === true || event === 'force') {
 			this.preLoadData('force');
 		} else {
 			super.refresh();

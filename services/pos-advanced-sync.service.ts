@@ -129,6 +129,7 @@ export class POSAdvancedSyncService {
   constructor(
     private posSecurityService: POSSecurityService
   ) {
+    console.log('🚀 POSAdvancedSyncService: Constructor initialized');
     this.initializeSync();
     this.setupConflictResolution();
     this.startPeriodicSync();
@@ -140,6 +141,8 @@ export class POSAdvancedSyncService {
   // ========================
 
   private initializeSync(): void {
+    console.log('🔧 POSAdvancedSyncService: Initializing sync service...');
+    
     // Setup auto-sync trigger with debouncing
     this.syncTrigger$.pipe(
       debounceTime(1000),
@@ -200,6 +203,13 @@ export class POSAdvancedSyncService {
    * Add order to sync queue with priority
    */
   addToSyncQueue(order: POS_Order, operation: 'CREATE' | 'UPDATE' | 'DELETE', priority: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM'): void {
+    console.log('📤 POSAdvancedSyncService: Adding order to sync queue', { 
+      orderCode: order.Code, 
+      operation, 
+      priority,
+      queueLength: this.syncQueue$.value.length 
+    });
+    
     const queueItem: SyncQueueItem = {
       id: `${operation}_${order.Code}_${Date.now()}`,
       order: { ...order },

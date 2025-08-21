@@ -361,24 +361,6 @@ export class POSCartService {
 	}
 
 	// ========================
-	// Discount Integration
-	// ========================
-
-	/**
-	 * Get current discount from discount service
-	 */
-	getCurrentDiscount(): any {
-		return this.discountService.getCurrentDiscount();
-	}
-
-	/**
-	 * Get applied promotion programs
-	 */
-	getAppliedPromotionPrograms(): any[] {
-		return this.discountService.getAppliedPrograms();
-	}
-
-	// ========================
 	// Utility Methods
 	// ========================
 
