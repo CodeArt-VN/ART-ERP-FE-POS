@@ -3,6 +3,7 @@ import { Observable, Subject } from 'rxjs';
 import { EnvService } from 'src/app/services/core/env.service';
 import { PrintingService } from 'src/app/services/printing.service';
 import { POSService } from './pos.service';
+import { POSCartService } from './pos-cart.service';
 
 interface JobTracker {
 	job: any;
@@ -31,7 +32,8 @@ export class POSPrintService implements OnDestroy {
 	constructor(
 		private env: EnvService,
 		private printingService: PrintingService,
-		private posService: POSService
+		private posService: POSService,
+		private cartService: POSCartService
 	) {}
 
 	get events$(): Observable<PrintEvent> {
@@ -51,7 +53,8 @@ export class POSPrintService implements OnDestroy {
 
 			this.printJobTracking.clear();
 
-			const undeliveredItems = this.getUndeliveredItems(orderLines);
+			// Use cart service for undelivered items check
+			const undeliveredItems = this.cartService.getUndeliveredItems();
 			if (undeliveredItems.length === 0) {
 				this.env.showMessage('No new products need to be sent!', 'success');
 				return true;
@@ -128,6 +131,11 @@ export class POSPrintService implements OnDestroy {
 			console.error(`❌ Print job ${job.IDJob} failed:`, error);
 			tracker.status = 'failed';
 			tracker.error = error.message;
+			
+			// Mark items as failed in cart service
+			const itemIds = tracker.items.map(item => item.Id).filter(id => id);
+			this.cartService.markItemsAsDeliveryFailed(itemIds, error.message);
+			
 			this.emitEvent('job_failed', job.IDJob, { error: error.message });
 			throw error; // Re-throw để executeJobs biết có lỗi
 		}
@@ -199,6 +207,12 @@ export class POSPrintService implements OnDestroy {
 		tracker.status = 'success';
 		console.log(`✅ Job ${jobId} SUCCESS`);
 
+		// Extract item IDs for cart service tracking
+		const itemIds = tracker.items.map(item => item.Id).filter(id => id);
+		
+		// Mark items as delivered in cart service
+		this.cartService.markItemsAsDelivered(itemIds);
+
 		const updateLines = tracker.items.map(item => ({
 			Id: item.Id,
 			Code: item.Code,
@@ -264,7 +278,8 @@ export class POSPrintService implements OnDestroy {
 					this.env.showMessage(`✓ Marked ${allFailedItems.length} items as serving`, 'success');
 					
 					// Clear failed jobs after successful force update
-					for (let [jobId, job] of this.printJobTracking.entries()) {
+					const jobEntries = Array.from(this.printJobTracking.entries());
+					for (let [jobId, job] of jobEntries) {
 						if (job.status === 'failed') {
 							this.printJobTracking.delete(jobId);
 						}
@@ -313,7 +328,8 @@ export class POSPrintService implements OnDestroy {
 		const printJobs = [];
 		const kitchenGroups = this.groupItemsByKitchen(undeliveredItems);
 		
-		for (const [kitchenId, items] of kitchenGroups.entries()) {
+		const kitchenEntries = Array.from(kitchenGroups.entries());
+		for (const [kitchenId, items] of kitchenEntries) {
 			const kitchen = this.posService.dataSource.kitchens.find(k => k.Id === Number(kitchenId));
 			
 			if (!kitchen || !kitchen._Printer) {

@@ -244,7 +244,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.notifications = this.posNotifyService.notifications;
 
 		this.cdr.detectChanges();
-		this.CheckPOSNewOrderLines();
+		// Remove manual CheckPOSNewOrderLines call - now handled by service
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
@@ -276,7 +276,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				return true;
 			}
 
-			this.posNotifyService.handleEvent(data, this.item, this.idTable, () => this.loadData());
+			// Use POSOrderService to handle SignalR notifications instead of manual refresh
+			if (data?.id && data?.type === 'order_update') {
+				this.posOrderService.handleOrderUpdateNotification(data);
+			} else {
+				// Fallback to existing notification handler
+				this.posNotifyService.handleEvent(data, this.item, this.idTable, () => this.loadData());
+			}
 		});
 
 		super.ngOnInit();
@@ -350,58 +356,18 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.notifications = this.posNotifyService.notifications; // sync
 	}
 
-	private async CheckPOSNewOrderLines() {
-		// Input validation
-		if (!this.query || !this.notifications) {
-			console.warn('CheckPOSNewOrderLines: Missing required data');
-			return;
-		}
+	/**
+	 * Get undelivered items count using cart service
+	 */
+	private getUndeliveredItemsCount(): number {
+		return this.cartService.getUndeliveredItemsCount();
+	}
 
-		try {
-			const results = await this.pageProvider.commonService.connect('GET', POSConstants.API_ENDPOINTS.CHECK_POS_NEW_ORDER_LINES, this.query).toPromise();
-
-			if (!results || !Array.isArray(results)) {
-				return;
-			}
-
-			// Type-safe filtering and processing
-			const resultIds = results.map((s: any) => s?.Id).filter((id) => id !== undefined);
-			const orderNotifications = this.notifications.filter(
-				(d) => d && !resultIds.includes(d.IDSaleOrder) && (d.Type === 'Remind order' || d.Type === 'Order') && d.Code === 'pos-order'
-			);
-
-			// Remove outdated notifications
-			orderNotifications.forEach((o) => {
-				const index = this.notifications.indexOf(o);
-				if (index > -1) {
-					this.notifications.splice(index, 1);
-				}
-			});
-
-			// Process results sequentially (fix forEach with await anti-pattern)
-			for (const r of results) {
-				if (!r?.Id) continue;
-
-				// Check for old notifications to update
-				const oldNotis = this.notifications.filter((n) => n && n.IDSaleOrder === r.Id && n.Type === 'Remind order' && n.Code === 'pos-order');
-
-				// Process old notifications sequentially
-				for (const oldNoti of oldNotis) {
-					if (oldNoti.NewOrderLineCount !== r.NewOrderLineCount) {
-						const index = this.notifications.indexOf(oldNoti);
-						if (index > -1) {
-							this.notifications.splice(index, 1);
-						}
-					}
-				}
-			}
-
-			await this.setNotifiOrder(results);
-		} catch (err) {
-			console.error('CheckPOSNewOrderLines error:', err);
-			const errorMessage = err?.message || 'Failed to check new order lines';
-			this.env.showMessage(errorMessage, 'danger');
-		}
+	/**
+	 * Check if current order has undelivered items using cart service
+	 */
+	private hasUndeliveredItems(): boolean {
+		return this.cartService.hasUndeliveredItems();
 	}
 
 	async setNotifiOrder(items) {
@@ -1056,6 +1022,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.loadedData();
 			this.env.showMessage('Saving completed!', 'success');
 		}
+		// Remove manual CheckPOSNewOrderLines call - now handled by service
 	}
 
 	getPromotionProgram() {
@@ -1201,13 +1168,21 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	doneOrder() {
 		let changed: any = { OrderLines: [] };
-		if (this.printData.undeliveredItems.length > 0) {
+		
+		// Use cart service to check undelivered items
+		const undeliveredItems = this.cartService.getUndeliveredItems();
+		const undeliveredCount = undeliveredItems.length;
+		
+		if (undeliveredCount > 0) {
 			let message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			if (this.item.Debt > 0) {
 				message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			}
-			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: this.printData.undeliveredItems.length }, null, 'Thông báo', 'GỬI', null).then((_) => {
-				this.printData.undeliveredItems = []; //<-- clear;
+			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: undeliveredCount }, null, 'Thông báo', 'GỬI', null).then((_) => {
+				// Mark all items as delivered in cart service
+				const itemIds = undeliveredItems.map(item => item.Id).filter(id => id);
+				this.cartService.markItemsAsDelivered(itemIds);
+				
 				this.item.OrderLines.forEach((line) => {
 					if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
 						line.Status = 'Done';

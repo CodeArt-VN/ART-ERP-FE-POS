@@ -371,7 +371,8 @@ export class POSSecurityService {
    */
   getCircuitBreakerStatus(): Array<{ operation: string; state: string; failures: number; lastFailure: number }> {
     const status = [];
-    for (const [operation, breaker] of this.circuitBreakers.entries()) {
+    const circuitEntries = Array.from(this.circuitBreakers.entries());
+    for (const [operation, breaker] of circuitEntries) {
       status.push({
         operation,
         state: breaker.state,
@@ -387,7 +388,8 @@ export class POSSecurityService {
    */
   getAllOperationStats(): Array<{ operation: string; stats: OperationStats }> {
     const stats = [];
-    for (const [operation, operationStats] of this.operationStats.entries()) {
+    const operationEntries = Array.from(this.operationStats.entries());
+    for (const [operation, operationStats] of operationEntries) {
       stats.push({
         operation,
         stats: operationStats

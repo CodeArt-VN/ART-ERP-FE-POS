@@ -20,10 +20,26 @@ export class POSCartService {
 	private _canSaveOrder = new BehaviorSubject<boolean>(false);
 	private destroy$ = new Subject<void>();
 	
+	// Undelivered Items Tracking
+	private _undeliveredItems = new BehaviorSubject<POS_OrderDetail[]>([]);
+	private _printData = new BehaviorSubject<{
+		undeliveredItems: POS_OrderDetail[],
+		printDate: Date | null,
+		currentBranch: any,
+		selectedTables: any[]
+	}>({
+		undeliveredItems: [],
+		printDate: null,
+		currentBranch: null,
+		selectedTables: []
+	});
+	
 	// Public observables for UI
 	public readonly selectedTable$ = this._selectedTable.asObservable();
 	public readonly isFormDirty$ = this._isFormDirty.asObservable();
 	public readonly canSaveOrder$ = this._canSaveOrder.asObservable();
+	public readonly undeliveredItems$ = this._undeliveredItems.asObservable();
+	public readonly printData$ = this._printData.asObservable();
 	
 	// Cart data streams from POSOrderService
 	public readonly currentCart$: Observable<POS_Order | null>;
@@ -472,6 +488,9 @@ export class POSCartService {
 							orderLinesArray.push(this.createOrderLineFormGroup(line));
 						});
 					}
+					
+					// Update undelivered tracking
+					this.updateUndeliveredTracking(currentOrder.OrderLines);
 				}
 			});
 		}
@@ -481,26 +500,19 @@ export class POSCartService {
 	 * Count undelivered items (compatibility method)
 	 */
 	countUndeliveredItems(): number {
-		let count = 0;
-		this.orderService.currentOrder$.pipe(take(1)).subscribe(currentOrder => {
-			if (currentOrder?.OrderLines) {
-				count = currentOrder.OrderLines.filter(line => 
-					!line.IsDeleted && (!line.ProductStatus || line.ProductStatus === 'New')
-				).length;
-			}
-		});
-		return count;
+		return this.getUndeliveredItemsCount();
 	}
 
 	/**
-	 * Count delivered items (compatibility method)
+	 * Count delivered items (compatibility method) 
 	 */
 	countDeliveredItems(): number {
 		let count = 0;
 		this.orderService.currentOrder$.pipe(take(1)).subscribe(currentOrder => {
 			if (currentOrder?.OrderLines) {
 				count = currentOrder.OrderLines.filter(line => 
-					!line.IsDeleted && line.ProductStatus === 'Delivered'
+					!line.IsDeleted && 
+					(line.Status === 'Done' || line.Status === 'Serving' || line.Quantity <= (line.ShippedQuantity || 0))
 				).length;
 			}
 		});
@@ -663,6 +675,93 @@ export class POSCartService {
 				resolve(null);
 			}
 		});
+	}
+
+	// ========================
+	// Undelivered Items Tracking
+	// ========================
+
+	/**
+	 * Update undelivered items tracking from order lines
+	 */
+	updateUndeliveredTracking(orderLines: POS_OrderDetail[]): void {
+		const undeliveredItems = orderLines.filter(line => 
+			line.Status === 'New' || 
+			line.Status === 'Waiting' ||
+			(line.Quantity > (line.ShippedQuantity || 0))
+		);
+		
+		this._undeliveredItems.next(undeliveredItems);
+		
+		// Update print data
+		const currentPrintData = this._printData.value;
+		this._printData.next({
+			...currentPrintData,
+			undeliveredItems: undeliveredItems
+		});
+		
+		console.log(`📋 Updated undelivered items tracking: ${undeliveredItems.length} items`);
+	}
+
+	/**
+	 * Mark items as delivered after successful print
+	 */
+	markItemsAsDelivered(itemIds: number[]): void {
+		const currentOrder = this.item;
+		if (!currentOrder || !currentOrder.OrderLines) return;
+
+		let hasChanges = false;
+		currentOrder.OrderLines.forEach(line => {
+			if (itemIds.includes(line.Id) && (line.Status === 'New' || line.Status === 'Waiting')) {
+				line.Status = 'Serving';
+				line.ShippedQuantity = line.Quantity;
+				hasChanges = true;
+			}
+		});
+
+		if (hasChanges) {
+			this.updateUndeliveredTracking(currentOrder.OrderLines);
+			console.log(`✅ Marked ${itemIds.length} items as delivered`);
+		}
+	}
+
+	/**
+	 * Mark items as failed delivery
+	 */
+	markItemsAsDeliveryFailed(itemIds: number[], error: string): void {
+		const currentOrder = this.item;
+		if (!currentOrder || !currentOrder.OrderLines) return;
+
+		currentOrder.OrderLines.forEach(line => {
+			if (itemIds.includes(line.Id)) {
+				line.Status = 'New'; // Reset to New for retry
+				line.Remark = (line.Remark || '') + ` [Print Failed: ${error}]`;
+			}
+		});
+
+		this.updateUndeliveredTracking(currentOrder.OrderLines);
+		console.log(`❌ Marked ${itemIds.length} items as delivery failed: ${error}`);
+	}
+
+	/**
+	 * Get current undelivered items count
+	 */
+	getUndeliveredItemsCount(): number {
+		return this._undeliveredItems.value.length;
+	}
+
+	/**
+	 * Get current undelivered items
+	 */
+	getUndeliveredItems(): POS_OrderDetail[] {
+		return this._undeliveredItems.value;
+	}
+
+	/**
+	 * Check if order has items that need kitchen delivery
+	 */
+	hasUndeliveredItems(): boolean {
+		return this._undeliveredItems.value.length > 0;
 	}
 
 	// ========================

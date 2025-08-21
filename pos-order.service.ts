@@ -383,7 +383,8 @@ export class POSOrderService {
     let oldestKey = '';
     let oldestTime = Date.now();
 
-    for (const [key, value] of this.orderCache.entries()) {
+    const cacheEntries = Array.from(this.orderCache.entries());
+    for (const [key, value] of cacheEntries) {
       if (value.timestamp < oldestTime) {
         oldestTime = value.timestamp;
         oldestKey = key;
@@ -632,6 +633,12 @@ export class POSOrderService {
         if (updatedOrder) {
           await this.mergeServerOrder(updatedOrder);
           console.log('✅ Order updated from SignalR notification:', updatedOrder.Code);
+        }
+
+        // Trigger CheckPOSNewOrderLines after processing notification
+        const query = this.env?.query; // Use current query from environment
+        if (query) {
+          await this.checkPOSNewOrderLines(query);
         }
       }
     } catch (error) {
@@ -1127,7 +1134,8 @@ export class POSOrderService {
     this.orderIndex.delete(code);
     
     // Remove from date index
-    for (const [date, orders] of this.dateIndex.entries()) {
+    const dateEntries = Array.from(this.dateIndex.entries());
+    for (const [date, orders] of dateEntries) {
       const index = orders.indexOf(code);
       if (index >= 0) {
         orders.splice(index, 1);
@@ -1455,7 +1463,8 @@ export class POSOrderService {
     const batchSize = 10;
     const batches = this.chunkArray(orders, batchSize);
     
-    for (const [index, batch] of batches.entries()) {
+    for (let index = 0; index < batches.length; index++) {
+      const batch = batches[index];
       await this.securityService.executeWithRecovery(
         async () => {
           console.log(`📦 Processing batch ${index + 1}/${batches.length} (${batch.length} orders)`);
@@ -1696,6 +1705,103 @@ export class POSOrderService {
    */
   forceSyncAll(): void {
     this.realtimeSyncService.forceSyncAll();
+  }
+
+  /**
+   * Check for new order lines that need kitchen delivery (Service-based CheckPOSNewOrderLines)
+   * Only called from service load and SignalR notifications
+   */
+  async checkPOSNewOrderLines(query: any): Promise<any[]> {
+    return this.securityService.executeWithRecovery(async () => {
+      console.log('🔍 POSOrderService: Checking new order lines from server...');
+      
+      const results = await this.saleOrderProvider.commonService
+        .connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', query)
+        .toPromise();
+
+      if (!results || !Array.isArray(results)) {
+        console.warn('⚠️ CheckPOSNewOrderLines: Invalid server response');
+        return [];
+      }
+
+      console.log(`📋 CheckPOSNewOrderLines: Found ${results.length} orders with new items`);
+      return results;
+      
+    }, 'Failed to check new order lines').catch(error => {
+      console.error('❌ CheckPOSNewOrderLines error:', error);
+      throw error;
+    });
+  }
+
+  /**
+   * Check if local order needs kitchen delivery without server call
+   */
+  hasUndeliveredItems(orderCode: string): boolean {
+    const order = this.orderCache.get(orderCode)?.order;
+    if (!order?.OrderLines) return false;
+
+    const undeliveredCount = order.OrderLines.filter(line => 
+      line.Status === 'New' || 
+      line.Status === 'Waiting' ||
+      (line.Quantity > (line.ShippedQuantity || 0))
+    ).length;
+
+    return undeliveredCount > 0;
+  }
+
+  /**
+   * Get undelivered items count for local order
+   */
+  getUndeliveredItemsCount(orderCode: string): number {
+    const order = this.orderCache.get(orderCode)?.order;
+    if (!order?.OrderLines) return 0;
+
+    return order.OrderLines.filter(line => 
+      line.Status === 'New' || 
+      line.Status === 'Waiting' ||
+      (line.Quantity > (line.ShippedQuantity || 0))
+    ).length;
+  }
+
+  /**
+   * Refresh specific order from server
+   */
+  private async refreshOrderFromServer(orderId: number): Promise<void> {
+    try {
+      const orderData: any = await this.saleOrderProvider.read({ Id: orderId });
+      if (orderData?.data?.[0]) {
+        const refreshedOrder = orderData.data[0];
+        this.updateLocalOrder(refreshedOrder);
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing order from server:', error);
+    }
+  }
+
+  /**
+   * Update local order cache
+   */
+  private updateLocalOrder(order: POS_Order): void {
+    const existingCache = this.orderCache.get(order.Code);
+    if (existingCache) {
+      existingCache.order = order;
+      existingCache.timestamp = Date.now();
+      existingCache.hits++;
+    } else {
+      this.orderCache.set(order.Code, {
+        order,
+        timestamp: Date.now(),
+        hits: 1
+      });
+    }
+
+    // Update current orders array
+    const orders = this._orders.value;
+    const index = orders.findIndex(o => o.Code === order.Code);
+    if (index >= 0) {
+      orders[index] = order;
+      this._orders.next([...orders]);
+    }
   }
 
   /**

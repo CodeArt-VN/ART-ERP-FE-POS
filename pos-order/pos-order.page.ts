@@ -3,7 +3,6 @@ import { NavController, ModalController, AlertController, LoadingController, Pop
 import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
 import {
-	POS_BillTableProvider,
 	POS_MenuProvider,
 	POS_TableGroupProvider,
 	POS_TableProvider,
@@ -64,6 +63,15 @@ export class POSOrderPage extends PageBase {
 		this.pageConfig.ShowArchive = false;
 	}
 	ngOnInit() {
+		// Subscribe to POSOrderService reactive state
+		this.posOrderService.orders$.subscribe(orders => {
+			this.updateOrderCountersFromService(orders);
+		});
+
+		this.posOrderService.isLoading$.subscribe(loading => {
+			console.log('🔄 POSOrderService loading state:', loading);
+		});
+
 		this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
 			switch (data.code) {
 				case 'app:POSOrderFromCustomer':
@@ -145,7 +153,8 @@ export class POSOrderPage extends PageBase {
 				Url: url,
 			};
 			this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -168,7 +177,8 @@ export class POSOrderPage extends PageBase {
 				Url: url,
 			};
 			this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -191,7 +201,8 @@ export class POSOrderPage extends PageBase {
 				Url: url,
 			};
 			this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -214,7 +225,8 @@ export class POSOrderPage extends PageBase {
 			// 	Url: url,
 			// };
 			// this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -236,7 +248,8 @@ export class POSOrderPage extends PageBase {
 				Url: url,
 			};
 			this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -258,7 +271,8 @@ export class POSOrderPage extends PageBase {
 			// 	Url: url,
 			// };
 			// this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -281,7 +295,8 @@ export class POSOrderPage extends PageBase {
 				Url: url,
 			};
 			this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -304,8 +319,8 @@ export class POSOrderPage extends PageBase {
 				Url: url,
 			};
 			this.setNotifications(notification, true);
-
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -329,7 +344,8 @@ export class POSOrderPage extends PageBase {
 			// 	Url: url,
 			// };
 			// this.setNotifications(notification, true);
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -355,7 +371,8 @@ export class POSOrderPage extends PageBase {
 			};
 			this.setNotifications(notification, true);
 
-			this.refresh();
+			// Use service notification handling instead of manual refresh
+this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -606,7 +623,7 @@ export class POSOrderPage extends PageBase {
 	}
 
 	/**
-	 * Apply client-side filters to orders
+	 * Apply client-side filters to orders (enhanced)
 	 */
 	private applyClientFilters(orders: any[]): any[] {
 		return orders.filter(order => {
@@ -628,15 +645,61 @@ export class POSOrderPage extends PageBase {
 					}
 				}
 			}
+
+			// Filter by date range
+			if (this.query.CreatedDateFrom || this.query.CreatedDateTo) {
+				const orderDate = new Date(order.CreatedDate);
+				
+				if (this.query.CreatedDateFrom) {
+					const fromDate = new Date(this.query.CreatedDateFrom);
+					if (orderDate < fromDate) {
+						return false;
+					}
+				}
+				
+				if (this.query.CreatedDateTo) {
+					const toDate = new Date(this.query.CreatedDateTo);
+					toDate.setHours(23, 59, 59, 999); // End of day
+					if (orderDate > toDate) {
+						return false;
+					}
+				}
+			}
 			
-			// Filter by keyword if provided
+			// Filter by table if provided
+			if (this.query.IDTable) {
+				const hasTable = order.Tables?.some(table => 
+					table.IDTable === this.query.IDTable || table.TableId === this.query.IDTable
+				);
+				if (!hasTable) {
+					return false;
+				}
+			}
+			
+			// Enhanced keyword search
 			if (this.query.Keyword) {
 				const keyword = this.query.Keyword.toLowerCase();
-				return (
-					order.Code?.toLowerCase().includes(keyword) ||
-					order.Id?.toString().includes(keyword) ||
-					order.Remark?.toLowerCase().includes(keyword)
-				);
+				
+				// Special handling for date format search (MMDDYY-MMDDYY)
+				if (keyword.indexOf('-') !== -1 && keyword.length <= 13) {
+					// Date range search format
+					return true; // Let date range filter handle this
+				}
+				
+				// Multi-field text search
+				const searchableText = [
+					order.Code,
+					order.Id?.toString(),
+					order.Remark,
+					order.CustomerName,
+					order.CustomerPhone,
+					order.TotalAfterTax?.toString(),
+					order.Tables?.map(t => t.TableName)?.join(' ')
+				].filter(text => text).join(' ').toLowerCase();
+				
+				// Support multiple keywords with space separator
+				const keywords = keyword.split(' ').filter(k => k.trim());
+				return keywords.every(k => searchableText.includes(k));
 			}
 			
 			return true;
@@ -644,11 +707,61 @@ export class POSOrderPage extends PageBase {
 	}
 
 	/**
-	 * Apply client-side sorting to orders
+	 * Apply client-side sorting to orders (enhanced)
 	 */
 	private applyClientSorting(orders: any[]): any[] {
 		return orders.sort((a, b) => {
-			// Default sort by Id descending (newest first)
+			// Parse sort criteria from query
+			if (this.query.SortBy) {
+				const [field, direction] = this.query.SortBy.split('_');
+				const isDesc = direction === 'desc';
+				
+				let aValue, bValue;
+				
+				switch (field) {
+					case 'Id':
+					case 'IDOrder':
+						aValue = a.Id || 0;
+						bValue = b.Id || 0;
+						break;
+					case 'CreatedDate':
+						aValue = new Date(a.CreatedDate || 0).getTime();
+						bValue = new Date(b.CreatedDate || 0).getTime();
+						break;
+					case 'ModifiedDate':
+						aValue = new Date(a.ModifiedDate || 0).getTime();
+						bValue = new Date(b.ModifiedDate || 0).getTime();
+						break;
+					case 'TotalAfterTax':
+						aValue = a.TotalAfterTax || 0;
+						bValue = b.TotalAfterTax || 0;
+						break;
+					case 'Status':
+						aValue = a.Status || '';
+						bValue = b.Status || '';
+						break;
+					case 'Code':
+						aValue = a.Code || '';
+						bValue = b.Code || '';
+						break;
+					default:
+						// Default to Id
+						aValue = a.Id || 0;
+						bValue = b.Id || 0;
+				}
+				
+				// Compare values
+				let comparison = 0;
+				if (typeof aValue === 'string') {
+					comparison = aValue.localeCompare(bValue);
+				} else {
+					comparison = aValue - bValue;
+				}
+				
+				return isDesc ? -comparison : comparison;
+			}
+			
+			// Default sort by Id descending (newest first)  
 			return (b.Id || 0) - (a.Id || 0);
 		});
 	}
@@ -714,6 +827,35 @@ export class POSOrderPage extends PageBase {
 		
 		// Debug: Log data status
 		this.debugDataStatus();
+	}
+
+	/**
+	 * Update order counters from service reactive state
+	 */
+	private updateOrderCountersFromService(orders: any[]): void {
+		if (!orders) return;
+		
+		// Apply same filtering as current items
+		const filteredOrders = this.applyClientFilters(orders);
+		
+		// Update counters based on filtered orders (same logic as loadedData)
+		this.orderCounter = 0;
+		this.numberOfGuestCounter = 0;
+		
+		filteredOrders.forEach((order) => {
+			const isLocked = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'].indexOf(order.Status) == -1;
+			if (!isLocked) {
+				this.orderCounter++;
+				this.numberOfGuestCounter += (order.NumberOfGuests || 0);
+			}
+		});
+		
+		console.log('🔢 Updated counters from service:', { 
+			orderCounter: this.orderCounter, 
+			numberOfGuestCounter: this.numberOfGuestCounter,
+			totalOrders: orders.length,
+			filteredOrders: filteredOrders.length 
+		});
 	}
 
 	/**
@@ -805,6 +947,28 @@ export class POSOrderPage extends PageBase {
 		}
 	}
 
+	/**
+	 * Refresh method - Service-based implementation
+	 * Compatible with existing calls but uses POSOrderService
+	 */
+	async refresh(event?: any): Promise<void> {
+		console.log('🔄 POSOrderPage: Refresh triggered via service', { event });
+		
+		try {
+			// Force refresh from server
+			await this.posOrderService.ensureDataIsUpToDate(true);
+			
+			// Trigger search to update displayed items
+			this.loadData('search');
+			
+			console.log('✅ Service-based refresh completed');
+		} catch (error) {
+			console.error('❌ Service refresh failed, falling back to parent:', error);
+			// Fallback to original refresh mechanism
+			super.refresh();
+		}
+	}
+
 	// nav('/pos-order/'+od.Id+'/'+t.Id,'back')
 
 	filter(type = null) {
@@ -817,17 +981,6 @@ export class POSOrderPage extends PageBase {
 			}
 		} else {
 			this.query.Status = this.query.Status == '' ? JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']) : '';
-			super.refresh();
-		}
-	}
-
-	refresh(event?: any): void {
-		console.log('🔄 POSOrderPage: Refresh triggered', { event });
-		
-		// Service will handle all sync logic internally when we call loadData
-		if (event === true || event === 'force') {
-			this.preLoadData('force');
-		} else {
 			super.refresh();
 		}
 	}
@@ -857,7 +1010,16 @@ export class POSOrderPage extends PageBase {
 		const { data } = await modal.onWillDismiss();
 
 		this.selectedItems = [];
-		this.refresh();
+		
+		// Handle split completion via service
+		if (data && data.success) {
+			console.log('✅ Split order completed:', data);
+			// Force refresh from server to get updated split orders
+			await this.posOrderService.ensureDataIsUpToDate(true);
+		} else if (data && data.orderId) {
+			// If only orderId is provided, trigger notification handling
+			this.posOrderService.handleOrderUpdateNotification(data.orderId);
+		}
 	}
 
 	async mergePOSBills() {
@@ -869,7 +1031,6 @@ export class POSOrderPage extends PageBase {
 
 		const modal = await this.modalController.create({
 			component: POSMergeModalPage,
-
 			backdropDismiss: false,
 			cssClass: 'modal-merge-orders',
 			componentProps: {
@@ -880,7 +1041,16 @@ export class POSOrderPage extends PageBase {
 		const { data } = await modal.onWillDismiss();
 
 		this.selectedItems = [];
-		this.refresh();
+		
+		// Handle merge completion via service
+		if (data && data.success) {
+			console.log('✅ Merge orders completed:', data);
+			// Force refresh from server to get updated merged order
+			await this.posOrderService.ensureDataIsUpToDate(true);
+		} else if (data && data.orderId) {
+			// If only orderId is provided, trigger notification handling
+			this.posOrderService.handleOrderUpdateNotification(data.orderId);
+		}
 	}
 
 	async changeTable(i) {
@@ -908,7 +1078,16 @@ export class POSOrderPage extends PageBase {
 		const { data } = await modal.onWillDismiss();
 
 		this.selectedItems = [];
-		this.refresh();
+		
+		// Handle table change completion via service
+		if (data && data.success) {
+			console.log('✅ Table change completed:', data);
+			// Force refresh from server to get updated order
+			await this.posOrderService.ensureDataIsUpToDate(true);
+		} else if (data && data.orderId) {
+			// If only orderId is provided, trigger notification handling
+			this.posOrderService.handleOrderUpdateNotification(data.orderId);
+		}
 	}
 
 	async openCancellationReason(order = null) {
@@ -937,28 +1116,56 @@ export class POSOrderPage extends PageBase {
 
 			this.env
 				.showPrompt('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
-				.then((_) => {
-					let publishEventCode = this.pageConfig.pageName;
+				.then(async (_) => {
 					if (this.submitAttempt == false) {
 						this.submitAttempt = true;
-						cancelData.Type = 'POSOrder';
-						cancelData.Ids = this.selectedItems.map((m) => m.Id);
-						this.pageProvider.commonService
-							.connect('POST', 'SALE/Order/CancelOrders/', cancelData)
-							.toPromise()
-							.then(() => {
+						
+						try {
+							// Use POSOrderService for cancellation with fallback
+							const orderIds = this.selectedItems.map((m) => m.Id);
+							console.log('🚫 Cancelling orders via POSOrderService:', { orderIds, cancelData });
+							
+							// Try service first (if cancel method exists)
+							let success = false;
+							try {
+								// For now, fallback to original API since service doesn't have cancelOrder method yet
+								cancelData.Type = 'POSOrder';
+								cancelData.Ids = orderIds;
+								
+								await this.pageProvider.commonService
+									.connect('POST', 'SALE/Order/CancelOrders/', cancelData)
+									.toPromise();
+									
+								success = true;
+								console.log('✅ Orders cancelled successfully');
+								
+							} catch (serviceError) {
+								console.error('❌ Service cancellation failed:', serviceError);
+								throw serviceError;
+							}
+							
+							if (success) {
+								// Trigger data refresh via service
+								await this.posOrderService.ensureDataIsUpToDate(true);
+								
+								// Publish event for other components
+								let publishEventCode = this.pageConfig.pageName;
 								if (publishEventCode) {
 									this.env.publishEvent({
 										Code: publishEventCode,
 									});
 								}
-								this.loadData();
-								this.submitAttempt = false;
+								
+								// Navigate back
 								this.nav('/pos-order', 'forward');
-							})
-							.catch((err) => {
-								this.submitAttempt = false;
-							});
+							}
+							
+						} catch (error) {
+							console.error('❌ Failed to cancel orders:', error);
+							this.env.showMessage('Không thể hủy đơn hàng. Vui lòng thử lại.', 'danger');
+						} finally {
+							this.submitAttempt = false;
+						}
 					}
 				})
 				.catch((_) => {});
@@ -969,7 +1176,8 @@ export class POSOrderPage extends PageBase {
 	ionViewDidEnter() {
 		if (!this.interval) {
 			this.interval = setInterval(() => {
-				//this.refresh();
+				// Auto-refresh disabled since service handles sync automatically
+				// this.refresh();
 			}, 15000);
 		}
 	}
@@ -1103,10 +1311,12 @@ export class POSOrderPage extends PageBase {
 		this.env.setStorage('Notifications', this.notifications);
 	}
 
-	exportPOSData() {
+	async exportPOSData() {
+		console.log('📤 Starting POS data export...');
 		this.query.SortBy = 'IDOrder_desc';
 
-		if (this.query.Keyword.indexOf('-') != -1) {
+		// Validate date range for export
+		if (this.query.Keyword && this.query.Keyword.indexOf('-') !== -1) {
 			let dateParts = this.query.Keyword.split('-');
 			let fromDate = new Date(dateParts[0].slice(2, 4) + '/' + dateParts[0].slice(0, 2) + '/' + dateParts[0].slice(4, 6));
 			let toDate = new Date(dateParts[1].slice(2, 4) + '/' + dateParts[1].slice(0, 2) + '/' + dateParts[1].slice(4, 6));
@@ -1122,31 +1332,105 @@ export class POSOrderPage extends PageBase {
 			}
 		}
 
-		this.loadingController
-			.create({
-				cssClass: 'my-custom-class',
-				message: 'Please wait for a few moments',
-			})
-			.then((loading) => {
-				loading.present();
-				this.commonService
+		const loading = await this.loadingController.create({
+			cssClass: 'my-custom-class',
+			message: 'Đang xuất dữ liệu...',
+		});
+		
+		try {
+			await loading.present();
+			
+			// First try to get data from service (if available locally)
+			console.log('🔍 Checking local data availability...');
+			const localOrders = await this.posOrderService.getAllOrders();
+			const filteredOrders = this.applyClientFilters(localOrders);
+			
+			// If we have sufficient local data and query is simple, use it
+			if (filteredOrders.length > 0 && this.canUseLocalDataForExport()) {
+				console.log('✅ Using local data for export:', { count: filteredOrders.length });
+				
+				// Generate export from local data
+				const exportData = this.prepareExportData(filteredOrders);
+				this.downloadExportData(exportData);
+				
+			} else {
+				// Fallback to server export API
+				console.log('🌐 Falling back to server export...');
+				const response: any = await this.commonService
 					.connect('GET', 'SALE/Order/ExportPOSOrderList', this.query)
-					.toPromise()
-					.then((response: any) => {
-						this.submitAttempt = false;
-						if (loading) loading.dismiss();
-						this.downloadURLContent(response);
-					})
-					.catch((err) => {
-						if (err.message != null) {
-							this.env.showMessage(err.error.ExceptionMessage, 'danger');
-						} else {
-							this.env.showMessage('Cannot extract data', 'danger');
-						}
-						this.submitAttempt = false;
-						if (loading) loading.dismiss();
-						this.refresh();
-					});
-			});
+					.toPromise();
+				
+				this.downloadURLContent(response);
+			}
+			
+			console.log('✅ Export completed successfully');
+			
+		} catch (error) {
+			console.error('❌ Export failed:', error);
+			
+			if (error.message != null) {
+				this.env.showMessage(error.error?.ExceptionMessage || 'Lỗi xuất dữ liệu', 'danger');
+			} else {
+				this.env.showMessage('Cannot extract data', 'danger');
+			}
+		} finally {
+			this.submitAttempt = false;
+			if (loading) loading.dismiss();
+		}
+	}
+
+	/**
+	 * Check if local data can be used for export (simple queries only)
+	 */
+	private canUseLocalDataForExport(): boolean {
+		// Only use local data for simple queries without complex server-side processing
+		return (
+			!this.query.ComplexFilter && 
+			!this.query.GroupBy &&
+			!this.query.AggregateFields
+		);
+	}
+
+	/**
+	 * Prepare export data from local orders
+	 */
+	private prepareExportData(orders: any[]): any {
+		return {
+			data: orders.map(order => ({
+				Id: order.Id,
+				Code: order.Code,
+				Status: order.Status,
+				CreatedDate: order.CreatedDate,
+				TotalAfterTax: order.TotalAfterTax,
+				CustomerName: order.CustomerName,
+				Tables: order.Tables?.map(t => t.TableName).join(', ') || ''
+			})),
+			filename: `POS_Orders_${new Date().toISOString().split('T')[0]}.csv`
+		};
+	}
+
+	/**
+	 * Download export data (CSV format)
+	 */
+	private downloadExportData(exportData: any): void {
+		if (exportData.data && exportData.data.length > 0) {
+			// Generate CSV content
+			const headers = Object.keys(exportData.data[0]);
+			const csvContent = [
+				headers.join(','),
+				...exportData.data.map(row => 
+					headers.map(header => `"${row[header] || ''}"`).join(',')
+				)
+			].join('\n');
+			
+			// Create and download file
+			const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(blob);
+			link.download = exportData.filename;
+			link.click();
+			
+			console.log('📁 Local export downloaded:', exportData.filename);
+		}
 	}
 }
