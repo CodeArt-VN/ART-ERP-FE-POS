@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { EnvService } from 'src/app/services/core/env.service';
-import { PrintingService } from 'src/app/services/printing.service';
+import { PrintingService } from 'src/app/services/util/printing.service';
 import { POSService } from './pos.service';
 import { POSCartService } from './pos-cart.service';
 

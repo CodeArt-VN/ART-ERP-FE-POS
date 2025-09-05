@@ -8,6 +8,7 @@ import { POSSecurityService } from './services/pos-security.service';
 import { POSAdvancedSyncService } from './services/pos-advanced-sync.service';
 import { POSRealtimeSyncService } from './services/pos-realtime-sync.service';
 import { SALE_OrderProvider } from '../../services/static/services.service';
+import { dog } from '../../../environments/environment';
 
 export interface StorageOrderData {
   orders: POS_Order[];
@@ -1828,6 +1829,26 @@ export class POSOrderService {
     } catch (error) {
       console.error('❌ Emergency cleanup failed:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Cancel or reduce order lines
+   */
+  async cancelReduceOrderLines(cancelData: any): Promise<any> {
+    try {
+      dog && console.log('🔄 POSOrderService: Canceling/reducing order lines:', cancelData);
+      
+      // Use saleOrderProvider to call API
+      const result = await this.saleOrderProvider.commonService
+        .connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData)
+        .toPromise();
+      
+      dog && console.log('✅ POSOrderService: Order lines canceled/reduced successfully');
+      return result;
+    } catch (summary: any) {
+      dog && console.error('❌ POSOrderService: Error canceling/reducing order lines:', summary);
+      throw summary;
     }
   }
 }

@@ -8,7 +8,7 @@ import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { environment } from 'src/environments/environment';
-import { POS_ForCustomerProvider } from 'src/app/services/custom.service';
+import { POS_ForCustomerProvider } from 'src/app/services/custom/custom.service';
 import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
 import { POSForCustomerPaymentModalPage } from '../payment/pos-payment-modal.page';
 
