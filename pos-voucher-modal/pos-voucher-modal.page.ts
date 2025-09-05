@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, ModalController, NavController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { EnvService } from 'src/app/services/core/env.service';
-import { PromotionService } from 'src/app/services/promotion.service';
+import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { PR_ProgramItemProvider, PR_ProgramPartnerProvider, PR_ProgramProvider, SALE_OrderDeductionProvider } from 'src/app/services/static/services.service';
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { EnvService } from 'src/app/services/core/env.service';
-import { SYS_ConfigService } from 'src/app/services/system-config.service';
+import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
 import { POS_KitchenProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider } from 'src/app/services/static/services.service';
 import { POS_DataSource } from './interface.model';
 import { POSConfig } from './interface.config';

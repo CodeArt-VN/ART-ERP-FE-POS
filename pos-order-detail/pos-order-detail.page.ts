@@ -3,7 +3,7 @@ import { NavController, LoadingController, AlertController, ModalController, Pop
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import { CRM_ContactProvider, HRM_StaffProvider, POS_TerminalProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
+import { CRM_ContactProvider, HRM_StaffProvider } from 'src/app/services/static/services.service';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
@@ -12,16 +12,16 @@ import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
 import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
-import { environment } from 'src/environments/environment';
+import { environment, dog } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
-import { printData, PrintingService } from 'src/app/services/printing.service';
-import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { printData, PrintingService } from 'src/app/services/util/printing.service';
+import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
 import { POSService } from '../pos.service';
-import { PromotionService } from 'src/app/services/promotion.service';
+import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
 import { POSNotifyService } from '../pos-notify.service';
 import { POSConstants } from '../pos.constants';
@@ -44,8 +44,6 @@ const PAYMENT_CONFIG = {
 	TIME_TOLERANCE_MINUTES: 1,
 	MIN_DEBT_THRESHOLD: 10,
 } as const;
-
-
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -86,10 +84,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	constructor(
 		public posService: POSService,
-		public pageProvider: SALE_OrderProvider,
 		public contactProvider: CRM_ContactProvider,
 		public staffProvider: HRM_StaffProvider,
-		public printerTerminalProvider: POS_TerminalProvider,
 		public printingService: PrintingService,
 		public scanner: BarcodeScannerService,
 		public posNotifyService: POSNotifyService,
@@ -129,7 +125,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				Object.values(controls).some((control) => control.dirty) ||
 				this.item?.OrderLines?.some((d) => d.Status == POSConstants.ORDER_LINE_STATUS.NEW || d.Status == POSConstants.ORDER_LINE_STATUS.WAITING);
 		});
-		console.log('PR List: ', this.promotionService.promotionList);
+		dog && console.log('PR List: ', this.promotionService.promotionList);
 	}
 
 	preLoadData(event?: any): void {
@@ -140,8 +136,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				// Initialize cart service with POSService data
 				this.cartService.initializeConfig(this.posService.systemConfig, this.posService.dataSource);
 
-				this.getDefaultPrinter();
-				console.log(this.posService.dataSource);
+				dog && console.log(this.posService.dataSource);
 			})
 			.finally(() => {
 				super.preLoadData(event);
@@ -149,14 +144,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	loadData(event?: any): void {
-		console.log('loadData');
+		dog && console.log('loadData');
 
 		if (this.isWaitingRefresh) {
-			console.log('load canceled by isWaitingRefresh');
+			dog && console.log('load canceled by isWaitingRefresh');
 			return;
 		}
 		if (this.submitAttempt) {
-			console.log('Submit attempt detected');
+			dog && console.log('Submit attempt detected');
 			return;
 		}
 		if (this.formGroup.controls.OrderLines.dirty || this.formGroup.dirty) {
@@ -170,7 +165,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private validateBranchAccess(): boolean {
 		// Enhanced validation with null safety
 		if (!this.item || !this.env?.selectedBranch) {
-			console.warn('validateBranchAccess: Missing required data');
+			dog && console.warn('validateBranchAccess: Missing required data');
 			return false;
 		}
 
@@ -185,7 +180,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private handleNewItem() {
 		// Input validation
 		if (!this.item || !this.formGroup) {
-			console.error('handleNewItem: Missing required objects');
+			dog && console.error('handleNewItem: Missing required objects');
 			return;
 		}
 
@@ -193,7 +188,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Object.assign(this.item, this.formGroup.getRawValue());
 			this.setOrderValue(this.item);
 		} catch (error) {
-			console.error('handleNewItem error:', error);
+			dog && console.error('handleNewItem error:', error);
 			this.handleApiError(error, 'Failed to initialize new item');
 		}
 	}
@@ -201,7 +196,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private handleExistingItem() {
 		// Input validation
 		if (!this.item || !this.formGroup || !this.cartService) {
-			console.error('handleExistingItem: Missing required objects');
+			dog && console.error('handleExistingItem: Missing required objects');
 			return;
 		}
 
@@ -221,7 +216,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.getStaffInfo(this.item._Customer.Code);
 			}
 		} catch (error) {
-			console.error('handleExistingItem error:', error);
+			dog && console.error('handleExistingItem error:', error);
 			this.handleApiError(error, 'Failed to handle existing item');
 		}
 	}
@@ -248,7 +243,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
-		console.log('loadedData');
+		dog && console.log('loadedData');
 
 		if (!this.validateBranchAccess()) {
 			super.loadedData(event, ignoredFromGroup);
@@ -313,9 +308,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.Staff = null;
 			this.VietQRCode = null;
 
-			console.log('POSOrderDetailPage cleanup completed');
+			dog && console.log('POSOrderDetailPage cleanup completed');
 		} catch (error) {
-			console.error('ngOnDestroy cleanup error:', error);
+			dog && console.error('ngOnDestroy cleanup error:', error);
 		}
 
 		super.ngOnDestroy();
@@ -343,7 +338,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					});
 			}
 		} catch (error) {
-			console.error('canDeactivate error:', error);
+			dog && console.error('canDeactivate error:', error);
 			// Allow navigation if there's an error
 			return true;
 		}
@@ -413,33 +408,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.notifications = this.posNotifyService.notifications; // sync
 	}
 
-	async getDefaultPrinter(): Promise<boolean> {
-		// Input validation
-		if (!this.printerTerminalProvider || !this.env?.selectedBranch) {
-			console.warn('getDefaultPrinter: Missing required services or branch');
-			return false;
-		}
-
-		return this.posSecurityService.executeWithRecovery(async () => {
-			const results: any = await this.printerTerminalProvider.read({
-				IDBranch: this.env.selectedBranch,
-			});
-
-			// Validate results structure
-			if (results?.data?.[0]?.Printer) {
-				this.defaultPrinter.push(results.data[0].Printer);
-				return true;
-			}
-
-			console.warn('getDefaultPrinter: No printer found for branch');
-			return false;
-		}, 'getDefaultPrinter').catch((error) => {
-			console.error('getDefaultPrinter final error:', error);
-			// Don't show error to user, just log it
-			return false;
-		});
-	}
-
 	// refreshAttemp = false;
 	refresh(event?: any): void {
 		this.preLoadData('force');
@@ -504,7 +472,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	search(ev: any) {
 		// Input validation
 		if (!ev?.target) {
-			console.warn('search: Invalid event target');
+			dog && console.warn('search: Invalid event target');
 			return;
 		}
 
@@ -523,7 +491,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					this.query.Keyword = val;
 				}
 			} catch (error) {
-				console.error('search error:', error);
+				dog && console.error('search error:', error);
 			}
 		}, this.SEARCH_DEBOUNCE_DELAY);
 	}
@@ -706,7 +674,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						try {
 							this.submitAttempt = true;
 							await this.posOrderService.deleteOrder(this.item.Id);
-							
+
 							this.env.publishEvent({ Code: this.pageConfig.pageName });
 							this.loadData();
 							this.nav('/pos-order', 'back');
@@ -734,9 +702,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						try {
 							this.submitAttempt = true;
 
-							await this.pageProvider.commonService
-								.connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData)
-								.toPromise();
+							await this.posOrderService.cancelReduceOrderLines(cancelData);
 
 							this.env.publishEvent({ Code: this.pageConfig.pageName });
 							this.loadData();
@@ -761,7 +727,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			await this.sendKitchen();
 		} catch (error) {
 			// User cancelled or other error
-			console.log('Kitchen send cancelled or failed:', error);
+			dog && console.log('Kitchen send cancelled or failed:', error);
 		}
 	}
 
@@ -780,7 +746,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				(data, forceSave, autoSave) => this.setOrderValue(data, forceSave, autoSave)
 			);
 		} catch (error) {
-			console.error('Error in sendKitchen:', error);
+			dog && console.error('Error in sendKitchen:', error);
 			this.env.showMessage('Cannot send to kitchen/bar. Please try again!', 'danger');
 		}
 	}
@@ -821,7 +787,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			return result;
 		} catch (error) {
-			console.error('Error in sendPrint:', error);
+			dog && console.error('Error in sendPrint:', error);
 			this.env.showMessage('Print failed. Please try again!', 'danger');
 			return false;
 		}
@@ -836,8 +802,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		try {
 			// Use POSOrderService for status toggle
-			const updatedOrder = await this.posOrderService.updateOrder(this.item.Id, { 
-				Status: status
+			const updatedOrder = await this.posOrderService.updateOrder(this.item.Id, {
+				Status: status,
 			});
 
 			// Update local state
@@ -852,7 +818,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.getQRPayment(updatedOrder);
 			}
 		} catch (error) {
-			console.error('Toggle order status failed:', error);
+			dog && console.error('Toggle order status failed:', error);
 			this.env.showMessage('Failed to change order status. Please try again.', 'danger');
 			this.loadData();
 		} finally {
@@ -876,7 +842,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	GenQRCode(code: string) {
 		// Input validation
 		if (!code || typeof code !== 'string') {
-			console.warn('GenQRCode: Invalid code provided');
+			dog && console.warn('GenQRCode: Invalid code provided');
 			this.VietQRCode = null;
 			return;
 		}
@@ -887,7 +853,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		try {
 			QRCode.toDataURL(code, PAYMENT_CONFIG.QR_CONFIG, (err, url) => {
 				if (err) {
-					console.error('QR Code generation error:', err);
+					dog && console.error('QR Code generation error:', err);
 					this.env.showMessage('Failed to generate QR code', 'warning');
 					return;
 				}
@@ -900,7 +866,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.sendPrint('TemporaryBill');
 			}
 		} catch (error) {
-			console.error('GenQRCode error:', error);
+			dog && console.error('GenQRCode error:', error);
 			this.env.showMessage('QR Code generation failed', 'danger');
 		}
 	}
@@ -910,7 +876,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	////PRIVATE METHODS
 
 	private handleApiError(error: any, message: string = 'Operation failed. Please try again!'): void {
-		console.error(error);
+		dog && console.error(error);
 		this.env.showMessage(message, 'danger');
 	}
 
@@ -975,8 +941,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	async saveChange() {
 		//if(!(this.formGroup.controls.OrderLines.dirty || this.formGroup.dirty)) return;
 		this.isWaitingRefresh = true;
-		console.log('🔄 POSOrderDetail: Starting save operation via POSOrderService');
-		
+		dog && console.log('🔄 POSOrderDetail: Starting save operation via POSOrderService');
+
 		try {
 			// Use POSOrderService for order operations
 			const orderData = this.formGroup.getRawValue();
@@ -997,7 +963,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
-		console.log('saved change');
+		dog && console.log('saved change');
 
 		if (savedItem) {
 			if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id) form.controls.Id.setValue(savedItem.Id);
@@ -1015,7 +981,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.isWaitingRefresh = false;
 		this.submitAttempt = false;
 		if (this.nextSaveData) {
-			console.log('Save next');
+			dog && console.log('Save next');
 			this.setOrderValue(this.nextSaveData, true);
 			this.nextSaveData = null;
 		} else {
@@ -1030,10 +996,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			.getPromotionPrograms()
 			.then((data: any) => {
 				// Data is automatically set in cart service via discount service
-				console.log('Promotion programs loaded:', data);
+				dog && console.log('Promotion programs loaded:', data);
 			})
 			.catch((err) => {
-				console.log(err);
+				dog && console.log(err);
 			});
 	}
 
@@ -1118,16 +1084,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private async getPayments() {
 		try {
 			// Use POSSecurityService with error recovery
-			const result: any = await this.posSecurityService.executeWithRecovery(
-				async () => {
-					return await this.commonService
-						.connect('GET', 'BANK/IncomingPaymentDetail', {
-							IDSaleOrder: this.item.Id,
-						})
-						.toPromise();
-				},
-				'Error loading payment information'
-			);
+			const result: any = await this.posSecurityService.executeWithRecovery(async () => {
+				return await this.commonService
+					.connect('GET', 'BANK/IncomingPaymentDetail', {
+						IDSaleOrder: this.item.Id,
+					})
+					.toPromise();
+			}, 'Error loading payment information');
 
 			this.paymentList = result;
 			this.paymentList.forEach((e) => {
@@ -1138,7 +1101,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				};
 				e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.posService.dataSource.paymentTypeList, 'Name', '--', 'Code');
 			});
-			
+
 			let PaidAmounted = this.paymentList
 				?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false)
 				.map((x) => x.Amount)
@@ -1168,11 +1131,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	doneOrder() {
 		let changed: any = { OrderLines: [] };
-		
+
 		// Use cart service to check undelivered items
 		const undeliveredItems = this.cartService.getUndeliveredItems();
 		const undeliveredCount = undeliveredItems.length;
-		
+
 		if (undeliveredCount > 0) {
 			let message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			if (this.item.Debt > 0) {
@@ -1180,9 +1143,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: undeliveredCount }, null, 'Thông báo', 'GỬI', null).then((_) => {
 				// Mark all items as delivered in cart service
-				const itemIds = undeliveredItems.map(item => item.Id).filter(id => id);
+				const itemIds = undeliveredItems.map((item) => item.Id).filter((id) => id);
 				this.cartService.markItemsAsDelivered(itemIds);
-				
+
 				this.item.OrderLines.forEach((line) => {
 					if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
 						line.Status = 'Done';
@@ -1372,7 +1335,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			// Auto-save
 			await this.saveChange();
 		} catch (error) {
-			console.error('scanQRCode error:', error);
+			dog && console.error('scanQRCode error:', error);
 
 			const retry = await this.env.showPrompt('QR Code Error', 'Please scan a valid QR code. Try again?', null, 'Retry', 'Cancel').catch(() => false);
 

@@ -5,7 +5,7 @@ import { POS_DataSource, POS_Order } from 'src/app/pages/POS/interface.model';
 import { CommonService } from 'src/app/services/core/common.service';
 import { EnvService } from 'src/app/services/core/env.service';
 import { SALE_OrderProvider } from 'src/app/services/static/services.service';
-import { SYS_ConfigService } from 'src/app/services/system-config.service';
+import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
 import { POSEnviromentDataService } from './pos-env-data.service';
 import { POSOrderService } from './pos-order.service';
 

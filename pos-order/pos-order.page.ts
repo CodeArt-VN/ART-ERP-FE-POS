@@ -19,7 +19,7 @@ import { lib } from 'src/app/services/static/global-functions';
 import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
-import { PromotionService } from 'src/app/services/promotion.service';
+import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { POSOrderService } from '../pos-order.service';
 
 @Component({
@@ -36,6 +36,7 @@ export class POSOrderPage extends PageBase {
 	orderCounter = 0;
 	numberOfGuestCounter = 0;
 	notifications = [];
+	systemConfig: any = {};
 	constructor(
 		public pageProvider: SALE_OrderProvider,
 		public tableGroupProvider: POS_TableGroupProvider,
@@ -379,13 +380,13 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 	private playAudio(type) {
 		let audio = new Audio();
 		if (type == 'Order') {
-			audio.src = this.pageConfig.systemConfig['POSAudioOrderUpdate'];
+			audio.src = this.systemConfig['POSAudioOrderUpdate'];
 		} else if (type == 'CallToPay') {
-			audio.src = this.pageConfig.systemConfig['POSAudioCallToPay'];
+			audio.src = this.systemConfig['POSAudioCallToPay'];
 		} else if (type == 'Payment') {
-			audio.src = this.pageConfig.systemConfig['POSAudioIncomingPayment'];
+			audio.src = this.systemConfig['POSAudioIncomingPayment'];
 		} else if (type == 'Support') {
-			audio.src = this.pageConfig.systemConfig['POSAudioCallStaff'];
+			audio.src = this.systemConfig['POSAudioCallStaff'];
 		}
 		if (audio.src) {
 			audio.load();
@@ -421,12 +422,12 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		]).then((values: any) => {
 			this.tableGroupList = values[0];
 			this.soStatusList = values[1];
-			this.pageConfig.systemConfig = {};
+			this.systemConfig = {};
 			values[2]['data'].forEach((e) => {
 				if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
 					e.Value = e._InheritedConfig.Value;
 				}
-				this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
+				this.systemConfig[e.Code] = JSON.parse(e.Value);
 			});
 			
 			// Service handles all data initialization internally
