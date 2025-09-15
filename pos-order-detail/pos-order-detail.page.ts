@@ -33,10 +33,10 @@ import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
-import { printData, PrintingService } from 'src/app/services/printing.service';
-import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
-import { POSService } from '../pos-service';
-import { PromotionService } from 'src/app/services/promotion.service';
+import { printData, PrintingService } from 'src/app/services/util/printing.service';
+import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
+import { POSService } from '../pos.service';
+import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
 
 @Component({
