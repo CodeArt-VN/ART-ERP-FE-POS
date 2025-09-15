@@ -38,9 +38,6 @@
 							<div class="ion-text-center">
 								<ion-text color="danger"><h4>{{Voucher.Value | number: '1.0-0'}} đ</h4></ion-text>
 							</div>
-							<div class="ion-text-center">
-								<ion-text color="dark">{{Voucher.NumberOfUsed}}/{{Voucher.NumberOfCoupon}}</ion-text>
-							</div>
 							<ion-button expand="block" size="small" *ngIf="Voucher.Used == false" slot="end" (click)="applyVoucher(Voucher)">{{'Áp dụng' | translate}}</ion-button>
 							<ion-button expand="block" size="small" [disabled]="Voucher.Used" *ngIf="Voucher.Used == true" slot="end">{{'Đã áp dụng' | translate}}</ion-button>
 						</ion-card-content>
@@ -65,9 +62,6 @@
 						<ion-card-content>
 							<div class="ion-text-center">
 								<ion-text color="danger" size="large">{{i.Value | number: '1.0-0'}} đ</ion-text>
-							</div>
-							<div class="ion-text-center">
-								<ion-text color="dark">{{i.NumberOfUsed}}/{{i.NumberOfCoupon}}</ion-text>
 							</div>
 							<ion-button expand="block" size="small" *ngIf="i.Used == false" slot="end" (click)="applyVoucher(i)">{{'Áp dụng' | translate}}</ion-button>
 							<ion-button expand="block" size="small" [disabled]="i.Used" *ngIf="i.Used == true" slot="end">{{'Đã áp dụng' | translate}}</ion-button>

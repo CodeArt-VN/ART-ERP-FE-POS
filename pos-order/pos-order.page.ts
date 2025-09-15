@@ -396,9 +396,9 @@ export class POSOrderPage extends PageBase {
 				IDBranch: this.env.selectedBranch,
 			}),
 		]).then((values: any) => {
-		this.tableGroupList = values[0];
-		this.soStatusList = values[1];
-		this.pageConfig.systemConfig = { IsAutoSave: true };
+			this.tableGroupList = values[0];
+			this.soStatusList = values[1];
+			this.pageConfig.systemConfig = { IsAutoSave: true };
 			values[2]['data'].forEach((e) => {
 				if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
 					e.Value = e._InheritedConfig.Value;
