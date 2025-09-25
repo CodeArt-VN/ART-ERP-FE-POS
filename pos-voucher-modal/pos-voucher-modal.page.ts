@@ -77,17 +77,18 @@ export class POSVoucherModalPage extends PageBase {
 			date.setHours(0, 0, 0, 0);
 
 			let query = {
-				Code_eq: this.Code,
+				VoucherCode: this.Code,
 				BetweenDate: date,
 				Type: 'Voucher',
 				CanUse: true,
 				Status: 'Approved',
 			};
-			this.pageProvider
-				.read(query)
-				.then((result) => {
-					if (result['count'] > 0) {
-						this.Voucher = result['data'][0];
+			this.pageProvider.commonService
+				.connect('GET', 'PR/Program/CheckVoucher', query)
+				.toPromise()
+				.then((result: any) => {
+					if (result.length > 0) {
+						this.Voucher = result[0];
 						this.Voucher.Used = false;
 						let find = this.item.Deductions.find((p) => p.IDProgram == this.Voucher.Id);
 						if (find) {
@@ -99,38 +100,45 @@ export class POSVoucherModalPage extends PageBase {
 								this.Voucher.Value = this.Voucher.MaxValue;
 							}
 						}
+						if (this.Voucher.NumberOfCopy > 0 && this.Voucher.NumberOfUsed >= this.Voucher.NumberOfCopy) {
+							this.Voucher.Used = true;
+						}
 					} else {
 						this.env.showMessage('Mã Voucher không hợp lệ', 'danger');
 					}
 				})
-				.catch((err) => {});
+				.catch((err) => {
+					const message = (err && err.error && err.error.Message) ? err.error.Message : 'Có lỗi xảy ra khi kiểm tra voucher';
+					this.env.showMessage(message, 'danger');
+				});
 		}
 	}
 	async applyVoucher(line) {
 		// let count = this.item.Deductions.filter((d) => d.Type == 'Voucher').length;
 		// if (count < 2) {
-			let apiPath = {
-				method: 'POST',
-				url: function () {
-					return ApiSetting.apiDomain('PR/Program/ApplyVoucher/');
-				},
-			};
-			new Promise((resolve, reject) => {
-				this.pageProvider.commonService
-					.connect(apiPath.method, apiPath.url(), {
-						IDPrograms: [line.Id],
-						IDSaleOrder: this.item.Id,
-					})
-					.toPromise()
-					.then((savedItem: any) => {
-						this.env.showMessage('Saving completed!', 'success');
-						resolve(true);
-						this.modalController.dismiss(this.item);
-					})
-					.catch((err) => {
-						this.env.showMessage(err.error.Message, 'danger');
-					});
-			});
+		let apiPath = {
+			method: 'POST',
+			url: function () {
+				return ApiSetting.apiDomain('PR/Program/ApplyVoucher/');
+			},
+		};
+		new Promise((resolve, reject) => {
+			this.pageProvider.commonService
+				.connect(apiPath.method, apiPath.url(), {
+					IDPrograms: [line.Id],
+					IDSaleOrder: this.item.Id,
+					VoucherCode: line.VoucherCode,
+				})
+				.toPromise()
+				.then((savedItem: any) => {
+					this.env.showMessage('Saving completed!', 'success');
+					resolve(true);
+					this.modalController.dismiss(this.item);
+				})
+				.catch((err) => {
+					this.env.showMessage(err.error.Message, 'danger');
+				});
+		});
 		// } else {
 		// 	this.env.showMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
 		// }

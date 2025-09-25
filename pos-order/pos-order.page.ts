@@ -20,7 +20,9 @@ import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
-import { POSOrderService } from '../pos-order.service';
+
+//import { POSOrderService } from '../pos-order.service';
+
 
 @Component({
 	selector: 'app-pos-order',
@@ -422,7 +424,11 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		]).then((values: any) => {
 			this.tableGroupList = values[0];
 			this.soStatusList = values[1];
+
+			this.pageConfig.systemConfig = {IsAutoSave:false};
+
 			this.systemConfig = {};
+
 			values[2]['data'].forEach((e) => {
 				if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
 					e.Value = e._InheritedConfig.Value;
