@@ -100,12 +100,16 @@ export class POSVoucherModalPage extends PageBase {
 								this.Voucher.Value = this.Voucher.MaxValue;
 							}
 						}
-						if (this.Voucher.NumberOfCopy > 0 && this.Voucher.NumberOfUsed <= this.Voucher.NumberOfCopy) {
+						if (this.Voucher.NumberOfCopy > 0 && this.Voucher.NumberOfUsed >= this.Voucher.NumberOfCopy) {
 							this.Voucher.Used = true;
 						}
 					} else {
 						this.env.showMessage('Mã Voucher không hợp lệ', 'danger');
 					}
+				})
+				.catch((err) => {
+					const message = (err && err.error && err.error.Message) ? err.error.Message : 'Có lỗi xảy ra khi kiểm tra voucher';
+					this.env.showMessage(message, 'danger');
 				});
 		}
 	}
