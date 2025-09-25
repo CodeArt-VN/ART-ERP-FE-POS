@@ -230,7 +230,7 @@ export class POSWelcomePage extends PageBase {
 		this.commonService.getAnItemOnServer(parseInt(this.idTable), '', apiPath).then((result: any) => {
 			this.currentBranch = result.Branch;
 			this.env.branchList.push(this.currentBranch);
-			this.env.selectedBranch = this.currentBranch.Id;
+			this.env.storage.app.selectedBranch = this.currentBranch.Id;
 
 			this.SlidingCard.forEach((s) => {
 				s.Logo = this.currentBranch?.LogoURL;

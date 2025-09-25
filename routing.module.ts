@@ -28,6 +28,9 @@ export const POSRoutes: Routes = [
     { path: 'pos-booking', loadChildren: () => import('./pos-booking/pos-booking.module').then(m => m.PosBookingPageModule) },
     { path: 'pos-booking/:id', loadChildren: () => import('./pos-booking-detail/pos-booking-detail.module').then(m => m.PosBookingDetailPageModule) },
    
+    { path: 'pos-config', loadChildren: () => import('../ADMIN/config/config.module').then(m => m.ConfigPageModule), canActivate: [AuthGuard] },
+
+
     // { path: 'pos-table', loadChildren: () => import('./pos-table/pos-table.module').then(m => m.TablePageModule), canActivate: [AuthGuard] },
     // { path: 'pos-menu', loadChildren: () => import('./pos-menu/pos-menu.module').then(m => m.TablePageModule), canActivate: [AuthGuard] },
   

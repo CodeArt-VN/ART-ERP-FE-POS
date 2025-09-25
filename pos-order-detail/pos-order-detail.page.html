@@ -1,8 +1,8 @@
 <ion-header>
 	<app-toolbar [page]="this">
-		<ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
+		<ion-button color="primary" startTitle *ngIf="printData?.selectedTables?.length" class="ion-hide-sm-down">
 			{{'Table' | translate}}:
-			<span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
+			<span *ngFor="let t of printData?.selectedTables">&nbsp;{{t.Name}} </span>
 		</ion-button>
 
 		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
@@ -10,7 +10,7 @@
 		<ion-button
 			class="cart"
 			title="{{'Cart' | translate}}"
-			[ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}"
+			[ngClass]="{'blink': (printData?.undeliveredItems?.length > 0) && pageConfig.canEdit}"
 			(click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;"
 		>
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
@@ -52,7 +52,7 @@
 	</ion-fab>
 
 	<!-- feature box -->
-	<ion-fab *ngIf="pageConfig.isShowFeature && item" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
+	<ion-fab *ngIf="pageConfig.isShowFeature && item && posService.dataSource" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2"></div>
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 180px)">
 			<!-- Dishes -->
@@ -378,11 +378,13 @@
 							<app-input-control
 								(change)="setOrderValue([])"
 								style="text-align: left; min-height: 3.8rem; height: auto"
-								[field]="{id:'Tables',label:'Tables',type:'ng-select',dataSource:tableList,clearable:true,bindLabel:'Name',bindValue:'Id',multiple:true,placeholder:'Select Table', form: formGroup,appendTo:'#pos-order-detail-page'}"
+								[field]="{id:'Tables',label:'Tables',type:'ng-select',dataSource:posService.dataSource.tableList,clearable:true,bindLabel:'Name',bindValue:'Id',multiple:true,placeholder:'Select Table', form: formGroup,appendTo:'#pos-order-detail-page'}"
 							>
 							</app-input-control>
 						</div>
-						<app-form-control [field]="{id:'Status', type : 'ng-select-status', form : formGroup,  dataSource: soStatusList, bindLabel:'Name',  bindValue: 'Code'}">
+						<app-form-control
+							[field]="{id:'Status', type : 'ng-select-status', form : formGroup,  dataSource: posService.dataSource.orderStatusList, bindLabel:'Name',  bindValue: 'Code'}"
+						>
 						</app-form-control>
 						<div class="c-control" *ngIf="item?.Id && pageConfig.canEdit">
 							<label for=""></label>
@@ -405,7 +407,7 @@
 		<div class="functions-list" *ngIf="!(item.Status === 'Merged' || item.Status === 'Splitted' || item.Status === 'Canceled')">
 			<ion-grid fixed>
 				<ion-row *ngIf="item" style="flex-wrap: nowrap">
-					<ion-col *ngIf="pageConfig.canEdit && pageConfig.systemConfig.IsAutoSave">
+					<ion-col *ngIf="pageConfig.canEdit && posService.systemConfig.IsAutoSave">
 						<ion-button
 							class="gr-btn-order"
 							[color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' "
@@ -418,7 +420,7 @@
 							{{'Send BAR/KIT' | translate}}
 						</ion-button>
 					</ion-col>
-					<ion-col *ngIf="pageConfig.canEdit && !pageConfig.systemConfig.IsAutoSave && item.Status != 'TemporaryBill'">
+					<ion-col *ngIf="pageConfig.canEdit && !posService.systemConfig.IsAutoSave && item.Status != 'TemporaryBill'">
 						<ion-button
 							class="gr-btn-order"
 							[color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' "
@@ -431,14 +433,14 @@
 						</ion-button>
 					</ion-col>
 					<ion-col *ngIf="item.Status == 'TemporaryBill'">
-						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();" [disabled]="submitAttempt || !item.Id"> Hủy tạm tính </ion-button>
+						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();" [disabled]="submitLockOrderAttempt || !item.Id"> Hủy tạm tính </ion-button>
 					</ion-col>
-					<ion-col *ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && pageConfig.systemConfig.POSEnableTemporaryPayment">
-						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitAttempt || !item.Id"> Tạm tính tiền </ion-button>
+					<ion-col *ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && posService.systemConfig.POSEnableTemporaryPayment">
+						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitLockOrderAttempt"> Tạm tính tiền </ion-button>
 					</ion-col>
-					<ion-col *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !pageConfig.systemConfig.POSEnableTemporaryPayment">
+					<ion-col *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !posService.systemConfig.POSEnableTemporaryPayment">
 						<ion-button
-							*ngIf="canSaveOrder && pageConfig.systemConfig.POSEnableTemporaryPayment"
+							*ngIf="canSaveOrder && posService.systemConfig.POSEnableTemporaryPayment"
 							class="gr-btn-order"
 							[color]="printData.undeliveredItems?.length == 0 ? 'medium' : 'danger' "
 							fill="outline"
@@ -447,17 +449,26 @@
 						>
 							{{'Save' | translate}}
 						</ion-button>
-						<ion-button *ngIf="!canSaveOrder || !pageConfig.systemConfig.POSEnableTemporaryPayment" color="medium" fill="outline" expand="block" (click)="sendPrint();" [disabled]="submitAttempt || !item.Id"> In phiếu </ion-button>
+						<ion-button
+							*ngIf="!canSaveOrder || !posService.systemConfig.POSEnableTemporaryPayment"
+							color="medium"
+							fill="outline"
+							expand="block"
+							(click)="sendPrint();"
+							[disabled]="submitPrintBillAttempt || !item.Id"
+						>
+							In phiếu
+						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="( item && pageConfig.canEdit && !pageConfig.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap">
+				<ion-row *ngIf="( item && pageConfig.canEdit && !posService.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap">
 					<ion-col size="12">
 						<ion-button *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>{{'Bill please' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="item && pageConfig.canEdit && !pageConfig.systemConfig.POSSettleAtCheckout" style="flex-wrap: nowrap">
+				<ion-row *ngIf="item && pageConfig.canEdit && !posService.systemConfig.POSSettleAtCheckout" style="flex-wrap: nowrap">
 					<ion-col>
 						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>{{'Settle bill' | translate}}</ion-text>
@@ -469,75 +480,22 @@
 	</ion-fab>
 
 	<!-- Menu Group -->
-	<div class="no-print menu-holder">
+	<div class="no-print menu-holder" *ngIf="posService.dataSource">
 		<div class="menu-group-list">
-			<div class="menu-group" *ngIf="dealList.length" [style]="{order:0}" (click)="segmentChanged('all'); query.Keyword ='deals'">
+			<div class="menu-group" *ngIf="posService.dataSource.dealList.length" [style]="{order:0}" (click)="segmentChanged('all'); query.Keyword ='deals'">
 				<ion-img #img [src]="noImage" (ionError)="img.src = noImage" [ngClass]="{selected: query.Keyword == 'deals'}"></ion-img>
 				<ion-label>DEAL</ion-label>
 			</div>
-			<div class="menu-group" [style]="{order:(i==0 && g.Id==0) ? -1:''}" *ngFor="let g of menuList;let i = index" (click)="segmentChanged(g.Id); query.Keyword =''">
+			<div
+				class="menu-group"
+				[style]="{order:(i==0 && g.Id==0) ? -1:''}"
+				*ngFor="let g of posService.dataSource.menuList;let i = index"
+				(click)="segmentChanged(g.Id); query.Keyword =''"
+			>
 				<ion-img #img [src]="g.menuImage" (ionError)="img.src = noImage" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
 				<ion-label>{{g.Name}}</ion-label>
 			</div>
 		</div>
-	</div>
-
-	<!-- View MenuList -->
-	<div class="no-print">
-		<ion-grid fixed *ngIf="menuList?.length">
-			<ng-container *ngFor="let g of menuList | filter:{Id:segmentView}">
-				<ng-container *ngIf="g.Items?.length">
-					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
-						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
-							<ion-list-header class="ion-no-padding">
-								<ion-label color="primary">{{g.Name}}</ion-label>
-							</ion-list-header>
-						</ion-col>
-
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
-							<span class="tag right" *ngIf="i.IsDisabled">
-								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
-							</span>
-							<div class="card" [id]="'item'+i.Id">
-								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = noImage"></ion-img>
-								<span class="table-name clickable">
-									<span [appTranslateResource]="i"></span>
-								</span>
-
-								<ng-container *ngFor="let u of i.UoMs">
-									<span *ngIf="u.PriceList.length" class="price clickable">
-										<span class="price-list" *ngFor="let p of u.PriceList">
-											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-											</span>
-											<span *ngIf="p.NewPrice">
-												{{p.NewPrice | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-												<small class="old-price">{{p.Price | number: '1.0-0'}}</small>
-												-{{(p.Price - p.NewPrice)/p.Price * 100 | number: '1.0-0'}}%
-											</span>
-										</span>
-
-										<ion-button
-											[disabled]="i.IsDisabled"
-											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
-											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
-											class="ion-float-right add-to-cart-btn"
-											size="small"
-											(click)="addToCart(i, u.Id)"
-										>
-											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-										</ion-button>
-									</span>
-								</ng-container>
-							</div>
-						</ion-col>
-					</ion-row>
-				</ng-container>
-			</ng-container>
-		</ion-grid>
-		<app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 	</div>
 
 	<!-- Bill Printing -->
@@ -546,8 +504,8 @@
 			margin-top: 10px;
 		}
 	</style>
-	<div id="bill" class="bill" style="overflow: auto; width: 72mm" *ngIf="item?.OrderLines?.length">
-		<div class="receipt giao-nhan" style="overflow: auto">
+	<div id="bill" class="bill" *ngIf="item?.OrderLines?.length">
+		<div class="receipt giao-nhan" >
 			<section class="sheet rpt p1">
 				<table>
 					<thead>
@@ -562,25 +520,25 @@
 							<td>
 								<div>
 									<div class="header">
-										<span class="logo"
+										<!-- <span class="logo"
 											><img
 												[src]="printData.currentBranch?.LogoURL || 'assets/logo/logo-in-holdings.png'"
 												(error)="$event.src='assets/logos/logo-the-log.png'"
-										/></span>
+										/></span> -->
 										<span class="brand">{{printData.currentBranch?.ShortName || printData.currentBranch?.Name}}</span>
 										<span class="address">{{printData.currentBranch?.Address || ''}}</span>
 										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
 
 										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
-											<span class="brand">ORDER</span>
+											<span class="brand">{{'ORDER' | translate}}</span>
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="item.Status == 'TemporaryBill'">
-											<span class="brand">TEMPORARY BILL</span>
+											<span class="brand">{{'TEMPORARY BILL' | translate}}</span>
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
-											<span class="brand">RECEIPT</span>
+											<span class="brand">{{'RECEIPT' | translate}}</span>
 											<span>({{'Receipt No.' | translate}}: {{id}})</span>
 										</ng-container>
 									</div>
@@ -589,19 +547,19 @@
 											<tr>
 												<td class="title">{{'Table' | translate}}</td>
 												<td>
-													<span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span>
+													<span *ngFor="let t of printData?.selectedTables">{{t.Name}}; </span>
 												</td>
 											</tr>
 											<tr>
-												<td class="title">Ngày mở</td>
+												<td class="title">{{'Order date' | translate}}</td>
 												<td>{{item.OrderDate | date: 'HH:mm dd/MM/yyyy'}}</td>
 											</tr>
 											<tr>
-												<td class="title">Ngày in</td>
+												<td class="title">{{'Print date' | translate}}</td>
 												<td>{{printData.printDate}}</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
-												<td class="title">Thu ngân</td>
+												<td class="title">{{'Cashier' | translate}}</td>
 												<td>{{env.user.FullName}}</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
@@ -614,7 +572,7 @@
 											<tr *ngIf="kitchenQuery!='all'">
 												<td class="title">{{'Send To' | translate}}</td>
 												<td>
-													<span *ngFor="let k of kitchenList | filter:{Id:kitchenQuery}">{{k.Name}}</span>
+													<span *ngFor="let k of posService.dataSource.kitchens | filter:{Id:kitchenQuery}">{{k.Name}}</span>
 												</td>
 											</tr>
 										</table>
@@ -622,16 +580,17 @@
 									<div class="items" *ngIf="kitchenQuery=='all'">
 										<table>
 											<tr style="font-size: 10px; font-weight: bold">
-												<td>{{'Item' | translate}}</td>
+												<td>{{'Name' | translate}}</td>
 												<td class="text-right">{{'Price' | translate}}</td>
 												<td class="text-right">{{'Quantity' | translate}}</td>
 												<td class="text-right">{{'Discount' | translate}}</td>
-												<td class="text-right">{{'Amount' | translate}}</td>
+												<td class="text-right">{{'BILL Amount' | translate}}</td>
 											</tr>
-											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
+											<ng-container *ngFor="let o of getGroupedOrderLines()">
 												<tr class="small">
 													<td colspan="5" class="name">
 														<span [appTranslateResource]="o._item"></span>
+														<small *ngIf="o.UoMName"> ({{o.UoMName}})</small>
 													</td>
 												</tr>
 												<tr class="small">
@@ -698,7 +657,7 @@
 													</td>
 												</tr>
 												<tr>
-													<td class="title">{{'Discount' | translate }} [ {{item.OriginalTotalDiscountPercent}}% ]</td>
+													<td class="title">{{'Discount' | translate }} [{{item.OriginalTotalDiscountPercent}}%]</td>
 													<td class="text-right">
 														<span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span>
 													</td>
@@ -716,7 +675,7 @@
 													</td>
 												</tr>
 												<tr>
-													<td class="title">{{'Service charge' | translate}} [ {{item.AdditionsAmountPercent}}% ]</td>
+													<td class="title">{{'Service charge' | translate}} [{{item.AdditionsAmountPercent}}%]</td>
 													<td class="text-right">
 														<span>{{item.AdditionsAmount | number: '1.0-0'}}</span>
 													</td>
@@ -734,7 +693,7 @@
 													</td>
 												</tr>
 												<tr>
-													<td class="title">{{'VAT' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
+													<td class="title">{{'VAT' | translate}} [{{item.OriginalTaxPercent}}%]</td>
 													<td class="text-right">
 														<span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
 													</td>
@@ -746,7 +705,7 @@
 										<div class="table-info-top">
 											<table>
 												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
-													<td class="title">{{'Discount from saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
+													<td class="title">{{'Discount from saleman' | translate}} [{{item.OriginalDiscountFromSalesmanPercent}}%]</td>
 													<td class="text-right">
 														<span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 													</td>
@@ -807,11 +766,7 @@
 										</div>
 
 										<div class="message">
-											<div style="font-size: 10px">Cảm ơn & Hẹn gặp lại Quý Khách!</div>
-											<div style="font-size: 10px">
-												Phiếu thanh toán chỉ có giá trị xuất hoá đơn<br />
-												GTGT trong ngày.
-											</div>
+											<div style="font-size: 10px">{{"This bill's invoice can only be generated in the same day" | translate}}.</div>
 											<div>{{'Thank you! See you again!' | translate}}</div>
 										</div>
 									</ng-container>
@@ -829,6 +784,64 @@
 				</table>
 			</section>
 		</div>
+	</div>
+
+	<!-- View MenuList -->
+	<div class="no-print" *ngIf="posService.dataSource">
+		<ion-grid fixed *ngIf="posService.dataSource.menuList?.length">
+			<ng-container *ngFor="let g of posService.dataSource.menuList | filter:{Id:segmentView}">
+				<ng-container *ngIf="g.Items?.length">
+					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
+						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
+							<ion-list-header class="ion-no-padding">
+								<ion-label color="primary">{{g.Name}}</ion-label>
+							</ion-list-header>
+						</ion-col>
+
+						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
+							<span class="tag right" *ngIf="i.IsDisabled">
+								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
+							</span>
+							<div class="card" [id]="'item'+i.Id">
+								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = noImage"></ion-img>
+								<span class="table-name clickable">
+									<span [appTranslateResource]="i"></span>
+								</span>
+
+								<ng-container *ngFor="let u of i.UoMs">
+									<span *ngIf="u.PriceList.length" class="price clickable">
+										<span class="price-list" *ngFor="let p of u.PriceList">
+											<span *ngIf="!p.NewPrice">
+												{{p.Price | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
+											</span>
+											<span *ngIf="p.NewPrice">
+												{{p.NewPrice | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
+												<small class="old-price">{{p.Price | number: '1.0-0'}}</small>
+												-{{(p.Price - p.NewPrice)/p.Price * 100 | number: '1.0-0'}}%
+											</span>
+										</span>
+
+										<ion-button
+											[disabled]="i.IsDisabled"
+											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
+											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
+											class="ion-float-right add-to-cart-btn"
+											size="small"
+											(click)="addToCart(i, u.Id)"
+										>
+											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+										</ion-button>
+									</span>
+								</ng-container>
+							</div>
+						</ion-col>
+					</ion-row>
+				</ng-container>
+			</ng-container>
+		</ion-grid>
+		<app-page-message [itemsLength]="posService.dataSource.menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 	</div>
 
 	<!-- Kitchen Dishes Printing -->
@@ -854,7 +867,7 @@
 													<tr>
 														<td class="title" colspan="2" style="font-size: 16px">
 															<ion-text class="bold">{{'Table' | translate}}: </ion-text>
-															<ng-container *ngFor="let t of printData.selectedTables">
+															<ng-container *ngFor="let t of printData?.selectedTables">
 																<ion-text class="bold">{{t.Name}};</ion-text>
 															</ng-container>
 														</td>

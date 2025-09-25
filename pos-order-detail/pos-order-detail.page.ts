@@ -3,34 +3,19 @@ import { NavController, LoadingController, AlertController, ModalController, Pop
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
-import {
-	CRM_ContactProvider,
-	HRM_StaffProvider,
-	POS_KitchenProvider,
-	POS_MenuProvider,
-	POS_TableGroupProvider,
-	POS_TableProvider,
-	POS_TerminalProvider,
-	PR_ProgramProvider,
-	SALE_OrderDeductionProvider,
-	SALE_OrderProvider,
-	SYS_ConfigProvider,
-	SYS_PrinterProvider,
-} from 'src/app/services/static/services.service';
-import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
+import { CRM_ContactProvider, HRM_StaffProvider } from 'src/app/services/static/services.service';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { BehaviorSubject, concat, firstValueFrom, lastValueFrom, Observable, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, filter, switchMap, take, tap, toArray } from 'rxjs/operators';
+
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
 import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
-import { environment } from 'src/environments/environment';
+import { environment, dog } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
-import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
 import { printData, PrintingService } from 'src/app/services/util/printing.service';
@@ -38,6 +23,27 @@ import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.ser
 import { POSService } from '../pos.service';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
+import { POSNotifyService } from '../pos-notify.service';
+import { POSConstants } from '../pos.constants';
+import { POSCartService } from '../pos-cart.service';
+import { POSPrintService } from '../pos-print.service';
+import { POSDiscountService } from '../pos-discount.service';
+import { POSOrderService } from '../pos-order.service';
+import { POSSecurityService } from '../services/pos-security.service';
+
+// Constants
+const PAYMENT_CONFIG = {
+	WALKIN_CUSTOMER_ID: 922,
+	QR_CONFIG: {
+		errorCorrectionLevel: 'H',
+		version: 10,
+		width: 150,
+		scale: 1,
+		type: 'image/jpeg',
+	},
+	TIME_TOLERANCE_MINUTES: 1,
+	MIN_DEBT_THRESHOLD: 10,
+} as const;
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -47,28 +53,18 @@ import { CanComponentDeactivate } from './deactivate-guard';
 })
 export class POSOrderDetailPage extends PageBase implements CanComponentDeactivate {
 	@ViewChild('numberOfGuestsInput') numberOfGuestsInput: ElementRef;
-	isOpenMemoModal = false;
-	AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
+
 	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png'; //No image for menu item
 	segmentView = 'all';
 	idTable: any; //Default table
-	tableList = [];
-	menuList = [];
-	dealList = [];
+
 	paymentList = [];
-	paymentTypeList = [];
-	paymentStatusList = [];
-	soStatusList = []; //Show on bill
-	soDetailStatusList = [];
-	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];
-	noLockLineStatusList = ['New', 'Waiting'];
-	checkDoneLineStatusList = ['Done', 'Canceled', 'Returned'];
-	kitchenQuery = 'all';
-	itemQuery = 'all';
-	kitchenList = [];
-	OrderAdditionTypeList = [];
-	OrderDeductionTypeList = [];
-	promotionAppliedPrograms = [];
+
+	noLockStatusList = POSConstants.NO_LOCK_STATUS_LIST;
+	noLockLineStatusList = POSConstants.NO_LOCK_LINE_STATUS_LIST;
+	checkDoneLineStatusList = POSConstants.CHECK_DONE_LINE_STATUS_LIST;
+	kitchenQuery = POSConstants.KITCHEN_QUERY.ALL;
+	itemQuery = POSConstants.KITCHEN_QUERY.ALL;
 	defaultPrinter = [];
 	printData = {
 		undeliveredItems: [], //To track undelivered items to the kitchen
@@ -76,26 +72,28 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		currentBranch: null,
 		selectedTables: [],
 	};
-	Discount;
 	Staff;
 	notifications = [];
 
+	isWaitingRefresh = false;
+
+	// Discount and promotion getters through discount service
+	get promotionAppliedPrograms() {
+		return this.posDiscountService.promotionAppliedPrograms;
+	}
+
 	constructor(
 		public posService: POSService,
-		public pageProvider: SALE_OrderProvider,
-		public programProvider: PR_ProgramProvider,
-		public kitchenProvider: POS_KitchenProvider,
-		public deductionProvider: SALE_OrderDeductionProvider,
-		public menuProvider: POS_MenuProvider,
-		public tableGroupProvider: POS_TableGroupProvider,
-		public tableProvider: POS_TableProvider,
 		public contactProvider: CRM_ContactProvider,
 		public staffProvider: HRM_StaffProvider,
-		public sysConfigProvider: SYS_ConfigProvider,
-		public printerProvider: SYS_PrinterProvider,
-		public printerTerminalProvider: POS_TerminalProvider,
 		public printingService: PrintingService,
 		public scanner: BarcodeScannerService,
+		public posNotifyService: POSNotifyService,
+		public posPrintService: POSPrintService,
+		public cartService: POSCartService,
+		public posDiscountService: POSDiscountService,
+		public posOrderService: POSOrderService,
+		public posSecurityService: POSSecurityService,
 
 		public env: EnvService,
 		public navCtrl: NavController,
@@ -117,395 +115,254 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.pageConfig.canChangeBranch = false;
 		this.idTable = this.route.snapshot?.paramMap?.get('table');
 		this.idTable = typeof this.idTable == 'string' ? parseInt(this.idTable) : this.idTable;
-		this.formGroup = formBuilder.group({
-			Id: new FormControl({ value: 0, disabled: true }),
-			Code: [],
-			Name: [],
-			Remark: [],
-			OrderLines: this.formBuilder.array([]),
-			DeletedLines: [[]],
-			Additions: this.formBuilder.array([]),
-			Deductions: this.formBuilder.array([]),
-			Tables: [[this.idTable], Validators.required],
-			IDBranch: [this.env.selectedBranch],
-			IDOwner: [this.env.user.StaffID],
-			//OrderDate: [new Date()],
-			IDContact: [null],
-			IDAddress: [null],
-			Type: ['POSOrder'],
-			SubType: ['TableService'],
-			Status: new FormControl({ value: 'New', disabled: true }),
-			IsCOD: [],
-			IsInvoiceRequired: [],
-			NumberOfGuests: [1, Validators.required],
-			InvoicDate: new FormControl({ value: null, disabled: true }),
-			InvoiceNumber: new FormControl({ value: null, disabled: true }),
 
-			IsDebt: new FormControl({ value: null, disabled: true }),
-			Debt: new FormControl({ value: null, disabled: true }),
-			IsPaymentReceived: new FormControl({ value: null, disabled: true }),
-			Received: new FormControl({ value: null, disabled: true }),
-			ReceivedDiscountFromSalesman: new FormControl({
-				value: null,
-				disabled: true,
-			}),
+		// Initialize cart service form
+		this.formGroup = this.cartService.initializeForm(this.idTable);
+
+		this.formGroup.valueChanges.subscribe(() => {
+			const controls = this.formGroup.controls;
+			this.canSaveOrder =
+				Object.values(controls).some((control) => control.dirty) ||
+				this.item?.OrderLines?.some((d) => d.Status == POSConstants.ORDER_LINE_STATUS.NEW || d.Status == POSConstants.ORDER_LINE_STATUS.WAITING);
 		});
+		dog && console.log('PR List: ', this.promotionService.promotionList);
+	}
 
-		console.log('PR List: ', this.promotionService.promotionList);
+	preLoadData(event?: any): void {
+		let forceReload = event === 'force';
+		this.posService
+			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
+			.then(() => {
+				// Initialize cart service with POSService data
+				this.cartService.initializeConfig(this.posService.systemConfig, this.posService.dataSource);
+
+				dog && console.log(this.posService.dataSource);
+			})
+			.finally(() => {
+				super.preLoadData(event);
+			});
+	}
+
+	loadData(event?: any): void {
+		dog && console.log('loadData');
+
+		if (this.isWaitingRefresh) {
+			dog && console.log('load canceled by isWaitingRefresh');
+			return;
+		}
+		if (this.submitAttempt) {
+			dog && console.log('Submit attempt detected');
+			return;
+		}
+		if (this.formGroup.controls.OrderLines.dirty || this.formGroup.dirty) {
+			this.env.showMessage('Please save your changes before loading data!', 'warning');
+			return;
+		}
+
+		super.loadData(event);
+	}
+
+	private validateBranchAccess(): boolean {
+		// Enhanced validation with null safety
+		if (!this.item || !this.env?.selectedBranch) {
+			dog && console.warn('validateBranchAccess: Missing required data');
+			return false;
+		}
+
+		if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
+			this.item = null;
+			this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
+			return false;
+		}
+		return true;
+	}
+
+	private handleNewItem() {
+		// Input validation
+		if (!this.item || !this.formGroup) {
+			dog && console.error('handleNewItem: Missing required objects');
+			return;
+		}
+
+		try {
+			Object.assign(this.item, this.formGroup.getRawValue());
+			this.setOrderValue(this.item);
+		} catch (error) {
+			dog && console.error('handleNewItem error:', error);
+			this.handleApiError(error, 'Failed to initialize new item');
+		}
+	}
+
+	private handleExistingItem() {
+		// Input validation
+		if (!this.item || !this.formGroup || !this.cartService) {
+			dog && console.error('handleExistingItem: Missing required objects');
+			return;
+		}
+
+		try {
+			this.formGroup?.patchValue(this.item);
+
+			// Ensure cart service has the item and form before calling patchOrderLinesValue
+			this.cartService.item = this.item;
+			this.cartService.formGroup = this.formGroup;
+			this.cartService.patchOrderLinesValue();
+
+			this.getPayments();
+			this.getPromotionProgram();
+
+			// Safe staff info retrieval
+			if (this.item._Customer?.IsStaff && this.item._Customer?.Code) {
+				this.getStaffInfo(this.item._Customer.Code);
+			}
+		} catch (error) {
+			dog && console.error('handleExistingItem error:', error);
+			this.handleApiError(error, 'Failed to handle existing item');
+		}
+	}
+
+	private initializeContactDataSource() {
+		this._contactDataSource.selected = [];
+		if (this.posService.systemConfig.SODefaultBusinessPartner) {
+			this._contactDataSource.selected.push(this.posService.systemConfig.SODefaultBusinessPartner);
+		}
+		if (this.item._Customer && !this._contactDataSource.selected?.some((d) => d.Id == this.item._Customer.Id)) {
+			this._contactDataSource.selected.push(this.item._Customer);
+		}
+		this._contactDataSource.initSearch();
+	}
+
+	private finalizeDataLoad() {
+		this.loadOrder();
+
+		// Sync notifications from service
+		this.notifications = this.posNotifyService.notifications;
+
+		this.cdr.detectChanges();
+		// Remove manual CheckPOSNewOrderLines call - now handled by service
+	}
+
+	async loadedData(event?: any, ignoredFromGroup?: boolean) {
+		dog && console.log('loadedData');
+
+		if (!this.validateBranchAccess()) {
+			super.loadedData(event, ignoredFromGroup);
+			return;
+		}
+
+		super.loadedData(event, ignoredFromGroup);
+
+		if (!this.item?.Id) {
+			this.handleNewItem();
+		} else {
+			this.handleExistingItem();
+		}
+
+		this.initializeContactDataSource();
+		this.finalizeDataLoad();
 	}
 
 	////EVENTS
 	ngOnInit() {
 		this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
-			switch (data.code) {
-				case 'app:POSOrderPaymentUpdate':
-					this.notifyPayment(data);
-					break;
-				case 'app:POSOrderFromCustomer':
-					this.notifyOrder(data);
-					break;
-				case 'app:POSLockOrderFromStaff':
-					this.notifyLockOrder(data);
-					break;
-				case 'app:POSLockOrderFromCustomer':
-					this.notifyLockOrder(data);
-					break;
-				case 'app:POSUnlockOrderFromStaff':
-					this.notifyUnlockOrder(data);
-					break;
-				case 'app:POSUnlockOrderFromCustomer':
-					this.notifyUnlockOrder(data);
-					break;
-				case 'app:POSSupport':
-					this.notifySupport(data);
-					break;
-				case 'app:POSCallToPay':
-					this.notifyCallToPay(data);
-					break;
-				case 'app:notifySplittedOrderFromStaff':
-					this.notifySplittedOrderFromStaff(data);
-					break;
-				case 'app:POSOrderMergedFromStaff':
-					this.notifyMergedOrderFromStaff(data);
-					break;
-				case 'app:networkStatusChange':
-					this.checkNetworkChange(data);
-					break;
-				case 'app:POSOrderFromStaff':
-					this.notifyOrderFromStaff(data);
-					break;
+			//Check if form is dirty
+			if (this.formGroup.dirty) {
+				//TODO: check if user wants to discard changes
+				return true;
+			}
+
+			// Use POSOrderService to handle SignalR notifications instead of manual refresh
+			if (data?.id && data?.type === 'order_update') {
+				this.posOrderService.handleOrderUpdateNotification(data);
+			} else {
+				// Fallback to existing notification handler
+				this.posNotifyService.handleEvent(data, this.item, this.idTable, () => this.loadData());
 			}
 		});
 
 		super.ngOnInit();
 	}
 	ngOnDestroy() {
-		this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
+		// Enhanced cleanup for memory leak prevention
+		try {
+			// Clear debounce timer
+			if (this.searchDebounceTimer) {
+				clearTimeout(this.searchDebounceTimer);
+				this.searchDebounceTimer = null;
+			}
+
+			// Unsubscribe from POS events
+			this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
+
+			// Clear large arrays to help GC
+			if (this.paymentList?.length > 0) {
+				this.paymentList.length = 0;
+			}
+
+			if (this.notifications?.length > 0) {
+				this.notifications.length = 0;
+			}
+
+			// Reset references
+			this.printData = null;
+			this.Staff = null;
+			this.VietQRCode = null;
+
+			dog && console.log('POSOrderDetailPage cleanup completed');
+		} catch (error) {
+			dog && console.error('ngOnDestroy cleanup error:', error);
+		}
+
 		super.ngOnDestroy();
 	}
 
-	canDeactivate(): Promise<boolean> {
-		if (this.formGroup.controls.OrderLines.dirty || (this.formGroup.dirty && this.item.Id)) {
-			return this.env
-				.showPrompt('This order has not been saved yet, do you want to save?', '', 'Please save order!')
-				.then(() => {
-					this.saveOrderData();
-					return false; // ở lại trang
-				})
-				.catch(() => {
-					return true; // back
-				});
+	canDeactivate(): Promise<boolean> | boolean {
+		// Enhanced validation with null safety
+		if (!this.formGroup?.controls) {
+			return true; // Allow navigation if form is not properly initialized
 		}
-	}
 
-	private notifyPayment(data) {
-		const value = JSON.parse(data.value);
-		if (value.IDSaleOrder == this.item?.Id) {
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-	private async notifyOrder(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' Gọi món';
-			this.env.showMessage(message, 'warning');
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Order',
-				Name: 'Đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			await this.setNotifications(notification, true);
-			// this.refresh();
-		}
-		if (data.id == this.item?.Id) {
-			//this.CheckPOSNewOrderLines();
-			this.refresh('load');
-		}
-	}
+		try {
+			const hasOrderLinesChanges = this.formGroup.controls.OrderLines?.dirty;
+			const hasFormChanges = this.formGroup.dirty && this.item?.Id;
 
-	private notifyOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			this.refresh('load');
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-
-	private notifyLockOrder(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			// this.env.showMessage('Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.', 'warning');
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-	private notifyUnlockOrder(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			// this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
-			this.refresh('load');
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-
-	private notifySupport(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
-			this.env.showMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			let notification = {
-				Id: value.Id,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: value.IDSaleOrder,
-				Type: 'Support',
-				Name: 'Yêu cầu phục vụ',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-				Watched: false,
-			};
-
-			this.setNotifications(notification, true);
-		}
-	}
-
-	private notifyCallToPay(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
-			this.env.showMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			let notification = {
-				Id: value.Id,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: value.IDSaleOrder,
-				Type: 'Support',
-				Name: 'Yêu cầu tính tiền',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-				Watched: false,
-			};
-
-			this.setNotifications(notification, true);
-		}
-	}
-
-	private notifySplittedOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			this.env.showMessage('The order has been split.', 'warning');
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-
-	private notifyMergedOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-
-		if (index != -1) {
-			this.env.showMessage('The order has been merged.', 'warning');
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-
-	private checkNetworkChange(data) {
-		if (data.status.connected) {
-			if (this.item.Id) {
-				this.pageProvider.commonService
-					.connect('GET', 'SALE/Order/CheckPOSModifiedDate', {
-						IDOrder: this.item.Id,
+			if (hasOrderLinesChanges || hasFormChanges) {
+				return this.env
+					.showPrompt('This order has not been saved yet, do you want to save?', '', 'Please save order!')
+					.then(() => {
+						this.setOrderValue({}, true);
+						return false; // Stay on page
 					})
-					.toPromise()
-					.then((lastModifiedDate) => {
-						if (lastModifiedDate > this.item.ModifiedDate) {
-							this.env.showMessage('Order information has changed, the order will be updated.', 'danger');
-							this.refresh();
-						}
-					})
-					.catch((err) => {
-						console.log(err);
+					.catch(() => {
+						return true; // Allow navigation
 					});
 			}
-		}
-	}
-
-	preLoadData(event?: any): void {
-		//'IsUseIPWhitelist','IPWhitelistInput', 'IsRequireOTP','POSLockSpamPhoneNumber',
-		let sysConfigQuery = [
-			'IsAutoSave',
-			'SODefaultBusinessPartner',
-			'POSSettleAtCheckout',
-			'POSHideSendBarKitButton',
-			'POSEnableTemporaryPayment',
-			'POSEnablePrintTemporaryBill',
-			'POSAutoPrintBillAtSettle',
-		];
-
-		let forceReload = event === 'force';
-		Promise.all([
-			this.env.getStatus('POSOrder'),
-			this.env.getStatus('POSOrderDetail'),
-			this.getTableGroupFlat(forceReload),
-			this.getMenu(forceReload),
-			this.getDeal(),
-			this.sysConfigProvider.read({
-				Code_in: sysConfigQuery,
-				IDBranch: this.env.selectedBranch,
-			}),
-			this.env.getType('PaymentType'),
-			this.env.getStatus('PaymentStatus'),
-			this.kitchenProvider.read({ IDBranch: this.env.selectedBranch }),
-		])
-			.then((values: any) => {
-				this.pageConfig.systemConfig = {};
-				values[5]['data'].forEach((e) => {
-					if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
-						e.Value = e._InheritedConfig.Value;
-					}
-					this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
-				});
-
-				this.soStatusList = values[0];
-				this.soDetailStatusList = values[1];
-				this.tableList = values[2];
-				this.menuList = values[3];
-
-				this.dealList = values[4];
-
-				this.paymentTypeList = values[6];
-				this.paymentStatusList = values[7];
-				this.kitchenList = values[8]?.data;
-				super.preLoadData(event);
-			})
-			.catch((err) => {
-				this.env.showErrorMessage(err);
-				this.loadedData(event);
-			});
-	}
-
-	async loadedData(event?: any, ignoredFromGroup?: boolean) {
-		this._contactDataSource.selected = [];
-		this.formGroup.valueChanges.subscribe(() => {
-			const controls = this.formGroup.controls;
-			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
-		});
-		super.loadedData(event, ignoredFromGroup);
-		if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
-			this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
-			return;
+		} catch (error) {
+			dog && console.error('canDeactivate error:', error);
+			// Allow navigation if there's an error
+			return true;
 		}
 
-		if (!this.item?.Id) {
-			Object.assign(this.item, this.formGroup.getRawValue());
-			this.setOrderValue(this.item);
-			this.getDefaultPrinter();
-		} else {
-			this.patchOrderValue();
-			this.getPayments();
-			this.getDefaultPrinter();
-			this.getPromotionProgram();
-			if (this.item._Customer.IsStaff == true) {
-				this.getStaffInfo(this.item._Customer.Code);
-			}
-		}
-		if (this.pageConfig.systemConfig.SODefaultBusinessPartner) {
-			this._contactDataSource.selected.push(this.pageConfig.systemConfig.SODefaultBusinessPartner);
-		}
-		if (this.item._Customer && !this._contactDataSource.selected?.some((d) => d.Id == this.item._Customer.Id)) {
-			this._contactDataSource.selected.push(this.item._Customer);
-		}
-		this.loadOrder();
-		this._contactDataSource.initSearch();
-		this.cdr.detectChanges();
-		// await this.getStorageNotifications();
-		this.CheckPOSNewOrderLines();
-
-		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
+		return true; // Allow navigation if no changes
 	}
 
 	async getStorageNotifications() {
-		await this.env.getStorage('Notifications').then(async (result) => {
-			if (result?.length > 0) {
-				this.notifications = [...result.filter((n) => !n.Watched && n.IDBranch == this.env.selectedBranch)];
-				let a = this.notifications;
-				console.log(a);
-			}
-		});
+		await this.posNotifyService.getStorageNotifications();
+		this.notifications = this.posNotifyService.notifications; // sync
 	}
 
-	private CheckPOSNewOrderLines() {
-		this.pageProvider.commonService
-			.connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', this.query)
-			.toPromise()
-			.then(async (results: any) => {
-				if (results) {
-					let orderNotification = this.notifications.filter(
-						(d) => !results.map((s) => s.Id).includes(d.IDSaleOrder) && (d.Type == 'Remind order' || d.Type == 'Order') && d.Code == 'pos-order'
-					);
-					orderNotification.forEach((o) => {
-						let index = this.notifications.indexOf(o);
-						this.notifications.splice(index, 1);
-					});
-					await results.forEach(async (r) => {
-						// kiểm tra noti cũ có số order line chưa gửi bếp khác với DB thì update
-						let oldNotis = this.notifications.filter((n) => n.IDSaleOrder == r.Id && n.Type == 'Remind order' && n.Code == 'pos-order');
-						await oldNotis.forEach(async (oldNoti) => {
-							if (oldNoti.NewOrderLineCount != r.NewOrderLineCount) {
-								let index = this.notifications.indexOf(oldNoti);
-								this.notifications.splice(index, 1);
-							}
-						});
-					});
-					this.setNotifiOrder(results);
-				}
-			})
-			.catch((err) => {
-				if (err.message != null) {
-					this.env.showMessage(err.message, 'danger');
-				}
-			});
+	/**
+	 * Get undelivered items count using cart service
+	 */
+	private getUndeliveredItemsCount(): number {
+		return this.cartService.getUndeliveredItemsCount();
+	}
+
+	/**
+	 * Check if current order has undelivered items using cart service
+	 */
+	private hasUndeliveredItems(): boolean {
+		return this.cartService.hasUndeliveredItems();
 	}
 
 	async setNotifiOrder(items) {
@@ -525,90 +382,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				NewOrderLineCount: item.NewOrderLineCount,
 				Watched: false,
 			};
-			await this.setNotifications(notification);
+			await this.posNotifyService.setNotifications(notification);
+			this.notifications = this.posNotifyService.notifications; // sync
 		}
 	}
-
-	async setNotifications(item, lasted = false) {
-		let isExistedNoti = this.notifications.some(
-			(d) =>
-				d.Id == item.Id &&
-				d.IDBranch == item.IDBranch &&
-				d.IDSaleOrder == item.IDSaleOrder &&
-				d.Type == item.Type &&
-				d.Name == item.Name &&
-				d.Code == item.Code &&
-				d.Message == item.Message &&
-				d.Url == item.Url &&
-				!d.Watched
-		);
-		if (isExistedNoti) {
-			if (lasted) {
-				let index = this.notifications.findIndex(
-					(d) =>
-						d.Id == item.Id &&
-						d.IDBranch == item.IDBranch &&
-						d.IDSaleOrder == item.IDSaleOrder &&
-						d.Type == item.Type &&
-						d.Name == item.Name &&
-						d.Code == item.Code &&
-						d.Message == item.Message &&
-						d.Url == item.Url &&
-						!d.Watched
-				);
-				if (index != -1) {
-					this.notifications.splice(index, 1);
-					this.notifications.unshift(item);
-					await this.env.setStorage('Notifications', this.notifications);
-				}
-			}
-		} else {
-			this.notifications.unshift(item);
-			await this.env.setStorage('Notifications', this.notifications);
-		}
-	}
-
-	// async setStorageNotification(Id, IDBranch, IDSaleOrder, Type, Name, Code, Message, Url) {
-	//   let notification = {
-	//     Id: Id,
-	//     IDBranch: IDBranch,
-	//     IDSaleOrder: IDSaleOrder,
-	//     Type: Type,
-	//     Name: Name,
-	//     Code: Code,
-	//     Message: Message,
-	//     Url: Url,
-	//     Watched: false,
-	//   };
-	//   const notifications = await this.env.getStorage('Notifications').then((result) => {
-	//     if (result) {
-	//       return result;
-	//     } else {
-	//       return [];
-	//     }
-	//   });
-	//   if(notifications.some(d=> d.Id ==notification.Id && d.IDBranch == notification.IDBranch &&
-	//     d.IDSaleOrder == notification.IDSaleOrder && d.Type == notification.Type && d.Name == notification.Name && d.Code == notification.Code && d.Message == notification.Message && d.Url == notification.Url
-	//   )){
-	//     return;
-	//   }
-	//   notifications.unshift(notification);
-	//   this.env.setStorage('Notifications', notifications);
-	//   this.notifications.unshift(notification);
-	// }
 
 	async goToNofication(i, j) {
-		this.notifications[j].Watched = true;
-		this.env.setStorage('Notifications', this.notifications);
-		if (i.Url != null) {
-			if (i.IDSaleOrder == this.item.Id) {
-				this.refresh();
-			} else {
-				await this.navBackOrder();
-				this.nav(i.Url, 'forward');
-			}
-			this.removeNotification(j);
-		}
+		return this.posNotifyService.goToNotification(
+			i,
+			j,
+			this.item,
+			() => this.loadData(),
+			() => this.navBackOrder(),
+			(url, direction) => this.nav(url, direction)
+		);
 	}
 
 	async navBackOrder() {
@@ -617,51 +404,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	removeNotification(j) {
-		this.notifications.splice(j, 1);
-		this.env.setStorage('Notifications', this.notifications);
-	}
-
-	getDefaultPrinter() {
-		return new Promise((resolve, reject) => {
-			this.printerTerminalProvider
-				.read({
-					IDBranch: this.env.selectedBranch,
-					IsDeleted: false,
-					IsDisabled: false,
-				})
-				.then(async (results: any) => {
-					this.defaultPrinter.push(results['data']?.[0]?.['Printer']);
-					this.defaultPrinter = [...new Map(this.defaultPrinter.map((item: any) => [item?.['Id'], item])).values()];
-					resolve(this.defaultPrinter);
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
+		this.posNotifyService.removeNotification(j);
+		this.notifications = this.posNotifyService.notifications; // sync
 	}
 
 	// refreshAttemp = false;
 	refresh(event?: any): void {
-		// if (this.refreshAttemp) return;
-		// this.refreshAttemp = true;
-		// if (this.formGroup.dirty) {
-		// 	console.log('dirty');
-		// 	this.env.showPrompt('This order have not been saved yet, Do you want to save?', '', 'Please save order!').then(() => {
-		// 		this.saveOrderData();
-		// 		this.debounce(() => {
-		// 			super.refresh();
-		// 			this.refreshAttemp = false;
-		// 		}, 2000);
-		// 	});
-		// } else
-		if (!event) {
-			this.preLoadData('force');
-			// this.refreshAttemp = false;
-		} else
-			this.debounce(() => {
-				super.refresh();
-				// this.refreshAttemp = false;
-			}, 1000);
+		this.preLoadData('force');
 	}
 
 	segmentFilterDishes = 'New';
@@ -670,165 +419,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	countDishes(segment) {
-		if (segment == 'New')
-			return this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting')
-				.map((x) => x.Quantity)
-				.reduce((a, b) => +a + +b, 0);
+		if (segment == 'New') return this.cartService.countUndeliveredItems();
 
-		return this.item.OrderLines.filter((d) => !(d.Status == 'New' || d.Status == 'Waiting'))
-			.map((x) => x.Quantity)
-			.reduce((a, b) => +a + +b, 0);
+		return this.cartService.countDeliveredItems();
 	}
 
 	canSaveOrder = false;
 	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '') {
-		if (item.IsDisabled) {
-			return;
-		}
-		if (this.submitAttempt) {
-			let element = document.getElementById('item' + item.Id);
-			if (element) {
-				element = element.parentElement;
-				element.classList.add('shake');
-				setTimeout(() => {
-					element.classList.remove('shake');
-				}, 400);
-			}
-			return;
-		}
-
-		if (!this.pageConfig.canAdd) {
-			this.env.showMessage('You do not have permission to add products!', 'warning');
-			return;
-		}
-
-		if (!this.pageConfig.canEdit || this.item.Status == 'TemporaryBill') {
-			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
-			return;
-		}
-
-		if (this.item.Tables == null || this.item.Tables.length == 0) {
-			this.env.showMessage('Please select a table before adding items!', 'warning');
-			return;
-		}
-
-		if (!item.UoMs.length) {
-			this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
-			return;
-		}
-
-		let uom = item.UoMs.find((d) => d.Id == idUoM);
-		let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
-
-		let line;
-		if (quantity == 1) {
-			line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
-		} else {
-			line = this.item.OrderLines[idx]; //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
-		}
-
-		if (!line) {
-			line = {
-				IDOrder: this.item.Id,
-				Id: 0,
-				Code: lib.generateUID(this.env.user.Id),
-				Type: 'TableService',
-				Status: 'New',
-
-				IDItem: item.Id,
-				IDTax: item.IDSalesTaxDefinition,
-				TaxRate: item.SaleVAT,
-				IDUoM: idUoM,
-				UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
-				UoMName: uom.Name,
-				Quantity: 1,
-				IDBaseUoM: idUoM,
-				UoMSwap: 1,
-				UoMSwapAlter: 1,
-				BaseQuantity: 0,
-				ShippedQuantity: 0,
-
-				Remark: null,
-				IsPromotionItem: false,
-				IDPromotion: null,
-
-				OriginalDiscountFromSalesman: 0,
-
-				CreatedDate: new Date(),
-			};
-
-			this.item.OrderLines.push(line);
-
-			this.addOrderLine(line);
-			this.setOrderValue({ OrderLines: [line], Status: 'New' });
-		} else {
-			if (line.Quantity > 0 && line.Quantity + quantity < line.ShippedQuantity) {
-				if (this.pageConfig.canDeleteItems) {
-					this.env
-						.showPrompt('Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?', item.Name, 'Xóa sản phẩm')
-						.then((_) => {
-							this.openCancellationReason(line, quantity);
-						})
-						.catch((_) => {});
-				} else {
-					this.env.showMessage('Item has been sent to Bar/Kitchen');
-					return;
-				}
-			} else if (line.Quantity + quantity > 0) {
-				line.Quantity += quantity;
-				this.setOrderValue({
-					OrderLines: [
-						{
-							Id: line.Id,
-							Code: line.Code,
-							IDUoM: line.IDUoM,
-							Quantity: line.Quantity,
-						},
-					],
-					Status: 'New',
-				});
-			} else {
-				if (line.Status == 'New') {
-					this.env
-						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
-						.then((_) => {
-							line.Quantity += quantity;
-							this.setOrderValue({
-								OrderLines: [
-									{
-										Id: line.Id,
-										Code: line.Code,
-										IDUoM: line.IDUoM,
-										Quantity: line.Quantity,
-									},
-								],
-							});
-						})
-						.catch((_) => {});
-				} else {
-					if (this.pageConfig.canDeleteItems) {
-						this.env
-							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
-							.then((_) => {
-								line.Quantity += quantity;
-								this.setOrderValue({
-									OrderLines: [
-										{
-											Id: line.Id,
-											Code: line.Code,
-											IDUoM: line.IDUoM,
-											Quantity: line.Quantity,
-										},
-									],
-								});
-							})
-							.catch((_) => {});
-					} else {
-						this.env.showMessage('This account does not have permission to delete products!', 'warning');
-					}
-				}
-			}
-		}
+		return await this.cartService.addToCart(item, idUoM, quantity, idx, status, this.pageConfig, this.submitAttempt, (line, qty) => this.openCancellationReason(line, qty));
 	}
 
 	async openQuickMemo(line) {
@@ -839,15 +437,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			return;
 		}
 
-		const modal = await this.modalController.create({
-			component: POSMemoModalPage,
-			id: 'POSMemoModalPage',
-			backdropDismiss: true,
-			cssClass: 'modal-quick-memo',
-			componentProps: {
-				item: JSON.parse(JSON.stringify(line)),
-			},
-		});
+		const modal = await this.createModal(POSMemoModalPage, { item: JSON.parse(JSON.stringify(line)) }, 'modal-quick-memo', 'POSMemoModalPage');
+
 		await modal.present();
 		const { data, role } = await modal.onWillDismiss();
 
@@ -874,14 +465,35 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.segmentView = ev;
 	}
 
-	search(ev) {
-		var val = ev.target.value.toLowerCase();
-		if (val == undefined) {
-			val = '';
+	// Performance optimization: debounce search
+	private searchDebounceTimer: any = null;
+	private readonly SEARCH_DEBOUNCE_DELAY = 300; // milliseconds
+
+	search(ev: any) {
+		// Input validation
+		if (!ev?.target) {
+			dog && console.warn('search: Invalid event target');
+			return;
 		}
-		if (val.length > 2 || val == '') {
-			this.query.Keyword = val;
+
+		// Clear previous timer
+		if (this.searchDebounceTimer) {
+			clearTimeout(this.searchDebounceTimer);
 		}
+
+		// Debounced search execution
+		this.searchDebounceTimer = setTimeout(() => {
+			try {
+				const val = ev.target.value?.toLowerCase() || '';
+
+				// Only update query if length is valid
+				if (val.length > 2 || val === '') {
+					this.query.Keyword = val;
+				}
+			} catch (error) {
+				dog && console.error('search error:', error);
+			}
+		}, this.SEARCH_DEBOUNCE_DELAY);
 	}
 
 	async processPayments() {
@@ -947,17 +559,18 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async processDiscounts() {
-		this.Discount = {
+		const discount = this.cartService.getCurrentDiscount() || {
 			Amount: this.item.OriginalTotalDiscount,
 			Percent: (this.item.OriginalTotalDiscount * 100) / this.item.OriginalTotalBeforeDiscount,
 		};
+
 		const modal = await this.modalController.create({
 			component: POSDiscountModalPage,
 			canDismiss: true,
 			backdropDismiss: true,
 			cssClass: 'modal-change-table',
 			componentProps: {
-				Discount: this.Discount,
+				Discount: discount,
 				item: this.item,
 			},
 		});
@@ -982,7 +595,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		const { data, role } = await modal.onWillDismiss();
 		if (data) {
 			this.item = data;
-			this.refresh();
+			this.loadData();
 		}
 	}
 
@@ -995,7 +608,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env.showMessage('Please select a customer', 'warning');
 			return false;
 		}
-		if (this.item._Customer.Id == 922) {
+		if (this.item._Customer.Id == PAYMENT_CONFIG.WALKIN_CUSTOMER_ID) {
 			this.env.showMessage('Cannot issue invoice for walk-in customer', 'warning');
 			return false;
 		}
@@ -1054,35 +667,26 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 
 			if (!line) {
+				// Cancel entire order using POSOrderService
 				this.env
 					.showPrompt('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
-					.then((_) => {
-						let publishEventCode = this.pageConfig.pageName;
-						if (this.submitAttempt == false) {
+					.then(async (_) => {
+						try {
 							this.submitAttempt = true;
-							cancelData.Type = 'POSOrder';
-							cancelData.Ids = [this.item.Id];
+							await this.posOrderService.deleteOrder(this.item.Id);
 
-							this.pageProvider.commonService
-								.connect('POST', 'SALE/Order/CancelOrders/', cancelData)
-								.toPromise()
-								.then(() => {
-									if (publishEventCode) {
-										this.env.publishEvent({
-											Code: publishEventCode,
-										});
-									}
-									this.loadData();
-									this.submitAttempt = false;
-									this.nav('/pos-order', 'back');
-								})
-								.catch((err) => {
-									this.submitAttempt = false;
-								});
+							this.env.publishEvent({ Code: this.pageConfig.pageName });
+							this.loadData();
+							this.nav('/pos-order', 'back');
+						} catch (error) {
+							this.handleApiError(error, 'Cannot cancel order');
+						} finally {
+							this.submitAttempt = false;
 						}
 					})
 					.catch((_) => {});
 			} else {
+				// Cancel specific line items - keep existing logic for now
 				let cancelData: any = {
 					Code: data.Code,
 					OrderLine: line,
@@ -1094,27 +698,18 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 				this.env
 					.showPrompt('Bạn có chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm')
-					.then((_) => {
-						let publishEventCode = this.pageConfig.pageName;
-						if (this.submitAttempt == false) {
+					.then(async (_) => {
+						try {
 							this.submitAttempt = true;
 
-							this.pageProvider.commonService
-								.connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData)
-								.toPromise()
-								.then(() => {
-									if (publishEventCode) {
-										this.env.publishEvent({
-											Code: publishEventCode,
-										});
-									}
+							await this.posOrderService.cancelReduceOrderLines(cancelData);
 
-									this.refresh();
-									this.submitAttempt = false;
-								})
-								.catch((err) => {
-									this.submitAttempt = false;
-								});
+							this.env.publishEvent({ Code: this.pageConfig.pageName });
+							this.loadData();
+						} catch (error) {
+							this.handleApiError(error, 'Cannot cancel item');
+						} finally {
+							this.submitAttempt = false;
 						}
 					})
 					.catch((_) => {});
@@ -1122,325 +717,188 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	checkItemNotSendKitchen() {
-		if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
-			this.env.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo').then(() => this.sendKitchen());
+	private async sendKitchenWithPrompt() {
+		if (!this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
+			return; // No items to send
+		}
+
+		try {
+			await this.env.showPrompt('Do you want to send the print command to the bar/kitchen?', null, null, 'Print', 'Skip');
+			await this.sendKitchen();
+		} catch (error) {
+			// User cancelled or other error
+			dog && console.log('Kitchen send cancelled or failed:', error);
 		}
 	}
+
 	saveOrderData() {
-		if (this.formGroup.dirty || !this.item.Id) this.setOrderValue({}, false, true);
-		this.checkItemNotSendKitchen();
-		//this.saveChange().then(() => this.checkItemNotSendKitchen());
+		this.setOrderValue({}, true);
+		this.sendKitchenWithPrompt();
 	}
-	sendKitchenAttempt = false;
+
 	async sendKitchen() {
-		return new Promise(async (resolve, reject) => {
-			let printData: any = {};
-			printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
-
-			printData.undeliveredItems = [];
-			this.item.OrderLines.forEach((e) => {
-				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
-				e._IDKitchen = e._item?.IDKitchen;
-				if (e.Remark) {
-					e.Remark = e.Remark.toString();
-				}
-				if (e._undeliveredQuantity > 0) {
-					printData.undeliveredItems.push(e);
-				}
-			});
-
-			if (printData.undeliveredItems.length == 0) {
-				if (this.pageConfig.systemConfig.IsAutoSave) this.env.showMessage('No new product needs to be sent!', 'success');
-				return;
-			}
-			if (this.sendKitchenAttempt) {
-				this.env.showMessage('Printers were busy, please try again!', 'warning');
-				return;
-			}
-			this.sendKitchenAttempt = true;
-			let printItems = printData.undeliveredItems;
-			const newKitchenIDList = [...new Set(printItems.map((g) => g._IDKitchen))];
-			const newKitchenList = this.kitchenList.filter((d) => newKitchenIDList.includes(d.Id));
-
-			let itemNotPrint = [];
-			let printJobs: printData[] = [];
-			try {
-				for (let kitchen of newKitchenList.filter((d) => d.Id)) {
-					await this.setKitchenID(kitchen.Id);
-					if (!kitchen._Printer) {
-						itemNotPrint = printItems
-							.filter((d) => d._IDKitchen == kitchen.Id)
-							.map((e) => ({
-								Id: e.Id,
-								Code: e.Code,
-								ShippedQuantity: e.Quantity,
-								IDUoM: e.IDUoM,
-								Status: e.Status,
-								ItemName: e._item.Name, // để hiển thị item ko in đc
-							}));
-						printItems = printItems.filter((d) => d._IDKitchen != kitchen.Id);
-						continue;
-					}
-					if (kitchen.IsPrintList) {
-						let jobName = `${kitchen.Id}_${this.item?.Id} | ${new Date().toISOString()}`;
-						let data = this.printPrepare('bill', [kitchen._Printer], jobName);
-						printJobs.push(data);
-					}
-					if (kitchen.IsPrintOneByOne) {
-						for (let i of printItems.filter((d) => d._IDKitchen == kitchen.Id)) {
-							await this.setItemQuery(i.IDItem);
-							let idJob = `${kitchen.Id}_${this.item?.Id}_${i.Code} | ${new Date().toISOString()}`;
-							let data = this.printPrepare('bill-item-each-' + i.Id, [kitchen._Printer], idJob);
-							printJobs.push(data);
-						}
-					}
-				}
-				let doneCount = 0;
-				const checkItemNotPrint = () => {
-					if (itemNotPrint.length == 0) {
-						this.submitAttempt = false;
-						return;
-					}
-					this.env
-						.showPrompt(
-							{ code: 'Items cannot print: {{value}}, do you want to change these items to serving!', value: itemNotPrint.map((i) => i.ItemName) },
-							'',
-							'Items printing error!',
-							'Ok',
-							"Don't send"
-						)
-						.then(() => {
-							this.checkData(false, true, true)
-								.then((r) => resolve(true))
-								.catch((err) => {
-									reject(false);
-								});
-						})
-						.catch((err) => {
-							let saveList = [];
-							itemNotPrint.forEach((e) => {
-								let line = {
-									Id: e.Id,
-									Code: e.Code,
-									ShippedQuantity: e.Quantity,
-									IDUoM: e.IDUoM,
-									Status: e.Status,
-								};
-								saveList.push(line);
-							});
-							this.submitAttempt = false;
-							this.setOrderValue({ OrderLines: saveList }, false, true);
-						});
-				};
-
-				if (printJobs.length > 0) {
-					this.printingService.printJobsWithProgress(printJobs).subscribe({
-						next: ({ job, result }) => {
-							doneCount++;
-							this.submitAttempt = false;
-							job.options
-								.map((s) => s.jobName)
-								.forEach((s) => {
-									const [idsPart, timestamp] = s.split('|').map((s) => s.trim());
-									const [idKitchen, IDSO, code] = idsPart.split('_');
-									if (idKitchen && !code) {
-										let saveList = printItems
-											.filter((d) => d._IDKitchen == idKitchen)
-											.map((e) => ({
-												Id: e.Id,
-												Code: e.Code,
-												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
-												IDUoM: e.IDUoM,
-												Status: result.status == 'success' ? 'Serving' : e.Status,
-												ItemName: e._item.Name, // để hiển thị item ko in đc
-											}));
-
-										if (result.status == 'success') this.setOrderValue({ OrderLines: saveList }, false, true);
-										else saveList.forEach((g) => itemNotPrint.push(g));
-										// Xóa hết các món của bếp này
-										printItems = printItems.filter((d) => d._IDKitchen != idKitchen);
-									} else {
-										let e = printItems.find((d) => d._IDKitchen == idKitchen && d.Code == code);
-										if (e) {
-											let line = {
-												Id: e.Id,
-												Code: e.Code,
-												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
-												IDUoM: e.IDUoM,
-												Status: result.status == 'success' ? 'Serving' : e.Status,
-												ItemName: e._item.Name, // để hiển thị item ko in đc
-											};
-											if (result.status == 'success') this.setOrderValue({ OrderLines: [line] }, false, true);
-											else itemNotPrint.push(line);
-											// Xóa item vừa in
-											printItems = printItems.filter((d) => !(d._IDKitchen == idKitchen && d.Code == code));
-										}
-									}
-								});
-							if (doneCount == printJobs.length) {
-								if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
-								else checkItemNotPrint();
-							}
-						},  
-						complete: () => {
-							this.sendKitchenAttempt = false;
-							console.log('Tất cả jobs đã hoàn tất');
-						},
-					});
-				} else checkItemNotPrint();
-			} catch (e) {
-				console.log(e);
-				this.sendKitchenAttempt = false;
-			}
-		});
+		try {
+			await this.posPrintService.sendKitchen(
+				this.item,
+				this.item.OrderLines,
+				(kitchenId) => this.setKitchenID(kitchenId),
+				(itemId) => this.setItemQuery(itemId),
+				(data, forceSave, autoSave) => this.setOrderValue(data, forceSave, autoSave)
+			);
+		} catch (error) {
+			dog && console.error('Error in sendKitchen:', error);
+			this.env.showMessage('Cannot send to kitchen/bar. Please try again!', 'danger');
+		}
 	}
+
 	printPrepare(element, printers, jobName = '') {
 		let content = document.getElementById(element);
-		//let ele = this.printingService.applyAllStyles(content);
 		let optionPrinters = printers.map((printer) => {
 			return {
 				printer: printer.Code,
 				host: printer.Host,
 				port: printer.Port,
 				isSecure: printer.IsSecure,
-				// tray: '1',
 				jobName: jobName ? jobName : printer.Code + '-' + this.item.Id,
-				copies: 1,
-				//orientation: 'landscape',
-				duplex: 'duplex',
-				//  autoStyle:content
 			};
 		});
 		let data: printData = {
 			content: content?.outerHTML,
 			type: 'html',
 			options: optionPrinters,
+			IDJob: jobName ? jobName : `print-${this.item.Id}-${Date.now()}`,
 		};
 		return data;
 	}
-	printContent(data: printData[]) {
-		return new Promise((resolve, reject) => {
-			this.printingService
-				.print(data)
-				.then((s) => {
-					resolve(s);
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
-	}
+
 	async sendPrint(Status?, receipt = true, sendEachItem = false) {
-		return new Promise(async (resolve, reject) => {
-			this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
+		try {
+			const result = await this.posPrintService.sendPrint(
+				this.item,
+				this.defaultPrinter,
+				(kitchenId) => this.setKitchenID(kitchenId),
+				(itemId) => this.setItemQuery(itemId),
+				Status
+			);
 
-			if (this.submitAttempt) return;
-			this.submitAttempt = true;
-			let times = 1; // Số lần in phiếu; Nếu là 2, in 2 lần;
-
-			// let printerCodeList = [];
-			// let dataList = [];
-			let newTerminalList = [];
-
-			if (this.defaultPrinter && this.defaultPrinter.length != 0) {
-				this.defaultPrinter.forEach((p: any) => {
-					let Info = {
-						Id: p.Id,
-						Name: p.Name,
-						Code: p.Code,
-						Host: p.Host,
-						Port: p.Port,
-					};
-					newTerminalList.push({ Printer: Info });
-				});
-			} else {
-				this.env.showMessage('Recheck Receipt Printer information!', 'warning');
-				this.submitAttempt = false;
-				return;
-			}
-
-			for (let index = 0; index < newTerminalList.length; index++) {
-				if (Status) {
-					this.item.Status = Status; // Sử dụng khi in kết bill ( Status = 'Done' )
-				}
-
-				await this.setKitchenID('all');
-				await this.setItemQuery('all');
-
-				let printerInfo = newTerminalList[index]['Printer'];
-				let printing = this.printPrepare('bill', [printerInfo]);
-				lastValueFrom(this.printingService.printJobsWithProgress([printing]));
-				// this.printingService.print([printing]);
+			if (result) {
 				this.checkData(receipt, !receipt, sendEachItem);
-				resolve(true);
 			}
-		});
+
+			return result;
+		} catch (error) {
+			dog && console.error('Error in sendPrint:', error);
+			this.env.showMessage('Print failed. Please try again!', 'danger');
+			return false;
+		}
 	}
 
-	unlockOrder() {
-		const Debt = this.item.Debt;
-		let postDTO = { Id: this.item.Id, Code: 'Scheduled', Debt: Debt };
+	private async toggleOrderStatus(status: string, isLocked: boolean, shouldCheckKitchen: boolean = false) {
+		this.submitLockOrderAttempt = true;
 
-		this.pageProvider.commonService
-			.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
-			.toPromise()
-			.then((savedItem: any) => {
-				// this.refresh();
+		if (shouldCheckKitchen) {
+			this.sendKitchenWithPrompt();
+		}
+
+		try {
+			// Use POSOrderService for status toggle
+			const updatedOrder = await this.posOrderService.updateOrder(this.item.Id, {
+				Status: status,
 			});
+
+			// Update local state
+			this.item.Status = status;
+			this.item._Locked = isLocked;
+			this.pageConfig.canEdit = !isLocked;
+			isLocked ? this.formGroup?.disable() : this.formGroup?.enable();
+			this.cdr.detectChanges();
+
+			// Handle specific status actions
+			if (status === 'TemporaryBill') {
+				this.getQRPayment(updatedOrder);
+			}
+		} catch (error) {
+			dog && console.error('Toggle order status failed:', error);
+			this.env.showMessage('Failed to change order status. Please try again.', 'danger');
+			this.loadData();
+		} finally {
+			this.submitLockOrderAttempt = false;
+		}
 	}
 
+	async unlockOrder() {
+		await this.toggleOrderStatus('Scheduled', false);
+	}
+
+	submitLockOrderAttempt = false;
 	async lockOrder() {
-		this.checkItemNotSendKitchen();
-		const Debt = this.item.Debt;
-		let postDTO = {
-			Id: this.item.Id,
-			Code: 'TemporaryBill',
-			Debt: Debt,
-		};
-		this.pageProvider.commonService
-			.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
-			.toPromise()
-			.then((savedItem: any) => {
-				this.getQRPayment(savedItem);
-			});
+		await this.toggleOrderStatus('TemporaryBill', true, true);
 	}
 
 	getQRPayment(payment) {
 		if (payment) this.GenQRCode(payment.Code);
 	}
 
-	VietQRCode;
-	GenQRCode(code) {
-		let that = this;
-		this.VietQRCode = null;
-		if (code != '' && code != null) {
-			QRCode.toDataURL(
-				code,
-				{
-					errorCorrectionLevel: 'H',
-					version: 10,
-					width: 150,
-					scale: 1,
-					type: 'image/jpeg',
-				},
-				function (err, url) {
-					that.VietQRCode = url;
-				}
-			);
+	GenQRCode(code: string) {
+		// Input validation
+		if (!code || typeof code !== 'string') {
+			dog && console.warn('GenQRCode: Invalid code provided');
+			this.VietQRCode = null;
+			return;
 		}
-		if (this.pageConfig.systemConfig.POSEnableTemporaryPayment && this.pageConfig.systemConfig.POSEnablePrintTemporaryBill) {
-			this.sendPrint('TemporaryBill');
+
+		// Reset QR code
+		this.VietQRCode = null;
+
+		try {
+			QRCode.toDataURL(code, PAYMENT_CONFIG.QR_CONFIG, (err, url) => {
+				if (err) {
+					dog && console.error('QR Code generation error:', err);
+					this.env.showMessage('Failed to generate QR code', 'warning');
+					return;
+				}
+
+				this.VietQRCode = url;
+			});
+
+			// Auto-print if enabled
+			if (this.posService.systemConfig?.POSEnableTemporaryPayment && this.posService.systemConfig?.POSEnablePrintTemporaryBill) {
+				this.sendPrint('TemporaryBill');
+			}
+		} catch (error) {
+			dog && console.error('GenQRCode error:', error);
+			this.env.showMessage('QR Code generation failed', 'danger');
 		}
 	}
 
-	printerCodeList = [];
-	dataList = [];
+	VietQRCode: string | null = null;
 
 	////PRIVATE METHODS
+
+	private handleApiError(error: any, message: string = 'Operation failed. Please try again!'): void {
+		dog && console.error(error);
+		this.env.showMessage(message, 'danger');
+	}
+
+	private async createModal(component: any, props: any, cssClass: string = '', modalId?: string) {
+		return this.modalController.create({
+			component,
+			componentProps: props,
+			cssClass,
+			canDismiss: true,
+			backdropDismiss: true,
+			id: modalId,
+		});
+	}
+
+	// Group order lines by item for printing bill
+	getGroupedOrderLines() {
+		return this.cartService.getGroupedOrderLines();
+	}
+
 	private UpdatePrice() {
-		this.dealList.forEach((d) => {
-			this.menuList.forEach((m) => {
+		this.posService.dataSource.dealList.forEach((d) => {
+			this.posService.dataSource.menuList.forEach((m) => {
 				let index = m.Items.findIndex((i) => i.SalesUoM == d.IDItemUoM);
 				if (index != -1) {
 					let idexUom = m.Items[index].UoMs.findIndex((u) => u.Id == d.IDItemUoM);
@@ -1456,13 +914,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	private loadOrder() {
-		this.printData.undeliveredItems = [];
-		this.printData.selectedTables = this.tableList.filter((d) => this.item.Tables.indexOf(d.Id) > -1);
-		this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
+		// Use cart service to load order
+		this.cartService.loadOrderFromData(this.item);
 
-		this.item._Locked = this.noLockStatusList.indexOf(this.item.Status) == -1;
-		this.printData.currentBranch = this.env.branchList.find((d) => d.Id == this.item.IDBranch);
+		// Copy printData from cart service for page-specific access
+		this.printData = this.cartService.printData;
 
+		// Page specific data
 		if (this.item._Locked) {
 			this.pageConfig.canEdit = false;
 			this.formGroup?.disable();
@@ -1471,423 +929,42 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 
 		this.UpdatePrice();
-		this.calcOrder();
 	}
 
-	//Hàm này để tính và show số liệu ra bill ngay tức thời mà ko cần phải chờ response từ server gửi về.
-	private calcOrder() {
-		this.Discount = {
-			Amount: 0, //this.item.OriginalTotalDiscount,
-			Percent: 0, // (this.item.OriginalTotalDiscount * 100) / this.item.OriginalTotalBeforeDiscount,
-		};
+	// State management for save operations
+	nextSaveData = null;
 
-		this.item._TotalQuantity = this.item.OrderLines?.map((x) => x.Quantity).reduce((a, b) => +a + +b, 0);
-
-		this.item.OriginalTotalBeforeDiscount = 0;
-		this.item.OriginalDiscountByOrder = 0;
-		this.item.OriginalDiscountFromSalesman = 0;
-		this.item.OriginalTotalDiscount = 0;
-		this.item.AdditionsAmount = 0;
-		this.item.AdditionsTax = 0;
-		this.item.OriginalTotalAfterDiscount = 0;
-		this.item.OriginalTax = 0;
-		this.item.OriginalTotalAfterTax = 0;
-		this.item.CalcOriginalTotalAdditions = 0;
-		this.item.CalcTotalOriginal = 0;
-
-		this.item.OriginalTotalDiscountPercent = 0;
-		this.item.OriginalTaxPercent = 0;
-		this.item.CalcOriginalTotalAdditionsPercent = 0;
-		this.item.AdditionsAmountPercent = 0;
-		this.item.OriginalDiscountFromSalesmanPercent = 0;
-
-		for (let m of this.menuList) for (let mi of m.Items) mi.BookedQuantity = 0;
-
-		for (let line of this.item.OrderLines) {
-			line._serviceCharge = 0;
-			if (
-				this.item.IDBranch == 174 || //W-Cafe
-				this.item.IDBranch == 17 || //The Log
-				this.item.IDBranch == 416 || //Gem Cafe && set menu  && line._item.IDMenu == 218
-				this.item.IDBranch == 864 || //TEST
-				this.env.branchList.find((d) => d.Id == this.item.IDBranch)?.Code == '145' //phindily code 145
-			) {
-				line._serviceCharge = 5;
-			}
-
-			//Parse data + Tính total
-			line.UoMPrice = line.IsPromotionItem ? 0 : parseFloat(line.UoMPrice) || 0;
-			line.TaxRate = parseFloat(line.TaxRate) || 0;
-			line.Quantity = parseFloat(line.Quantity) || 0;
-			line.OriginalTotalBeforeDiscount = line.UoMPrice * line.Quantity;
-			this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount;
-
-			//line.OriginalPromotion
-			line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount1) || 0;
-			line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount2) || 0;
-			line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
-			line.OriginalDiscountByGroup = 0;
-			line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
-			line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
-			if (this.Discount?.Percent > 0) {
-				line.OriginalDiscountByOrder = (this.Discount?.Percent * line.OriginalTotalBeforeDiscount) / 100;
-			}
-			this.item.OriginalDiscountByOrder += line.OriginalDiscountByOrder;
-			line.OriginalTotalDiscount = line.OriginalDiscountByLine + line.OriginalDiscountByOrder;
-			this.item.OriginalTotalDiscount += line.OriginalTotalDiscount;
-
-			line.OriginalTotalAfterDiscount = line.OriginalTotalBeforeDiscount - line.OriginalTotalDiscount;
-			line.OriginalTax = line.OriginalTotalAfterDiscount * (line.TaxRate / 100.0);
-			this.item.OriginalTotalAfterDiscount += line.OriginalTotalAfterDiscount;
-			this.item.OriginalTax += line.OriginalTax;
-			line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
-			this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
-			line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
-			line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
-			this.item.AdditionsAmount += line.AdditionsAmount;
-			this.item.AdditionsTax += line.CalcOriginalTotalAdditions - line.AdditionsAmount;
-			this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
-
-			line.CalcTotalOriginal = line.OriginalTotalAfterTax + line.CalcOriginalTotalAdditions;
-			this.item.CalcTotalOriginal += line.CalcTotalOriginal;
-			line.OriginalDiscountFromSalesman = parseFloat(line.OriginalDiscountFromSalesman) || 0;
-			line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
-
-			this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman;
-
-			//Lấy hình & hiển thị thông tin số lượng đặt hàng lên menu
-			for (let m of this.menuList)
-				for (let mi of m.Items) {
-					if (mi.Id == line.IDItem) {
-						mi.BookedQuantity = this.item.OrderLines.filter((x) => x.IDItem == line.IDItem)
-							.map((x) => x.Quantity)
-							.reduce((a, b) => +a + +b, 0);
-						line._item = mi;
-					}
-				}
-
-			line._background = {
-				'background-image': 'url("' + environment.posImagesServer + (line._item && line._item.Image ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")',
-			};
-
-			//Tính số lượng item chưa gửi bếp
-			line._undeliveredQuantity = line.Quantity - line.ShippedQuantity;
-			if (line._undeliveredQuantity > 0) {
-				this.printData.undeliveredItems.push(line);
-				line.Status = 'New';
-			}
-			// else {
-			//     line.Status = 'Serving';
-			// }
-			this.updateOrderLineStatus(line);
-
-			line._Locked = this.item._Locked ? true : this.noLockLineStatusList.indexOf(line.Status) == -1;
-			if (this.pageConfig.canDeleteItems) {
-				line._Locked = false;
-			}
-		}
-
-		this.item.OriginalTotalDiscountPercent = ((this.item.OriginalTotalDiscount / this.item.OriginalTotalBeforeDiscount) * 100.0).toFixed(0);
-		this.item.OriginalTaxPercent = (((this.item.OriginalTax + this.item.AdditionsTax) / (this.item.OriginalTotalAfterDiscount + this.item.AdditionsAmount)) * 100.0).toFixed(0);
-		this.item.CalcOriginalTotalAdditionsPercent = ((this.item.CalcOriginalTotalAdditions / this.item.OriginalTotalAfterTax) * 100.0).toFixed(0);
-		this.item.AdditionsAmountPercent = ((this.item.AdditionsAmount / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
-		this.item.OriginalDiscountFromSalesmanPercent = ((this.item.OriginalDiscountFromSalesman / this.item.CalcTotalOriginal) * 100.0).toFixed(0);
-		this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
-	}
-
-	//patch value to form
-	private patchOrderValue() {
-		this.formGroup?.patchValue(this.item);
-		this.patchOrderLinesValue();
-	}
-
-	private patchOrderLinesValue() {
-		this.formGroup.controls.OrderLines = new FormArray([]);
-		if (this.item.OrderLines?.length) {
-			for (let i of this.item.OrderLines) {
-				this.addOrderLine(i);
-			}
-		}
-	}
-
-	private updateOrderLineStatus(line) {
-		line.StatusText = lib.getAttrib(line.Status, this.soDetailStatusList, 'Name', '--', 'Code');
-		line.StatusColor = lib.getAttrib(line.Status, this.soDetailStatusList, 'Color', '--', 'Code');
-	}
-
-	private getMenu(forceReload) {
-		return new Promise((resolve, reject) => {
-			this.env
-				.getStorage('menuList' + this.env.selectedBranch)
-				.then((data) => {
-					if (!forceReload && data) {
-						resolve(data);
-					} else {
-						this.menuProvider
-							.read({ IDBranch: this.env.selectedBranch })
-							.then((resp) => {
-								let menuList = resp['data'];
-								menuList.forEach((m: any) => {
-									m.menuImage = environment.posImagesServer + (m.Image ? m.Image : 'assets/pos-icons/POS-Item-demo.png');
-									m.Items.forEach((i) => {
-										i.imgPath = environment.posImagesServer + (i.Image ? i.Image : 'assets/pos-icons/POS-Item-demo.png');
-									});
-								});
-								this.env.setStorage('menuList' + this.env.selectedBranch, menuList);
-								resolve(menuList);
-							})
-							.catch((err) => {
-								reject(err);
-							});
-					}
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
-	}
-
-	private getTableGroupFlat(forceReload) {
-		return new Promise((resolve, reject) => {
-			this.getTableGroupTree(forceReload)
-				.then((data: any) => {
-					let tableList = [];
-
-					data.forEach((g) => {
-						tableList.push({
-							Id: 0,
-							Name: g.Name,
-							levels: [],
-							disabled: true,
-						});
-						g.TableList.forEach((t) => {
-							tableList.push({
-								Id: t.Id,
-								Name: t.Name,
-								levels: [{}],
-							});
-						});
-					});
-
-					resolve(tableList);
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
-	}
-
-	private getTableGroupTree(forceReload) {
-		return new Promise((resolve, reject) => {
-			this.env
-				.getStorage('tableGroup' + this.env.selectedBranch)
-				.then((data) => {
-					if (!forceReload && data) {
-						resolve(data);
-					} else {
-						let query = { IDBranch: this.env.selectedBranch };
-						Promise.all([this.tableGroupProvider.read(query), this.tableProvider.read(query)])
-							.then((values) => {
-								let tableGroupList = values[0]['data'];
-								let tableList = values[1]['data'];
-
-								tableGroupList.forEach((g) => {
-									g.TableList = tableList.filter((d) => d.IDTableGroup == g.Id);
-								});
-								this.env.setStorage('tableGroup' + this.env.selectedBranch, tableGroupList);
-								resolve(tableGroupList);
-							})
-							.catch((err) => {
-								reject(err);
-							});
-					}
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
-	}
-
-	private getDeal() {
-		let apiPath = {
-			method: 'GET',
-			url: function () {
-				return ApiSetting.apiDomain('PR/Deal/ForPOS');
-			},
-		};
-		return new Promise((resolve, reject) => {
-			this.commonService
-				.connect(apiPath.method, apiPath.url(), this.query)
-				.toPromise()
-				.then((result: any) => {
-					resolve(result);
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
-	}
-
-	patchOrderLines() {}
-
-	private addOrderLine(line) {
-		let groups = <FormArray>this.formGroup.controls.OrderLines;
-		let group = this.formBuilder.group({
-			IDOrder: [line.IDOrder],
-			Id: new FormControl({ value: line.Id, disabled: true }),
-			Code: [line.Code],
-
-			Type: [line.Type],
-			Status: new FormControl({ value: line.Status, disabled: true }),
-			IDItem: [line.IDItem, Validators.required],
-			IDTax: [line.IDTax],
-			TaxRate: [line.TaxRate],
-
-			IDUoM: [line.IDUoM, Validators.required],
-			UoMPrice: [line.UoMPrice],
-
-			Quantity: [line.Quantity, Validators.required],
-			IDBaseUoM: [line.IDBaseUoM],
-			UoMSwap: [line.UoMSwap],
-			UoMSwapAlter: [line.UoMSwapAlter],
-			BaseQuantity: [line.BaseQuantity],
-
-			ShippedQuantity: [line.ShippedQuantity],
-			Remark: new FormControl({ value: line.Remark, disabled: true }),
-
-			IsPromotionItem: [line.IsPromotionItem],
-			IDPromotion: [line.IDPromotion],
-
-			OriginalDiscountFromSalesman: [line.OriginalDiscountFromSalesman],
-
-			CreatedDate: new FormControl({
-				value: line.CreatedDate,
-				disabled: true,
-			}),
-
-			// OriginalTotalBeforeDiscount
-			// OriginalPromotion
-			// OriginalDiscount1
-			// OriginalDiscount2
-			// OriginalDiscountByItem
-			// OriginalDiscountByGroup
-			// OriginalDiscountByLine
-			// OriginalDiscountByOrder
-			// OriginalDiscountFromSalesman
-			// OriginalTotalDiscount
-			// OriginalTotalAfterDiscount
-			// OriginalTax
-			// OriginalTotalAfterTax
-			// CalcOriginalTotalAdditions
-			// CalcOriginalTotalDeductions
-			// CalcTotalOriginal
-
-			// ShippedQuantity
-			// ReturnedQuantity
-
-			// TotalBeforeDiscount
-			// Discount1
-			// Discount2
-			// DiscountByItem
-			// Promotion
-			// DiscountByGroup
-			// DiscountByLine
-			// DiscountByOrder
-			// DiscountFromSalesman
-			// TotalDiscount
-			// TotalAfterDiscount
-			// Tax
-			// TotalAfterTax
-			// CalcTotalAdditions
-			// CalcTotalDeductions
-			// CalcTotal
-
-			// CreatedBy
-			// ModifiedBy
-			// CreatedDate
-			// ModifiedDate
-		});
-		groups.push(group);
-	}
-	delay = 1000;
 	setOrderValue(data, forceSave = false, autoSave = null) {
-		for (const c in data) {
-			if (c == 'OrderLines' || c == 'OrderLines') {
-				let fa = <FormArray>this.formGroup.controls.OrderLines;
-
-				for (const line of data[c]) {
-					let idx = -1;
-					if (c == 'OrderLines') {
-						idx = this.item[c].findIndex((d) => d.Code == line.Code && d.IDUoM == line.IDUoM);
-					}
-					//Remove Order line
-					if (line.Quantity < 1) {
-						if (line.Id) {
-							let deletedLines = this.formGroup.get('DeletedLines').value;
-							deletedLines.push(line.Id);
-							this.formGroup.get('DeletedLines').setValue(deletedLines);
-							this.formGroup.get('DeletedLines').markAsDirty();
-						}
-						this.item.OrderLines.splice(idx, 1);
-						fa.removeAt(idx);
-					}
-					//Update
-					else {
-						let cfg = <FormGroup>fa.controls[idx];
-
-						for (const lc in line) {
-							let fc = <FormControl>cfg.controls[lc];
-							if (fc) {
-								fc.setValue(line[lc]);
-								fc.markAsDirty();
-							}
-						}
-					}
-
-					let numberOfGuests = this.formGroup.get('NumberOfGuests');
-					numberOfGuests.setValue(this.item.OrderLines?.map((x) => x.Quantity).reduce((a, b) => +a + +b, 0));
-					numberOfGuests.markAsDirty();
-
-					const parentElement = this.numberOfGuestsInput?.nativeElement?.parentElement;
-					if (parentElement) {
-						parentElement.classList.add('shake');
-						setTimeout(() => {
-							parentElement.classList.remove('shake');
-						}, 2000);
-					}
-				}
-			} else {
-				let fc = <FormControl>this.formGroup.controls[c];
-				if (fc) {
-					fc.setValue(data[c]);
-					fc.markAsDirty();
-				}
-			}
-		}
-		this.calcOrder();
-		if (forceSave) {
-			this.saveChange();
-		} else {
-			if (autoSave === null) autoSave = this.pageConfig.systemConfig.IsAutoSave;
-			if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && autoSave) {
-				if (this.submitAttempt) {
-					this.delay += 1000;
-				}
-				this.debounce(() => {
-					this.delay = 1000; // reset
-					this.saveChange();
-				}, this.delay);
-			}
-		}
+		// Delegate to cart service for order value management
+		return this.cartService.setOrderValue(data, forceSave, autoSave);
 	}
-
-	alwaysReturnProps = ['Id', 'IDBranch', 'Code'];
 	async saveChange() {
-		let submitItem = this.getDirtyValues(this.formGroup);
-		return this.saveChange2();
+		//if(!(this.formGroup.controls.OrderLines.dirty || this.formGroup.dirty)) return;
+		this.isWaitingRefresh = true;
+		dog && console.log('🔄 POSOrderDetail: Starting save operation via POSOrderService');
+
+		try {
+			// Use POSOrderService for order operations
+			const orderData = this.formGroup.getRawValue();
+			if (this.item?.Id) {
+				// Update existing order
+				const updatedOrder = await this.posOrderService.updateOrder(this.item.Id, orderData);
+				this.savedChange(updatedOrder, this.formGroup);
+			} else {
+				// Create new order
+				const newOrder = await this.posOrderService.createOrder(orderData);
+				this.savedChange(newOrder, this.formGroup);
+			}
+		} catch (error) {
+			this.handleApiError(error, 'Save operation failed');
+			this.isWaitingRefresh = false;
+			this.submitAttempt = false;
+		}
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
+		dog && console.log('saved change');
+
 		if (savedItem) {
 			if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id) form.controls.Id.setValue(savedItem.Id);
 
@@ -1901,37 +978,31 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			this.item = savedItem;
 		}
-
-		this.loadedData();
-
+		this.isWaitingRefresh = false;
 		this.submitAttempt = false;
-		this.env.showMessage('Saving completed!', 'success');
-
-		// if (savedItem.Status == 'Done') {
-		// 	this.sendPrint(savedItem.Status, true);
-		// }
-		// if (savedItem.Status == 'TemporaryBill' && this.pageConfig.systemConfig.POSEnableTemporaryPayment && this.pageConfig.systemConfig.POSEnablePrintTemporaryBill) {
-		// 	this.sendPrint();
-		// }
+		if (this.nextSaveData) {
+			dog && console.log('Save next');
+			this.setOrderValue(this.nextSaveData, true);
+			this.nextSaveData = null;
+		} else {
+			this.loadedData();
+			this.env.showMessage('Saving completed!', 'success');
+		}
+		// Remove manual CheckPOSNewOrderLines call - now handled by service
 	}
 
 	getPromotionProgram() {
-		this.programProvider.commonService
-			.connect('GET', 'PR/Program/AppliedProgramInSaleOrder', {
-				IDSO: this.id,
-			})
-			.toPromise()
+		this.cartService
+			.getPromotionPrograms()
 			.then((data: any) => {
-				this.promotionAppliedPrograms = data;
+				// Data is automatically set in cart service via discount service
+				dog && console.log('Promotion programs loaded:', data);
 			})
 			.catch((err) => {
-				console.log(err);
+				dog && console.log(err);
 			});
 	}
 
-	changeTable() {
-		this.saveSO();
-	}
 	_contactDataSource = this.buildSelectDataSource((term) => {
 		return this.contactProvider.search({
 			Take: 20,
@@ -1977,10 +1048,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	private saveSO() {
-		Object.assign(this.item, this.formGroup.value);
-		this.saveChange();
-	}
 	getStaffInfo(Code) {
 		if (Code != null) {
 			this.staffProvider
@@ -2004,79 +1071,81 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			OriginalDiscountFromSalesman = 0;
 		}
 
-		if (OriginalDiscountFromSalesman > line.CalcTotalOriginal) {
-			this.env.showMessage('Gift amount cannot be greater than the product value!', 'danger');
+		// Use cart service for discount calculation
+		try {
+			const orderData = this.cartService.applySalesmanDiscount(line, OriginalDiscountFromSalesman);
+			this.setOrderValue(orderData);
+		} catch (error) {
+			this.env.showMessage(error.message, 'danger');
 			return false;
 		}
-		this.setOrderValue({
-			OrderLines: [
-				{
-					Id: line.Id,
-					Code: line.Code,
-					IDUoM: line.IDUoM,
-					Remark: line.Remark,
-					OriginalDiscountFromSalesman: OriginalDiscountFromSalesman,
-				},
-			],
-		});
 	}
 
-	private getPayments() {
-		return new Promise((resolve, reject) => {
-			this.commonService
-				.connect('GET', 'BANK/IncomingPaymentDetail', {
-					IDSaleOrder: this.item.Id,
-				})
-				.toPromise()
-				.then((result: any) => {
-					this.paymentList = result; //.filter(p => p.IncomingPayment.Status == "Success" || p.IncomingPayment.Status == "Processing");
-					this.paymentList.forEach((e) => {
-						// console.log(this.paymentStatusList);
+	private async getPayments() {
+		try {
+			// Use POSSecurityService with error recovery
+			const result: any = await this.posSecurityService.executeWithRecovery(async () => {
+				return await this.commonService
+					.connect('GET', 'BANK/IncomingPaymentDetail', {
+						IDSaleOrder: this.item.Id,
+					})
+					.toPromise();
+			}, 'Error loading payment information');
 
-						e.IncomingPayment._Status = this.paymentStatusList.find((s) => s.Code == e.IncomingPayment.Status) || {
-							Code: e.IncomingPayment.Status,
-							Name: e.IncomingPayment.Status,
-							Color: 'danger',
-						};
-						e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.paymentTypeList, 'Name', '--', 'Code');
-					});
-					let PaidAmounted = this.paymentList
-						?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false)
-						.map((x) => x.Amount)
-						.reduce((a, b) => +a + +b, 0);
-					let RefundAmount = this.paymentList
-						?.filter((x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true)
-						.map((x) => x.Amount)
-						.reduce((a, b) => +a + +b, 0);
+			this.paymentList = result;
+			this.paymentList.forEach((e) => {
+				e.IncomingPayment._Status = this.posService.dataSource.paymentStatusList.find((s) => s.Code == e.IncomingPayment.Status) || {
+					Code: e.IncomingPayment.Status,
+					Name: e.IncomingPayment.Status,
+					Color: 'danger',
+				};
+				e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.posService.dataSource.paymentTypeList, 'Name', '--', 'Code');
+			});
 
-					this.item.Received = PaidAmounted - RefundAmount;
-					this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
-					if (this.item.Debt > 0) {
-						this.item.IsDebt = true;
-					}
+			let PaidAmounted = this.paymentList
+				?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == false)
+				.map((x) => x.Amount)
+				.reduce((a, b) => +a + +b, 0);
+			let RefundAmount = this.paymentList
+				?.filter((x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true)
+				.map((x) => x.Amount)
+				.reduce((a, b) => +a + +b, 0);
 
-					if (this.pageConfig.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done') {
-						this.env.showMessage('The order has been paid, the system will automatically close this bill.');
-						this.formGroup.enable();
-						this.doneOrder();
-					}
-					resolve(this.paymentList);
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
+			this.item.Received = PaidAmounted - RefundAmount;
+			this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
+			if (this.item.Debt > 0) {
+				this.item.IsDebt = true;
+			}
+
+			if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < PAYMENT_CONFIG.MIN_DEBT_THRESHOLD && this.item.Status != 'Done') {
+				this.env.showMessage('The order has been paid, the system will automatically close this bill.');
+				this.formGroup.enable();
+				this.doneOrder();
+			}
+			return this.paymentList;
+		} catch (error) {
+			this.handleApiError(error, 'Error loading payment information');
+			throw error;
+		}
 	}
 
 	doneOrder() {
 		let changed: any = { OrderLines: [] };
-		if (this.printData.undeliveredItems.length > 0) {
+
+		// Use cart service to check undelivered items
+		const undeliveredItems = this.cartService.getUndeliveredItems();
+		const undeliveredCount = undeliveredItems.length;
+
+		if (undeliveredCount > 0) {
 			let message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			if (this.item.Debt > 0) {
 				message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			}
-			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: this.printData.undeliveredItems.length }, null, 'Thông báo', 'GỬI', null).then((_) => {
-				this.printData.undeliveredItems = []; //<-- clear;
+			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: undeliveredCount }, null, 'Thông báo', 'GỬI', null).then((_) => {
+				// Mark all items as delivered in cart service
+				const itemIds = undeliveredItems.map((item) => item.Id).filter((id) => id);
+				this.cartService.markItemsAsDelivered(itemIds);
+
 				this.item.OrderLines.forEach((line) => {
 					if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
 						line.Status = 'Done';
@@ -2124,34 +1193,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	cssStyling = `
-    .bill .items .name,.bill .items tr:last-child td{border:none!important}.bill,.bill .title,.sheet{color:#000;font-sized:13px;}.sheet .no-break-page,.sheet .no-break-page *,.sheet table break-guard,.sheet table break-guard *,.sheet table tr{page-break-inside:avoid}.bill{display:block;overflow:hidden!important}.bill .sheet{box-shadow:none!important}.bill .header,.bill .message,.sheet.rpt .cen,.text-center{text-align:center}.bill .header span{display:inline-block;width:100%}.bill .header .logo img{max-width:150px;max-height:75px}.bill .header .bill-no,.bill .header .brand,.bill .items .quantity,.bold,.sheet.rpt .bol{font-weight:700}.bill .header .address{font-size:80%;font-style:italic}.bill .table-info{border:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .table-info-bottom{border-bottom:solid;margin:5px 0;padding:5px;border-width:1px 0}.bill .items{margin:5px 0}.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}.bill .items .name{width:100%;padding-top:5px;padding-bottom:2px!important}.bill .items .code{font-weight:700;text-transform:uppercase}.bill .items .total,.sheet.rpt .num,.text-right{text-align:right}.bill .header,.bill .items,.bill .message,.bill .table-info,.bill .table-info-bottom,.bill .table-info-top{padding-left:8px;padding-right:8px}.page-footer-space{margin-top:10px}.table-name-bill{font-size:16px}.table-info-top td{padding-top:5px}.table-info-top .small{font-size:smaller!important}.sheet{margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:'Times New Roman',Times,serif;font-size:13px;background:#fff}.sheet.rpt .top-zone{min-height:940px}.sheet.rpt table,.sheet.rpt tbody table{width:100%;border-collapse:collapse}.sheet.rpt tbody table td{padding:0}.sheet.rpt .rpt-header .ngay-hd{width:100px}.sheet.rpt .rpt-header .title{font-size:18px;font-weight:700;color:#000}.sheet.rpt .rpt-header .head-c1{width:75px}.sheet.rpt .chu-ky,.sheet.rpt .rpt-nvgh-header{margin-top:20px}.sheet.rpt .ds-san-pham{margin:10px 0}.sheet.rpt .ds-san-pham td{padding:2px 5px;border:1px solid #000;white-space:nowrap}.sheet.rpt .ds-san-pham .head{background-color:#f1f1f1;font-weight:700}.sheet.rpt .ds-san-pham .oven{background-color:#f1f1f1}.sheet.rpt .ds-san-pham .ghi-chu{min-width:170px}.sheet.rpt .ds-san-pham .tien{width:200px}.sheet.rpt .thanh-tien .c1{width:95px}.sheet.rpt .chu-ky td{font-weight:700;text-align:center}.sheet.rpt .chu-ky .line2{font-weight:400;height:100px;page-break-inside:avoid}.sheet.rpt .noti{margin-top:-105px}.sheet.rpt .noti td{vertical-align:bottom}.sheet.rpt .noti td .qrc{width:100px;height:100px;border:1px solid;display:block}.sheet.rpt .big{font-size:16px;font-weight:700;color:#b7332b}.sheet .page-footer,.sheet .page-footer-space,.sheet .page-header,.sheet .page-header-space{height:10mm}.sheet table{page-break-inside:auto}.sheet table tr{page-break-after:auto}.float-right{float:right}
-    `;
 	deleteVoucher(p) {
-		let apiPath = {
-			method: 'POST',
-			url: function () {
-				return ApiSetting.apiDomain('PR/Program/DeleteVoucher/');
-			},
-		};
-		new Promise((resolve, reject) => {
-			this.pageProvider.commonService
-				.connect(apiPath.method, apiPath.url(), {
-					IDProgram: p.Id,
-					IDSaleOrder: this.item.Id,
-					IDDeduction: p.IDDeduction,
-				})
-				.toPromise()
-				.then((savedItem: any) => {
-					this.env.showMessage('Saving completed!', 'success');
-					resolve(true);
-					this.refresh();
-				})
-				.catch((err) => {
-					this.env.showMessage('Cannot save, please try again!', 'danger');
-					reject(err);
-				});
-		});
+		this.cartService
+			.deleteVoucher(p)
+			.then(() => {
+				this.env.showMessage('Saving completed!', 'success');
+				this.loadData();
+			})
+			.catch((err) => this.handleApiError(err, 'Cannot save, please try again!'));
 	}
 
 	async setKitchenID(value, ms = 1) {
@@ -2195,151 +1244,104 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			this.submitAttempt = false;
 			this.printData.undeliveredItems = []; //<-- clear;
-			this.printerCodeList = [];
-			this.dataList = [];
 			resolve(true);
 		});
 	}
 
 	applyDiscount() {
-		this.pageProvider.commonService
-			.connect('POST', 'SALE/Order/UpdatePosOrderDiscount/', {
-				Id: this.item.Id,
-				Percent: this.Discount.Percent,
-			})
-			.toPromise()
+		const discount = this.cartService.getCurrentDiscount();
+		if (!discount) {
+			this.env.showMessage('No discount data available', 'warning');
+			return;
+		}
+
+		this.cartService
+			.applyDiscount(discount.Percent)
 			.then((result) => {
 				this.env.showMessage('Saving completed!', 'success');
-				this.refresh();
+				this.loadData();
 			})
-			.catch((err) => {
-				this.env.showMessage('Cannot save, please try again!', 'danger');
-			});
+			.catch((err) => this.handleApiError(err, 'Cannot save, please try again!'));
 	}
 
 	async scanQRCode() {
-		let code = await this.scanner.scan();
-		if (code.indexOf('VCARD;') != -1) {
-			var tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
+		try {
+			// Input validation for scanner service
+			if (!this.scanner) {
+				this.env.showMessage('QR Scanner not available', 'danger');
+				return;
+			}
 
-			var StaffCode = tempString.split(';')[0];
-			var QRGenTime = tempString.split(';')[1];
+			const code = await this.scanner.scan();
 
-			let toDay = new Date();
-			let fromTime = new Date(toDay);
-			let toTime = new Date(toDay);
-			fromTime.setMinutes(toDay.getMinutes() - 1);
-			toTime.setMinutes(toDay.getMinutes() + 1);
+			if (!code || typeof code !== 'string') {
+				throw new Error('Invalid QR code data');
+			}
 
-			let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
-			let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+			// Check if it's a valid staff VCARD
+			if (!code.includes('VCARD;')) {
+				throw new Error('Invalid QR code format');
+			}
 
-			if (currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo) {
-				this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
-					let address = resp['data'][0];
-					address.IDAddress = address['Addresses'][0]['Id'];
-					address.Address = address['Addresses'][0];
+			const tempString = code.substring(code.indexOf('VCARD;') + 6);
+			const parts = tempString.split(';');
 
-					this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
-					this._contactDataSource.selected.push(address);
-					this.changedIDAddress(address);
-					this._contactDataSource.initSearch();
-					this.cdr.detectChanges();
-					this.saveChange();
-				});
-			} else {
+			if (parts.length < 2) {
+				throw new Error('Incomplete QR code data');
+			}
+
+			const StaffCode = parts[0];
+			const QRGenTime = parts[1];
+
+			// Validate time window
+			const currentTime = new Date();
+			const tolerance = PAYMENT_CONFIG.TIME_TOLERANCE_MINUTES;
+			const fromTime = new Date(currentTime.getTime() - tolerance * 60000);
+			const toTime = new Date(currentTime.getTime() + tolerance * 60000);
+
+			const currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+			const currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+
+			if (!(currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo)) {
 				this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {{value}}', 'danger', QRGenTime);
+
+				// Offer retry
+				const retry = await this.env.showPrompt('QR Code expired', 'Would you like to try again?', null, 'Retry', 'Cancel').catch(() => false);
+
+				if (retry) {
+					setTimeout(() => this.scanQRCode(), 0);
+				}
+				return;
+			}
+
+			// Fetch staff data with validation
+			const resp: any = await this.contactProvider.read({ Code: StaffCode, Take: 20 });
+
+			if (!resp?.data?.[0]?.Addresses?.[0]) {
+				throw new Error('Staff not found or invalid data');
+			}
+
+			const address = resp.data[0];
+			address.IDAddress = address.Addresses[0].Id;
+			address.Address = address.Addresses[0];
+
+			// Update UI
+			this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address.Name);
+			this._contactDataSource.selected.push(address);
+			this.changedIDAddress(address);
+			this._contactDataSource.initSearch();
+			this.cdr.detectChanges();
+
+			// Auto-save
+			await this.saveChange();
+		} catch (error) {
+			dog && console.error('scanQRCode error:', error);
+
+			const retry = await this.env.showPrompt('QR Code Error', 'Please scan a valid QR code. Try again?', null, 'Retry', 'Cancel').catch(() => false);
+
+			if (retry) {
 				setTimeout(() => this.scanQRCode(), 0);
 			}
-		} else {
-			this.env
-				.showPrompt('Please scan valid QR code', 'Invalid QR code', null, 'Retry', 'Cancel')
-				.then(() => {
-					setTimeout(() => this.scanQRCode(), 0);
-				})
-				.catch(() => {});
-			return;
 		}
 	}
 }
-
-/*
-1201
-Mới
-New
-
-1202
-Tiếp nhận
-Confirmed
-
-1203
-Đã chuyển bếp/bar
-Scheduled
-
-1204
-Đang chuẩn bị
-Picking
-
-1205
-Đã lên món
-Delivered
-
-1206
-Đơn đã chia
-Splitted
-
-1207
-Đơn đã gộp
-Merged
-
-1208
-Còn nợ
-Debt
-
-1209
-Đã xong
-Done
-
-1210
-Đã hủy
-Canceled
-
-
-
-
-
-1301
-Mới
-New
-
-1302
-Chờ tiếp nhận
-Waiting
-
-1303
-Đang thực hiện
-Preparing
-
-1304
-Đã sẵn sàng
-Ready
-
-1305
-Đang phục vụ
-Serving
-
-1306
-Đã xong
-Done
-
-1307
-Đã hủy
-Canceled
-
-1308
-Đã đổi trả
-Returned
-
-
-
-*/
