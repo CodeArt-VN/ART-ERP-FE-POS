@@ -21,7 +21,7 @@ import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 
-//import { POSOrderService } from '../pos-order.service';
+import { POSOrderService } from '../pos-order.service';
 
 
 @Component({
