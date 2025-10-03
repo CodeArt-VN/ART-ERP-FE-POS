@@ -4,9 +4,10 @@ import { POSConfig } from 'src/app/pages/POS/interface.config';
 import { POS_DataSource, POS_Order } from 'src/app/pages/POS/interface.model';
 import { CommonService } from 'src/app/services/core/common.service';
 import { EnvService } from 'src/app/services/core/env.service';
-import { POS_KitchenProvider, POS_TableProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
-import { SYS_ConfigService } from 'src/app/services/system-config.service';
+import { SALE_OrderProvider } from 'src/app/services/static/services.service';
+import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
 import { POSEnviromentDataService } from './pos-env-data.service';
+
 
 @Injectable({
 	providedIn: 'root',
@@ -19,11 +20,25 @@ export class POSService extends SALE_OrderProvider {
 	systemConfig: POSConfig = {
 		IsAutoSave: true,
 		SODefaultBusinessPartner: 123,
+		IsUseIPWhitelist: false,
+		IPWhitelistInput: '',
+		IsRequireOTP: false,
+		POSLockSpamPhoneNumber: false,
+		LeaderMachineHost: '',
 		POSSettleAtCheckout: true,
 		POSHideSendBarKitButton: false,
 		POSEnableTemporaryPayment: true,
 		POSEnablePrintTemporaryBill: false,
 		POSAutoPrintBillAtSettle: true,
+		POSDefaultPaymentProvider: '',
+		POSTopItemsMenuIsShow: false,
+		POSTopItemsMenuNumberOfItems: 0,
+		POSTopItemsMenuNumberOfDays: 0,
+		POSTopItemsMenuNotIncludedItemIds: '',
+		POSAudioOrderUpdate: '',
+		POSAudioIncomingPayment: '',
+		POSAudioCallToPay: '',
+		POSAudioCallStaff: '',
 	};
 
 	constructor(
@@ -32,23 +47,38 @@ export class POSService extends SALE_OrderProvider {
 		public dataSourceService: POSEnviromentDataService,
 		public env: EnvService
 	) {
+		console.log('🚀 POSService: Constructor initialized (Facade Pattern)');
 		super(commonService);
 		this.env?.ready?.then((_) => {
-			console.log('POS service ready');
+			console.log('✅ POS service ready');
 		});
 	}
 
-	public getSystemConfig(IDBranch) {
+	public getSystemConfig(IDBranch, forceReload = false) {
 		return new Promise((resolve, reject) => {
-			const keys = [
-				'IsAutoSave',
-				'SODefaultBusinessPartner',
-				'POSSettleAtCheckout',
-				'POSHideSendBarKitButton',
-				'POSEnableTemporaryPayment',
-				'POSEnablePrintTemporaryBill',
-				'POSAutoPrintBillAtSettle',
-			];
+		const keys = [
+			'IsAutoSave',
+			'SODefaultBusinessPartner',
+			'IsUseIPWhitelist',
+			'IPWhitelistInput',
+			'IsRequireOTP',
+			'POSLockSpamPhoneNumber',
+			'LeaderMachineHost',
+			'POSSettleAtCheckout',
+			'POSHideSendBarKitButton',
+			'POSEnableTemporaryPayment',
+			'POSEnablePrintTemporaryBill',
+			'POSAutoPrintBillAtSettle',
+			'POSDefaultPaymentProvider',
+			'POSTopItemsMenuIsShow',
+			'POSTopItemsMenuNumberOfItems',
+			'POSTopItemsMenuNumberOfDays',
+			'POSTopItemsMenuNotIncludedItemIds',
+			'POSAudioOrderUpdate',
+			'POSAudioIncomingPayment',
+			'POSAudioCallToPay',
+			'POSAudioCallStaff',
+		];
 			this.sysConfigService
 				.getConfig(IDBranch, keys)
 				.then((config) => {

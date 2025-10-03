@@ -8,7 +8,7 @@ import { POSConstants } from './pos.constants';
 import { environment } from 'src/environments/environment';
 import { BehaviorSubject } from 'rxjs';
 import { POSEnviromentDataService } from './pos-env-data.service';
-import { SYS_ConfigService } from 'src/app/services/system-config.service';
+import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
 import { POSDiscountService } from './pos-discount.service';
 
 @Injectable({

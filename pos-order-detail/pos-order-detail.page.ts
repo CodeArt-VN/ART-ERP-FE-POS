@@ -4,7 +4,7 @@ import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
 import { EnvService } from 'src/app/services/core/env.service';
 import { CRM_ContactProvider, HRM_StaffProvider, POS_TerminalProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
-import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 
@@ -12,23 +12,23 @@ import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
 import { POSMemoModalPage } from '../pos-memo-modal/pos-memo-modal.page';
-import { environment } from 'src/environments/environment';
+import { dog, environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
-import { printData, PrintingService } from 'src/app/services/printing.service';
-import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { printData, PrintingService } from 'src/app/services/util/printing.service';
+import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
 import { POSService } from '../pos.service';
-import { PromotionService } from 'src/app/services/promotion.service';
+import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
 import { POSNotifyService } from '../pos-notify.service';
 import { POSConstants } from '../pos.constants';
 import { POSCartService } from '../pos-cart.service';
 import { POSPrintService } from '../pos-print.service';
 
-// Constants
+// Constants 1
 const PAYMENT_CONFIG = {
 	WALKIN_CUSTOMER_ID: 922,
 	QR_CONFIG: {
@@ -61,7 +61,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	@ViewChild('numberOfGuestsInput') numberOfGuestsInput: ElementRef;
 
 	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png'; //No image for menu item
-	segmentView = 'all';
+	segmentView = 0; //Default top menu segment
 	idTable: any; //Default table
 
 	paymentList = [];
@@ -83,25 +83,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	isWaitingRefresh = false;
 
-	get notificationService() {
-		return this.posNotifyService;
-	}
-
-	// Discount and promotion getters through cart service
-	get Discount() {
-		return this.cartService.getCurrentDiscount();
-	}
-
 	get promotionAppliedPrograms() {
 		return this.cartService.getAppliedPromotionPrograms();
-	}
-
-	get OrderAdditionTypeList() {
-		return this.cartService.discountService.orderAdditionTypeList;
-	}
-
-	get OrderDeductionTypeList() {
-		return this.cartService.discountService.orderDeductionTypeList;
 	}
 
 	constructor(
@@ -146,7 +129,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				Object.values(controls).some((control) => control.dirty) ||
 				this.item?.OrderLines?.some((d) => d.Status == POSConstants.ORDER_LINE_STATUS.NEW || d.Status == POSConstants.ORDER_LINE_STATUS.WAITING);
 		});
-		console.log('PR List: ', this.promotionService.promotionList);
+		dog && console.log('PR List: ', this.promotionService.promotionList);
 	}
 
 	preLoadData(event?: any): void {
@@ -157,8 +140,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				// Initialize cart service with POSService data
 				this.cartService.initializeConfig(this.posService.systemConfig, this.posService.dataSource);
 
+				dog && console.log(this.posService.dataSource);
+
 				this.getDefaultPrinter();
-				console.log(this.posService.dataSource);
 			})
 			.finally(() => {
 				super.preLoadData(event);
@@ -166,14 +150,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	loadData(event?: any): void {
-		console.log('loadData');
+		dog && console.log('loadData');
 
 		if (this.isWaitingRefresh) {
-			console.log('load canceled by isWaitingRefresh');
+			dog && console.log('load canceled by isWaitingRefresh');
 			return;
 		}
 		if (this.submitAttempt) {
-			console.log('Submit attempt detected');
+			dog && console.log('Submit attempt detected');
 			return;
 		}
 		if (this.formGroup.controls.OrderLines.dirty || this.formGroup.dirty) {
@@ -182,12 +166,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 
 		super.loadData(event);
+
+		setTimeout(() => {
+			this.segmentChanged('all');
+		}, 500);
 	}
 
 	private validateBranchAccess(): boolean {
 		// Enhanced validation with null safety
 		if (!this.item || !this.env?.selectedBranch) {
-			console.warn('validateBranchAccess: Missing required data');
+			dog && console.warn('validateBranchAccess: Missing required data');
 			return false;
 		}
 
@@ -202,7 +190,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private handleNewItem() {
 		// Input validation
 		if (!this.item || !this.formGroup) {
-			console.error('handleNewItem: Missing required objects');
+			dog && console.error('handleNewItem: Missing required objects');
 			return;
 		}
 
@@ -210,7 +198,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Object.assign(this.item, this.formGroup.getRawValue());
 			this.setOrderValue(this.item);
 		} catch (error) {
-			console.error('handleNewItem error:', error);
+			dog && console.error('handleNewItem error:', error);
 			this.handleApiError(error, 'Failed to initialize new item');
 		}
 	}
@@ -218,7 +206,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private handleExistingItem() {
 		// Input validation
 		if (!this.item || !this.formGroup || !this.cartService) {
-			console.error('handleExistingItem: Missing required objects');
+			dog && console.error('handleExistingItem: Missing required objects');
 			return;
 		}
 
@@ -238,7 +226,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.getStaffInfo(this.item._Customer.Code);
 			}
 		} catch (error) {
-			console.error('handleExistingItem error:', error);
+			dog && console.error('handleExistingItem error:', error);
 			this.handleApiError(error, 'Failed to handle existing item');
 		}
 	}
@@ -261,11 +249,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.notifications = this.posNotifyService.notifications;
 
 		this.cdr.detectChanges();
-		this.CheckPOSNewOrderLines();
+		//this.CheckPOSNewOrderLines();
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
-		console.log('loadedData');
+		dog && console.log('loadedData');
 
 		if (!this.validateBranchAccess()) {
 			super.loadedData(event, ignoredFromGroup);
@@ -324,9 +312,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.Staff = null;
 			this.VietQRCode = null;
 
-			console.log('POSOrderDetailPage cleanup completed');
+			dog && console.log('POSOrderDetailPage cleanup completed');
 		} catch (error) {
-			console.error('ngOnDestroy cleanup error:', error);
+			dog && console.error('ngOnDestroy cleanup error:', error);
 		}
 
 		super.ngOnDestroy();
@@ -354,7 +342,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					});
 			}
 		} catch (error) {
-			console.error('canDeactivate error:', error);
+			dog && console.error('canDeactivate error:', error);
 			// Allow navigation if there's an error
 			return true;
 		}
@@ -370,7 +358,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private async CheckPOSNewOrderLines() {
 		// Input validation
 		if (!this.query || !this.notifications) {
-			console.warn('CheckPOSNewOrderLines: Missing required data');
+			dog && console.warn('CheckPOSNewOrderLines: Missing required data');
 			return;
 		}
 
@@ -415,7 +403,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			await this.setNotifiOrder(results);
 		} catch (err) {
-			console.error('CheckPOSNewOrderLines error:', err);
+			dog && console.error('CheckPOSNewOrderLines error:', err);
 			const errorMessage = err?.message || 'Failed to check new order lines';
 			this.env.showMessage(errorMessage, 'danger');
 		}
@@ -431,7 +419,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				IDBranch: item.IDBranch,
 				IDSaleOrder: item.Id,
 				Type: 'Remind order',
-				Name: 'Đơn hàng',
+				Name: 'Đơn hàng',
 				Code: 'pos-order',
 				Message: message,
 				Url: url,
@@ -464,31 +452,22 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.notifications = this.posNotifyService.notifications; // sync
 	}
 
-	async getDefaultPrinter(): Promise<boolean> {
-		// Input validation
-		if (!this.printerTerminalProvider || !this.env?.selectedBranch) {
-			console.warn('getDefaultPrinter: Missing required services or branch');
-			return false;
-		}
-
-		return this.apiCallWithRetry(async () => {
-			const results: any = await this.printerTerminalProvider.read({
+	getDefaultPrinter() {
+		this.printerTerminalProvider
+			.read({
 				IDBranch: this.env.selectedBranch,
+			})
+			.then((results: any) => {
+				// Validate results structure
+				if (results?.data?.[0]?.Printer) {
+					this.defaultPrinter.push(results.data[0].Printer);
+				}
+
+				console.warn('getDefaultPrinter: No printer found for branch');
+			})
+			.catch((error) => {
+				console.error('getDefaultPrinter error:', error);
 			});
-
-			// Validate results structure
-			if (results?.data?.[0]?.Printer) {
-				this.defaultPrinter.push(results.data[0].Printer);
-				return true;
-			}
-
-			console.warn('getDefaultPrinter: No printer found for branch');
-			return false;
-		}, 'getDefaultPrinter').catch((error) => {
-			console.error('getDefaultPrinter final error:', error);
-			// Don't show error to user, just log it
-			return false;
-		});
 	}
 
 	// refreshAttemp = false;
@@ -555,7 +534,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	search(ev: any) {
 		// Input validation
 		if (!ev?.target) {
-			console.warn('search: Invalid event target');
+			dog && console.warn('search: Invalid event target');
 			return;
 		}
 
@@ -574,7 +553,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					this.query.Keyword = val;
 				}
 			} catch (error) {
-				console.error('search error:', error);
+				dog && console.error('search error:', error);
 			}
 		}, this.SEARCH_DEBOUNCE_DELAY);
 	}
@@ -828,7 +807,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			await this.sendKitchen();
 		} catch (error) {
 			// User cancelled or other error
-			console.log('Kitchen send cancelled or failed:', error);
+			dog && console.log('Kitchen send cancelled or failed:', error);
 		}
 	}
 
@@ -847,7 +826,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				(data, forceSave, autoSave) => this.setOrderValue(data, forceSave, autoSave)
 			);
 		} catch (error) {
-			console.error('Error in sendKitchen:', error);
+			dog && console.error('Error in sendKitchen:', error);
 			this.env.showMessage('Cannot send to kitchen/bar. Please try again!', 'danger');
 		}
 	}
@@ -888,7 +867,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			return result;
 		} catch (error) {
-			console.error('Error in sendPrint:', error);
+			dog && console.error('Error in sendPrint:', error);
 			this.env.showMessage('Print failed. Please try again!', 'danger');
 			return false;
 		}
@@ -922,7 +901,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		} catch (error) {
 			// FAILURE - Rollback optimistic update
-			console.error('Toggle order status failed:', error);
+			dog && console.error('Toggle order status failed:', error);
 
 			this.item.Status = originalStatus;
 			this.item._Locked = originalLocked;
@@ -952,7 +931,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	GenQRCode(code: string) {
 		// Input validation
 		if (!code || typeof code !== 'string') {
-			console.warn('GenQRCode: Invalid code provided');
+			dog && console.warn('GenQRCode: Invalid code provided');
 			this.VietQRCode = null;
 			return;
 		}
@@ -963,7 +942,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		try {
 			QRCode.toDataURL(code, PAYMENT_CONFIG.QR_CONFIG, (err, url) => {
 				if (err) {
-					console.error('QR Code generation error:', err);
+					dog && console.error('QR Code generation error:', err);
 					this.env.showMessage('Failed to generate QR code', 'warning');
 					return;
 				}
@@ -976,7 +955,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.sendPrint('TemporaryBill');
 			}
 		} catch (error) {
-			console.error('GenQRCode error:', error);
+			dog && console.error('GenQRCode error:', error);
 			this.env.showMessage('QR Code generation failed', 'danger');
 		}
 	}
@@ -985,58 +964,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	////PRIVATE METHODS
 
-	// Retry configuration
-	private readonly RETRY_CONFIG = {
-		maxRetries: 3,
-		baseDelay: 1000,
-		backoffMultiplier: 2,
-	};
-
-	/**
-	 * Enhanced API call with retry mechanism and exponential backoff
-	 */
-	private async apiCallWithRetry<T>(apiCall: () => Promise<T>, context: string, maxRetries: number = this.RETRY_CONFIG.maxRetries): Promise<T> {
-		let lastError: any;
-
-		for (let attempt = 1; attempt <= maxRetries; attempt++) {
-			try {
-				return await apiCall();
-			} catch (error) {
-				lastError = error;
-				console.warn(`${context} attempt ${attempt} failed:`, error);
-
-				// Don't retry on final attempt or on certain error types
-				if (attempt === maxRetries || this.isNonRetryableError(error)) {
-					break;
-				}
-
-				// Exponential backoff delay
-				const delay = this.RETRY_CONFIG.baseDelay * Math.pow(this.RETRY_CONFIG.backoffMultiplier, attempt - 1);
-				await this.delay(delay);
-			}
-		}
-
-		throw lastError;
-	}
-
-	/**
-	 * Check if error should not be retried
-	 */
-	private isNonRetryableError(error: any): boolean {
-		// Don't retry on client errors (4xx) or validation errors
-		const status = error?.status || error?.code;
-		return status >= 400 && status < 500;
-	}
-
-	/**
-	 * Promise-based delay utility
-	 */
-	private delay(ms: number): Promise<void> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
-
 	private handleApiError(error: any, message: string = 'Operation failed. Please try again!'): void {
-		console.error(error);
+		dog && console.error(error);
 		this.env.showMessage(message, 'danger');
 	}
 
@@ -1129,12 +1058,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	async saveChange() {
 		//if(!(this.formGroup.controls.OrderLines.dirty || this.formGroup.dirty)) return;
 		this.isWaitingRefresh = true;
-		console.log('isWaitingRefresh from saveChange');
+		dog && console.log('isWaitingRefresh from saveChange');
 		return this.saveChange2();
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
-		console.log('saved change');
+		dog && console.log('saved change');
 
 		if (savedItem) {
 			if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id) form.controls.Id.setValue(savedItem.Id);
@@ -1152,7 +1081,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.isWaitingRefresh = false;
 		this.submitAttempt = false;
 		if (this.nextSaveData) {
-			console.log('Save next');
+			dog && console.log('Save next');
 			this.setOrderValue(this.nextSaveData, true);
 			this.nextSaveData = null;
 		} else {
@@ -1166,10 +1095,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			.getPromotionPrograms()
 			.then((data: any) => {
 				// Data is automatically set in cart service via discount service
-				console.log('Promotion programs loaded:', data);
+				dog && console.log('Promotion programs loaded:', data);
 			})
 			.catch((err) => {
-				console.log(err);
+				dog && console.log(err);
 			});
 	}
 
@@ -1493,7 +1422,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			// Auto-save
 			await this.saveChange();
 		} catch (error) {
-			console.error('scanQRCode error:', error);
+			dog && console.error('scanQRCode error:', error);
 
 			const retry = await this.env.showPrompt('QR Code Error', 'Please scan a valid QR code. Try again?', null, 'Retry', 'Cancel').catch(() => false);
 
