@@ -684,7 +684,7 @@ export class POSOrderService {
     
     try {
       // Use SALE_OrderProvider save method (handles both create and update based on Id)
-      const savedOrder = await this.saleOrderProvider.save(order) as POS_Order;
+      const savedOrder = null;// await this.saleOrderProvider.save(order) as POS_Order;
       
       console.log('✅ Order synced to database successfully', { code: savedOrder.Code, id: savedOrder.Id });
       

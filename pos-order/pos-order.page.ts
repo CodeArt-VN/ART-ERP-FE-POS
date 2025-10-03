@@ -13,15 +13,15 @@ import { POSSplitModalPage } from '../pos-split-modal/pos-split-modal.page';
 import { POSMergeModalPage } from '../pos-merge-modal/pos-merge-modal.page';
 import { Location } from '@angular/common';
 import { POSChangeTableModalPage } from '../pos-change-table-modal/pos-change-table-modal.page';
-import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 
 import { POSOrderService } from '../pos-order.service';
+import { POSService } from '../pos.service';
+import { dog } from 'src/environments/environment';
 
 
 @Component({
@@ -40,12 +40,15 @@ export class POSOrderPage extends PageBase {
 	notifications = [];
 	systemConfig: any = {};
 	constructor(
+		public posService: POSService,
 		public pageProvider: SALE_OrderProvider,
-		public tableGroupProvider: POS_TableGroupProvider,
-		public tableProvider: POS_TableProvider,
-		public menuProvider: POS_MenuProvider,
+		public posOrderService: POSOrderService,
+		private tableGroupProvider: POS_TableGroupProvider,
+		private tableProvider: POS_TableProvider,	
+		private sysConfigProvider: SYS_ConfigProvider,
+		private promotionService: PromotionService,
+
 		public modalController: ModalController,
-		public sysConfigProvider: SYS_ConfigProvider,
 		public popoverCtrl: PopoverController,
 		public alertCtrl: AlertController,
 		public loadingController: LoadingController,
@@ -53,8 +56,7 @@ export class POSOrderPage extends PageBase {
 		public navCtrl: NavController,
 		public location: Location,
 		public commonService: CommonService,
-		public promotionService: PromotionService,
-		public posOrderService: POSOrderService
+		
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -401,10 +403,21 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		super.ngOnDestroy();
 	}
 	preLoadData(event?: any): void {
+		let forceReload = event === 'force';
+		this.posService
+			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
+			.then(() => {
+				this.tableGroupList = this.posService.dataSource?.tableGroups||[];
+				dog && console.log('POSOrderPage: PreLoadData dataSource', this.posService.dataSource);
+			})
+			.finally(() => {
+				super.preLoadData(event);
+			});
+
+
 		console.log('🔄 POSOrderPage: PreLoadData triggered', { event });
 		
 		let sysConfigQuery = ['POSAudioCallStaff', 'POSAudioCallToPay', 'POSAudioOrderUpdate', 'POSAudioIncomingPayment'];
-		let forceReload = event === 'force';
 		this.query.Type = 'POSOrder';
 		this.query.Status = JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']);
 		this.query.IDBranch = this.env.selectedBranch;
@@ -423,6 +436,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			}),
 		]).then((values: any) => {
 			this.tableGroupList = values[0];
+			dog && console.log('POSOrderPage: PreLoadData tableGroupList', this.tableGroupList);
 			this.soStatusList = values[1];
 
 			this.pageConfig.systemConfig = {IsAutoSave:false};

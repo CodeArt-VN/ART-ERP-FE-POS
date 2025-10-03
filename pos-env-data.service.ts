@@ -15,11 +15,25 @@ export class POSEnviromentDataService {
 	private _systemConfig = new BehaviorSubject<POSConfig>({
 		IsAutoSave: true,
 		SODefaultBusinessPartner: 123,
+		IsUseIPWhitelist: false,
+		IPWhitelistInput: '',
+		IsRequireOTP: false,
+		POSLockSpamPhoneNumber: false,
+		LeaderMachineHost: '',
 		POSSettleAtCheckout: true,
 		POSHideSendBarKitButton: false,
 		POSEnableTemporaryPayment: true,
 		POSEnablePrintTemporaryBill: false,
 		POSAutoPrintBillAtSettle: true,
+		POSDefaultPaymentProvider: '',
+		POSTopItemsMenuIsShow: false,
+		POSTopItemsMenuNumberOfItems: 0,
+		POSTopItemsMenuNumberOfDays: 0,
+		POSTopItemsMenuNotIncludedItemIds: '',
+		POSAudioOrderUpdate: '',
+		POSAudioIncomingPayment: '',
+		POSAudioCallToPay: '',
+		POSAudioCallStaff: '',
 	});
 	
 	private _dataSource = new BehaviorSubject<POS_DataSource | null>(null);
@@ -68,11 +82,25 @@ export class POSEnviromentDataService {
 			const keys = [
 				'IsAutoSave',
 				'SODefaultBusinessPartner',
+				'IsUseIPWhitelist',
+				'IPWhitelistInput',
+				'IsRequireOTP',
+				'POSLockSpamPhoneNumber',
+				'LeaderMachineHost',
 				'POSSettleAtCheckout',
 				'POSHideSendBarKitButton',
 				'POSEnableTemporaryPayment',
 				'POSEnablePrintTemporaryBill',
 				'POSAutoPrintBillAtSettle',
+				'POSDefaultPaymentProvider',
+				'POSTopItemsMenuIsShow',
+				'POSTopItemsMenuNumberOfItems',
+				'POSTopItemsMenuNumberOfDays',
+				'POSTopItemsMenuNotIncludedItemIds',
+				'POSAudioOrderUpdate',
+				'POSAudioIncomingPayment',
+				'POSAudioCallToPay',
+				'POSAudioCallStaff',
 			];
 			
 			this.sysConfigService
