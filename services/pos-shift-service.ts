@@ -32,6 +32,9 @@ export class POS_ShiftPService {
     ]).then((values: any) => {
       if (values[0] && values[0].data && values[0].data.length > 0) {
         this.currentShift = values[0]?.data[0];
+        if(this.currentShift.Status== 'Unconfirmed'){
+           this.openShiftModal();
+        }
       }
       else {
         this.currentShift = {
