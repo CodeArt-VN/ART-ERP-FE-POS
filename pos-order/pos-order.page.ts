@@ -22,6 +22,9 @@ import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { POSOrderService } from '../pos-order.service';
 import { POSService } from '../pos.service';
 import { dog } from 'src/environments/environment';
+import { ShiftDetailPage } from '../../HRM/shift-detail/shift-detail.page';
+import { POSShiftDetailPage } from '../pos-shift-detail/pos-shift-detail.page';
+import { POS_ShiftPService } from '../services/pos-shift-service';
 
 
 @Component({
@@ -41,10 +44,11 @@ export class POSOrderPage extends PageBase {
 	systemConfig: any = {};
 	constructor(
 		public posService: POSService,
+		public posShiftService: POS_ShiftPService,
 		public pageProvider: SALE_OrderProvider,
 		public posOrderService: POSOrderService,
 		private tableGroupProvider: POS_TableGroupProvider,
-		private tableProvider: POS_TableProvider,	
+		private tableProvider: POS_TableProvider,
 		private sysConfigProvider: SYS_ConfigProvider,
 		private promotionService: PromotionService,
 
@@ -56,11 +60,11 @@ export class POSOrderPage extends PageBase {
 		public navCtrl: NavController,
 		public location: Location,
 		public commonService: CommonService,
-		
+
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
-		
+
 		this.pageConfig.ShowAdd = false;
 		this.pageConfig.ShowSearch = false;
 		this.pageConfig.ShowImport = false;
@@ -114,10 +118,14 @@ export class POSOrderPage extends PageBase {
 					break;
 			}
 		});
-
+		this.posShiftService.getShift();
 		super.ngOnInit();
 	}
 
+	openShift(){
+		this.posShiftService.openShiftModal();
+	}
+	
 	private notifyPayment(data) {
 		const value = JSON.parse(data.value);
 		if (this.env.selectedBranch == value.IDBranch && value.IDStaff == 0) {
@@ -350,7 +358,7 @@ export class POSOrderPage extends PageBase {
 			// };
 			// this.setNotifications(notification, true);
 			// Use service notification handling instead of manual refresh
-this.posOrderService.handleOrderUpdateNotification(data.id);
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -377,7 +385,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			this.setNotifications(notification, true);
 
 			// Use service notification handling instead of manual refresh
-this.posOrderService.handleOrderUpdateNotification(data.id);
+			this.posOrderService.handleOrderUpdateNotification(data.id);
 		}
 	}
 
@@ -407,7 +415,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		this.posService
 			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
 			.then(() => {
-				this.tableGroupList = this.posService.dataSource?.tableGroups||[];
+				this.tableGroupList = this.posService.dataSource?.tableGroups || [];
 				dog && console.log('POSOrderPage: PreLoadData dataSource', this.posService.dataSource);
 			})
 			.finally(() => {
@@ -416,7 +424,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 
 
 		console.log('🔄 POSOrderPage: PreLoadData triggered', { event });
-		
+
 		let sysConfigQuery = ['POSAudioCallStaff', 'POSAudioCallToPay', 'POSAudioOrderUpdate', 'POSAudioIncomingPayment'];
 		this.query.Type = 'POSOrder';
 		this.query.Status = JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']);
@@ -426,7 +434,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			this.sort.Id = 'Id';
 			this.sortToggle('Id', true);
 		}
-		
+
 		Promise.all([
 			this.getTableGroupTree(forceReload),
 			this.env.getStatus('POSOrder'),
@@ -439,7 +447,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			dog && console.log('POSOrderPage: PreLoadData tableGroupList', this.tableGroupList);
 			this.soStatusList = values[1];
 
-			this.pageConfig.systemConfig = {IsAutoSave:false};
+			this.pageConfig.systemConfig = { IsAutoSave: false };
 
 			this.systemConfig = {};
 
@@ -449,7 +457,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 				}
 				this.systemConfig[e.Code] = JSON.parse(e.Value);
 			});
-			
+
 			// Service handles all data initialization internally
 			super.preLoadData(event);
 		});
@@ -459,10 +467,10 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 	private async initializePOSOrderData(forceReload: boolean = false): Promise<void> {
 		try {
 			console.log('🔄 Initializing POS Order data...', { forceReload });
-			
+
 			// Let POSOrderService handle the fetch logic
 			await this.posOrderService.ensureDataIsUpToDate(forceReload);
-			
+
 			console.log('✅ POS Order data initialization completed');
 		} catch (error) {
 			console.error('❌ Failed to initialize POS Order data:', error);
@@ -475,7 +483,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			// Get last fetch timestamp
 			const lastFetchKey = `pos_orders_last_fetch_${this.env.selectedBranch}`;
 			let lastFetchTime: string | null = await this.env.getStorage(lastFetchKey);
-			
+
 			// If force reload or never fetched, get data from 7 days ago
 			let modifiedDateFrom: string;
 			if (forceReload || !lastFetchTime) {
@@ -502,24 +510,24 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 				Skip: 0,
 				SortBy: 'ModifiedDate_desc' // Sort by modified date
 			};
-			
+
 			console.log('� Fetching orders with query:', serverQuery);
 
 			// Fetch from server using original pageProvider
 			const serverResult: any = await this.pageProvider.read(serverQuery, true);
-			
+
 			if (serverResult && serverResult.data && serverResult.data.length > 0) {
 				console.log('✅ Fetched from server:', serverResult.data.length, 'orders');
-				
+
 				// Process each order
 				let newOrdersCount = 0;
 				let updatedOrdersCount = 0;
-				
+
 				for (const serverOrder of serverResult.data) {
 					try {
 						// Check if order exists locally
 						const existingOrder = await this.posOrderService.getOrder(serverOrder.Code || `ORD-${serverOrder.Id}`);
-						
+
 						// Transform server order to match POS_Order interface
 						const posOrder = {
 							...serverOrder,
@@ -532,7 +540,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 							Tax: serverOrder.Tax || 0,
 							TotalAfterTax: serverOrder.TotalAfterTax || serverOrder.CalcTotalOriginal || 0
 						};
-						
+
 						if (existingOrder) {
 							// Update existing order
 							await this.posOrderService.updateOrder(posOrder.Code, posOrder);
@@ -546,21 +554,21 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 						console.warn('⚠️ Failed to save server order to local:', saveError);
 					}
 				}
-				
-				console.log('✅ Orders synced:', { 
-					new: newOrdersCount, 
-					updated: updatedOrdersCount, 
-					total: serverResult.data.length 
+
+				console.log('✅ Orders synced:', {
+					new: newOrdersCount,
+					updated: updatedOrdersCount,
+					total: serverResult.data.length
 				});
 			} else {
 				console.log('ℹ️ No new/updated orders found on server');
 			}
-			
+
 			// Update last fetch timestamp
 			const currentTime = new Date().toISOString();
 			await this.env.setStorage(lastFetchKey, currentTime);
 			console.log('✅ Updated last fetch time:', currentTime);
-			
+
 		} catch (error) {
 			console.error('❌ Failed to fetch from server:', error);
 			throw error;
@@ -569,7 +577,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 
 	loadData(event?: any): void {
 		console.log('🔄 POSOrderPage: Loading data using POSOrderService', { event, query: this.query });
-		
+
 		if (this.pageConfig.isEndOfData) {
 			console.log('ℹ️ End of data reached, skipping load');
 			this.loadedData(event);
@@ -595,7 +603,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 
 			// Service handles all sync logic internally
 			const allOrders = await this.posOrderService.getAllOrders();
-			
+
 			// Apply client-side filters to local data
 			let filteredOrders = this.applyClientFilters(allOrders);
 
@@ -605,11 +613,11 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			// Apply pagination
 			const take = this.query.Take || 100;
 			const paginatedOrders = filteredOrders.slice(skip, skip + take);
-			
-			console.log('✅ Orders processed:', { 
-				total: allOrders.length, 
-				filtered: filteredOrders.length, 
-				paginated: paginatedOrders.length 
+
+			console.log('✅ Orders processed:', {
+				total: allOrders.length,
+				filtered: filteredOrders.length,
+				paginated: paginatedOrders.length
 			});
 
 			// Handle results
@@ -634,10 +642,10 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			}
 
 			this.loadedData(event);
-			
+
 		} catch (error) {
 			console.error('❌ Failed to load orders from service:', error);
-			
+
 			// Fallback to original provider
 			this.fallbackToOriginalProvider(skip, isSearch, event);
 		}
@@ -652,7 +660,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			if (this.env.selectedBranch && order.IDBranch !== this.env.selectedBranch) {
 				return false;
 			}
-			
+
 			// Filter by status
 			if (this.query.Status) {
 				try {
@@ -670,14 +678,14 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			// Filter by date range
 			if (this.query.CreatedDateFrom || this.query.CreatedDateTo) {
 				const orderDate = new Date(order.CreatedDate);
-				
+
 				if (this.query.CreatedDateFrom) {
 					const fromDate = new Date(this.query.CreatedDateFrom);
 					if (orderDate < fromDate) {
 						return false;
 					}
 				}
-				
+
 				if (this.query.CreatedDateTo) {
 					const toDate = new Date(this.query.CreatedDateTo);
 					toDate.setHours(23, 59, 59, 999); // End of day
@@ -686,27 +694,27 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 					}
 				}
 			}
-			
+
 			// Filter by table if provided
 			if (this.query.IDTable) {
-				const hasTable = order.Tables?.some(table => 
+				const hasTable = order.Tables?.some(table =>
 					table.IDTable === this.query.IDTable || table.TableId === this.query.IDTable
 				);
 				if (!hasTable) {
 					return false;
 				}
 			}
-			
+
 			// Enhanced keyword search
 			if (this.query.Keyword) {
 				const keyword = this.query.Keyword.toLowerCase();
-				
+
 				// Special handling for date format search (MMDDYY-MMDDYY)
 				if (keyword.indexOf('-') !== -1 && keyword.length <= 13) {
 					// Date range search format
 					return true; // Let date range filter handle this
 				}
-				
+
 				// Multi-field text search
 				const searchableText = [
 					order.Code,
@@ -717,12 +725,12 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 					order.TotalAfterTax?.toString(),
 					order.Tables?.map(t => t.TableName)?.join(' ')
 				].filter(text => text).join(' ').toLowerCase();
-				
+
 				// Support multiple keywords with space separator
 				const keywords = keyword.split(' ').filter(k => k.trim());
 				return keywords.every(k => searchableText.includes(k));
 			}
-			
+
 			return true;
 		});
 	}
@@ -736,9 +744,9 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			if (this.query.SortBy) {
 				const [field, direction] = this.query.SortBy.split('_');
 				const isDesc = direction === 'desc';
-				
+
 				let aValue, bValue;
-				
+
 				switch (field) {
 					case 'Id':
 					case 'IDOrder':
@@ -770,7 +778,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 						aValue = a.Id || 0;
 						bValue = b.Id || 0;
 				}
-				
+
 				// Compare values
 				let comparison = 0;
 				if (typeof aValue === 'string') {
@@ -778,10 +786,10 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 				} else {
 					comparison = aValue - bValue;
 				}
-				
+
 				return isDesc ? -comparison : comparison;
 			}
-			
+
 			// Default sort by Id descending (newest first)  
 			return (b.Id || 0) - (a.Id || 0);
 		});
@@ -795,11 +803,11 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		try {
 			const fallbackQuery = { ...this.query, Skip: skip };
 			const result: any = await this.pageProvider.read(fallbackQuery, this.pageConfig.forceLoadData);
-			
+
 			if (result.data.length === 0) {
 				this.pageConfig.isEndOfData = true;
 			}
-			
+
 			if (isSearch) {
 				this.items = result.data;
 			} else if (result.data.length > 0) {
@@ -808,13 +816,13 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 					this.items = [...this.items, ...result.data];
 				}
 			}
-			
+
 			console.log('✅ Fallback load completed');
 		} catch (fallbackError) {
 			console.error('❌ Fallback also failed:', fallbackError);
 			this.env.showMessage('Cannot load orders. Please try again.', 'danger');
 		}
-		
+
 		this.loadedData(event);
 	}
 
@@ -845,7 +853,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		});
 		this.CheckPOSNewOrderLines();
 		this.promotionService.getPromotions();
-		
+
 		// Debug: Log data status
 		this.debugDataStatus();
 	}
@@ -855,14 +863,14 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 	 */
 	private updateOrderCountersFromService(orders: any[]): void {
 		if (!orders) return;
-		
+
 		// Apply same filtering as current items
 		const filteredOrders = this.applyClientFilters(orders);
-		
+
 		// Update counters based on filtered orders (same logic as loadedData)
 		this.orderCounter = 0;
 		this.numberOfGuestCounter = 0;
-		
+
 		filteredOrders.forEach((order) => {
 			const isLocked = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'].indexOf(order.Status) == -1;
 			if (!isLocked) {
@@ -870,12 +878,12 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 				this.numberOfGuestCounter += (order.NumberOfGuests || 0);
 			}
 		});
-		
-		console.log('🔢 Updated counters from service:', { 
-			orderCounter: this.orderCounter, 
+
+		console.log('🔢 Updated counters from service:', {
+			orderCounter: this.orderCounter,
 			numberOfGuestCounter: this.numberOfGuestCounter,
 			totalOrders: orders.length,
-			filteredOrders: filteredOrders.length 
+			filteredOrders: filteredOrders.length
 		});
 	}
 
@@ -886,7 +894,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		try {
 			const localOrders = await this.posOrderService.getAllOrders();
 			const systemHealth = this.posOrderService.getSystemHealth();
-			
+
 			console.log('🔍 POS Order Data Status:', {
 				localOrdersCount: localOrders.length,
 				displayedItemsCount: this.items.length,
@@ -897,7 +905,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 					lastUpdated: systemHealth.storageInfo.lastUpdated
 				}
 			});
-			
+
 			// Show in console for debugging
 			if (localOrders.length > 0) {
 				console.log('📋 Sample local orders:', localOrders.slice(0, 3));
@@ -974,14 +982,14 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 	 */
 	async refresh(event?: any): Promise<void> {
 		console.log('🔄 POSOrderPage: Refresh triggered via service', { event });
-		
+
 		try {
 			// Force refresh from server
 			await this.posOrderService.ensureDataIsUpToDate(true);
-			
+
 			// Trigger search to update displayed items
 			this.loadData('search');
-			
+
 			console.log('✅ Service-based refresh completed');
 		} catch (error) {
 			console.error('❌ Service refresh failed, falling back to parent:', error);
@@ -1031,7 +1039,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		const { data } = await modal.onWillDismiss();
 
 		this.selectedItems = [];
-		
+
 		// Handle split completion via service
 		if (data && data.success) {
 			console.log('✅ Split order completed:', data);
@@ -1062,7 +1070,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		const { data } = await modal.onWillDismiss();
 
 		this.selectedItems = [];
-		
+
 		// Handle merge completion via service
 		if (data && data.success) {
 			console.log('✅ Merge orders completed:', data);
@@ -1099,7 +1107,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 		const { data } = await modal.onWillDismiss();
 
 		this.selectedItems = [];
-		
+
 		// Handle table change completion via service
 		if (data && data.success) {
 			console.log('✅ Table change completed:', data);
@@ -1140,35 +1148,35 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 				.then(async (_) => {
 					if (this.submitAttempt == false) {
 						this.submitAttempt = true;
-						
+
 						try {
 							// Use POSOrderService for cancellation with fallback
 							const orderIds = this.selectedItems.map((m) => m.Id);
 							console.log('🚫 Cancelling orders via POSOrderService:', { orderIds, cancelData });
-							
+
 							// Try service first (if cancel method exists)
 							let success = false;
 							try {
 								// For now, fallback to original API since service doesn't have cancelOrder method yet
 								cancelData.Type = 'POSOrder';
 								cancelData.Ids = orderIds;
-								
+
 								await this.pageProvider.commonService
 									.connect('POST', 'SALE/Order/CancelOrders/', cancelData)
 									.toPromise();
-									
+
 								success = true;
 								console.log('✅ Orders cancelled successfully');
-								
+
 							} catch (serviceError) {
 								console.error('❌ Service cancellation failed:', serviceError);
 								throw serviceError;
 							}
-							
+
 							if (success) {
 								// Trigger data refresh via service
 								await this.posOrderService.ensureDataIsUpToDate(true);
-								
+
 								// Publish event for other components
 								let publishEventCode = this.pageConfig.pageName;
 								if (publishEventCode) {
@@ -1176,11 +1184,11 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 										Code: publishEventCode,
 									});
 								}
-								
+
 								// Navigate back
 								this.nav('/pos-order', 'forward');
 							}
-							
+
 						} catch (error) {
 							console.error('❌ Failed to cancel orders:', error);
 							this.env.showMessage('Không thể hủy đơn hàng. Vui lòng thử lại.', 'danger');
@@ -1189,7 +1197,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 						}
 					}
 				})
-				.catch((_) => {});
+				.catch((_) => { });
 		}
 	}
 
@@ -1357,38 +1365,38 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			cssClass: 'my-custom-class',
 			message: 'Đang xuất dữ liệu...',
 		});
-		
+
 		try {
 			await loading.present();
-			
+
 			// First try to get data from service (if available locally)
 			console.log('🔍 Checking local data availability...');
 			const localOrders = await this.posOrderService.getAllOrders();
 			const filteredOrders = this.applyClientFilters(localOrders);
-			
+
 			// If we have sufficient local data and query is simple, use it
 			if (filteredOrders.length > 0 && this.canUseLocalDataForExport()) {
 				console.log('✅ Using local data for export:', { count: filteredOrders.length });
-				
+
 				// Generate export from local data
 				const exportData = this.prepareExportData(filteredOrders);
 				this.downloadExportData(exportData);
-				
+
 			} else {
 				// Fallback to server export API
 				console.log('🌐 Falling back to server export...');
 				const response: any = await this.commonService
 					.connect('GET', 'SALE/Order/ExportPOSOrderList', this.query)
 					.toPromise();
-				
+
 				this.downloadURLContent(response);
 			}
-			
+
 			console.log('✅ Export completed successfully');
-			
+
 		} catch (error) {
 			console.error('❌ Export failed:', error);
-			
+
 			if (error.message != null) {
 				this.env.showMessage(error.error?.ExceptionMessage || 'Lỗi xuất dữ liệu', 'danger');
 			} else {
@@ -1406,7 +1414,7 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 	private canUseLocalDataForExport(): boolean {
 		// Only use local data for simple queries without complex server-side processing
 		return (
-			!this.query.ComplexFilter && 
+			!this.query.ComplexFilter &&
 			!this.query.GroupBy &&
 			!this.query.AggregateFields
 		);
@@ -1439,19 +1447,20 @@ this.posOrderService.handleOrderUpdateNotification(data.id);
 			const headers = Object.keys(exportData.data[0]);
 			const csvContent = [
 				headers.join(','),
-				...exportData.data.map(row => 
+				...exportData.data.map(row =>
 					headers.map(header => `"${row[header] || ''}"`).join(',')
 				)
 			].join('\n');
-			
+
 			// Create and download file
 			const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 			const link = document.createElement('a');
 			link.href = URL.createObjectURL(blob);
 			link.download = exportData.filename;
 			link.click();
-			
+
 			console.log('📁 Local export downloaded:', exportData.filename);
 		}
 	}
+
 }

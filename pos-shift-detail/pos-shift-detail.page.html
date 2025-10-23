@@ -1,0 +1,83 @@
+<ion-header>
+	<ion-toolbar>
+		<ion-title>{{item.Status == 'Unconfirmed'? 'Confirm shift':item.Status == 'Open'? 'Close shift':'Shift' }}</ion-title>
+
+		<ion-buttons slot="primary">
+			<ion-button title="{{'Close' | translate}}" color="secondary" (click)="closeModal()">
+				<ion-icon slot="icon-only" name="close"></ion-icon>
+			</ion-button>
+		</ion-buttons>
+	</ion-toolbar>
+</ion-header>
+<ion-content appScrollbarTheme class="ion-padding" fullscreen>
+	<div class="main-view">
+		<div class="row-full shadow full-screen">
+			<div>
+				<ion-grid fixed>
+					<form [formGroup]="formGroup">
+						<ion-row>
+							<ion-col size="12" size-sm="12" size-md="6">
+								<app-form-control
+									[field]="{id:'OpeningCash', label:'Opening cash',type:'number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'ClosingCash', label:'Closing cash',type:'number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'CashDifference', label:'Cash difference',type:'span-number',form: formGroup}"></app-form-control>
+
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'ExpectedCash', label:'Expected cash',type:'number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'CashAmount', label:'Cash amount',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'CardAmount', label:'Card amount',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'TransferAmount', label:'Transfer amount',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'ApplyPayAmount', label:'Apple pay amount',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'ZalopayAppAmount', label:'Zalo pay amount',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'OtherAmount', label:'Other amount',type:'span-number',form: formGroup}"></app-form-control>
+							</ion-col>
+							<ion-col size="12" size-sm="12" size-md="6">
+								<app-form-control (change)="changeDate()"
+									[field]="{id:'StartDate', label:'Start date',type:'datetime-local',form: formGroup}"></app-form-control>
+								<app-form-control (change)="changeDate()"  *ngIf="item.Status=='Open'"
+									[field]="{id:'EndDate', label:'End date',type:'datetime-local',form: formGroup}"></app-form-control>
+								<!-- <app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'IDToStaff', label:'Shift Handover',type:'ng-select-staff',dataSource:_staffReceiveDataSource,bindLabel:'FullName',bindValue:'Id',form: formGroup}"></app-form-control> -->
+								<app-form-control
+									[field]="{id:'Status', label:'Status',type:'span-text',form: formGroup}"></app-form-control>
+
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'ClosingReason', label:'Closing reason',type:'textarea',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'DoneOrder', label:'Done order',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'CanceledOrder', label:'Canceled order',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'DebtOrder', label:'Debt order',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'TemporaryBillOrder', label:'Temporary order',type:'span-number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'"
+									[field]="{id:'NewOrder', label:'New order',type:'span-number',form: formGroup}"></app-form-control>
+							</ion-col>
+						</ion-row>
+
+					</form>
+				</ion-grid>
+			</div>
+		</div>
+	</div>
+</ion-content>
+<ion-footer>
+	<ion-toolbar>
+		
+		<ion-button slot="end" *ngIf="item.Status == 'Unconfirmed'" (click)="confirm()"
+			color="warning">{{'Confirm shift' |
+			translate}}</ion-button>
+		<ion-button slot="end" *ngIf="item.Status == 'Open' && item.Id" (click)="close()"
+			color="warning">{{'Close shift' |
+			translate}}</ion-button>
+	</ion-toolbar>
+</ion-footer>
