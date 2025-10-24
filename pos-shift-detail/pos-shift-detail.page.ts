@@ -124,7 +124,7 @@ export class POSShiftDetailPage extends PageBase {
 		super.loadedData();
 		switch (this.formGroup.get('Status').value) {
 			case 'Unconfirmed': {
-				this.formGroup.get('OpeningCash').enable();
+				// this.formGroup.get('OpeningCash').enable();
 				break;
 			};
 			case 'Open': {

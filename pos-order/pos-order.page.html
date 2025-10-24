@@ -1,8 +1,10 @@
 <ion-header>
 	<app-toolbar [page]="this" [ShowAdd]="false" [ShowSearch]="false" [ShowImport]="false" [ShowExport]="false"
 		[ShowArchive]="false">
-		<ion-button (click)="openShift()">
-			<ion-icon slot="icon-only" [name]="'calendar-number-outline'"></ion-icon>
+		<ion-button *ngIf="pageConfig.canCloseShift" 
+			[ngClass]="{'blink': posShiftService.currentShift && posShiftService.currentShift.Status == 'Unconfirmed'}"
+			(click)="openShift()">
+			<ion-icon slot="icon-only" [name]="'calendar-clear-outline'"></ion-icon>
 		</ion-button>
 		<span class="hide-small" startTitle>{{'Order Qty' | translate}}: {{orderCounter}}</span>
 		<span class="hide-small ion-margin-start" startTitle>Số khách: {{numberOfGuestCounter}}</span>
@@ -65,6 +67,9 @@
 	<!-- View TableList -->
 	<ion-fab *ngIf="pageConfig.isShowFeature" class="table-list feature no-print" vertical="top" horizontal="start"
 		slot="fixed">
+		<app-page-message [itemsLength]="posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed' ? 1 : 0" [showSpinner]="false" [showImg]="true"
+		[message]="'SHIFT IS UNCONFIRMED'" [subMessage]="'Please confirm shift'"	minHeight="100px">
+		</app-page-message>
 		<div class="ion-padding" style="min-height: calc(100vh - 110px)">
 			<ion-grid fixed>
 				<ng-container *ngFor="let g of tableGroupList | filter:{Id:segmentView}">

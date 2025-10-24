@@ -16,6 +16,7 @@ export class POS_ShiftPService {
   currentShift: any;
   hangoverPendingShifts: any;
   hangoverList: any;
+  pageConfig:any = {};
   constructor(
     private shiftProvider: POS_ShiftProvider,
     private env: EnvService,
@@ -23,44 +24,64 @@ export class POS_ShiftPService {
   ) {
     this.env.getEvents().subscribe((data) => {
       if (data && data.Code === 'Refresh') {
-        this.getShift();
+        this.initShift();
       }
     });
   }
-  getShift() {
-    Promise.all([this.shiftProvider.read({ IDBranch: this.env.selectedBranch, Take: 1, SortBy: 'Id_desc' })
+  initShift() {
+    this.loadShift().then(() => {
+      if ((!this.currentShift.Id || this.currentShift.IDPreviousClosingStaff!= this.env.user.StaffID)
+         && this.pageConfig.canCloseShift  && this.currentShift.Status == 'Unconfirmed' ) {
+        this.openShiftModal();
+      }
+    })
+  }
+  loadShift() {
+    return Promise.all([this.shiftProvider.read({ IDBranch: this.env.selectedBranch, Take: 1, SortBy: 'Id_desc' })
     ]).then((values: any) => {
       if (values[0] && values[0].data && values[0].data.length > 0) {
         this.currentShift = values[0]?.data[0];
-        if(this.currentShift.Status== 'Unconfirmed'){
-           this.openShiftModal();
-        }
       }
       else {
         this.currentShift = {
           IDBranch: this.env.selectedBranch,
           Status: 'Unconfirmed',
         }
-        this.openShiftModal();
       }
     });
-
   }
-
   async openShiftModal(i = this.currentShift) {
-    const modal = await this.modalController.create({
-      component: POSShiftDetailPage,
-      componentProps: {
-        item: i,
-      },
-      cssClass: 'modal90',
+    this.loadShift().then(async () => {
+      const modal = await this.modalController.create({
+        component: POSShiftDetailPage,
+        componentProps: {
+          item: i,
+        },
+        cssClass: 'modal90',
+      });
+      await modal.present();
+      const { data } = await modal.onWillDismiss();
+      if (data) {
+        if (data.Role && data.Role == 'Refresh') this.initShift();
+        else this.currentShift = data;
+      }
+    }).catch(async(error) => {
+      const modal = await this.modalController.create({
+        component: POSShiftDetailPage,
+        componentProps: {
+          item: i,
+        },
+        cssClass: 'modal90',
+      });
+      await modal.present();
+      const { data } = await modal.onWillDismiss();
+      if (data) {
+        if (data.Role && data.Role == 'Refresh') this.initShift();
+        else this.currentShift = data;
+      }
+    }).catch((error) => {
     });
-    await modal.present();
-    const { data } = await modal.onWillDismiss();
-    if (data) {
-      if (data.Role && data.Role == 'Refresh') this.getShift();
-      else this.currentShift = data;
-    }
+
   }
 
   getFormattedDate(date: Date): string {

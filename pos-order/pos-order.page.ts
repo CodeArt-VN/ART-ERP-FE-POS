@@ -118,14 +118,15 @@ export class POSOrderPage extends PageBase {
 					break;
 			}
 		});
-		this.posShiftService.getShift();
+		this.posShiftService.pageConfig =  this.pageConfig
+		this.posShiftService.initShift();
 		super.ngOnInit();
 	}
 
-	openShift(){
+	openShift() {
 		this.posShiftService.openShiftModal();
 	}
-	
+
 	private notifyPayment(data) {
 		const value = JSON.parse(data.value);
 		if (this.env.selectedBranch == value.IDBranch && value.IDStaff == 0) {
