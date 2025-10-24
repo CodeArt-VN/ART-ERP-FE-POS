@@ -1,7 +1,7 @@
 <ion-header>
 	<app-toolbar [page]="this" [ShowAdd]="false" [ShowSearch]="false" [ShowImport]="false" [ShowExport]="false"
 		[ShowArchive]="false">
-		<ion-button *ngIf="pageConfig.canCloseShift" 
+		<ion-button *ngIf="pageConfig.canCloseShift"
 			[ngClass]="{'blink': posShiftService.currentShift && posShiftService.currentShift.Status == 'Unconfirmed'}"
 			(click)="openShift()">
 			<ion-icon slot="icon-only" [name]="'calendar-clear-outline'"></ion-icon>
@@ -67,10 +67,22 @@
 	<!-- View TableList -->
 	<ion-fab *ngIf="pageConfig.isShowFeature" class="table-list feature no-print" vertical="top" horizontal="start"
 		slot="fixed">
-		<app-page-message [itemsLength]="posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed' ? 1 : 0" [showSpinner]="false" [showImg]="true"
-		[message]="'SHIFT IS UNCONFIRMED'" [subMessage]="'Please confirm shift'"	minHeight="100px">
+		<app-page-message *ngIf="pageConfig.canCloseShift"
+			[itemsLength]="pageConfig.canCloseShift && posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed' ? 1 : 0"
+			[showSpinner]="false" [showImg]="true" [message]="'SHIFT IS UNCONFIRMED'"
+			[subMessage]="'Please confirm shift'" minHeight="100px">
+			<div class="c-control" style="min-width: 260px">
+				<div>
+					<ion-button 
+					[ngClass]="{'blink': posShiftService.currentShift && posShiftService.currentShift.Status == 'Unconfirmed'}"
+					fill="outline" size="small" class="small-btn" (click)="openShift()">
+						<ion-icon slot="start" name="calendar-clear-outline"></ion-icon>
+						{{'Confirm shift' | translate}}
+					</ion-button>
+				</div>
+				</div>
 		</app-page-message>
-		<div class="ion-padding" style="min-height: calc(100vh - 110px)">
+		<div class="ion-padding" style="min-height: calc(100vh - 110px)" *ngIf="!pageConfig.canCloseShift || (pageConfig.canCloseShift && posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed')">
 			<ion-grid fixed>
 				<ng-container *ngFor="let g of tableGroupList | filter:{Id:segmentView}">
 					<ion-row>
