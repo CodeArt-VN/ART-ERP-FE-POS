@@ -791,14 +791,14 @@
 		<ion-grid fixed *ngIf="posService.dataSource.menuList?.length">
 			<ng-container *ngFor="let g of posService.dataSource.menuList | filter:{Id:segmentView}">
 				<ng-container *ngIf="g.Items?.length">
-					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{SearchName:query.Keyword}).length">
+					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{Name:query.Keyword}).length">
 						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
 							<ion-list-header class="ion-no-padding">
 								<ion-label color="primary">{{g.Name}}</ion-label>
 							</ion-list-header>
 						</ion-col>
 
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{SearchName:query.Keyword}">
+						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{Name:query.Keyword}">
 							<span class="tag right" *ngIf="i.IsDisabled">
 								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
 							</span>
