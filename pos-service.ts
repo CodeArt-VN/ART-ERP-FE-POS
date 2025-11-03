@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { POS_Order } from 'src/app/models/custom-model-interface';
+import { POS_Order } from './interface.model';
 import { CommonService } from 'src/app/services/core/common.service';
 import { EnvService } from 'src/app/services/core/env.service';
 import { SALE_OrderProvider } from 'src/app/services/static/services.service';

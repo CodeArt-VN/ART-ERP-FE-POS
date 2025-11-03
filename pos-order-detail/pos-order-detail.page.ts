@@ -20,7 +20,7 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { BehaviorSubject, concat, firstValueFrom, lastValueFrom, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, concat, firstValueFrom, from, lastValueFrom, Observable, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, filter, switchMap, take, tap, toArray } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
@@ -33,10 +33,10 @@ import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
-import { printData, PrintingService } from 'src/app/services/printing.service';
-import { BarcodeScannerService } from 'src/app/services/barcode-scanner.service';
+import { printData, PrintingService } from 'src/app/services/util/printing.service';
+import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
 import { POSService } from '../pos-service';
-import { PromotionService } from 'src/app/services/promotion.service';
+import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
 
 @Component({
@@ -399,7 +399,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.kitchenProvider.read({ IDBranch: this.env.selectedBranch }),
 		])
 			.then((values: any) => {
-				this.pageConfig.systemConfig = {};
+				this.pageConfig.systemConfig = { IsAutoSave: true };
 				values[5]['data'].forEach((e) => {
 					if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
 						e.Value = e._InheritedConfig.Value;
@@ -1235,59 +1235,58 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				};
 
 				if (printJobs.length > 0) {
-					this.printingService.printJobsWithProgress(printJobs).subscribe({
-						next: ({ job, result }) => {
+					from(this.printingService.print(printJobs)).subscribe({
+						next: (results) => {
 							doneCount++;
 							this.submitAttempt = false;
-							job.options
-								.map((s) => s.jobName)
+							printJobs.forEach(job => {
+								job.options
+									.map((s) => s.jobName)
 								.forEach((s) => {
-									const [idsPart, timestamp] = s.split('|').map((s) => s.trim());
-									const [idKitchen, IDSO, code] = idsPart.split('_');
-									if (idKitchen && !code) {
-										let saveList = printItems
-											.filter((d) => d._IDKitchen == idKitchen)
-											.map((e) => ({
-												Id: e.Id,
-												Code: e.Code,
-												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
+								const [idsPart, timestamp] = s.split('|').map((s) => s.trim());
+								const [idKitchen, IDSO, code] = idsPart.split('_');
+								if (idKitchen && !code) {
+									let saveList = printItems
+										.filter((d) => d._IDKitchen == idKitchen)
+										.map((e) => ({
+											Id: e.Id,
+											Code: e.Code,
+											ShippedQuantity: e.Quantity,
 												IDUoM: e.IDUoM,
-												Status: result.status == 'success' ? 'Serving' : e.Status,
+												Status: 'Serving',
 												ItemName: e._item.Name, // để hiển thị item ko in đc
 											}));
 
-										if (result.status == 'success') this.setOrderValue({ OrderLines: saveList }, false, true);
-										else saveList.forEach((g) => itemNotPrint.push(g));
+										this.setOrderValue({ OrderLines: saveList }, false, true);
 										// Xóa hết các món của bếp này
 										printItems = printItems.filter((d) => d._IDKitchen != idKitchen);
 									} else {
-										let e = printItems.find((d) => d._IDKitchen == idKitchen && d.Code == code);
-										if (e) {
-											let line = {
-												Id: e.Id,
-												Code: e.Code,
-												ShippedQuantity: result.status == 'success' ? e.Quantity : e.ShippedQuantity,
-												IDUoM: e.IDUoM,
-												Status: result.status == 'success' ? 'Serving' : e.Status,
-												ItemName: e._item.Name, // để hiển thị item ko in đc
-											};
-											if (result.status == 'success') this.setOrderValue({ OrderLines: [line] }, false, true);
-											else itemNotPrint.push(line);
-											// Xóa item vừa in
-											printItems = printItems.filter((d) => !(d._IDKitchen == idKitchen && d.Code == code));
-										}
+									let e = printItems.find((d) => d._IDKitchen == idKitchen && d.Code == code);
+									if (e) {
+										let line = {
+											Id: e.Id,
+											Code: e.Code,
+											ShippedQuantity: e.Quantity,
+											IDUoM: e.IDUoM,
+											Status: 'Serving',
+											ItemName: e._item.Name, // để hiển thị item ko in đc
+										};
+										this.setOrderValue({ OrderLines: [line] }, false, true);
+										// Xóa item vừa in
+										printItems = printItems.filter((d) => !(d._IDKitchen == idKitchen && d.Code == code));
 									}
-								});
-							if (doneCount == printJobs.length) {
-								if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
-								else checkItemNotPrint();
-							}
-						},  
-						complete: () => {
-							this.sendKitchenAttempt = false;
-							console.log('Tất cả jobs đã hoàn tất');
-						},
-					});
+								}
+							});
+						});
+						if (itemNotPrint.length == 0) this.setOrderValue({ Status: 'Scheduled' }, false, true);
+						else checkItemNotPrint();
+						this.sendKitchenAttempt = false;
+					},  
+					error: (error) => {
+						this.sendKitchenAttempt = false;
+						console.log('Print error:', error);
+					}
+				});
 				} else checkItemNotPrint();
 			} catch (e) {
 				console.log(e);
@@ -1368,10 +1367,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				await this.setKitchenID('all');
 				await this.setItemQuery('all');
 
-				let printerInfo = newTerminalList[index]['Printer'];
-				let printing = this.printPrepare('bill', [printerInfo]);
-				lastValueFrom(this.printingService.printJobsWithProgress([printing]));
-				// this.printingService.print([printing]);
+			let printerInfo = newTerminalList[index]['Printer'];
+			let printing = this.printPrepare('bill', [printerInfo]);
+			this.printingService.print([printing]);
 				this.checkData(receipt, !receipt, sendEachItem);
 				resolve(true);
 			}

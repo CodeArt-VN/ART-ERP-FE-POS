@@ -20,7 +20,7 @@ import { lib } from 'src/app/services/static/global-functions';
 import { environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
-import { PromotionService } from 'src/app/services/promotion.service';
+import { PromotionService } from 'src/app/services/custom/promotion.service';
 
 @Component({
 	selector: 'app-pos-order',
@@ -396,9 +396,9 @@ export class POSOrderPage extends PageBase {
 				IDBranch: this.env.selectedBranch,
 			}),
 		]).then((values: any) => {
-			this.tableGroupList = values[0];
-			this.soStatusList = values[1];
-			this.pageConfig.systemConfig = {};
+		this.tableGroupList = values[0];
+		this.soStatusList = values[1];
+		this.pageConfig.systemConfig = { IsAutoSave: true };
 			values[2]['data'].forEach((e) => {
 				if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
 					e.Value = e._InheritedConfig.Value;
