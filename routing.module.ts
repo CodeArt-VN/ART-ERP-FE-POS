@@ -28,6 +28,8 @@ export const POSRoutes: Routes = [
     { path: 'pos-booking', loadChildren: () => import('./pos-booking/pos-booking.module').then(m => m.PosBookingPageModule) },
     { path: 'pos-booking/:id', loadChildren: () => import('./pos-booking-detail/pos-booking-detail.module').then(m => m.PosBookingDetailPageModule) },
    
+    { path: 'pos-shift/:id', loadChildren: () => import('./pos-shift-detail/pos-shift-detail.module').then(m => m.POSShiftDetailPageModule), canActivate: [AuthGuard] },
+   
     { path: 'pos-config', loadChildren: () => import('../ADMIN/config/config.module').then(m => m.ConfigPageModule), canActivate: [AuthGuard] },
 
 

@@ -1,9 +1,16 @@
 <ion-header>
-	<app-toolbar [page]="this" [ShowAdd]="false" [ShowSearch]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false">
+	<app-toolbar [page]="this" [ShowAdd]="false" [ShowSearch]="false" [ShowImport]="false" [ShowExport]="false"
+		[ShowArchive]="false">
+		<ion-button *ngIf="pageConfig.canCloseShift"
+			[ngClass]="{'blink': posShiftService.currentShift && posShiftService.currentShift.Status == 'Unconfirmed'}"
+			(click)="openShift()">
+			<ion-icon slot="icon-only" [name]="'calendar-clear-outline'"></ion-icon>
+		</ion-button>
 		<span class="hide-small" startTitle>{{'Order Qty' | translate}}: {{orderCounter}}</span>
 		<span class="hide-small ion-margin-start" startTitle>Số khách: {{numberOfGuestCounter}}</span>
 	</app-toolbar>
-	<ion-toolbar style="position: absolute; z-index: 100; padding-top: 0px !important" *ngIf="pageConfig.isShowFeature" class="no-padding table-list">
+	<ion-toolbar style="position: absolute; z-index: 100; padding-top: 0px !important" *ngIf="pageConfig.isShowFeature"
+		class="no-padding table-list">
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 			<ion-segment-button value="all">
 				<ion-label>{{'All' | translate}}</ion-label>
@@ -16,17 +23,13 @@
 	</ion-toolbar>
 	<div class="so-rows">
 		<ion-toolbar style="padding-top: 0px !important" class="no-padding">
-			<ion-searchbar
-				class="search-box"
-				[(ngModel)]="query.Keyword"
-				style="padding-bottom: 2px; height: 45px"
-				(ionChange)="filter('search')"
-				placeholder="{{'Type to search...' | translate}}"
-			></ion-searchbar>
+			<ion-searchbar class="search-box" [(ngModel)]="query.Keyword" style="padding-bottom: 2px; height: 45px"
+				(ionChange)="filter('search')" placeholder="{{'Type to search...' | translate}}"></ion-searchbar>
 
 			<ion-buttons slot="primary">
 				<ion-button (click)="filter()" title="Ản/Hiện đơn đã xong">
-					<ion-icon slot="icon-only" [name]="query.Status == ''? 'bookmarks-outline':'bookmark-outline'"></ion-icon>
+					<ion-icon slot="icon-only"
+						[name]="query.Status == ''? 'bookmarks-outline':'bookmark-outline'"></ion-icon>
 				</ion-button>
 			</ion-buttons>
 		</ion-toolbar>
@@ -62,8 +65,24 @@
 	</ion-fab>
 
 	<!-- View TableList -->
-	<ion-fab *ngIf="pageConfig.isShowFeature" class="table-list feature no-print" vertical="top" horizontal="start" slot="fixed">
-		<div class="ion-padding" style="min-height: calc(100vh - 110px)">
+	<ion-fab *ngIf="pageConfig.isShowFeature" class="table-list feature no-print" vertical="top" horizontal="start"
+		slot="fixed">
+		<app-page-message *ngIf="pageConfig.canCloseShift"
+			[itemsLength]="pageConfig.canCloseShift && posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed' ? 1 : 0"
+			[showSpinner]="false" [showImg]="true" [message]="'SHIFT IS UNCONFIRMED'"
+			[subMessage]="'Please confirm shift'" minHeight="100px">
+			<div class="c-control" style="min-width: 260px">
+				<div>
+					<ion-button 
+					[ngClass]="{'blink': posShiftService.currentShift && posShiftService.currentShift.Status == 'Unconfirmed'}"
+					fill="outline" size="small" class="small-btn" (click)="openShift()">
+						<ion-icon slot="start" name="calendar-clear-outline"></ion-icon>
+						{{'Confirm shift' | translate}}
+					</ion-button>
+				</div>
+				</div>
+		</app-page-message>
+		<div class="ion-padding" style="min-height: calc(100vh - 110px)" *ngIf="!pageConfig.canCloseShift || (pageConfig.canCloseShift && posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed')">
 			<ion-grid fixed>
 				<ng-container *ngFor="let g of tableGroupList | filter:{Id:segmentView}">
 					<ion-row>
@@ -74,17 +93,21 @@
 						</ion-col>
 					</ion-row>
 					<ion-row class="table-holder">
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': t._Orders?.length, 'done-payment': t._Orders?.[0]?.Debt == 0}" *ngFor="let t of g.TableList">
+						<ion-col class="shadow table-item"
+							[ngClass]="{'in-serve': t._Orders?.length, 'done-payment': t._Orders?.[0]?.Debt == 0}"
+							*ngFor="let t of g.TableList">
 							<!-- <span class="tag left" *ngIf="t._Orders">
 								<ion-text class="tag-content" color="primary">
 									<ion-icon size="medium" color="primary" name="people"></ion-icon> <sup class="number-guest">{{t._Orders[0]?.NumberOfGuests}}</sup>
 								</ion-text>
 							</span> -->
 							<span class="tag left" *ngIf="t._Orders?.length == 1">
-								<ion-text class="tag-content" [color]="t._Orders[0]._Status.Color"> {{t._Orders[0].OrderDate | date: 'HH:mm'}} </ion-text>
+								<ion-text class="tag-content" [color]="t._Orders[0]._Status.Color">
+									{{t._Orders[0].OrderDate | date: 'HH:mm'}} </ion-text>
 							</span>
 
-							<span class="tag right clickable more-btn" *ngIf="t._Orders?.length == 1" [id]="'order-trigger-'+t.Id">
+							<span class="tag right clickable more-btn" *ngIf="t._Orders?.length == 1"
+								[id]="'order-trigger-'+t.Id">
 								<ion-icon name="ellipsis-vertical"></ion-icon>
 							</span>
 
@@ -93,32 +116,25 @@
 									<ng-template>
 										<ion-content>
 											<ion-list>
-												<ion-item
-													*ngIf="pageConfig.canChangeTable"
-													[button]="true"
+												<ion-item *ngIf="pageConfig.canChangeTable" [button]="true"
 													[detail]="false"
-													(click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();"
-												>
+													(click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();">
 													{{'Chuyển bàn' | translate}}
-													<ion-icon color="warning" slot="icon-only" name="git-compare" slot="start"></ion-icon>
+													<ion-icon color="warning" slot="icon-only" name="git-compare"
+														slot="start"></ion-icon>
 												</ion-item>
-												<ion-item
-													*ngIf="pageConfig.canSplit"
-													[button]="true"
-													[detail]="false"
-													(click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();"
-												>
+												<ion-item *ngIf="pageConfig.canSplit" [button]="true" [detail]="false"
+													(click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();">
 													{{'Chia đơn' | translate}}
-													<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
+													<ion-icon color="warning" slot="icon-only" name="git-branch"
+														slot="start"></ion-icon>
 												</ion-item>
-												<ion-item
-													*ngIf="pageConfig.canCancelOrder"
-													[button]="true"
+												<ion-item *ngIf="pageConfig.canCancelOrder" [button]="true"
 													[detail]="false"
-													(click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();"
-												>
+													(click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();">
 													{{'Hủy đơn' | translate}}
-													<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
+													<ion-icon color="danger" slot="icon-only" name="ban-outline"
+														slot="start"></ion-icon>
 												</ion-item>
 											</ion-list>
 										</ion-content>
@@ -130,17 +146,15 @@
 								<ion-text class="tag-content" color="danger"> {{t._Orders?.length}} </ion-text>
 							</span>
 
-							<a
-								routerDirection="forward"
-								*ngIf="!t._Orders || t._Orders?.length < 2"
-								[routerLink]="['/'+pageConfig.pageName+'/'+((t._Orders && t._Orders[0]?.Id) || 0)+'/'+t.Id]"
-							>
+							<a routerDirection="forward" *ngIf="!t._Orders || t._Orders?.length < 2"
+								[routerLink]="['/'+pageConfig.pageName+'/'+((t._Orders && t._Orders[0]?.Id) || 0)+'/'+t.Id]">
 								<span class="table-name">{{t.Name}}</span>
 								<span class="table-status" *ngIf="t._Orders?.length == 1">
 									<!-- #{{t._Orders[0].Id}}  -->
 									<b>{{t._Orders[0].CalcTotalOriginal | number }}</b>
 
-									<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name"> <br />{{t._Orders[0]._Status.Name}} </ion-text>
+									<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name">
+										<br />{{t._Orders[0]._Status.Name}} </ion-text>
 								</span>
 							</a>
 
@@ -148,72 +162,66 @@
 								<span class="table-name">{{t.Name}}</span>
 							</a>
 
-							<ion-popover [trigger]="'popover-button-'+t.Id" [dismissOnSelect]="true" [backdropDismiss]="true" *ngIf="t._Orders?.length > 1">
+							<ion-popover [trigger]="'popover-button-'+t.Id" [dismissOnSelect]="true"
+								[backdropDismiss]="true" *ngIf="t._Orders?.length > 1">
 								<ng-template>
 									<ion-content>
 										<ion-list>
 											<ion-list-header>
 												<ion-label>{{'Bàn' | translate}} {{t.Name}}</ion-label>
 											</ion-list-header>
-											<ion-item
-												[button]="true"
-												[detail]="false"
-												routerDirection="forward"
+											<ion-item [button]="true" [detail]="false" routerDirection="forward"
 												[routerLink]="['/'+pageConfig.pageName+'/0/'+t.Id]"
-												(click)="$event.stopPropagation(); this.popoverCtrl.dismiss();"
-											>
-												<ion-icon color="success" slot="icon-only" name="add-outline" slot="end"></ion-icon>
+												(click)="$event.stopPropagation(); this.popoverCtrl.dismiss();">
+												<ion-icon color="success" slot="icon-only" name="add-outline"
+													slot="end"></ion-icon>
 												<ion-text color="success">{{'Thêm đơn mới' | translate}}</ion-text>
 											</ion-item>
 
 											<ng-container *ngFor="let od of t._Orders">
 												<ion-item>
-													<ion-icon color="primary" slot="icon-only" name="ellipsis-vertical" slot="end" [id]="'nested-trigger-'+od.Id"></ion-icon>
+													<ion-icon color="primary" slot="icon-only" name="ellipsis-vertical"
+														slot="end" [id]="'nested-trigger-'+od.Id"></ion-icon>
 													<ion-label>
-														<a
-															routerDirection="forward"
+														<a routerDirection="forward"
 															[routerLink]="['/'+pageConfig.pageName+'/'+od.Id+'/'+t.Id]"
-															(click)="$event.stopPropagation(); this.popoverCtrl.dismiss();"
-														>
+															(click)="$event.stopPropagation(); this.popoverCtrl.dismiss();">
 															<h3>#{{od.Id}}</h3>
 															<p>
-																<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name">
-																	{{od.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}} - {{od._Status.Name}}
+																<ion-text [color]="t._Orders[0]._Status.Color"
+																	[title]="t._Orders[0]._Status.Name">
+																	{{od.CalcTotalOriginal | currency:
+																	'VND':'':'1.0-0':''}} - {{od._Status.Name}}
 																</ion-text>
 															</p>
 														</a>
 													</ion-label>
 												</ion-item>
-												<ion-popover [trigger]="'nested-trigger-'+od.Id" [dismissOnSelect]="true" side="end">
+												<ion-popover [trigger]="'nested-trigger-'+od.Id"
+													[dismissOnSelect]="true" side="end">
 													<ng-template>
 														<ion-content>
 															<ion-list>
-																<ion-item
-																	*ngIf="pageConfig.canChangeTable"
-																	[button]="true"
-																	[detail]="false"
-																	(click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();"
-																>
+																<ion-item *ngIf="pageConfig.canChangeTable"
+																	[button]="true" [detail]="false"
+																	(click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();">
 																	{{'Chuyển bàn' | translate}}
-																	<ion-icon color="warning" slot="icon-only" name="git-compare" slot="start"></ion-icon>
+																	<ion-icon color="warning" slot="icon-only"
+																		name="git-compare" slot="start"></ion-icon>
 																</ion-item>
-																<ion-item
-																	*ngIf="pageConfig.canSplit"
-																	[button]="true"
+																<ion-item *ngIf="pageConfig.canSplit" [button]="true"
 																	[detail]="false"
-																	(click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();"
-																>
+																	(click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();">
 																	{{'Chia đơn' | translate}}
-																	<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
+																	<ion-icon color="warning" slot="icon-only"
+																		name="git-branch" slot="start"></ion-icon>
 																</ion-item>
-																<ion-item
-																	*ngIf="pageConfig.canCancelOrder"
-																	[button]="true"
-																	[detail]="false"
-																	(click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();"
-																>
+																<ion-item *ngIf="pageConfig.canCancelOrder"
+																	[button]="true" [detail]="false"
+																	(click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();">
 																	{{'Hủy đơn' | translate}}
-																	<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
+																	<ion-icon color="danger" slot="icon-only"
+																		name="ban-outline" slot="start"></ion-icon>
 																</ion-item>
 															</ion-list>
 														</ion-content>
@@ -237,15 +245,11 @@
 			<app-page-message [itemsLength]="items.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 			<div *ngIf="items.length && pageConfig.showSpinner==false">
 				<section class="table">
-					<div
-						*ngFor="let i of items; let j = index;"
-						class="row clickable"
-						[ngClass]="{odd: j % 2 != 0}"
-						[ngClass]="{selected: i.checked}"
-						(click)="nav('pos-order/'+i.Id+'/'+i.Tables[0],'forward')"
-					>
+					<div *ngFor="let i of items; let j = index;" class="row clickable" [ngClass]="{odd: j % 2 != 0}"
+						[ngClass]="{selected: i.checked}" (click)="nav('pos-order/'+i.Id+'/'+i.Tables[0],'forward')">
 						<div class="col-checkbox cell">
-							<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked" type="checkbox" />
+							<input (click)="changeSelection(i, $event)" class="c-checkbox" [(ngModel)]="i.checked"
+								type="checkbox" />
 						</div>
 						<div class="col-id cell">
 							<b><span *ngFor="let t of i._Tables">{{t.Name}}</span></b>
@@ -260,20 +264,24 @@
 
 						<div class="col-code cell" *ngIf="i._Status">
 							<span>
-								<ion-text [color]="i._Status.Color" [title]="i._Status.Name"> {{i._Status.Name}} </ion-text>
+								<ion-text [color]="i._Status.Color" [title]="i._Status.Name"> {{i._Status.Name}}
+								</ion-text>
 							</span>
 						</div>
 						<div class="col-date cell">{{i.OrderDate | date: 'HH:mm dd/MM'}}</div>
 						<div class="col-number cell">
-							<ion-text [color]="i._Status.Color"> {{i.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}} </ion-text>
+							<ion-text [color]="i._Status.Color"> {{i.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}}
+							</ion-text>
 						</div>
 						<div class="col-button cell hide-small" *ngIf="!i._Locked && pageConfig.canChangeTable">
-							<ion-button (click)="$event.stopPropagation(); changeTable(i)" size="small" fill="outline" color="warning"> {{'Change table' | translate}} </ion-button>
+							<ion-button (click)="$event.stopPropagation(); changeTable(i)" size="small" fill="outline"
+								color="warning"> {{'Change table' | translate}} </ion-button>
 						</div>
 					</div>
 				</section>
 			</div>
-			<ion-infinite-scroll color="primary" threshold="50%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
+			<ion-infinite-scroll color="primary" threshold="50%" (ionInfinite)="loadData($event)"
+				[disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
 				<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
 			</ion-infinite-scroll>
 		</div>
