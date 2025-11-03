@@ -4,7 +4,6 @@ import { map } from 'rxjs/operators';
 import { EnvService } from '../../services/core/env.service';
 import { POS_Order, POS_OrderDetail } from './interface.model';
 import { lib } from '../../services/static/global-functions';
-import { POSRealtimeSyncService } from './services/pos-realtime-sync.service';
 import { SALE_OrderProvider } from '../../services/static/services.service';
 import { dog } from '../../../environments/environment';
 
@@ -74,7 +73,6 @@ export class POSOrderService {
 
   constructor(
     private envService: EnvService,
-    private realtimeSyncService: POSRealtimeSyncService,
     private saleOrderProvider: SALE_OrderProvider
   ) {
     console.log('🚀 POSOrderService: Constructor initialized');
@@ -83,48 +81,13 @@ export class POSOrderService {
   }
 
   private initializeService(): void {
-    console.log('🔧 POSOrderService: Initializing service...');
-    this.setupRealtimeEventHandlers();
-    console.log('✅ POSOrderService: Service initialized successfully');
+    dog && console.log('🔧 POSOrderService: Initializing service...');
+    dog && console.log('✅ POSOrderService: Service initialized successfully');
   }
 
   private async initialize(): Promise<void> {
     await this.loadOrdersFromStorage();
     this.setupAutoCleanup();
-    this.setupRealtimeEventHandlers();
-  }
-
-  /**
-   * Setup realtime event handlers to avoid circular dependency
-   */
-  private setupRealtimeEventHandlers(): void {
-    // Listen to realtime events from sync service
-    this.realtimeSyncService.realtimeEvents.subscribe(event => {
-      this.handleRealtimeEvent(event);
-    });
-
-    // Listen to orders changes and broadcast to realtime sync
-    this.orders$.subscribe(orders => {
-      this.broadcastOrderChanges();
-    });
-  }
-
-  /**
-   * Handle realtime sync events
-   */
-  private async handleRealtimeEvent(event: any): Promise<void> {
-    dog && console.log('📨 Realtime event received:', event);
-    // Event handling can be extended here if needed
-  }
-
-  /**
-   * Broadcast order changes to realtime sync
-   */
-  private broadcastOrderChanges(): void {
-    // Use a simple method call instead of dependency injection
-    if (this.realtimeSyncService && typeof this.realtimeSyncService.triggerOrderSync === 'function') {
-      this.realtimeSyncService.triggerOrderSync();
-    }
   }
 
   // ========================
@@ -201,9 +164,6 @@ export class POSOrderService {
       // Update indexes
       this.updateIndexes(calculatedOrder);
       
-      // Notify realtime sync
-      this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'CREATE');
-      
       // Auto-sync to database if online
       try {
         const syncedOrder = await this.syncOrderToDatabase(calculatedOrder);
@@ -275,9 +235,6 @@ export class POSOrderService {
       }
       
       this._isDirty.next(true);
-      
-      // Notify realtime sync
-      this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'UPDATE');
       
       // Auto-sync to database if online
       try {
@@ -405,9 +362,6 @@ export class POSOrderService {
       // Add to sync queue with HIGH priority for deletes (need immediate sync)
       const orderToDelete: POS_Order = currentOrders.find(o => o.Code === code) as POS_Order;
       if (orderToDelete) {
-        // Notify realtime sync
-        this.realtimeSyncService.notifyOrderUpdate(orderToDelete, 'DELETE');
-        
         // Try to sync deletion to database immediately
         try {
           await this.deleteOrderFromDatabase(orderToDelete);
