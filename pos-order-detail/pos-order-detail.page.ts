@@ -29,7 +29,6 @@ import { POSCartService } from '../pos-cart.service';
 import { POSPrintService } from '../pos-print.service';
 import { POSDiscountService } from '../pos-discount.service';
 import { POSOrderService } from '../pos-order.service';
-import { POSSecurityService } from '../services/pos-security.service';
 
 // Constants
 const PAYMENT_CONFIG = {
@@ -93,7 +92,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public cartService: POSCartService,
 		public posDiscountService: POSDiscountService,
 		public posOrderService: POSOrderService,
-		public posSecurityService: POSSecurityService,
 
 		public env: EnvService,
 		public navCtrl: NavController,
@@ -1083,14 +1081,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	private async getPayments() {
 		try {
-			// Use POSSecurityService with error recovery
-			const result: any = await this.posSecurityService.executeWithRecovery(async () => {
-				return await this.commonService
-					.connect('GET', 'BANK/IncomingPaymentDetail', {
-						IDSaleOrder: this.item.Id,
-					})
-					.toPromise();
-			}, 'Error loading payment information');
+			const result: any = await this.commonService
+				.connect('GET', 'BANK/IncomingPaymentDetail', {
+					IDSaleOrder: this.item.Id,
+				})
+				.toPromise();
 
 			this.paymentList = result;
 			this.paymentList.forEach((e) => {

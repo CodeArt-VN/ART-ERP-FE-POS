@@ -4,7 +4,6 @@ import { map } from 'rxjs/operators';
 import { EnvService } from '../../services/core/env.service';
 import { POS_Order, POS_OrderDetail } from './interface.model';
 import { lib } from '../../services/static/global-functions';
-import { POSSecurityService } from './services/pos-security.service';
 import { POSAdvancedSyncService } from './services/pos-advanced-sync.service';
 import { POSRealtimeSyncService } from './services/pos-realtime-sync.service';
 import { SALE_OrderProvider } from '../../services/static/services.service';
@@ -78,7 +77,6 @@ export class POSOrderService {
     private envService: EnvService,
     private advancedSyncService: POSAdvancedSyncService,
     private realtimeSyncService: POSRealtimeSyncService,
-    private securityService: POSSecurityService,
     private saleOrderProvider: SALE_OrderProvider
   ) {
     console.log('🚀 POSOrderService: Constructor initialized');
