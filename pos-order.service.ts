@@ -4,7 +4,6 @@ import { map } from 'rxjs/operators';
 import { EnvService } from '../../services/core/env.service';
 import { POS_Order, POS_OrderDetail } from './interface.model';
 import { lib } from '../../services/static/global-functions';
-import { POSAdvancedSyncService } from './services/pos-advanced-sync.service';
 import { POSRealtimeSyncService } from './services/pos-realtime-sync.service';
 import { SALE_OrderProvider } from '../../services/static/services.service';
 import { dog } from '../../../environments/environment';
@@ -75,7 +74,6 @@ export class POSOrderService {
 
   constructor(
     private envService: EnvService,
-    private advancedSyncService: POSAdvancedSyncService,
     private realtimeSyncService: POSRealtimeSyncService,
     private saleOrderProvider: SALE_OrderProvider
   ) {
@@ -115,25 +113,8 @@ export class POSOrderService {
    * Handle realtime sync events
    */
   private async handleRealtimeEvent(event: any): Promise<void> {
-    if (event.type === 'SYNC_STATUS_CHANGED') {
-      const { status, orderCodes, orderCode } = event.data;
-      
-      if (status === 'SERVER_SYNC_REQUEST' && orderCodes) {
-        // Handle server sync request
-        for (const code of orderCodes) {
-          const order = await this.getOrder(code);
-          if (order) {
-            this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'HIGH');
-          }
-        }
-      } else if (status === 'SERVER_ORDER_UPDATED' && orderCode) {
-        // Handle server order update
-        const order = await this.getOrder(orderCode);
-        if (order) {
-          this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'MEDIUM');
-        }
-      }
-    }
+    dog && console.log('📨 Realtime event received:', event);
+    // Event handling can be extended here if needed
   }
 
   /**
@@ -220,9 +201,6 @@ export class POSOrderService {
       // Update indexes
       this.updateIndexes(calculatedOrder);
       
-      // Add to sync queue with HIGH priority for new orders
-      this.advancedSyncService.addToSyncQueue(calculatedOrder, 'CREATE', 'HIGH');
-      
       // Notify realtime sync
       this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'CREATE');
       
@@ -297,9 +275,6 @@ export class POSOrderService {
       }
       
       this._isDirty.next(true);
-      
-      // Add to sync queue with MEDIUM priority for updates
-      this.advancedSyncService.addToSyncQueue(calculatedOrder, 'UPDATE', 'MEDIUM');
       
       // Notify realtime sync
       this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'UPDATE');
@@ -430,8 +405,6 @@ export class POSOrderService {
       // Add to sync queue with HIGH priority for deletes (need immediate sync)
       const orderToDelete: POS_Order = currentOrders.find(o => o.Code === code) as POS_Order;
       if (orderToDelete) {
-        this.advancedSyncService.addToSyncQueue(orderToDelete, 'DELETE', 'HIGH');
-        
         // Notify realtime sync
         this.realtimeSyncService.notifyOrderUpdate(orderToDelete, 'DELETE');
         
@@ -1642,77 +1615,16 @@ export class POSOrderService {
     }
   }
 
-  /**
-   * Get security service for monitoring
-   */
-  getSecurityService(): POSSecurityService {
-    return this.securityService;
-  }
 
-  /**
-   * Get advanced sync service for monitoring
-   */
-  getAdvancedSyncService(): POSAdvancedSyncService {
-    return this.advancedSyncService;
-  }
 
-  /**
-   * Trigger manual sync for all orders
-   */
-  triggerManualSync(): void {
-    console.log('🔄 Manual sync triggered from POS Order Service');
-    this.advancedSyncService.triggerSync('MANUAL_ORDER_SERVICE');
-  }
-
-  /**
-   * Get sync statistics
-   */
-  getSyncStats(): Observable<any> {
-    return this.advancedSyncService.syncStats;
-  }
-
-  /**
-   * Check if sync is currently running
-   */
-  isSyncing(): Observable<boolean> {
-    return this.advancedSyncService.isSyncing;
-  }
-
-  /**
-   * Check network status
-   */
-  isOnline(): Observable<boolean> {
-    return this.advancedSyncService.isOnline;
-  }
-
-  /**
-   * Get realtime sync service
-   */
-  getRealtimeSyncService(): POSRealtimeSyncService {
-    return this.realtimeSyncService;
-  }
-
-  /**
-   * Get realtime sync events
-   */
-  getRealtimeEvents(): Observable<any> {
-    return this.realtimeSyncService.realtimeEvents;
-  }
-
-  /**
-   * Force sync all orders through realtime channel
-   */
-  forceSyncAll(): void {
-    this.realtimeSyncService.forceSyncAll();
-  }
 
   /**
    * Check for new order lines that need kitchen delivery (Service-based CheckPOSNewOrderLines)
    * Only called from service load and SignalR notifications
    */
   async checkPOSNewOrderLines(query: any): Promise<any[]> {
-    return this.securityService.executeWithRecovery(async () => {
-      console.log('🔍 POSOrderService: Checking new order lines from server...');
+    try {
+      dog && console.log('🔍 POSOrderService: Checking new order lines from server...');
       
       const results = await this.saleOrderProvider.commonService
         .connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', query)
@@ -1723,13 +1635,13 @@ export class POSOrderService {
         return [];
       }
 
-      console.log(`📋 CheckPOSNewOrderLines: Found ${results.length} orders with new items`);
+      dog && console.log(`📋 CheckPOSNewOrderLines: Found ${results.length} orders with new items`);
       return results;
       
-    }, 'Failed to check new order lines').catch(error => {
+    } catch (error) {
       console.error('❌ CheckPOSNewOrderLines error:', error);
       throw error;
-    });
+    }
   }
 
   /**
