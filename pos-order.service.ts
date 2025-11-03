@@ -1335,185 +1335,62 @@ export class POSOrderService {
     };
   }
 
-  // ========================
-  // ROBUSTNESS FEATURES (PHASE 3)
-  // ========================
-
-  /**
-   * Create order with retry mechanism and data encryption
-   */
-  async createOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
-    return this.securityService.executeWithRecovery(
-      async () => {
-        // Encrypt sensitive data
-        const encryptedOrder = await this.securityService.encryptSensitiveData(order);
-        return await this.createOrder(encryptedOrder);
-      },
-      'CREATE_ORDER',
-      { maxRetries: 3, retryDelays: [1000, 2000, 4000], backoffMultiplier: 2 }
-    );
-  }
-
-  /**
-   * Update order with retry mechanism
-   */
-  async updateOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
-    return this.securityService.executeWithRecovery(
-      async () => {
-        const encryptedOrder = await this.securityService.encryptSensitiveData(order);
-        await this.createOrder(encryptedOrder);
-        return encryptedOrder;
-      },
-      'UPDATE_ORDER'
-    );
-  }
-
-  /**
-   * Get order with retry mechanism
-   */
-  async getOrderWithRecovery(code: string): Promise<POS_Order | null> {
-    return this.securityService.executeWithRecovery(
-      async () => {
-        let orders: POS_Order[];
-        this.orders$.subscribe(data => orders = data).unsubscribe();
-        return orders.find(order => order.Code === code) || null;
-      },
-      'GET_ORDER'
-    );
-  }
-
-  /**
-   * Bulk save operations with retry
-   */
-  async bulkSaveWithRecovery(orders: POS_Order[]): Promise<void> {
-    const batchSize = 10;
-    const batches = this.chunkArray(orders, batchSize);
-    
-    for (let index = 0; index < batches.length; index++) {
-      const batch = batches[index];
-      await this.securityService.executeWithRecovery(
-        async () => {
-          console.log(`📦 Processing batch ${index + 1}/${batches.length} (${batch.length} orders)`);
-          
-          const encryptedBatch = await Promise.all(
-            batch.map(order => this.securityService.encryptSensitiveData(order))
-          );
-          
-          // Save each order in batch
-          for (const order of encryptedBatch) {
-            await this.createOrder(order);
-          }
-        },
-        `BULK_SAVE_BATCH_${index + 1}`,
-        { maxRetries: 2 }
-      );
-    }
-  }
-
-  /**
-   * Get performance and error statistics
-   */
-  getSystemHealth(): {
-    circuitBreakers: Array<{ operation: string; state: string; failures: number }>;
-    operationStats: Array<{ operation: string; stats: any }>;
-    recentErrors: Array<{ type: string; error: any; timestamp: number; operation: string }>;
-    cacheStats: any;
-    storageInfo: { ordersCount: number; lastUpdated: string; cacheHitRate: number };
-  } {
-    let orders: POS_Order[];
-    this.orders$.subscribe(data => orders = data).unsubscribe();
-    
-    return {
-      circuitBreakers: this.securityService.getCircuitBreakerStatus(),
-      operationStats: this.securityService.getAllOperationStats(),
-      recentErrors: this.securityService.getRecentErrors(20),
-      cacheStats: {
-        cacheSize: this.orderCache.size,
-        maxSize: this.MAX_CACHE_SIZE,
-        hitCount: this.cacheStats.hits,
-        missCount: this.cacheStats.misses,
-        hitRate: this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses) || 0
-      },
-      storageInfo: {
-        ordersCount: orders?.length || 0,
-        lastUpdated: new Date().toISOString(),
-        cacheHitRate: this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses) || 0
-      }
-    };
-  }
-
-  /**
-   * Chunk array into smaller batches
-   */
-  private chunkArray<T>(array: T[], size: number): T[][] {
-    const chunks = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-  }
-
-  // ========================
-  // END ROBUSTNESS FEATURES
-  // ========================
 
   /**
    * Validate and recover corrupted data
    */
   async validateAndRecoverData(): Promise<void> {
-    await this.securityService.executeWithRecovery(
-      async () => {
-        console.log('🔍 Starting data validation and recovery...');
-        
-        // Check localStorage integrity
-        const storageData = await this.env.getStorage(this.STORAGE_KEY);
-        if (!storageData) {
-          console.log('📦 No storage data found, initializing...');
-          await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
-          return;
-        }
+    try {
+      dog && console.log('🔍 Starting data validation and recovery...');
+      
+      // Check localStorage integrity
+      const storageData = await this.env.getStorage(this.STORAGE_KEY);
+      if (!storageData) {
+        dog && console.log('📦 No storage data found, initializing...');
+        await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
+        return;
+      }
 
-        let data;
+      let data;
+      try {
+        data = JSON.parse(storageData);
+      } catch (error) {
+        console.error('❌ Failed to parse storage data:', error);
+        await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
+        return;
+      }
+      
+      if (!data || !Array.isArray(data.orders)) {
+        throw new Error('Invalid storage data structure');
+      }
+      
+      // Validate each order
+      let corruptedCount = 0;
+      let recoveredCount = 0;
+      
+      for (const order of data.orders) {
         try {
-          data = JSON.parse(storageData);
+          this.validateOrderStructure(order);
         } catch (error) {
-          console.error('❌ Failed to parse storage data:', error);
-          await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
-          return;
-        }
-        
-        if (!data || !Array.isArray(data.orders)) {
-          throw new Error('Invalid storage data structure');
-        }
-        
-        // Validate each order
-        let corruptedCount = 0;
-        let recoveredCount = 0;
-        
-        for (const order of data.orders) {
+          corruptedCount++;
+          console.warn(`⚠️ Corrupted order detected: ${order.Code}`, error);
+          
           try {
-            this.validateOrderStructure(order);
-          } catch (error) {
-            corruptedCount++;
-            console.warn(`⚠️ Corrupted order detected: ${order.Code}`, error);
-            
-            try {
-              const recoveredOrder = await this.recoverOrder(order);
-              if (recoveredOrder) {
-                recoveredCount++;
-                console.log(`✅ Order recovered: ${order.Code}`);
-              }
-            } catch (recoveryError) {
-              console.error(`❌ Failed to recover order ${order.Code}:`, recoveryError);
+            const recoveredOrder = await this.recoverOrder(order);
+            if (recoveredOrder) {
+              recoveredCount++;
+              dog && console.log(`✅ Order recovered: ${order.Code}`);
             }
+          } catch (recoveryError) {
+            console.error(`❌ Failed to recover order ${order.Code}:`, recoveryError);
           }
         }
-        
-        console.log(`📊 Validation complete: ${corruptedCount} corrupted, ${recoveredCount} recovered`);
-      },
-      'DATA_VALIDATION',
-      { maxRetries: 1 }
-    );
+      }
+      
+      dog && console.log(`📊 Validation complete: ${corruptedCount} corrupted, ${recoveredCount} recovered`);
+    } catch (error) {
+      console.error('❌ Data validation failed:', error);
+    }
   }
 
   /**
@@ -1674,10 +1551,7 @@ export class POSOrderService {
    */
   async emergencyCleanup(): Promise<void> {
     try {
-      console.log('🚨 Starting emergency cleanup...');
-      
-      // Clear circuit breaker states
-      this.securityService.clearStats();
+      dog && console.log('🚨 Starting emergency cleanup...');
       
       // Clear all caches
       this.orderCache.clear();
@@ -1689,7 +1563,7 @@ export class POSOrderService {
       // Trigger data refresh
       this.loadOrdersFromStorage();
       
-      console.log('✅ Emergency cleanup completed');
+      dog && console.log('✅ Emergency cleanup completed');
     } catch (error) {
       console.error('❌ Emergency cleanup failed:', error);
       throw error;
