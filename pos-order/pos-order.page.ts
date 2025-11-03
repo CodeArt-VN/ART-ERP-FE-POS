@@ -894,25 +894,19 @@ export class POSOrderPage extends PageBase {
 	private async debugDataStatus(): Promise<void> {
 		try {
 			const localOrders = await this.posOrderService.getAllOrders();
-			const systemHealth = this.posOrderService.getSystemHealth();
 
-			console.log('🔍 POS Order Data Status:', {
+			dog && console.log('🔍 POS Order Data Status:', {
 				localOrdersCount: localOrders.length,
 				displayedItemsCount: this.items.length,
-				query: this.query,
-				systemHealth: {
-					ordersCount: systemHealth.storageInfo.ordersCount,
-					cacheStats: systemHealth.cacheStats,
-					lastUpdated: systemHealth.storageInfo.lastUpdated
-				}
+				query: this.query
 			});
 
 			// Show in console for debugging
 			if (localOrders.length > 0) {
-				console.log('📋 Sample local orders:', localOrders.slice(0, 3));
+				dog && console.log('📋 Sample local orders:', localOrders.slice(0, 3));
 			}
 			if (this.items.length > 0) {
-				console.log('📋 Sample displayed items:', this.items.slice(0, 3));
+				dog && console.log('📋 Sample displayed items:', this.items.slice(0, 3));
 			}
 		} catch (error) {
 			console.error('❌ Debug data status failed:', error);
