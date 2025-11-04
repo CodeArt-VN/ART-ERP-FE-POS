@@ -5,7 +5,7 @@ import { EnvService } from '../../services/core/env.service';
 import { POS_Order, POS_OrderDetail } from './interface.model';
 import { lib } from '../../services/static/global-functions';
 import { SALE_OrderProvider } from '../../services/static/services.service';
-import { dog } from '../../../environments/environment';
+import { dogF } from '../../../environments/environment';
 
 export interface StorageOrderData {
   orders: POS_Order[];
@@ -81,8 +81,8 @@ export class POSOrderService {
   }
 
   private initializeService(): void {
-    dog && console.log('🔧 POSOrderService: Initializing service...');
-    dog && console.log('✅ POSOrderService: Service initialized successfully');
+    dogF && console.log('🔧 POSOrderService: Initializing service...');
+    dogF && console.log('✅ POSOrderService: Service initialized successfully');
   }
 
   private async initialize(): Promise<void> {
@@ -122,6 +122,7 @@ export class POSOrderService {
       const order: POS_Order = {
         Id: 0, // Will be set by server
         Code: this.generateOrderCode(),
+        Type: 'POSOrder', // ✅ IMPORTANT: Mark as POS Order
         Status: 'New',
         OrderDate: new Date(),
         ModifiedDate: new Date(),
@@ -609,7 +610,7 @@ export class POSOrderService {
     
     try {
       // Use SALE_OrderProvider save method (handles both create and update based on Id)
-      const savedOrder = null;// await this.saleOrderProvider.save(order) as POS_Order;
+      const savedOrder = await this.saleOrderProvider.save(order) as POS_Order;
       
       console.log('✅ Order synced to database successfully', { code: savedOrder.Code, id: savedOrder.Id });
       
@@ -1341,12 +1342,12 @@ export class POSOrderService {
    */
   async validateAndRecoverData(): Promise<void> {
     try {
-      dog && console.log('🔍 Starting data validation and recovery...');
+      dogF && console.log('🔍 Starting data validation and recovery...');
       
       // Check localStorage integrity
       const storageData = await this.env.getStorage(this.STORAGE_KEY);
       if (!storageData) {
-        dog && console.log('📦 No storage data found, initializing...');
+        dogF && console.log('📦 No storage data found, initializing...');
         await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
         return;
       }
@@ -1379,7 +1380,7 @@ export class POSOrderService {
             const recoveredOrder = await this.recoverOrder(order);
             if (recoveredOrder) {
               recoveredCount++;
-              dog && console.log(`✅ Order recovered: ${order.Code}`);
+              dogF && console.log(`✅ Order recovered: ${order.Code}`);
             }
           } catch (recoveryError) {
             console.error(`❌ Failed to recover order ${order.Code}:`, recoveryError);
@@ -1387,7 +1388,7 @@ export class POSOrderService {
         }
       }
       
-      dog && console.log(`📊 Validation complete: ${corruptedCount} corrupted, ${recoveredCount} recovered`);
+      dogF && console.log(`📊 Validation complete: ${corruptedCount} corrupted, ${recoveredCount} recovered`);
     } catch (error) {
       console.error('❌ Data validation failed:', error);
     }
@@ -1455,7 +1456,7 @@ export class POSOrderService {
    */
   async checkPOSNewOrderLines(query: any): Promise<any[]> {
     try {
-      dog && console.log('🔍 POSOrderService: Checking new order lines from server...');
+      dogF && console.log('🔍 POSOrderService: Checking new order lines from server...');
       
       const results = await this.saleOrderProvider.commonService
         .connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', query)
@@ -1466,7 +1467,7 @@ export class POSOrderService {
         return [];
       }
 
-      dog && console.log(`📋 CheckPOSNewOrderLines: Found ${results.length} orders with new items`);
+      dogF && console.log(`📋 CheckPOSNewOrderLines: Found ${results.length} orders with new items`);
       return results;
       
     } catch (error) {
@@ -1551,7 +1552,7 @@ export class POSOrderService {
    */
   async emergencyCleanup(): Promise<void> {
     try {
-      dog && console.log('🚨 Starting emergency cleanup...');
+      dogF && console.log('🚨 Starting emergency cleanup...');
       
       // Clear all caches
       this.orderCache.clear();
@@ -1563,7 +1564,7 @@ export class POSOrderService {
       // Trigger data refresh
       this.loadOrdersFromStorage();
       
-      dog && console.log('✅ Emergency cleanup completed');
+      dogF && console.log('✅ Emergency cleanup completed');
     } catch (error) {
       console.error('❌ Emergency cleanup failed:', error);
       throw error;
@@ -1575,17 +1576,17 @@ export class POSOrderService {
    */
   async cancelReduceOrderLines(cancelData: any): Promise<any> {
     try {
-      dog && console.log('🔄 POSOrderService: Canceling/reducing order lines:', cancelData);
+      dogF && console.log('🔄 POSOrderService: Canceling/reducing order lines:', cancelData);
       
       // Use saleOrderProvider to call API
       const result = await this.saleOrderProvider.commonService
         .connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData)
         .toPromise();
       
-      dog && console.log('✅ POSOrderService: Order lines canceled/reduced successfully');
+      dogF && console.log('✅ POSOrderService: Order lines canceled/reduced successfully');
       return result;
     } catch (summary: any) {
-      dog && console.error('❌ POSOrderService: Error canceling/reducing order lines:', summary);
+      dogF && console.error('❌ POSOrderService: Error canceling/reducing order lines:', summary);
       throw summary;
     }
   }
