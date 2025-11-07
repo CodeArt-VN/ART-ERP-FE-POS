@@ -505,7 +505,7 @@
 		}
 	</style>
 	<div id="bill" class="bill" *ngIf="item?.OrderLines?.length">
-		<div class="receipt giao-nhan" >
+		<div class="receipt giao-nhan">
 			<section class="sheet rpt p1">
 				<table>
 					<thead>
@@ -547,31 +547,31 @@
 											<tr>
 												<td class="title">{{'Table' | translate}}</td>
 												<td>
-													<span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span>
+													<span class="bold" *ngFor="let t of printData.selectedTables">{{t.Name}}; </span>
 												</td>
 											</tr>
 											<tr>
 												<td class="title">{{'Order date' | translate}}</td>
-												<td>{{(item.OrderDate || printData.printDate) | date: 'HH:mm dd/MM/yyyy'}}</td>
+												<td class="bold">{{(item.OrderDate || printData.printDate) | date: 'HH:mm dd/MM/yyyy'}}</td>
 											</tr>
 											<tr>
 												<td class="title">{{'Print date' | translate}}</td>
-												<td>{{printData.printDate}}</td>
+												<td class="bold">{{printData.printDate}}</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
 												<td class="title">{{'Cashier' | translate}}</td>
-												<td>{{env.user.FullName}}</td>
+												<td class="bold">{{env.user.FullName}}</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
 												<td class="title">{{'Customer' | translate}}</td>
-												<td>
+												<td class="bold">
 													{{item._Customer?.Name}}
 													<span *ngIf="item._Customer?.Code"> ({{item._Customer.Code}}) </span>
 												</td>
 											</tr>
 											<tr *ngIf="kitchenQuery!='all'">
 												<td class="title">{{'Send To' | translate}}</td>
-												<td>
+												<td class="bold">
 													<span *ngFor="let k of posService.dataSource.kitchens | filter:{Id:kitchenQuery}">{{k.Name}}</span>
 												</td>
 											</tr>
@@ -603,7 +603,7 @@
 													<td class="total">
 														<span>{{o.OriginalTotalDiscount | number: '1.0-0'}}</span>
 													</td>
-													<td class="total">
+													<td class="total bold">
 														<span>{{o.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
@@ -651,13 +651,13 @@
 											<table>
 												<tr>
 													<td class="title">{{'Total' | translate }}</td>
-													<td class="text-right">
+													<td class="text-right bold">
 														<span>{{item.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
 												<tr>
 													<td class="title">{{'Discount' | translate }} [ {{item.OriginalTotalDiscountPercent}}% ]</td>
-													<td class="text-right">
+													<td class="text-right bold">
 														<span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
@@ -669,13 +669,13 @@
 											<table>
 												<tr>
 													<td class="title">{{'Discounted amount' | translate}}</td>
-													<td class="text-right">
+													<td class="text-right bold">
 														<span>{{item.OriginalTotalAfterDiscount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
 												<tr>
 													<td class="title">{{'Service charge' | translate}} [ {{item.AdditionsAmountPercent}}% ]</td>
-													<td class="text-right">
+													<td class="text-right bold">
 														<span>{{item.AdditionsAmount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
@@ -687,13 +687,13 @@
 											<table>
 												<tr>
 													<td class="title">{{'Base VAT amount' | translate}}</td>
-													<td class="text-right">
+													<td class="text-right bold">
 														<span>{{item.OriginalTotalAfterDiscount + item.AdditionsAmount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
 												<tr>
 													<td class="title">{{'VAT' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
-													<td class="text-right">
+													<td class="text-right bold">
 														<span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
 													</td>
 												</tr>
@@ -705,7 +705,7 @@
 											<table>
 												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
 													<td class="title">{{'Discount from saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
-													<td class="text-right">
+													<td class="text-right bold">
 														<span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 													</td>
 												</tr>
