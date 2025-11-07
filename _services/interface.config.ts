@@ -21,4 +21,5 @@ export interface POSConfig
 	POSAudioIncomingPayment: string;
 	POSAudioCallToPay: string;
 	POSAudioCallStaff: string;
+	POSServiceCharge: number;
 }

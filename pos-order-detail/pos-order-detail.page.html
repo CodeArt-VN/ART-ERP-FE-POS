@@ -1,8 +1,8 @@
 <ion-header>
 	<app-toolbar [page]="this">
-		<ion-button color="primary" startTitle *ngIf="printData?.selectedTables?.length" class="ion-hide-sm-down">
+		<ion-button color="primary" startTitle *ngIf="printData.selectedTables.length" class="ion-hide-sm-down">
 			{{'Table' | translate}}:
-			<span *ngFor="let t of printData?.selectedTables">&nbsp;{{t.Name}} </span>
+			<span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
 		</ion-button>
 
 		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
@@ -10,7 +10,7 @@
 		<ion-button
 			class="cart"
 			title="{{'Cart' | translate}}"
-			[ngClass]="{'blink': (printData?.undeliveredItems?.length > 0) && pageConfig.canEdit}"
+			[ngClass]="{'blink': (printData.undeliveredItems?.length > 0) && pageConfig.canEdit}"
 			(click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;"
 		>
 			<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
@@ -326,7 +326,7 @@
 			<div class="box header-box ion-padding">
 				<div class="header-name">
 					<div class="bill-for">
-						<span *ngIf="item?.OrderDate">{{item.OrderDate | date: 'HH:mm dd/MM'}} </span>
+						<span>{{(item?.OrderDate || printData.printDate) | date: 'HH:mm dd/MM'}} </span>
 						<span *ngIf="!item?.Tables?.length">{{'Please choose a table' | translate}}</span>
 						<span *ngIf="item?.Tables?.length && !item?.OrderLines?.length">{{'Please choose products' | translate}}</span>
 					</div>
@@ -433,10 +433,10 @@
 						</ion-button>
 					</ion-col>
 					<ion-col *ngIf="item.Status == 'TemporaryBill'">
-						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();" [disabled]="submitLockOrderAttempt || !item.Id"> Hủy tạm tính </ion-button>
+						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();" [disabled]="submitAttempt || !item.Id"> Hủy tạm tính </ion-button>
 					</ion-col>
 					<ion-col *ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && posService.systemConfig.POSEnableTemporaryPayment">
-						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitLockOrderAttempt"> Tạm tính tiền </ion-button>
+						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();" [disabled]="submitAttempt || !item.Id"> Tạm tính tiền </ion-button>
 					</ion-col>
 					<ion-col *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !posService.systemConfig.POSEnableTemporaryPayment">
 						<ion-button
@@ -455,7 +455,7 @@
 							fill="outline"
 							expand="block"
 							(click)="sendPrint();"
-							[disabled]="submitPrintBillAttempt || !item.Id"
+							[disabled]="submitAttempt || !item.Id"
 						>
 							In phiếu
 						</ion-button>
@@ -520,11 +520,11 @@
 							<td>
 								<div>
 									<div class="header">
-										<!-- <span class="logo"
+										<span class="logo" *ngIf="0"
 											><img
 												[src]="printData.currentBranch?.LogoURL || 'assets/logo/logo-in-holdings.png'"
 												(error)="$event.src='assets/logos/logo-the-log.png'"
-										/></span> -->
+										/></span>
 										<span class="brand">{{printData.currentBranch?.ShortName || printData.currentBranch?.Name}}</span>
 										<span class="address">{{printData.currentBranch?.Address || ''}}</span>
 										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
@@ -535,11 +535,11 @@
 										</ng-container>
 										<ng-container *ngIf="item.Status == 'TemporaryBill'">
 											<span class="brand">{{'TEMPORARY BILL' | translate}}</span>
-											<span>({{'Bill No.' | translate}}: {{id}})</span>
+											<span>({{'Bill No.' | translate}}: <strong>{{id}}</strong>)</span>
 										</ng-container>
 										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
 											<span class="brand">{{'RECEIPT' | translate}}</span>
-											<span>({{'Receipt No.' | translate}}: {{id}})</span>
+											<span>({{'Receipt No.' | translate}}: <strong>{{id}}</strong>)</span>
 										</ng-container>
 									</div>
 									<div class="table-info">
@@ -547,12 +547,12 @@
 											<tr>
 												<td class="title">{{'Table' | translate}}</td>
 												<td>
-													<span *ngFor="let t of printData?.selectedTables">{{t.Name}}; </span>
+													<span *ngFor="let t of printData.selectedTables">{{t.Name}}; </span>
 												</td>
 											</tr>
 											<tr>
 												<td class="title">{{'Order date' | translate}}</td>
-												<td>{{item.OrderDate | date: 'HH:mm dd/MM/yyyy'}}</td>
+												<td>{{(item.OrderDate || printData.printDate) | date: 'HH:mm dd/MM/yyyy'}}</td>
 											</tr>
 											<tr>
 												<td class="title">{{'Print date' | translate}}</td>
@@ -586,11 +586,10 @@
 												<td class="text-right">{{'Discount' | translate}}</td>
 												<td class="text-right">{{'BILL Amount' | translate}}</td>
 											</tr>
-											<ng-container *ngFor="let o of getGroupedOrderLines()">
+											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
 												<tr class="small">
 													<td colspan="5" class="name">
-														<span [appTranslateResource]="o._item"></span>
-														<small *ngIf="o.UoMName"> ({{o.UoMName}})</small>
+														<strong><span [appTranslateResource]="o._item"></span></strong>
 													</td>
 												</tr>
 												<tr class="small">
@@ -622,7 +621,7 @@
 													<tr>
 														<td>
 															{{idx + 1}}.
-															<span [appTranslateResource]="o._item"></span>
+															<strong><span [appTranslateResource]="o._item"></span></strong>
 														</td>
 														<td class="total">
 															<span class="bold quantity">{{o._undeliveredQuantity}}</span>
@@ -657,7 +656,7 @@
 													</td>
 												</tr>
 												<tr>
-													<td class="title">{{'Discount' | translate }} [{{item.OriginalTotalDiscountPercent}}%]</td>
+													<td class="title">{{'Discount' | translate }} [ {{item.OriginalTotalDiscountPercent}}% ]</td>
 													<td class="text-right">
 														<span>{{item.OriginalTotalDiscount | number: '1.0-0'}}</span>
 													</td>
@@ -675,7 +674,7 @@
 													</td>
 												</tr>
 												<tr>
-													<td class="title">{{'Service charge' | translate}} [{{item.AdditionsAmountPercent}}%]</td>
+													<td class="title">{{'Service charge' | translate}} [ {{item.AdditionsAmountPercent}}% ]</td>
 													<td class="text-right">
 														<span>{{item.AdditionsAmount | number: '1.0-0'}}</span>
 													</td>
@@ -693,7 +692,7 @@
 													</td>
 												</tr>
 												<tr>
-													<td class="title">{{'VAT' | translate}} [{{item.OriginalTaxPercent}}%]</td>
+													<td class="title">{{'VAT' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
 													<td class="text-right">
 														<span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
 													</td>
@@ -705,7 +704,7 @@
 										<div class="table-info-top">
 											<table>
 												<tr *ngIf="item.OriginalDiscountFromSalesman>0">
-													<td class="title">{{'Discount from saleman' | translate}} [{{item.OriginalDiscountFromSalesmanPercent}}%]</td>
+													<td class="title">{{'Discount from saleman' | translate}} [ {{item.OriginalDiscountFromSalesmanPercent}}% ]</td>
 													<td class="text-right">
 														<span>{{item.OriginalDiscountFromSalesman | number: '1.0-0'}}</span>
 													</td>

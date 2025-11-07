@@ -33,6 +33,7 @@ export interface MenuDetail extends POS_MenuDetail
 	SalesTaxPercent?: number;
 
 	UoMs?: any[]; // Danh sách UoM của item không cần tạo interface
+	BookedQuantity?: number
 }
 
 export interface TableGroup extends POS_TableGroup
