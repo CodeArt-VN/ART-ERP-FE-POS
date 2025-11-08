@@ -54,7 +54,7 @@ export class POSOrderPage extends PageBase {
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
-		
+
 		this.pageConfig.ShowAdd = false;
 		this.pageConfig.ShowSearch = false;
 		this.pageConfig.ShowImport = false;
@@ -96,6 +96,9 @@ export class POSOrderPage extends PageBase {
 					break;
 				case 'app:POSOrderFromStaff':
 					this.notifyOrderFromStaff(data);
+					break;
+				case 'app:POSPaymentSuccess':
+					this.notifyPaymentSuccess(data);
 					break;
 			}
 		});
@@ -327,6 +330,29 @@ export class POSOrderPage extends PageBase {
 			// 	Url: url,
 			// };
 			// this.setNotifications(notification, true);
+			this.refresh();
+		}
+	}
+
+	private notifyPaymentSuccess(data) {
+		const value = JSON.parse(data.value);
+		if (this.env.selectedBranch == value.IDBranch) {
+			let message = 'Đơn hàng ' + value.IDSaleOrder + ' thanh toán thành công';
+			this.env.showMessage('Đơn hàng ' + value.IDSaleOrder +' thanh toán thành công', 'success');
+			let url = 'pos-order/' + data.id;
+			let notification = {
+				Id: value.Id,
+				IDBranch: value.IDBranch,
+				IDSaleOrder: value.IDSaleOrder,
+				Type: 'Payment',
+				Name: 'Thanh toán thành công',
+				Code: 'pos-order',
+				Message: message,
+				Url: url,
+				Watched: false,
+			};
+
+			this.setNotifications(notification, true);
 			this.refresh();
 		}
 	}
