@@ -18,7 +18,7 @@ export class POSNotifyService {
 	async handleEvent(data: any, currentItem: any, currentTable: number, loadDataCallback: Function) {
 		//Check if form is dirty - this should be handled by caller
 		console.log('received event:', data);
-		
+
 		switch (data.code) {
 			case 'app:POSOrderPaymentUpdate':
 				return this.handlePaymentEvent(data, currentItem, loadDataCallback);
@@ -42,6 +42,9 @@ export class POSNotifyService {
 				return this.handleNetworkChangeEvent(data, currentItem, loadDataCallback);
 			case 'app:POSOrderFromStaff':
 				return this.handleOrderFromStaffEvent(data, currentTable, loadDataCallback);
+			case 'app:POSPaymentSuccess':
+				this.handlePaymentSuccessEvent(data, currentTable, loadDataCallback);
+				break;
 		}
 	}
 
@@ -51,6 +54,30 @@ export class POSNotifyService {
 			loadDataCallback();
 		} else {
 			this.getStorageNotifications();
+		}
+	}
+
+	private async handlePaymentSuccessEvent(data: any, currentItem: any, loadDataCallback: Function) {
+		const value = JSON.parse(data.value);
+		if (this.env.selectedBranch == value.IDBranch) {
+			let message = 'Đơn hàng ' + value.IDSaleOrder + ' thanh toán thành công';
+			this.env.showMessage('Đơn hàng ' + value.IDSaleOrder + ' thanh toán thành công', 'success');
+			let url = 'pos-order/' + value.IDSaleOrder;
+			let notification = {
+				Id: value.Id,
+				IDBranch: value.IDBranch,
+				IDSaleOrder: value.IDSaleOrder,
+				Type: 'Payment',
+				Name: 'Thanh toán thành công',
+				Code: 'pos-order',
+				Message: message,
+				Url: url,
+				Watched: false,
+			};
+			await this.setNotifications(notification, true);
+			if (data.id == currentItem?.Id) {
+				loadDataCallback();
+			}
 		}
 	}
 
@@ -216,7 +243,7 @@ export class POSNotifyService {
 				d.Url == item.Url &&
 				!d.Watched
 		);
-		
+
 		if (isExistedNoti) {
 			if (lasted) {
 				let index = this.notifications.findIndex(

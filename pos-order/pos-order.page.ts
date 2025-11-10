@@ -2,13 +2,7 @@ import { Component } from '@angular/core';
 import { NavController, ModalController, AlertController, LoadingController, PopoverController } from '@ionic/angular';
 import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
-import {
-	POS_MenuProvider,
-	POS_TableGroupProvider,
-	POS_TableProvider,
-	SALE_OrderProvider,
-	SYS_ConfigProvider,
-} from 'src/app/services/static/services.service';
+import { POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider, SALE_OrderProvider, SYS_ConfigProvider } from 'src/app/services/static/services.service';
 import { POSSplitModalPage } from '../pos-split-modal/pos-split-modal.page';
 import { POSMergeModalPage } from '../pos-merge-modal/pos-merge-modal.page';
 import { Location } from '@angular/common';
@@ -25,7 +19,6 @@ import { dog } from 'src/environments/environment';
 import { ShiftDetailPage } from '../../HRM/shift-detail/shift-detail.page';
 import { POSShiftDetailPage } from '../pos-shift-detail/pos-shift-detail.page';
 import { POS_ShiftPService } from '../services/pos-shift-service';
-
 
 @Component({
 	selector: 'app-pos-order',
@@ -59,8 +52,7 @@ export class POSOrderPage extends PageBase {
 		public env: EnvService,
 		public navCtrl: NavController,
 		public location: Location,
-		public commonService: CommonService,
-
+		public commonService: CommonService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -73,11 +65,11 @@ export class POSOrderPage extends PageBase {
 	}
 	ngOnInit() {
 		// Subscribe to POSOrderService reactive state
-		this.posOrderService.orders$.subscribe(orders => {
+		this.posOrderService.orders$.subscribe((orders) => {
 			this.updateOrderCountersFromService(orders);
 		});
 
-		this.posOrderService.isLoading$.subscribe(loading => {
+		this.posOrderService.isLoading$.subscribe((loading) => {
 			console.log('🔄 POSOrderService loading state:', loading);
 		});
 
@@ -116,9 +108,13 @@ export class POSOrderPage extends PageBase {
 				case 'app:POSOrderFromStaff':
 					this.notifyOrderFromStaff(data);
 					break;
+
+				case 'app:POSPaymentSuccess':
+					this.notifyPaymentSuccess(data);
+					break;
 			}
 		});
-		this.posShiftService.pageConfig =  this.pageConfig
+		this.posShiftService.pageConfig = this.pageConfig;
 		this.posShiftService.initShift();
 		super.ngOnInit();
 	}
@@ -126,6 +122,30 @@ export class POSOrderPage extends PageBase {
 	openShift() {
 		this.posShiftService.openShiftModal();
 	}
+
+	private notifyPaymentSuccess(data) {
+		const value = JSON.parse(data.value);
+		if (this.env.selectedBranch == value.IDBranch) {
+			let message = 'Đơn hàng ' + value.IDSaleOrder + ' thanh toán thành công';
+			this.env.showMessage('Đơn hàng ' + value.IDSaleOrder +' thanh toán thành công', 'success');
+			let url = 'pos-order/' + data.id;
+			let notification = {
+				Id: value.Id,
+				IDBranch: value.IDBranch,
+				IDSaleOrder: value.IDSaleOrder,
+				Type: 'Payment',
+				Name: 'Thanh toán thành công',
+				Code: 'pos-order',
+				Message: message,
+				Url: url,
+				Watched: false,
+			};
+
+			this.setNotifications(notification, true);
+			this.refresh();
+		}
+	}
+
 
 	private notifyPayment(data) {
 		const value = JSON.parse(data.value);
@@ -423,7 +443,6 @@ export class POSOrderPage extends PageBase {
 				super.preLoadData(event);
 			});
 
-
 		console.log('🔄 POSOrderPage: PreLoadData triggered', { event });
 
 		let sysConfigQuery = ['POSAudioCallStaff', 'POSAudioCallToPay', 'POSAudioOrderUpdate', 'POSAudioIncomingPayment'];
@@ -462,7 +481,7 @@ export class POSOrderPage extends PageBase {
 			// Service handles all data initialization internally
 			super.preLoadData(event);
 		});
-	}	/**
+	} /**
 	 * Initialize POS Order data - sync from server if needed
 	 */
 	private async initializePOSOrderData(forceReload: boolean = false): Promise<void> {
@@ -476,7 +495,7 @@ export class POSOrderPage extends PageBase {
 		} catch (error) {
 			console.error('❌ Failed to initialize POS Order data:', error);
 		}
-	}	/**
+	} /**
 	 * Fetch orders from server with smart date filtering
 	 */
 	private async fetchOrdersFromServer(forceReload: boolean = false): Promise<void> {
@@ -509,7 +528,7 @@ export class POSOrderPage extends PageBase {
 				ModifiedDateTo: new Date().toISOString(), // Until now
 				Take: 1000, // Get more data for sync
 				Skip: 0,
-				SortBy: 'ModifiedDate_desc' // Sort by modified date
+				SortBy: 'ModifiedDate_desc', // Sort by modified date
 			};
 
 			console.log('� Fetching orders with query:', serverQuery);
@@ -539,7 +558,7 @@ export class POSOrderPage extends PageBase {
 							TotalDiscount: serverOrder.TotalDiscount || 0,
 							TotalAfterDiscount: serverOrder.TotalAfterDiscount || serverOrder.CalcTotalOriginal || 0,
 							Tax: serverOrder.Tax || 0,
-							TotalAfterTax: serverOrder.TotalAfterTax || serverOrder.CalcTotalOriginal || 0
+							TotalAfterTax: serverOrder.TotalAfterTax || serverOrder.CalcTotalOriginal || 0,
 						};
 
 						if (existingOrder) {
@@ -559,7 +578,7 @@ export class POSOrderPage extends PageBase {
 				console.log('✅ Orders synced:', {
 					new: newOrdersCount,
 					updated: updatedOrdersCount,
-					total: serverResult.data.length
+					total: serverResult.data.length,
 				});
 			} else {
 				console.log('ℹ️ No new/updated orders found on server');
@@ -569,7 +588,6 @@ export class POSOrderPage extends PageBase {
 			const currentTime = new Date().toISOString();
 			await this.env.setStorage(lastFetchKey, currentTime);
 			console.log('✅ Updated last fetch time:', currentTime);
-
 		} catch (error) {
 			console.error('❌ Failed to fetch from server:', error);
 			throw error;
@@ -618,7 +636,7 @@ export class POSOrderPage extends PageBase {
 			console.log('✅ Orders processed:', {
 				total: allOrders.length,
 				filtered: filteredOrders.length,
-				paginated: paginatedOrders.length
+				paginated: paginatedOrders.length,
 			});
 
 			// Handle results
@@ -631,7 +649,7 @@ export class POSOrderPage extends PageBase {
 			} else {
 				if (paginatedOrders.length > 0) {
 					const firstRow = paginatedOrders[0];
-					if (this.items.findIndex(d => d.Id === firstRow.Id) === -1) {
+					if (this.items.findIndex((d) => d.Id === firstRow.Id) === -1) {
 						this.items = [...this.items, ...paginatedOrders];
 					}
 				}
@@ -643,7 +661,6 @@ export class POSOrderPage extends PageBase {
 			}
 
 			this.loadedData(event);
-
 		} catch (error) {
 			console.error('❌ Failed to load orders from service:', error);
 
@@ -656,7 +673,7 @@ export class POSOrderPage extends PageBase {
 	 * Apply client-side filters to orders (enhanced)
 	 */
 	private applyClientFilters(orders: any[]): any[] {
-		return orders.filter(order => {
+		return orders.filter((order) => {
 			// Filter by branch
 			if (this.env.selectedBranch && order.IDBranch !== this.env.selectedBranch) {
 				return false;
@@ -698,9 +715,7 @@ export class POSOrderPage extends PageBase {
 
 			// Filter by table if provided
 			if (this.query.IDTable) {
-				const hasTable = order.Tables?.some(table =>
-					table.IDTable === this.query.IDTable || table.TableId === this.query.IDTable
-				);
+				const hasTable = order.Tables?.some((table) => table.IDTable === this.query.IDTable || table.TableId === this.query.IDTable);
 				if (!hasTable) {
 					return false;
 				}
@@ -724,12 +739,15 @@ export class POSOrderPage extends PageBase {
 					order.CustomerName,
 					order.CustomerPhone,
 					order.TotalAfterTax?.toString(),
-					order.Tables?.map(t => t.TableName)?.join(' ')
-				].filter(text => text).join(' ').toLowerCase();
+					order.Tables?.map((t) => t.TableName)?.join(' '),
+				]
+					.filter((text) => text)
+					.join(' ')
+					.toLowerCase();
 
 				// Support multiple keywords with space separator
-				const keywords = keyword.split(' ').filter(k => k.trim());
-				return keywords.every(k => searchableText.includes(k));
+				const keywords = keyword.split(' ').filter((k) => k.trim());
+				return keywords.every((k) => searchableText.includes(k));
 			}
 
 			return true;
@@ -791,7 +809,7 @@ export class POSOrderPage extends PageBase {
 				return isDesc ? -comparison : comparison;
 			}
 
-			// Default sort by Id descending (newest first)  
+			// Default sort by Id descending (newest first)
 			return (b.Id || 0) - (a.Id || 0);
 		});
 	}
@@ -813,7 +831,7 @@ export class POSOrderPage extends PageBase {
 				this.items = result.data;
 			} else if (result.data.length > 0) {
 				const firstRow = result.data[0];
-				if (this.items.findIndex(d => d.Id === firstRow.Id) === -1) {
+				if (this.items.findIndex((d) => d.Id === firstRow.Id) === -1) {
 					this.items = [...this.items, ...result.data];
 				}
 			}
@@ -876,7 +894,7 @@ export class POSOrderPage extends PageBase {
 			const isLocked = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'].indexOf(order.Status) == -1;
 			if (!isLocked) {
 				this.orderCounter++;
-				this.numberOfGuestCounter += (order.NumberOfGuests || 0);
+				this.numberOfGuestCounter += order.NumberOfGuests || 0;
 			}
 		});
 
@@ -884,7 +902,7 @@ export class POSOrderPage extends PageBase {
 			orderCounter: this.orderCounter,
 			numberOfGuestCounter: this.numberOfGuestCounter,
 			totalOrders: orders.length,
-			filteredOrders: filteredOrders.length
+			filteredOrders: filteredOrders.length,
 		});
 	}
 
@@ -903,8 +921,8 @@ export class POSOrderPage extends PageBase {
 				systemHealth: {
 					ordersCount: systemHealth.storageInfo.ordersCount,
 					cacheStats: systemHealth.cacheStats,
-					lastUpdated: systemHealth.storageInfo.lastUpdated
-				}
+					lastUpdated: systemHealth.storageInfo.lastUpdated,
+				},
 			});
 
 			// Show in console for debugging
@@ -1162,13 +1180,10 @@ export class POSOrderPage extends PageBase {
 								cancelData.Type = 'POSOrder';
 								cancelData.Ids = orderIds;
 
-								await this.pageProvider.commonService
-									.connect('POST', 'SALE/Order/CancelOrders/', cancelData)
-									.toPromise();
+								await this.pageProvider.commonService.connect('POST', 'SALE/Order/CancelOrders/', cancelData).toPromise();
 
 								success = true;
 								console.log('✅ Orders cancelled successfully');
-
 							} catch (serviceError) {
 								console.error('❌ Service cancellation failed:', serviceError);
 								throw serviceError;
@@ -1189,7 +1204,6 @@ export class POSOrderPage extends PageBase {
 								// Navigate back
 								this.nav('/pos-order', 'forward');
 							}
-
 						} catch (error) {
 							console.error('❌ Failed to cancel orders:', error);
 							this.env.showMessage('Không thể hủy đơn hàng. Vui lòng thử lại.', 'danger');
@@ -1198,7 +1212,7 @@ export class POSOrderPage extends PageBase {
 						}
 					}
 				})
-				.catch((_) => { });
+				.catch((_) => {});
 		}
 	}
 
@@ -1382,19 +1396,15 @@ export class POSOrderPage extends PageBase {
 				// Generate export from local data
 				const exportData = this.prepareExportData(filteredOrders);
 				this.downloadExportData(exportData);
-
 			} else {
 				// Fallback to server export API
 				console.log('🌐 Falling back to server export...');
-				const response: any = await this.commonService
-					.connect('GET', 'SALE/Order/ExportPOSOrderList', this.query)
-					.toPromise();
+				const response: any = await this.commonService.connect('GET', 'SALE/Order/ExportPOSOrderList', this.query).toPromise();
 
 				this.downloadURLContent(response);
 			}
 
 			console.log('✅ Export completed successfully');
-
 		} catch (error) {
 			console.error('❌ Export failed:', error);
 
@@ -1414,11 +1424,7 @@ export class POSOrderPage extends PageBase {
 	 */
 	private canUseLocalDataForExport(): boolean {
 		// Only use local data for simple queries without complex server-side processing
-		return (
-			!this.query.ComplexFilter &&
-			!this.query.GroupBy &&
-			!this.query.AggregateFields
-		);
+		return !this.query.ComplexFilter && !this.query.GroupBy && !this.query.AggregateFields;
 	}
 
 	/**
@@ -1426,16 +1432,16 @@ export class POSOrderPage extends PageBase {
 	 */
 	private prepareExportData(orders: any[]): any {
 		return {
-			data: orders.map(order => ({
+			data: orders.map((order) => ({
 				Id: order.Id,
 				Code: order.Code,
 				Status: order.Status,
 				CreatedDate: order.CreatedDate,
 				TotalAfterTax: order.TotalAfterTax,
 				CustomerName: order.CustomerName,
-				Tables: order.Tables?.map(t => t.TableName).join(', ') || ''
+				Tables: order.Tables?.map((t) => t.TableName).join(', ') || '',
 			})),
-			filename: `POS_Orders_${new Date().toISOString().split('T')[0]}.csv`
+			filename: `POS_Orders_${new Date().toISOString().split('T')[0]}.csv`,
 		};
 	}
 
@@ -1446,12 +1452,7 @@ export class POSOrderPage extends PageBase {
 		if (exportData.data && exportData.data.length > 0) {
 			// Generate CSV content
 			const headers = Object.keys(exportData.data[0]);
-			const csvContent = [
-				headers.join(','),
-				...exportData.data.map(row =>
-					headers.map(header => `"${row[header] || ''}"`).join(',')
-				)
-			].join('\n');
+			const csvContent = [headers.join(','), ...exportData.data.map((row) => headers.map((header) => `"${row[header] || ''}"`).join(','))].join('\n');
 
 			// Create and download file
 			const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1463,5 +1464,4 @@ export class POSOrderPage extends PageBase {
 			console.log('📁 Local export downloaded:', exportData.filename);
 		}
 	}
-
 }
