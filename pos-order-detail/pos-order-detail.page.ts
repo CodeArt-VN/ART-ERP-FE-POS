@@ -376,6 +376,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.posService
 			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
 			.then(() => {
+				dog && console.log('POS environment data loaded', this.posService.dataSource, this.posService.systemConfig);
 				super.preLoadData(event);
 			})
 			.catch((err) => {
@@ -385,6 +386,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
+		this.VietQRCode = null;
 		this._contactDataSource.selected = [];
 		this.formGroup.valueChanges.subscribe(() => {
 			const controls = this.formGroup.controls;
@@ -409,15 +411,15 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		} else {
 			this.patchOrderValue();
 			this.getPayments().then(() => {
-				// Generate QR code if order is in TemporaryBill status
-				if (this.item.Status == 'TemporaryBill' && this.paymentList?.length > 0) {
-					// Find the latest payment with code
+				if (this.posService.systemConfig.POSBillQRPaymentMethod == 'VietQR') {
+					this.GenQRCode(null);
+				} else if (this.paymentList?.length) {
 					const latestPayment = this.paymentList
-						.filter(p => p.IncomingPayment?.Code)
+						.filter((p) => p.IncomingPayment?.Code)
 						.sort((a, b) => new Date(b.IncomingPayment.CreatedDate).getTime() - new Date(a.IncomingPayment.CreatedDate).getTime())[0];
-					
-					if (latestPayment?.IncomingPayment?.Code) {
-						this.GenQRCode(latestPayment.IncomingPayment.Code);
+
+					if (latestPayment?.IncomingPayment) {
+						this.GenQRCode(latestPayment.IncomingPayment);
 					}
 				}
 			});
@@ -1418,7 +1420,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			.connect('POST', 'SALE/Order/toggleBillStatus/', postDTO)
 			.toPromise()
 			.then((savedItem: any) => {
-				// this.refresh();
+				this.refresh();
 			});
 	}
 
@@ -1435,36 +1437,52 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			.toPromise()
 			.then((savedItem: any) => {
 				dog && console.log('getQRPayment', savedItem);
-				this.getQRPayment(savedItem);
+
+				this.GenQRCode(savedItem)
+					.then(() => {
+						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
+					})
+					.catch(() => {});
 			});
 	}
 
-	getQRPayment(payment) {
-		if (payment) this.GenQRCode(payment.Code);
-	}
-
 	VietQRCode;
-	GenQRCode(code) {
+	GenQRCode(payment) {
 		let that = this;
 		this.VietQRCode = null;
-		if (code != '' && code != null) {
-			QRCode.toDataURL(
-				code,
-				{
-					errorCorrectionLevel: 'H',
-					version: 10,
-					width: 150,
-					scale: 1,
-					type: 'image/jpeg',
-				},
-				function (err, url) {
-					that.VietQRCode = url;
-				}
-			);
-		}
-		if (this.posService.systemConfig.POSEnableTemporaryPayment && this.posService.systemConfig.POSEnablePrintTemporaryBill) {
-			this.sendPrint('TemporaryBill');
-		}
+		return new Promise((resolve, reject) => {
+			let bankQRContent = '';
+
+			if (this.posService.systemConfig.POSBillQRPaymentMethod === 'VietQR') {
+				bankQRContent = lib.genBankTransferQRCode(
+					this.posService.systemConfig.BKIncomingDefaultBankName.Code,
+					this.posService.systemConfig.BKIncomingDefaultBankAccount,
+					this.item.Debt,
+					this.posService.systemConfig.BKIncomingQRPrefix + 'SO' + this.item.Id + this.posService.systemConfig.BKIncomingQRSuffix
+				);
+			} else if (this.posService.systemConfig.POSBillQRPaymentMethod == 'ZaloPay' && payment.Type == 'ZalopayApp' && payment.SubType == 'VietQR') {
+				bankQRContent = payment.Code;
+			}
+
+			if (bankQRContent != '') {
+				QRCode.toDataURL(
+					bankQRContent,
+					{
+						errorCorrectionLevel: 'H',
+						version: 10,
+						width: 150,
+						scale: 1,
+						type: 'image/jpeg',
+					},
+					function (err, url) {
+						that.VietQRCode = url;
+						resolve(true);
+					}
+				);
+			} else {
+				reject(false);
+			}
+		});
 	}
 
 	printerCodeList = [];
@@ -1537,16 +1555,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		for (let m of this.posService.dataSource.menuList) for (let mi of m.Items) mi.BookedQuantity = 0;
 
 		for (let line of this.item.OrderLines) {
-			line._serviceCharge = 0;
-			if (
-				this.item.IDBranch == 174 || //W-Cafe
-				this.item.IDBranch == 17 || //The Log
-				this.item.IDBranch == 416 || //Gem Cafe && set menu  && line._item.IDMenu == 218
-				this.item.IDBranch == 864 || //TEST
-				this.env.branchList.find((d) => d.Id == this.item.IDBranch)?.Code == '145' //phindily code 145
-			) {
-				line._serviceCharge = 5;
-			}
+			line._serviceCharge = this.posService.systemConfig.POSServiceCharge || 0;
 
 			//Parse data + Tính total
 			line.UoMPrice = line.IsPromotionItem ? 0 : parseFloat(line.UoMPrice) || 0;

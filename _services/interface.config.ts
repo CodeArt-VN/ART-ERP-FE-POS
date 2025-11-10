@@ -1,5 +1,4 @@
-export interface POSConfig
-{
+export interface POSConfig {
 	IsAutoSave: boolean;
 	SODefaultBusinessPartner: number;
 	IsUseIPWhitelist: boolean;
@@ -22,4 +21,12 @@ export interface POSConfig
 	POSAudioCallToPay: string;
 	POSAudioCallStaff: string;
 	POSServiceCharge: number;
+	POSIsShowItemImage: boolean;
+	POSBillQRPaymentMethod: string;
+
+	// QR Code Payment
+	BKIncomingDefaultBankName?: any;
+	BKIncomingDefaultBankAccount?: string;
+	BKIncomingQRPrefix?: string;
+	BKIncomingQRSuffix?: string;
 }

@@ -36,6 +36,13 @@ export class POSEnviromentDataService {
 		POSAudioCallToPay: '',
 		POSAudioCallStaff: '',
 		POSServiceCharge: 0,
+		POSIsShowItemImage: true,
+		POSBillQRPaymentMethod: 'VietQR',
+
+		BKIncomingDefaultBankName: '',
+		BKIncomingDefaultBankAccount: '',
+		BKIncomingQRPrefix: '',
+		BKIncomingQRSuffix: '',
 	};
 
 	constructor(
@@ -76,7 +83,7 @@ export class POSEnviromentDataService {
 		return new Promise((resolve, reject) => {
 			const keys = Object.keys(this.defaultPOSConfig);
 			this.sysConfigService
-				.getConfig(IDBranch, keys)
+				.getConfig(IDBranch, keys, this.defaultPOSConfig)
 				.then((config: POSConfig) => {
 					this.env.setStorage('POSConfig', config);
 					resolve(config);

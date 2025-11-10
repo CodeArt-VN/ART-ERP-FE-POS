@@ -26,8 +26,8 @@ export class POSService extends SALE_OrderProvider {
 		});
 	}
 
-	public getSystemConfig(IDBranch) {
-		return this.dataSourceService.getSystemConfig(IDBranch).then((config: POSConfig) => {
+	public getSystemConfig(IDBranch, forceReload = false) {
+		return this.dataSourceService.getSystemConfig(IDBranch, forceReload).then((config: POSConfig) => {
 			this.systemConfig = config;
 			return config;
 		});
@@ -44,11 +44,9 @@ export class POSService extends SALE_OrderProvider {
 				this.env.getStatus('POSOrderDetail'),
 				this.env.getType('PaymentType'),
 				this.dataSourceService.getDeal(),
-				this.getSystemConfig(IDBranch),
+				this.getSystemConfig(IDBranch, forceReload),
 			])
 				.then((results: any) => {
-					console.log(results);
-
 					this.dataSource = {
 						menuList: results[0],
 						kitchens: results[1].data,
