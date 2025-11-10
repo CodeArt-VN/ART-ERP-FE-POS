@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { BehaviorSubject, Observable, combineLatest, map, distinctUntilChanged, tap, takeUntil, Subject } from 'rxjs';
-import { POS_Order, POS_OrderDetail } from './interface.model';
+import { POS_Order, POS_OrderDetail } from './_services/interface.model';
 import { EnvService } from 'src/app/services/core/env.service';
 import { POSOrderService } from './pos-order.service';
 import { POSDiscountService } from './pos-discount.service';

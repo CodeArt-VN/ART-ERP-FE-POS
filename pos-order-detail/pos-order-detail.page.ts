@@ -104,6 +104,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public promotionService: PromotionService
 	) {
 		super();
+		this.pageConfig.ShowRefresh = false;
 		this.pageConfig.isDetailPage = true;
 		this.pageConfig.isShowFeature = true;
 		this.pageConfig.ShowDelete = false;
@@ -145,53 +146,34 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}),
 		});
 
-		console.log('PR List: ', this.promotionService.promotionList);
+		dog && console.log('PR List: ', this.promotionService.promotionList);
 	}
 
-	////EVENTS
 	ngOnInit() {
 		this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
 			if (!data.code?.startsWith('signalR:')) return;
-			data.code = data.code.replace('signalR:', '');
+			if (data.id == this.env.user.StaffID) return;
 
-			if (data.id == this.env.user.StaffID) return; // Bypass notify to self
+			const value = JSON.parse(data.value);
+			if (value.IDSaleOrder != this.item?.Id) return;
 
 			switch (data.code) {
-				case 'POSOrderPaymentUpdate':
-					this.notifyPayment(data);
+				case 'signalR:POSOrderPaymentUpdate':
+				case 'signalR:POSOrderFromCustomer':
+				case 'signalR:POSOrderFromStaff':
+				case 'signalR:POSLockOrderFromStaff':
+				case 'signalR:POSLockOrderFromCustomer':
+				case 'signalR:POSUnlockOrderFromStaff':
+				case 'signalR:POSUnlockOrderFromCustomer':
+				case 'signalR:POSOrderSplittedFromStaff':
+				case 'signalR:POSOrderMergedFromStaff':
+				case 'signalR:POSSupport':
+				case 'signalR:POSCallToPay':
+					this.refresh();
 					break;
-				case 'POSOrderFromCustomer':
-					this.notifyOrder(data);
-					break;
-				case 'POSLockOrderFromStaff':
-					this.notifyLockOrder(data);
-					break;
-				case 'POSLockOrderFromCustomer':
-					this.notifyLockOrder(data);
-					break;
-				case 'POSUnlockOrderFromStaff':
-					this.notifyUnlockOrder(data);
-					break;
-				case 'POSUnlockOrderFromCustomer':
-					this.notifyUnlockOrder(data);
-					break;
-				case 'POSSupport':
-					this.notifySupport(data);
-					break;
-				case 'POSCallToPay':
-					this.notifyCallToPay(data);
-					break;
-				case 'notifySplittedOrderFromStaff':
-					this.notifySplittedOrderFromStaff(data);
-					break;
-				case 'POSOrderMergedFromStaff':
-					this.notifyMergedOrderFromStaff(data);
-					break;
+
 				case 'networkStatusChange':
 					this.checkNetworkChange(data);
-					break;
-				case 'POSOrderFromStaff':
-					this.notifyOrderFromStaff(data);
 					break;
 			}
 		});
@@ -209,143 +191,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				.showPrompt('This order has not been saved yet, do you want to save?', '', 'Please save order!')
 				.then(() => {
 					this.saveOrderData();
-					return false; // ở lại trang
+					return false;
 				})
 				.catch(() => {
-					return true; // back
+					return true;
 				});
-		}
-	}
-
-	private notifyPayment(data) {
-		const value = JSON.parse(data.value);
-		if (value.IDSaleOrder == this.item?.Id) {
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-	private async notifyOrder(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' Gọi món';
-			this.env.showMessage(message, 'warning');
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Order',
-				Name: 'Đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			await this.setNotifications(notification, true);
-			// this.refresh();
-		}
-		if (data.id == this.item?.Id) {
-			//this.CheckPOSNewOrderLines();
-			this.refresh('load');
-		}
-	}
-
-	private notifyOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			this.refresh('load');
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-
-	private notifyLockOrder(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			// this.env.showMessage('Đơn hàng đã được tạm khóa. Để tiếp tục đơn hàng, xin bấm nút Hủy tạm tính.', 'warning');
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-	private notifyUnlockOrder(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			// this.env.showMessage('Đơn hàng đã mở khóa. Xin vui lòng tiếp tục đơn hàng.', 'warning');
-			this.refresh('load');
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-
-	private notifySupport(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
-			this.env.showMessage('Khách bàn {{value}} yêu cầu phục vụ', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			let notification = {
-				Id: value.Id,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: value.IDSaleOrder,
-				Type: 'Support',
-				Name: 'Yêu cầu phục vụ',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-				Watched: false,
-			};
-
-			this.setNotifications(notification, true);
-		}
-	}
-
-	private notifyCallToPay(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
-			this.env.showMessage('Khách bàn {{value}} yêu cầu tính tiền', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			let notification = {
-				Id: value.Id,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: value.IDSaleOrder,
-				Type: 'Support',
-				Name: 'Yêu cầu tính tiền',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-				Watched: false,
-			};
-
-			this.setNotifications(notification, true);
-		}
-	}
-
-	private notifySplittedOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			this.env.showMessage('The order has been split.', 'warning');
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
-		}
-	}
-
-	private notifyMergedOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-
-		if (index != -1) {
-			this.env.showMessage('The order has been merged.', 'warning');
-			this.refresh();
-		} else {
-			this.getStorageNotifications();
 		}
 	}
 
@@ -364,7 +214,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						}
 					})
 					.catch((err) => {
-						console.log(err);
+						dog && console.log(err);
 					});
 			}
 		}
@@ -407,7 +257,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (!this.item?.Id) {
 			Object.assign(this.item, this.formGroup.getRawValue());
 			this.setOrderValue(this.item);
-			this.getDefaultPrinter();
+			
 		} else {
 			this.patchOrderValue();
 			this.getPayments().then(() => {
@@ -423,12 +273,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					}
 				}
 			});
-			this.getDefaultPrinter();
 			this.getPromotionProgram();
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
 			}
 		}
+
+		this.getDefaultPrinter();
+
 		if (this.posService.systemConfig.SODefaultBusinessPartner) {
 			this._contactDataSource.selected.push(this.posService.systemConfig.SODefaultBusinessPartner);
 		}
@@ -453,7 +305,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			if (result?.length > 0) {
 				this.notifications = [...result.filter((n) => !n.Watched && n.IDBranch == this.env.selectedBranch)];
 				let a = this.notifications;
-				console.log(a);
+				dog && console.log(a);
 			}
 		});
 	}
@@ -623,28 +475,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		});
 	}
 
-	// refreshAttemp = false;
 	refresh(event?: any): void {
-		// if (this.refreshAttemp) return;
-		// this.refreshAttemp = true;
-		// if (this.formGroup.dirty) {
-		// 	console.log('dirty');
-		// 	this.env.showPrompt('This order have not been saved yet, Do you want to save?', '', 'Please save order!').then(() => {
-		// 		this.saveOrderData();
-		// 		this.debounce(() => {
-		// 			super.refresh();
-		// 			this.refreshAttemp = false;
-		// 		}, 2000);
-		// 	});
-		// } else
-		if (!event) {
-			this.preLoadData('force');
-			// this.refreshAttemp = false;
-		} else
-			this.debounce(() => {
-				super.refresh();
-				// this.refreshAttemp = false;
-			}, 1000);
+		if (event) {
+			this.segmentView = '0';
+			this.clearData();
+			this.preLoadData(event);
+		} else {
+			super.refresh();
+		}
 	}
 
 	segmentFilterDishes = 'New';
@@ -1243,27 +1081,27 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								let isSuccess = false;
 								if (result && Array.isArray(result) && result.length > 0) {
 									const printResult = result[0];
-									console.log('🖨️ Print result for job:', jobName, printResult);
+									dog && console.log('🖨️ Print result for job:', jobName, printResult);
 
 									// Check Success/Failed count
 									if (typeof printResult?.Success === 'number' && typeof printResult?.Failed === 'number') {
 										isSuccess = printResult.Success > 0 && printResult.Failed === 0;
-										console.log(`📊 Success: ${printResult.Success}, Failed: ${printResult.Failed}, isSuccess: ${isSuccess}`);
+										dog && console.log(`📊 Success: ${printResult.Success}, Failed: ${printResult.Failed}, isSuccess: ${isSuccess}`);
 									}
 									// Check other success indicators
 									else if (printResult?.success === true || printResult?.status === 'success' || printResult?.code === 200) {
 										isSuccess = true;
-										console.log('✅ Print success by flag/status/code');
+										dog && console.log('✅ Print success by flag/status/code');
 									}
 									// Default to true if no error indicators
 									else if (!printResult?.error && printResult?.status !== 'error' && printResult?.status !== 'failed') {
 										isSuccess = true;
-										console.log('✅ Print success (no error indicators)');
+										dog && console.log('✅ Print success (no error indicators)');
 									}
 								}
 
 								if (!isSuccess) {
-									console.warn('⚠️ Print marked as FAILED for job:', jobName, 'Result:', result);
+									dog && console.warn('⚠️ Print marked as FAILED for job:', jobName, 'Result:', result);
 								}
 
 								// Collect items based on print result
@@ -1277,7 +1115,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									return { isSuccess, items: item ? [item] : [], idKitchen, code };
 								}
 							} catch (error) {
-								console.error('Print job failed:', error);
+								dog && console.error('Print job failed:', error);
 								return { isSuccess: false, items: [], error };
 							}
 						})
@@ -1307,14 +1145,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 					// Update all successful lines at once
 					if (allSuccessLines.length > 0) {
-						console.log('✅ Updating all successful lines at once:', allSuccessLines.length, 'items');
+						dog && console.log('✅ Updating all successful lines at once:', allSuccessLines.length, 'items');
 
 						// Must use forceSave = true to save immediately and await
 						await this.setOrderValue({ OrderLines: allSuccessLines, Status: 'Scheduled' }, true, false);
 
 						// After save completes, reload to update UI
 						if (this.item.Id) {
-							console.log('🔄 Reloading item after print to update UI...');
+							dog && console.log('🔄 Reloading item after print to update UI...');
 							await this.loadData();
 						}
 					}
@@ -1325,7 +1163,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					}
 				} else checkItemNotPrint();
 			} catch (e) {
-				console.log(e);
+				dog && console.log(e);
 				this.sendKitchenAttempt = false;
 			}
 		});
@@ -1885,7 +1723,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.promotionAppliedPrograms = data;
 			})
 			.catch((err) => {
-				console.log(err);
+				dog && console.log(err);
 			});
 	}
 
@@ -2222,5 +2060,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	f() {}
+	menuItemsPaging(event) {
+		
+	}
 }

@@ -3,8 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { EnvService } from 'src/app/services/core/env.service';
 import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
 import { POS_KitchenProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider } from 'src/app/services/static/services.service';
-import { POS_DataSource } from '../interface.model';
-import { POSConfig } from './interface.config';
+import { POSDataSource, POSServiceData, POSConfig } from './interface.model';
 import { environment } from 'src/environments/environment';
 import { dog } from 'src/environments/environment';
 
@@ -98,16 +97,16 @@ export class POSEnviromentDataService {
 	/**
 	 * Get complete environment data source for POS
 	 */
-	public getEnviromentDataSource(IDBranch: number, forceReload = false): Promise<POS_DataSource> {
+	public getEnviromentDataSource(IDBranch: number, forceReload = false): Promise<POSServiceData> {
 		if (forceReload) {
 			return this.fetchDataSource(IDBranch, forceReload);
 		} else {
 			return new Promise((resolve, reject) => {
-				this.env.getStorage('POSDataSource').then((cache: POS_DataSource) => {
+				this.env.getStorage('POSServiceData').then((cache: POSServiceData) => {
 					if (cache) {
 						resolve(cache);
 					} else {
-						this.fetchDataSource(IDBranch, forceReload).then((dataSource: POS_DataSource) => {
+						this.fetchDataSource(IDBranch, forceReload).then((dataSource: POSServiceData) => {
 							resolve(dataSource);
 						});
 					}
@@ -116,7 +115,7 @@ export class POSEnviromentDataService {
 		}
 	}
 
-	private fetchDataSource(IDBranch: number, forceReload = false): Promise<POS_DataSource> {
+	private fetchDataSource(IDBranch: number, forceReload = false): Promise<any> {
 		return new Promise((resolve, reject) => {
 			Promise.all([
 				this.getMenu(forceReload),
@@ -132,22 +131,24 @@ export class POSEnviromentDataService {
 				.then((results: any) => {
 					dog && console.log('✅ All environment data loaded:', results.length, 'items');
 
-					const dataSource: POS_DataSource = {
+					const dataSource: POSDataSource = {
 						menuList: results[0],
 						kitchens: results[1].data,
-						tableList: results[2],
+						tableList: results[2].tableList,
 						paymentStatusList: results[3],
 						orderStatusList: results[4],
 						orderDetailStatusList: results[5],
 						paymentTypeList: results[6],
 						dealList: results[7],
 						orders: [], // Will be populated by POSOrderService
-						tableGroups: [], // Will be populated from table data
+						tableGroups: results[2].tableGroups, // Will be populated from table data
 					};
 
-					this.env.setStorage('POSDataSource', dataSource).then(() => {
+					let posDataSources: POSServiceData = { SystemConfig: results[8], DataSources: dataSource };
+
+					this.env.setStorage('POSServiceData', posDataSources).then(() => {
 						dog && console.log('✅ Environment data source ready');
-						resolve(dataSource);
+						resolve(posDataSources);
 					});
 				})
 				.catch((error) => {
@@ -211,7 +212,7 @@ export class POSEnviromentDataService {
 	/**
 	 * Get table data with hierarchy
 	 */
-	public getTable(forceReload = false): Promise<any[]> {
+	public getTable(forceReload = false): Promise<any> {
 		return new Promise((resolve, reject) => {
 			this.getTableGroupTree(forceReload)
 				.then((data: any) => {
@@ -236,7 +237,7 @@ export class POSEnviromentDataService {
 					});
 
 					dog && console.log('✅ Table data processed:', tableList.length, 'items');
-					resolve(tableList);
+					resolve({ tableGroups: data, tableList: tableList });
 				})
 				.catch((err) => {
 					dog && console.error('❌ Failed to get table data:', err);

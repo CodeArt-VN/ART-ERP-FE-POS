@@ -17,10 +17,12 @@ import { POSChangeTableModalPage } from '../pos-change-table-modal/pos-change-ta
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { environment } from 'src/environments/environment';
+import { dog, environment } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
+import { POSNotifyService } from '../_services/pos-notify.service';
+import { POSService } from '../_services/pos.service';
 
 @Component({
 	selector: 'app-pos-order',
@@ -37,6 +39,7 @@ export class POSOrderPage extends PageBase {
 	numberOfGuestCounter = 0;
 	notifications = [];
 	constructor(
+		public posService: POSService,
 		public pageProvider: SALE_OrderProvider,
 		public tableGroupProvider: POS_TableGroupProvider,
 		public tableProvider: POS_TableProvider,
@@ -50,52 +53,37 @@ export class POSOrderPage extends PageBase {
 		public navCtrl: NavController,
 		public location: Location,
 		public commonService: CommonService,
-		public promotionService: PromotionService
+		public promotionService: PromotionService,
+		private notifyService: POSNotifyService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
-		
+
 		this.pageConfig.ShowAdd = false;
 		this.pageConfig.ShowSearch = false;
 		this.pageConfig.ShowImport = false;
 		this.pageConfig.ShowExport = false;
 		this.pageConfig.ShowArchive = false;
 	}
+
 	ngOnInit() {
 		this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
+			if (!data.code?.startsWith('signalR:')) return;
+			if (data.id == this.env.user.StaffID) return; // Bypass notify to self
+
 			switch (data.code) {
-				case 'app:POSOrderFromCustomer':
-					this.notifyOrder(data);
-					break;
-				case 'app:POSOrderPaymentUpdate':
-					this.notifyPayment(data);
-					break;
-				case 'app:POSSupport':
-					this.notifySupport(data);
-					break;
-				case 'app:POSCallToPay':
-					this.notifyCallToPay(data);
-					break;
-				case 'app:POSLockOrderFromStaff':
-					this.notifyLockOrderFromStaff(data);
-					break;
-				case 'app:POSLockOrderFromCustomer':
-					this.notifyLockOrderFromCustomer(data);
-					break;
-				case 'app:POSUnlockOrderFromStaff':
-					this.notifyUnlockOrderFromStaff(data);
-					break;
-				case 'app:POSUnlockOrderFromCustomer':
-					this.notifyUnlockOrderFromCustomer(data);
-					break;
-				case 'app:POSOrderSplittedFromStaff':
-					this.notifySplittedOrderFromStaff(data);
-					break;
-				case 'app:POSOrderMergedFromStaff':
-					this.notifyMergedOrderFromStaff(data);
-					break;
-				case 'app:POSOrderFromStaff':
-					this.notifyOrderFromStaff(data);
+				case 'signalR:POSOrderFromCustomer':
+				case 'signalR:POSOrderPaymentUpdate':
+				case 'signalR:POSSupport':
+				case 'signalR:POSCallToPay':
+				case 'signalR:POSLockOrderFromStaff':
+				case 'signalR:POSLockOrderFromCustomer':
+				case 'signalR:POSUnlockOrderFromStaff':
+				case 'signalR:POSUnlockOrderFromCustomer':
+				case 'signalR:POSOrderSplittedFromStaff':
+				case 'signalR:POSOrderMergedFromStaff':
+				case 'signalR:POSOrderFromStaff':
+					this.refresh();
 					break;
 			}
 		});
@@ -103,312 +91,28 @@ export class POSOrderPage extends PageBase {
 		super.ngOnInit();
 	}
 
-	private notifyPayment(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch && value.IDStaff == 0) {
-			this.playAudio('Payment');
-
-			let message = 'Khách hàng bàn ' + value.TableName + ' thanh toán online ' + lib.currencyFormat(value.Amount) + ' cho đơn hàng #' + value.IDSaleOrder;
-			this.env.showMessage(message, 'warning');
-			let url = 'pos-order/' + value.IDSaleOrder + '/' + value.IDTable;
-
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: value.IDSaleOrder,
-				Type: 'Payment',
-				Name: 'Thanh toán',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-		}
-	}
-	private notifyOrder(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Order');
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' Gọi món';
-			this.env.showMessage(message, 'warning');
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Order',
-				Name: 'Đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifySupport(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Support');
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu phục vụ';
-			this.env.showMessage(message, 'warning');
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Yêu cầu phục vụ',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifyCallToPay(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Support');
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' yêu cầu tính tiền';
-			this.env.showMessage(message, 'warning');
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Yêu cầu tính tiền',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifyLockOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			// this.playAudio('Order');
-			// let message = 'Nhân viên đã khóa đơn bàn ' + value.Tables[0].TableName;
-			// this.env.showMessage('Nhân viên đã khóa đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
-			// let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			// let notification = {
-			// 	Id: null,
-			// 	IDBranch: value.IDBranch,
-			// 	IDSaleOrder: data.id,
-			// 	Type: 'Support',
-			// 	Name: 'Khóa đơn hàng',
-			// 	Code: 'pos-order',
-			// 	Message: message,
-			// 	Url: url,
-			// };
-			// this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifyLockOrderFromCustomer(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Order');
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' đã khóa đơn';
-			this.env.showMessage('Khách bàn {{value}} đã khóa đơn', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Khóa đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifyUnlockOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			// this.playAudio('Order');
-			// let message = 'Nhân viên đã mở đơn bàn ' + value.Tables[0].TableName;
-			// this.env.showMessage('Nhân viên đã mở đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
-			// let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			// let notification = {
-			// 	Id: null,
-			// 	IDBranch: value.IDBranch,
-			// 	IDSaleOrder: data.id,
-			// 	Type: 'Support',
-			// 	Name: 'Mở khóa đơn hàng',
-			// 	Code: 'pos-order',
-			// 	Message: message,
-			// 	Url: url,
-			// };
-			// this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifyUnlockOrderFromCustomer(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Order');
-			let message = 'Khách bàn ' + value.Tables[0].TableName + ' đã mở đơn';
-			this.env.showMessage('Khách bàn {{value}} đã mở đơn', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Mở khóa đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifySplittedOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Order');
-			let message = 'Nhân viên đã chia đơn bàn ' + value.Tables[0].TableName;
-			this.env.showMessage('Nhân viên đã chia đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Chia đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-
-			this.refresh();
-		}
-	}
-
-	private notifyOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		console.log(value);
-
-		if (this.env.selectedBranch == value.IDBranch) {
-			// this.playAudio('Order');
-			// let message = 'Nhân viên đã thêm món mới đơn bàn ' + value.Tables[0].TableName;
-			// // this.env.showMessage('Nhân viên đã thêm món mới đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
-			// let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-			// let notification = {
-			// 	Id: null,
-			// 	IDBranch: value.IDBranch,
-			// 	IDSaleOrder: data.id,
-			// 	Type: 'Support',
-			// 	Name: 'Thêm món',
-			// 	Code: 'pos-order',
-			// 	Message: message,
-			// 	Url: url,
-			// };
-			// this.setNotifications(notification, true);
-			this.refresh();
-		}
-	}
-
-	private notifyMergedOrderFromStaff(data) {
-		const value = JSON.parse(data.value);
-		console.log(value);
-
-		if (this.env.selectedBranch == value.IDBranch) {
-			this.playAudio('Order');
-			let message = 'Nhân viên đã gộp đơn bàn ' + value.Tables[0].TableName;
-			this.env.showMessage('Nhân viên đã gộp đơn bàn {{value}}', 'warning', value.Tables[0].TableName);
-			let url = 'pos-order/' + data.id + '/' + value.Tables[0].IDTable;
-
-			let notification = {
-				Id: null,
-				IDBranch: value.IDBranch,
-				IDSaleOrder: data.id,
-				Type: 'Support',
-				Name: 'Gộp đơn hàng',
-				Code: 'pos-order',
-				Message: message,
-				Url: url,
-			};
-			this.setNotifications(notification, true);
-
-			this.refresh();
-		}
-	}
-
-	private playAudio(type) {
-		let audio = new Audio();
-		if (type == 'Order') {
-			audio.src = this.pageConfig.systemConfig['POSAudioOrderUpdate'];
-		} else if (type == 'CallToPay') {
-			audio.src = this.pageConfig.systemConfig['POSAudioCallToPay'];
-		} else if (type == 'Payment') {
-			audio.src = this.pageConfig.systemConfig['POSAudioIncomingPayment'];
-		} else if (type == 'Support') {
-			audio.src = this.pageConfig.systemConfig['POSAudioCallStaff'];
-		}
-		if (audio.src) {
-			audio.load();
-			audio.play();
-		}
-	}
-
-	ngOnDestroy() {
-		this.pageConfig?.subscribePOSOrder?.unsubscribe();
-		super.ngOnDestroy();
-	}
 	preLoadData(event?: any): void {
-		let sysConfigQuery = ['POSAudioCallStaff', 'POSAudioCallToPay', 'POSAudioOrderUpdate', 'POSAudioIncomingPayment'];
-		let forceReload = event === 'force';
-		this.query.Type = 'POSOrder';
-		this.query.Status = JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']);
-
-		this.query.IDBranch = this.env.selectedBranch;
-
+		const forceReload = event === 'force';
 		if (!this.sort.Id) {
 			this.sort.Id = 'Id';
 			this.sortToggle('Id', true);
 		}
-		Promise.all([
-			this.getTableGroupTree(forceReload),
-			this.env.getStatus('POSOrder'),
-			this.sysConfigProvider.read({
-				Code_in: sysConfigQuery,
-				IDBranch: this.env.selectedBranch,
-			}),
-		]).then((values: any) => {
-			this.tableGroupList = values[0];
-			this.soStatusList = values[1];
-			this.pageConfig.systemConfig = { IsAutoSave: false };
-			values[2]['data'].forEach((e) => {
-				if ((e.Value == null || e.Value == 'null') && e._InheritedConfig) {
-					e.Value = e._InheritedConfig.Value;
-				}
-				this.pageConfig.systemConfig[e.Code] = JSON.parse(e.Value);
+
+		this.query.Type = 'POSOrder';
+		this.query.Status = JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']);
+		this.query.IDBranch = this.env.selectedBranch;
+
+		this.posService
+			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
+			.then(() => {
+				this.tableGroupList = this.posService.dataSource.tableGroups;
+				this.soStatusList = this.posService.dataSource.orderStatusList;
+				super.preLoadData(event);
+			})
+			.catch((err) => {
+				this.env.showErrorMessage(err);
+				this.loadedData(event);
 			});
-			super.preLoadData(event);
-		});
 	}
 
 	loadedData(event?: any): void {
@@ -498,8 +202,6 @@ export class POSOrderPage extends PageBase {
 		}
 	}
 
-	// nav('/pos-order/'+od.Id+'/'+t.Id,'back')
-
 	filter(type = null) {
 		if (type == 'search') {
 			this.selectedItems = [];
@@ -515,6 +217,7 @@ export class POSOrderPage extends PageBase {
 	}
 
 	refresh(event?: any): void {
+		dog && console.log('POSOrderPage: refresh called with event:', event);
 		if (event === true) {
 			this.preLoadData('force');
 		} else {
@@ -574,7 +277,7 @@ export class POSOrderPage extends PageBase {
 	}
 
 	async changeTable(i) {
-		console.log('changeTable');
+		dog && console.log('changeTable');
 
 		if (i && i.Id) {
 			this.selectedItems.push(i);
@@ -671,54 +374,6 @@ export class POSOrderPage extends PageBase {
 		}
 	}
 
-	private getTableGroupTree(forceReload) {
-		return new Promise((resolve, reject) => {
-			this.env
-				.getStorage('tableGroup' + this.env.selectedBranch)
-				.then((data) => {
-					if (!forceReload && data) {
-						resolve(data);
-					} else {
-						let query = { IDBranch: this.env.selectedBranch };
-						Promise.all([this.tableGroupProvider.read(query), this.tableProvider.read(query)])
-							.then((values) => {
-								let tableGroupList = values[0]['data'];
-								let tableList = values[1]['data'];
-
-								tableGroupList.forEach((g) => {
-									g.TableList = tableList.filter((d) => d.IDTableGroup == g.Id);
-								});
-								this.env.setStorage('tableGroup' + this.env.selectedBranch, tableGroupList);
-								resolve(tableGroupList);
-							})
-							.catch((err) => {
-								reject(err);
-							});
-					}
-				})
-				.catch((err) => {
-					reject(err);
-				});
-		});
-	}
-	async showNotify() {
-		const modal = await this.modalController.create({
-			component: POSNotifyModalPage,
-			canDismiss: true,
-			backdropDismiss: true,
-			cssClass: 'modal-notify',
-			componentProps: {
-				item: this.notifications,
-			},
-		});
-
-		await modal.present();
-		const { data, role } = await modal.onWillDismiss();
-		if (data) {
-			this.notifications = data;
-		}
-	}
-
 	async setNotifiOrder(items) {
 		for (let item of items) {
 			let url = 'pos-order/' + item.Id + '/' + item.Tables[0].IDTable;
@@ -729,7 +384,7 @@ export class POSOrderPage extends PageBase {
 				IDBranch: item.IDBranch,
 				IDSaleOrder: item.Id,
 				Type: 'Remind order',
-				Name: 'Đơn hàng',
+				Name: 'Đơn hàng',
 				Code: 'pos-order',
 				Message: message,
 				Url: url,

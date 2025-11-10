@@ -20,6 +20,11 @@
 		<ion-button (click)="scanQRCode()">
 			<ion-icon slot="icon-only" name="qr-code-outline"></ion-icon>
 		</ion-button>
+
+		<ion-button title="{{ 'Refresh' | translate }}" (click)="refresh('force')">
+			<ion-icon slot="icon-only" name="reload-outline"></ion-icon>
+		</ion-button>
+
 	</app-toolbar>
 </ion-header>
 
@@ -479,11 +484,25 @@
 		</div>
 	</ion-fab>
 
+	<app-page-message [itemsLength]="1" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+
 	<!-- Menu Group -->
-	<div class="no-print menu-holder" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage}" *ngIf="posService.dataSource">
+	<div class="no-print menu-holder" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage}" *ngIf="posService.dataSource && pageConfig.showSpinner==false">
 		<div class="menu-group-list">
-			<div class="menu-group" *ngIf="posService.dataSource.dealList.length" [ngClass]="{selected: segmentView=='all' && query.Keyword == 'deals'}" [style]="{order:0}" (click)="segmentChanged('all'); query.Keyword ='deals'">
-				<ion-img *ngIf="posService.systemConfig.POSIsShowItemImage" #img [src]="noImage" (ionError)="img.src = noImage" [ngClass]="{selected: query.Keyword == 'deals'}"></ion-img>
+			<div
+				class="menu-group"
+				*ngIf="posService.dataSource.dealList.length"
+				[ngClass]="{selected: segmentView=='all' && query.Keyword == 'deals'}"
+				[style]="{order:0}"
+				(click)="segmentChanged('all'); query.Keyword ='deals'"
+			>
+				<ion-img
+					*ngIf="posService.systemConfig.POSIsShowItemImage"
+					#img
+					[src]="noImage"
+					(ionError)="img.src = noImage"
+					[ngClass]="{selected: query.Keyword == 'deals'}"
+				></ion-img>
 				<ion-label>DEAL</ion-label>
 			</div>
 			<div
@@ -493,10 +512,81 @@
 				*ngFor="let g of posService.dataSource.menuList;let i = index"
 				(click)="segmentChanged(g.Id); query.Keyword =''"
 			>
-				<ion-img *ngIf="posService.systemConfig.POSIsShowItemImage" #img [src]="g.menuImage" (ionError)="img.src = noImage" [ngClass]="{selected: segmentView==g.Id}"></ion-img>
+				<ion-img
+					*ngIf="posService.systemConfig.POSIsShowItemImage"
+					#img
+					[src]="g.menuImage"
+					(ionError)="img.src = noImage"
+					[ngClass]="{selected: segmentView==g.Id}"
+				></ion-img>
 				<ion-label>{{g.Name}}</ion-label>
 			</div>
 		</div>
+	</div>
+
+	<!-- View MenuList -->
+	<div class="no-print" *ngIf="posService.dataSource && pageConfig.showSpinner==false">
+		<ion-grid fixed *ngIf="posService.dataSource.menuList?.length">
+			<ng-container *ngFor="let g of posService.dataSource.menuList | filter:{Id:segmentView}">
+				<ng-container *ngIf="g.Items?.length">
+					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{Name:query.Keyword}).length">
+						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
+							<ion-list-header class="ion-no-padding">
+								<ion-label color="primary">{{g.Name}}</ion-label>
+							</ion-list-header>
+						</ion-col>
+
+						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{Name:query.Keyword}">
+							<span class="tag right" *ngIf="i.IsDisabled">
+								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
+							</span>
+							<div class="card" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage}" [id]="'item'+i.Id">
+								<ion-img
+									*ngIf="posService.systemConfig.POSIsShowItemImage"
+									class="item-image clickable"
+									[title]="i.Name"
+									#img
+									[src]="i.imgPath"
+									(ionError)="img.src = noImage"
+								></ion-img>
+								<span class="table-name clickable">
+									<span [appTranslateResource]="i"></span>
+								</span>
+
+								<ng-container *ngFor="let u of i.UoMs">
+									<span *ngIf="u.PriceList.length" class="price clickable">
+										<span class="price-list" *ngFor="let p of u.PriceList">
+											<span *ngIf="!p.NewPrice">
+												{{p.Price | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
+											</span>
+											<span *ngIf="p.NewPrice">
+												{{p.NewPrice | number: '1.0-0'}}
+												<span class="uom"> /{{u.Name}}</span>
+												<small class="old-price">{{p.Price | number: '1.0-0'}}</small>
+												-{{(p.Price - p.NewPrice)/p.Price * 100 | number: '1.0-0'}}%
+											</span>
+										</span>
+
+										<ion-button
+											[disabled]="i.IsDisabled"
+											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
+											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
+											class="ion-float-right add-to-cart-btn"
+											size="small"
+											(click)="addToCart(i, u.Id)"
+										>
+											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
+										</ion-button>
+									</span>
+								</ng-container>
+							</div>
+						</ion-col>
+					</ion-row>
+				</ng-container>
+			</ng-container>
+		</ion-grid>
+		<app-page-message [itemsLength]="posService.dataSource.menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 	</div>
 
 	<!-- Bill Printing -->
@@ -786,64 +876,6 @@
 		</div>
 	</div>
 
-	<!-- View MenuList -->
-	<div class="no-print" *ngIf="posService.dataSource">
-		<ion-grid fixed *ngIf="posService.dataSource.menuList?.length">
-			<ng-container *ngFor="let g of posService.dataSource.menuList | filter:{Id:segmentView}">
-				<ng-container *ngIf="g.Items?.length">
-					<ion-row class="table-holder" *ngIf="(g.Items | searchNoAccent:{Name:query.Keyword}).length">
-						<ion-col class="group-title" size="12" size-sm="12" size-md="12" size-xl="12">
-							<ion-list-header class="ion-no-padding">
-								<ion-label color="primary">{{g.Name}}</ion-label>
-							</ion-list-header>
-						</ion-col>
-
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of g.Items | searchNoAccent:{Name:query.Keyword}">
-							<span class="tag right" *ngIf="i.IsDisabled">
-								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
-							</span>
-							<div class="card" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage}" [id]="'item'+i.Id">
-								<ion-img *ngIf="posService.systemConfig.POSIsShowItemImage" class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = noImage"></ion-img>
-								<span class="table-name clickable">
-									<span [appTranslateResource]="i"></span>
-								</span>
-
-								<ng-container *ngFor="let u of i.UoMs">
-									<span *ngIf="u.PriceList.length" class="price clickable">
-										<span class="price-list" *ngFor="let p of u.PriceList">
-											<span *ngIf="!p.NewPrice">
-												{{p.Price | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-											</span>
-											<span *ngIf="p.NewPrice">
-												{{p.NewPrice | number: '1.0-0'}}
-												<span class="uom"> /{{u.Name}}</span>
-												<small class="old-price">{{p.Price | number: '1.0-0'}}</small>
-												-{{(p.Price - p.NewPrice)/p.Price * 100 | number: '1.0-0'}}%
-											</span>
-										</span>
-
-										<ion-button
-											[disabled]="i.IsDisabled"
-											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
-											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
-											class="ion-float-right add-to-cart-btn"
-											size="small"
-											(click)="addToCart(i, u.Id)"
-										>
-											<ion-icon slot="icon-only" name="cart-outline"></ion-icon>
-										</ion-button>
-									</span>
-								</ng-container>
-							</div>
-						</ion-col>
-					</ion-row>
-				</ng-container>
-			</ng-container>
-		</ion-grid>
-		<app-page-message [itemsLength]="posService.dataSource.menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
-	</div>
-
 	<!-- Kitchen Dishes Printing -->
 	<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
 		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery,'IDItem': itemQuery}; let idx = index">
@@ -921,4 +953,9 @@
 			</div>
 		</ng-container>
 	</ng-container>
+
+	<div class="ion-padding"></div>
+	<ion-infinite-scroll color="primary" threshold="30%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
+		<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
+	</ion-infinite-scroll>
 </ion-content>

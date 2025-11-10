@@ -1,6 +1,22 @@
-import { POS_Kitchen, POS_Menu, POS_MenuDetail, POS_Table, POS_TableGroup, SALE_Order, SALE_OrderDetail, SYS_Printer, SYS_Status, SYS_Type } from "../../models/model-list-interface";
+import {
+	POS_Kitchen,
+	POS_Menu,
+	POS_MenuDetail,
+	POS_Table,
+	POS_TableGroup,
+	SALE_Order,
+	SALE_OrderDetail,
+	SYS_Printer,
+	SYS_Status,
+	SYS_Type,
+} from '../../../models/model-list-interface';
 
-export interface POS_DataSource {
+export interface POSServiceData {
+	DataSources: POSDataSource;
+	SystemConfig: POSConfig;
+}
+
+export interface POSDataSource {
 	paymentStatusList: SYS_Status[];
 	orderStatusList: SYS_Status[];
 	orderDetailStatusList: SYS_Status[];
@@ -11,20 +27,16 @@ export interface POS_DataSource {
 	tableGroups: TableGroup[];
 	kitchens: Kitchen[];
 
-	tableList : POS_Table[];
+	tableList: POS_Table[];
 	menuList: Menu[];
 	dealList: any[];
-
-	
 }
 
-export interface Menu extends POS_Menu
-{
+export interface Menu extends POS_Menu {
 	Items?: MenuDetail[]; // Danh sách items trong menu
 }
 
-export interface MenuDetail extends POS_MenuDetail
-{
+export interface MenuDetail extends POS_MenuDetail {
 	ForeignName?: string;
 	SalesUoM?: number;
 	Price: number;
@@ -33,21 +45,18 @@ export interface MenuDetail extends POS_MenuDetail
 	SalesTaxPercent?: number;
 
 	UoMs?: any[]; // Danh sách UoM của item không cần tạo interface
-	BookedQuantity?: number
+	BookedQuantity?: number;
 }
 
-export interface TableGroup extends POS_TableGroup
-{
+export interface TableGroup extends POS_TableGroup {
 	tables: POS_Table[];
 }
 
-export interface Kitchen extends POS_Kitchen
-{
+export interface Kitchen extends POS_Kitchen {
 	_Printer: SYS_Printer;
 }
 
-export interface POS_Order extends SALE_Order
-{	
+export interface POS_Order extends SALE_Order {
 	_TotalQuantity?: number; //Show on the cart
 	IDTable?: number; // Table reference for POS orders
 
@@ -63,8 +72,7 @@ export interface POS_Order extends SALE_Order
 	OrderLines?: POS_OrderDetail[];
 }
 
-export interface POS_OrderDetail extends SALE_OrderDetail
-{
+export interface POS_OrderDetail extends SALE_OrderDetail {
 	_serviceCharge: number;
 	ItemName?: string;
 	Notes?: string;
@@ -157,6 +165,28 @@ export interface POSNotification {
 	isRead: boolean;
 }
 
+export interface NotificationPayload {
+	IDBranch: number;
+	IDSaleOrder?: number;
+	IDTable?: number;
+	TableName?: string;
+	Amount?: number;
+	IDStaff?: number;
+	Tables?: Array<{ TableName: string; IDTable: number }>;
+}
+
+export interface StoredNotification {
+	Id: number | null;
+	IDBranch: number;
+	IDSaleOrder: number;
+	Type: string;
+	Name: string;
+	Code: string;
+	Message: string;
+	Url: string;
+	Watched?: boolean;
+}
+
 export interface LANConnectionStatus {
 	isConnected: boolean;
 	lastPing: Date | null;
@@ -174,3 +204,35 @@ export interface CartFormData {
 	customerEmail: string;
 }
 
+export interface POSConfig {
+	IsAutoSave: boolean;
+	SODefaultBusinessPartner: number;
+	IsUseIPWhitelist: boolean;
+	IPWhitelistInput: string;
+	IsRequireOTP: boolean;
+	POSLockSpamPhoneNumber: boolean;
+	LeaderMachineHost: string;
+	POSSettleAtCheckout: boolean;
+	POSHideSendBarKitButton: boolean;
+	POSEnableTemporaryPayment: boolean;
+	POSEnablePrintTemporaryBill: boolean;
+	POSAutoPrintBillAtSettle: boolean;
+	POSDefaultPaymentProvider: string;
+	POSTopItemsMenuIsShow: boolean;
+	POSTopItemsMenuNumberOfItems: number;
+	POSTopItemsMenuNumberOfDays: number;
+	POSTopItemsMenuNotIncludedItemIds: string;
+	POSAudioOrderUpdate: string;
+	POSAudioIncomingPayment: string;
+	POSAudioCallToPay: string;
+	POSAudioCallStaff: string;
+	POSServiceCharge: number;
+	POSIsShowItemImage: boolean;
+	POSBillQRPaymentMethod: string;
+
+	// QR Code Payment
+	BKIncomingDefaultBankName?: any;
+	BKIncomingDefaultBankAccount?: string;
+	BKIncomingQRPrefix?: string;
+	BKIncomingQRSuffix?: string;
+}

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { EnvService } from '../../services/core/env.service';
-import { POS_Order, POS_OrderDetail } from './interface.model';
+import { POS_Order, POS_OrderDetail } from './_services/interface.model';
 import { lib } from '../../services/static/global-functions';
 import { SALE_OrderProvider } from '../../services/static/services.service';
 import { dogF } from '../../../environments/environment';
