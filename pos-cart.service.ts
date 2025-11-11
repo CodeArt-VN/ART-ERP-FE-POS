@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { BehaviorSubject, Observable, combineLatest, map, distinctUntilChanged, tap, takeUntil, Subject } from 'rxjs';
-import { POS_Order, POS_OrderDetail } from './interface.model';
+import { POS_Order, POS_OrderDetail } from './_services/interface.model';
 import { EnvService } from 'src/app/services/core/env.service';
 import { POSOrderService } from './pos-order.service';
 import { POSDiscountService } from './pos-discount.service';
@@ -93,24 +93,53 @@ export class POSCartService {
 		this._selectedTable.next(tableId);
 		
 		this.formGroup = this.formBuilder.group({
+			// Identity & Basic info
 			Id: [0],
 			Code: [''],
+			Name: [''],
 			Status: ['New'],
+			
+			// Type & Classification (CRITICAL - match old code)
+			Type: ['POSOrder'],              // ✅ CRITICAL: Must have for filtering
+			SubType: ['TableService'],       // ✅ Service type tracking
+			
+			// Owner & Staff tracking
+			IDOwner: [this.env.user?.StaffID || null],  // ✅ Track staff who created order
+			
+			// Table & Branch
 			IDTable: [tableId],
+			Tables: [[]],
+			IDBranch: [this.env.selectedBranch],
+			
+			// Customer info
 			IDContact: [null],
 			IDAddress: [null],
+			
+			// POS Specific
 			NumberOfGuests: [1, Validators.min(1)],
 			Remark: [''],
+			
+			// Order Lines & Tracking
 			OrderLines: this.formBuilder.array([]),
-			Tables: [[]],
+			DeletedLines: [[]],              // ✅ Track deleted lines
+			
+			// Additions & Deductions (Service charges, discounts)
+			Additions: this.formBuilder.array([]),    // ✅ Service charges
+			Deductions: this.formBuilder.array([]),   // ✅ Discount tiers
 			OriginalDiscountFromSalesman: [0],
+			
+			// Flags
 			IsInvoiceRequired: [false],
+			IsCOD: [false],
+			
+			// Totals (calculated)
 			TotalBeforeDiscount: [0],
 			TotalDiscount: [0],
 			TotalAfterDiscount: [0],
 			Tax: [0],
 			TotalAfterTax: [0],
-			IDBranch: [this.env.selectedBranch],
+			
+			// Dates
 			OrderDate: [new Date()],
 			ModifiedDate: [new Date()],
 			CreatedDate: [new Date()]

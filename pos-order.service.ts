@@ -2,13 +2,10 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { EnvService } from '../../services/core/env.service';
-import { POS_Order, POS_OrderDetail } from './interface.model';
+import { POS_Order, POS_OrderDetail } from './_services/interface.model';
 import { lib } from '../../services/static/global-functions';
-import { POSSecurityService } from './services/pos-security.service';
-import { POSAdvancedSyncService } from './services/pos-advanced-sync.service';
-import { POSRealtimeSyncService } from './services/pos-realtime-sync.service';
 import { SALE_OrderProvider } from '../../services/static/services.service';
-import { dog } from '../../../environments/environment';
+import { dogF } from '../../../environments/environment';
 
 export interface StorageOrderData {
   orders: POS_Order[];
@@ -76,9 +73,6 @@ export class POSOrderService {
 
   constructor(
     private envService: EnvService,
-    private advancedSyncService: POSAdvancedSyncService,
-    private realtimeSyncService: POSRealtimeSyncService,
-    private securityService: POSSecurityService,
     private saleOrderProvider: SALE_OrderProvider
   ) {
     console.log('🚀 POSOrderService: Constructor initialized');
@@ -87,65 +81,13 @@ export class POSOrderService {
   }
 
   private initializeService(): void {
-    console.log('🔧 POSOrderService: Initializing service...');
-    this.setupRealtimeEventHandlers();
-    console.log('✅ POSOrderService: Service initialized successfully');
+    dogF && console.log('🔧 POSOrderService: Initializing service...');
+    dogF && console.log('✅ POSOrderService: Service initialized successfully');
   }
 
   private async initialize(): Promise<void> {
     await this.loadOrdersFromStorage();
     this.setupAutoCleanup();
-    this.setupRealtimeEventHandlers();
-  }
-
-  /**
-   * Setup realtime event handlers to avoid circular dependency
-   */
-  private setupRealtimeEventHandlers(): void {
-    // Listen to realtime events from sync service
-    this.realtimeSyncService.realtimeEvents.subscribe(event => {
-      this.handleRealtimeEvent(event);
-    });
-
-    // Listen to orders changes and broadcast to realtime sync
-    this.orders$.subscribe(orders => {
-      this.broadcastOrderChanges();
-    });
-  }
-
-  /**
-   * Handle realtime sync events
-   */
-  private async handleRealtimeEvent(event: any): Promise<void> {
-    if (event.type === 'SYNC_STATUS_CHANGED') {
-      const { status, orderCodes, orderCode } = event.data;
-      
-      if (status === 'SERVER_SYNC_REQUEST' && orderCodes) {
-        // Handle server sync request
-        for (const code of orderCodes) {
-          const order = await this.getOrder(code);
-          if (order) {
-            this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'HIGH');
-          }
-        }
-      } else if (status === 'SERVER_ORDER_UPDATED' && orderCode) {
-        // Handle server order update
-        const order = await this.getOrder(orderCode);
-        if (order) {
-          this.advancedSyncService.addToSyncQueue(order, 'UPDATE', 'MEDIUM');
-        }
-      }
-    }
-  }
-
-  /**
-   * Broadcast order changes to realtime sync
-   */
-  private broadcastOrderChanges(): void {
-    // Use a simple method call instead of dependency injection
-    if (this.realtimeSyncService && typeof this.realtimeSyncService.triggerOrderSync === 'function') {
-      this.realtimeSyncService.triggerOrderSync();
-    }
   }
 
   // ========================
@@ -180,6 +122,7 @@ export class POSOrderService {
       const order: POS_Order = {
         Id: 0, // Will be set by server
         Code: this.generateOrderCode(),
+        Type: 'POSOrder', // ✅ IMPORTANT: Mark as POS Order
         Status: 'New',
         OrderDate: new Date(),
         ModifiedDate: new Date(),
@@ -221,12 +164,6 @@ export class POSOrderService {
 
       // Update indexes
       this.updateIndexes(calculatedOrder);
-      
-      // Add to sync queue with HIGH priority for new orders
-      this.advancedSyncService.addToSyncQueue(calculatedOrder, 'CREATE', 'HIGH');
-      
-      // Notify realtime sync
-      this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'CREATE');
       
       // Auto-sync to database if online
       try {
@@ -299,12 +236,6 @@ export class POSOrderService {
       }
       
       this._isDirty.next(true);
-      
-      // Add to sync queue with MEDIUM priority for updates
-      this.advancedSyncService.addToSyncQueue(calculatedOrder, 'UPDATE', 'MEDIUM');
-      
-      // Notify realtime sync
-      this.realtimeSyncService.notifyOrderUpdate(calculatedOrder, 'UPDATE');
       
       // Auto-sync to database if online
       try {
@@ -432,11 +363,6 @@ export class POSOrderService {
       // Add to sync queue with HIGH priority for deletes (need immediate sync)
       const orderToDelete: POS_Order = currentOrders.find(o => o.Code === code) as POS_Order;
       if (orderToDelete) {
-        this.advancedSyncService.addToSyncQueue(orderToDelete, 'DELETE', 'HIGH');
-        
-        // Notify realtime sync
-        this.realtimeSyncService.notifyOrderUpdate(orderToDelete, 'DELETE');
-        
         // Try to sync deletion to database immediately
         try {
           await this.deleteOrderFromDatabase(orderToDelete);
@@ -684,7 +610,7 @@ export class POSOrderService {
     
     try {
       // Use SALE_OrderProvider save method (handles both create and update based on Id)
-      const savedOrder = null;// await this.saleOrderProvider.save(order) as POS_Order;
+      const savedOrder = await this.saleOrderProvider.save(order) as POS_Order;
       
       console.log('✅ Order synced to database successfully', { code: savedOrder.Code, id: savedOrder.Id });
       
@@ -1410,185 +1336,62 @@ export class POSOrderService {
     };
   }
 
-  // ========================
-  // ROBUSTNESS FEATURES (PHASE 3)
-  // ========================
-
-  /**
-   * Create order with retry mechanism and data encryption
-   */
-  async createOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
-    return this.securityService.executeWithRecovery(
-      async () => {
-        // Encrypt sensitive data
-        const encryptedOrder = await this.securityService.encryptSensitiveData(order);
-        return await this.createOrder(encryptedOrder);
-      },
-      'CREATE_ORDER',
-      { maxRetries: 3, retryDelays: [1000, 2000, 4000], backoffMultiplier: 2 }
-    );
-  }
-
-  /**
-   * Update order with retry mechanism
-   */
-  async updateOrderWithRecovery(order: POS_Order): Promise<POS_Order> {
-    return this.securityService.executeWithRecovery(
-      async () => {
-        const encryptedOrder = await this.securityService.encryptSensitiveData(order);
-        await this.createOrder(encryptedOrder);
-        return encryptedOrder;
-      },
-      'UPDATE_ORDER'
-    );
-  }
-
-  /**
-   * Get order with retry mechanism
-   */
-  async getOrderWithRecovery(code: string): Promise<POS_Order | null> {
-    return this.securityService.executeWithRecovery(
-      async () => {
-        let orders: POS_Order[];
-        this.orders$.subscribe(data => orders = data).unsubscribe();
-        return orders.find(order => order.Code === code) || null;
-      },
-      'GET_ORDER'
-    );
-  }
-
-  /**
-   * Bulk save operations with retry
-   */
-  async bulkSaveWithRecovery(orders: POS_Order[]): Promise<void> {
-    const batchSize = 10;
-    const batches = this.chunkArray(orders, batchSize);
-    
-    for (let index = 0; index < batches.length; index++) {
-      const batch = batches[index];
-      await this.securityService.executeWithRecovery(
-        async () => {
-          console.log(`📦 Processing batch ${index + 1}/${batches.length} (${batch.length} orders)`);
-          
-          const encryptedBatch = await Promise.all(
-            batch.map(order => this.securityService.encryptSensitiveData(order))
-          );
-          
-          // Save each order in batch
-          for (const order of encryptedBatch) {
-            await this.createOrder(order);
-          }
-        },
-        `BULK_SAVE_BATCH_${index + 1}`,
-        { maxRetries: 2 }
-      );
-    }
-  }
-
-  /**
-   * Get performance and error statistics
-   */
-  getSystemHealth(): {
-    circuitBreakers: Array<{ operation: string; state: string; failures: number }>;
-    operationStats: Array<{ operation: string; stats: any }>;
-    recentErrors: Array<{ type: string; error: any; timestamp: number; operation: string }>;
-    cacheStats: any;
-    storageInfo: { ordersCount: number; lastUpdated: string; cacheHitRate: number };
-  } {
-    let orders: POS_Order[];
-    this.orders$.subscribe(data => orders = data).unsubscribe();
-    
-    return {
-      circuitBreakers: this.securityService.getCircuitBreakerStatus(),
-      operationStats: this.securityService.getAllOperationStats(),
-      recentErrors: this.securityService.getRecentErrors(20),
-      cacheStats: {
-        cacheSize: this.orderCache.size,
-        maxSize: this.MAX_CACHE_SIZE,
-        hitCount: this.cacheStats.hits,
-        missCount: this.cacheStats.misses,
-        hitRate: this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses) || 0
-      },
-      storageInfo: {
-        ordersCount: orders?.length || 0,
-        lastUpdated: new Date().toISOString(),
-        cacheHitRate: this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses) || 0
-      }
-    };
-  }
-
-  /**
-   * Chunk array into smaller batches
-   */
-  private chunkArray<T>(array: T[], size: number): T[][] {
-    const chunks = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-  }
-
-  // ========================
-  // END ROBUSTNESS FEATURES
-  // ========================
 
   /**
    * Validate and recover corrupted data
    */
   async validateAndRecoverData(): Promise<void> {
-    await this.securityService.executeWithRecovery(
-      async () => {
-        console.log('🔍 Starting data validation and recovery...');
-        
-        // Check localStorage integrity
-        const storageData = await this.env.getStorage(this.STORAGE_KEY);
-        if (!storageData) {
-          console.log('📦 No storage data found, initializing...');
-          await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
-          return;
-        }
+    try {
+      dogF && console.log('🔍 Starting data validation and recovery...');
+      
+      // Check localStorage integrity
+      const storageData = await this.env.getStorage(this.STORAGE_KEY);
+      if (!storageData) {
+        dogF && console.log('📦 No storage data found, initializing...');
+        await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
+        return;
+      }
 
-        let data;
+      let data;
+      try {
+        data = JSON.parse(storageData);
+      } catch (error) {
+        console.error('❌ Failed to parse storage data:', error);
+        await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
+        return;
+      }
+      
+      if (!data || !Array.isArray(data.orders)) {
+        throw new Error('Invalid storage data structure');
+      }
+      
+      // Validate each order
+      let corruptedCount = 0;
+      let recoveredCount = 0;
+      
+      for (const order of data.orders) {
         try {
-          data = JSON.parse(storageData);
+          this.validateOrderStructure(order);
         } catch (error) {
-          console.error('❌ Failed to parse storage data:', error);
-          await this.env.setStorage(this.STORAGE_KEY, JSON.stringify({ orders: [], lastUpdated: new Date().toISOString(), version: this.VERSION }));
-          return;
-        }
-        
-        if (!data || !Array.isArray(data.orders)) {
-          throw new Error('Invalid storage data structure');
-        }
-        
-        // Validate each order
-        let corruptedCount = 0;
-        let recoveredCount = 0;
-        
-        for (const order of data.orders) {
+          corruptedCount++;
+          console.warn(`⚠️ Corrupted order detected: ${order.Code}`, error);
+          
           try {
-            this.validateOrderStructure(order);
-          } catch (error) {
-            corruptedCount++;
-            console.warn(`⚠️ Corrupted order detected: ${order.Code}`, error);
-            
-            try {
-              const recoveredOrder = await this.recoverOrder(order);
-              if (recoveredOrder) {
-                recoveredCount++;
-                console.log(`✅ Order recovered: ${order.Code}`);
-              }
-            } catch (recoveryError) {
-              console.error(`❌ Failed to recover order ${order.Code}:`, recoveryError);
+            const recoveredOrder = await this.recoverOrder(order);
+            if (recoveredOrder) {
+              recoveredCount++;
+              dogF && console.log(`✅ Order recovered: ${order.Code}`);
             }
+          } catch (recoveryError) {
+            console.error(`❌ Failed to recover order ${order.Code}:`, recoveryError);
           }
         }
-        
-        console.log(`📊 Validation complete: ${corruptedCount} corrupted, ${recoveredCount} recovered`);
-      },
-      'DATA_VALIDATION',
-      { maxRetries: 1 }
-    );
+      }
+      
+      dogF && console.log(`📊 Validation complete: ${corruptedCount} corrupted, ${recoveredCount} recovered`);
+    } catch (error) {
+      console.error('❌ Data validation failed:', error);
+    }
   }
 
   /**
@@ -1644,77 +1447,16 @@ export class POSOrderService {
     }
   }
 
-  /**
-   * Get security service for monitoring
-   */
-  getSecurityService(): POSSecurityService {
-    return this.securityService;
-  }
 
-  /**
-   * Get advanced sync service for monitoring
-   */
-  getAdvancedSyncService(): POSAdvancedSyncService {
-    return this.advancedSyncService;
-  }
 
-  /**
-   * Trigger manual sync for all orders
-   */
-  triggerManualSync(): void {
-    console.log('🔄 Manual sync triggered from POS Order Service');
-    this.advancedSyncService.triggerSync('MANUAL_ORDER_SERVICE');
-  }
-
-  /**
-   * Get sync statistics
-   */
-  getSyncStats(): Observable<any> {
-    return this.advancedSyncService.syncStats;
-  }
-
-  /**
-   * Check if sync is currently running
-   */
-  isSyncing(): Observable<boolean> {
-    return this.advancedSyncService.isSyncing;
-  }
-
-  /**
-   * Check network status
-   */
-  isOnline(): Observable<boolean> {
-    return this.advancedSyncService.isOnline;
-  }
-
-  /**
-   * Get realtime sync service
-   */
-  getRealtimeSyncService(): POSRealtimeSyncService {
-    return this.realtimeSyncService;
-  }
-
-  /**
-   * Get realtime sync events
-   */
-  getRealtimeEvents(): Observable<any> {
-    return this.realtimeSyncService.realtimeEvents;
-  }
-
-  /**
-   * Force sync all orders through realtime channel
-   */
-  forceSyncAll(): void {
-    this.realtimeSyncService.forceSyncAll();
-  }
 
   /**
    * Check for new order lines that need kitchen delivery (Service-based CheckPOSNewOrderLines)
    * Only called from service load and SignalR notifications
    */
   async checkPOSNewOrderLines(query: any): Promise<any[]> {
-    return this.securityService.executeWithRecovery(async () => {
-      console.log('🔍 POSOrderService: Checking new order lines from server...');
+    try {
+      dogF && console.log('🔍 POSOrderService: Checking new order lines from server...');
       
       const results = await this.saleOrderProvider.commonService
         .connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', query)
@@ -1725,13 +1467,13 @@ export class POSOrderService {
         return [];
       }
 
-      console.log(`📋 CheckPOSNewOrderLines: Found ${results.length} orders with new items`);
+      dogF && console.log(`📋 CheckPOSNewOrderLines: Found ${results.length} orders with new items`);
       return results;
       
-    }, 'Failed to check new order lines').catch(error => {
+    } catch (error) {
       console.error('❌ CheckPOSNewOrderLines error:', error);
       throw error;
-    });
+    }
   }
 
   /**
@@ -1810,10 +1552,7 @@ export class POSOrderService {
    */
   async emergencyCleanup(): Promise<void> {
     try {
-      console.log('🚨 Starting emergency cleanup...');
-      
-      // Clear circuit breaker states
-      this.securityService.clearStats();
+      dogF && console.log('🚨 Starting emergency cleanup...');
       
       // Clear all caches
       this.orderCache.clear();
@@ -1825,7 +1564,7 @@ export class POSOrderService {
       // Trigger data refresh
       this.loadOrdersFromStorage();
       
-      console.log('✅ Emergency cleanup completed');
+      dogF && console.log('✅ Emergency cleanup completed');
     } catch (error) {
       console.error('❌ Emergency cleanup failed:', error);
       throw error;
@@ -1837,17 +1576,17 @@ export class POSOrderService {
    */
   async cancelReduceOrderLines(cancelData: any): Promise<any> {
     try {
-      dog && console.log('🔄 POSOrderService: Canceling/reducing order lines:', cancelData);
+      dogF && console.log('🔄 POSOrderService: Canceling/reducing order lines:', cancelData);
       
       // Use saleOrderProvider to call API
       const result = await this.saleOrderProvider.commonService
         .connect('POST', 'SALE/Order/CancelReduceOrderLines/', cancelData)
         .toPromise();
       
-      dog && console.log('✅ POSOrderService: Order lines canceled/reduced successfully');
+      dogF && console.log('✅ POSOrderService: Order lines canceled/reduced successfully');
       return result;
     } catch (summary: any) {
-      dog && console.error('❌ POSOrderService: Error canceling/reducing order lines:', summary);
+      dogF && console.error('❌ POSOrderService: Error canceling/reducing order lines:', summary);
       throw summary;
     }
   }
