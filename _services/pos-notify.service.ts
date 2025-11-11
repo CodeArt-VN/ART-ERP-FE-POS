@@ -14,6 +14,7 @@ enum NotificationType {
 	UnlockOrder = 'UnlockOrder',
 	SplitOrder = 'SplitOrder',
 	MergeOrder = 'MergeOrder',
+	PaymentSuccess = 'PaymentSuccess',
 }
 
 enum AudioType {
@@ -89,6 +90,9 @@ export class POSNotifyService {
 				break;
 			case 'signalR:POSOrderFromStaff':
 				this.notifyOrderFromStaff(value);
+				break;
+			case 'signalR:POSPaymentSuccess':
+				this.handlePaymentSuccessEvent(value);
 				break;
 			default:
 				break;
@@ -274,6 +278,23 @@ export class POSNotifyService {
 			value,
 			type: NotificationType.Support,
 			name: 'Thêm món',
+			message,
+			audioType: AudioType.Order,
+			showMessage: true,
+		});
+	}
+
+	private handlePaymentSuccessEvent(value: NotificationPayload): void {
+		const tableName = value.Tables?.[0]?.TableName;
+		const tableId = value.Tables?.[0]?.IDTable;
+		const message = 'Đơn hàng ' + value.IDSaleOrder + ' thanh toán thành công';
+
+		this.createAndStoreNotification({
+			orderId: value.IDSaleOrder,
+			tableId,
+			value,
+			type: NotificationType.PaymentSuccess,
+			name: 'Thanh toán thành công',
 			message,
 			audioType: AudioType.Order,
 			showMessage: true,

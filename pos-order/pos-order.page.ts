@@ -83,6 +83,7 @@ export class POSOrderPage extends PageBase {
 				case 'signalR:POSOrderSplittedFromStaff':
 				case 'signalR:POSOrderMergedFromStaff':
 				case 'signalR:POSOrderFromStaff':
+				case 'signalR:POSPaymentSuccess':
 					this.refresh();
 					break;
 			}

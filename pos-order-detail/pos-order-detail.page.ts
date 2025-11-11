@@ -169,6 +169,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				case 'signalR:POSOrderMergedFromStaff':
 				case 'signalR:POSSupport':
 				case 'signalR:POSCallToPay':
+				case 'signalR:POSPaymentSuccess':
 					this.refresh();
 					break;
 
