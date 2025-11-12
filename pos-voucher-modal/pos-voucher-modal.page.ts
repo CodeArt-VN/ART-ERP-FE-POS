@@ -116,6 +116,7 @@ export class POSVoucherModalPage extends PageBase {
 	async applyVoucher(line) {
 		// let count = this.item.Deductions.filter((d) => d.Type == 'Voucher').length;
 		// if (count < 2) {
+		let program= {IDProgram:line.Id,VoucherCode: line.VoucherCode}
 		let apiPath = {
 			method: 'POST',
 			url: function () {
@@ -125,18 +126,17 @@ export class POSVoucherModalPage extends PageBase {
 		new Promise((resolve, reject) => {
 			this.pageProvider.commonService
 				.connect(apiPath.method, apiPath.url(), {
-					IDPrograms: [line.Id],
 					IDSaleOrder: this.item.Id,
-					VoucherCode: line.VoucherCode,
+					Programs : [program]
 				})
 				.toPromise()
 				.then((savedItem: any) => {
 					this.env.showMessage('Saving completed!', 'success');
 					resolve(true);
 					this.modalController.dismiss(this.item);
-				})
-				.catch((err) => {
-					this.env.showMessage(err.error.Message, 'danger');
+				}).catch((err) => {
+					this.env.showErrorMessage(err);
+					resolve(false);
 				});
 		});
 		// } else {
