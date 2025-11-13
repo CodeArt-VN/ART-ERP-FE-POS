@@ -1,9 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { EnvService } from 'src/app/services/core/env.service';
 import { POSConfig, NotificationPayload, StoredNotification } from './interface.model';
 import { lib } from 'src/app/services/static/global-functions';
 import { dog } from 'src/environments/environment';
+import { CommonService } from 'src/app/services/core/common.service';
+import { ApiSetting } from 'src/app/services/static/api-setting';
+import { environment } from 'src/environments/environment';
 
 enum NotificationType {
 	Order = 'Order',
@@ -22,6 +26,7 @@ enum AudioType {
 	Payment = 'Payment',
 	CallToPay = 'CallToPay',
 	Support = 'Support',
+	PaymentSuccess = 'PaymentSuccess',
 }
 
 interface SignalREvent {
@@ -38,7 +43,11 @@ export class POSNotifyService {
 	systemConfig: POSConfig = null;
 	notifications: StoredNotification[] = [];
 
-	constructor(private env: EnvService) {
+	constructor(
+		private env: EnvService,
+		private commonService: CommonService,
+		private http: HttpClient
+	) {
 		this.subscriptions.push(
 			this.env.getEvents().subscribe((data: SignalREvent) => {
 				this.handleSignalREvent(data);
@@ -288,16 +297,19 @@ export class POSNotifyService {
 		const tableName = value.Tables?.[0]?.TableName;
 		const tableId = value.Tables?.[0]?.IDTable;
 		const message = 'Đơn hàng ' + value.IDSaleOrder + ' thanh toán thành công';
-
+		const messageValue = this.toVietnamese(value.Amount);
+		const messageTemplate = `Thanh toán thành công số tiền ${messageValue}`;
 		this.createAndStoreNotification({
 			orderId: value.IDSaleOrder,
 			tableId,
 			value,
 			type: NotificationType.PaymentSuccess,
 			name: 'Thanh toán thành công',
+			audioType: AudioType.PaymentSuccess,
 			message,
-			audioType: AudioType.Order,
 			showMessage: true,
+			messageTemplate: messageTemplate,
+			messageValue: messageValue,
 		});
 	}
 
@@ -337,7 +349,7 @@ export class POSNotifyService {
 		const { orderId, tableId, value, type, name, message, audioType, showMessage = true, messageTemplate, messageValue } = config;
 
 		if (audioType) {
-			this.playAudio(audioType);
+			this.playAudio(audioType, messageTemplate);
 		}
 
 		if (showMessage) {
@@ -393,7 +405,7 @@ export class POSNotifyService {
 		);
 	}
 
-	private playAudio(type: AudioType): void {
+	private playAudio(type: AudioType, text?: string): void {
 		const audio = new Audio();
 		switch (type) {
 			case AudioType.Order:
@@ -409,9 +421,116 @@ export class POSNotifyService {
 				audio.src = this.systemConfig.POSAudioCallStaff;
 				break;
 		}
-		if (audio.src) {
-			audio.load();
-			audio.play();
+
+		if (type == AudioType.PaymentSuccess && text && this.systemConfig.POSIsReadTheAmount) {
+			// Gọi API với responseType: 'blob' để nhận audio binary data
+			const url = ApiSetting.apiDomain('POS/Notify/TextToSpeech/' + encodeURIComponent(text));
+			const headers = new HttpHeaders({
+				Authorization: this.commonService.getToken(),
+				'App-Version': environment.appVersion,
+			});
+			
+			this.http.get(url, { 
+				headers: headers, 
+				responseType: 'blob' 
+			}).toPromise()
+			.then((blob: Blob) => {
+				const audioUrl = URL.createObjectURL(blob);
+				audio.src = audioUrl;
+				audio.load();
+				
+				// Handle autoplay policy on mobile - play() may fail silently
+				const playPromise = audio.play();
+				if (playPromise !== undefined) {
+					playPromise.catch(error => {
+						dog && console.warn('⚠️ Audio autoplay prevented:', error);
+						// Fallback: try to play after user interaction
+					});
+				}
+				
+				// Clean up object URL after audio finishes playing
+				audio.addEventListener('ended', () => {
+					URL.revokeObjectURL(audioUrl);
+				}, { once: true });
+			}).catch(err => {
+				dog && console.error('❌ Failed to get text-to-speech audio:', err);
+				// Fallback to default audio if TTS fails
+				if (this.systemConfig.POSAudioIncomingPayment) {
+					audio.src = this.systemConfig.POSAudioIncomingPayment;
+					audio.load();
+					audio.play().catch(e => dog && console.warn('⚠️ Fallback audio play failed:', e));
+				}
+			});
+		} else {
+			if (audio.src) {
+				audio.load();
+				audio.play().catch(error => {
+					dog && console.warn('⚠️ Audio autoplay prevented:', error);
+				});
+			}
 		}
+	}
+
+	toVietnamese(num: number): string {
+		if (!num) num = 100000;
+		const ChuSo = [' không', ' một', ' hai', ' ba', ' bốn', ' năm', ' sáu', ' bảy', ' tám', ' chín'];
+		const Tien = ['', ' nghìn', ' triệu', ' tỷ', ' nghìn tỷ', ' triệu tỷ', ' tỷ tỷ'];
+
+		function doc3so(baso: number): string {
+			let tram = Math.floor(baso / 100);
+			let chuc = Math.floor((baso % 100) / 10);
+			let donvi = baso % 10;
+			let ketqua = '';
+
+			if (tram === 0 && chuc === 0 && donvi === 0) return '';
+			if (tram !== 0) {
+				ketqua += ChuSo[tram] + ' trăm';
+				if (chuc === 0 && donvi !== 0) ketqua += ' linh';
+			}
+			if (chuc !== 0 && chuc !== 1) {
+				ketqua += ChuSo[chuc] + ' mươi';
+				if (chuc !== 0 && donvi === 1) ketqua += ' mốt';
+			}
+			if (chuc === 1) ketqua += ' mười';
+			switch (donvi) {
+				case 1:
+					if (chuc !== 0 && chuc !== 1) ketqua += ' mốt';
+					else ketqua += ChuSo[donvi];
+					break;
+				case 5:
+					if (chuc === 0) ketqua += ChuSo[donvi];
+					else ketqua += ' lăm';
+					break;
+				default:
+					if (donvi !== 0) ketqua += ChuSo[donvi];
+					break;
+			}
+			return ketqua;
+		}
+
+		if (num === 0) return 'Không đồng';
+
+		let so = num;
+		let i = 0;
+		let ketqua = '';
+		let tmp = '';
+
+		while (so > 0) {
+			const baso = so % 1000;
+			so = Math.floor(so / 1000);
+			tmp = doc3so(baso);
+			if (tmp !== '') ketqua = tmp + Tien[i] + ketqua;
+			i++;
+		}
+
+		return (ketqua.trim() + ' đồng').replace(/\s+/g, ' ').trim();
+	}
+
+	readText(text: string) {
+		const utterance = new SpeechSynthesisUtterance(text);
+		utterance.lang = 'vi-VN'; // tiếng Việt
+		utterance.rate = 1; // tốc độ đọc (1 = bình thường)
+		utterance.pitch = 1; // độ cao giọng
+		speechSynthesis.speak(utterance);
 	}
 }
