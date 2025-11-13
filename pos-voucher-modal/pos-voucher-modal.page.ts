@@ -46,9 +46,7 @@ export class POSVoucherModalPage extends PageBase {
 		// 	Status: 'Approved',
 		// });
 		// super.loadData();
-		this.items = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply);
-		console.log('items: ', this.items);
-
+		this.items = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply).map(p => ({ ...p })); // clone 
 		this.loadedData();
 	}
 
