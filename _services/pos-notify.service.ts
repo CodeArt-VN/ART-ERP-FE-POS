@@ -8,7 +8,6 @@ import { dog } from 'src/environments/environment';
 import { CommonService } from 'src/app/services/core/common.service';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { environment } from 'src/environments/environment';
-
 enum NotificationType {
 	Order = 'Order',
 	Payment = 'Payment',
@@ -297,8 +296,8 @@ export class POSNotifyService {
 		const tableName = value.Tables?.[0]?.TableName;
 		const tableId = value.Tables?.[0]?.IDTable;
 		const message = 'Đơn hàng ' + value.IDSaleOrder + ' thanh toán thành công';
-		const messageValue = this.toVietnamese(value.Amount);
-		const messageTemplate = `Thanh toán thành công số tiền ${messageValue}`;
+		const messageValue = lib.DocTienBangChu(value.Amount);
+		const messageTemplate = `Bàn ${tableName} đã thanh toán ${messageValue}`;
 		this.createAndStoreNotification({
 			orderId: value.IDSaleOrder,
 			tableId,
@@ -424,9 +423,8 @@ export class POSNotifyService {
 
 		if (type == AudioType.PaymentSuccess && text && this.systemConfig.POSIsReadTheAmount) {
 			// Gọi API với responseType: 'blob' để nhận audio binary data
-			const url = ApiSetting.apiDomain('POS/Notify/TextToSpeech/' + encodeURIComponent(text));
+			const url = (environment.appDomain + 'api/JOBS/TextToSpeech/' + encodeURIComponent(text));
 			const headers = new HttpHeaders({
-				Authorization: this.commonService.getToken(),
 				'App-Version': environment.appVersion,
 			});
 			
@@ -489,7 +487,6 @@ export class POSNotifyService {
 			}
 			if (chuc !== 0 && chuc !== 1) {
 				ketqua += ChuSo[chuc] + ' mươi';
-				if (chuc !== 0 && donvi === 1) ketqua += ' mốt';
 			}
 			if (chuc === 1) ketqua += ' mười';
 			switch (donvi) {
