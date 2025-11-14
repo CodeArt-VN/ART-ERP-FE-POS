@@ -36,6 +36,7 @@ export class POSEnviromentDataService {
 		POSAudioCallStaff: '',
 		POSServiceCharge: 0,
 		POSIsShowItemImage: true,
+		POSIsReadTheAmount: false,
 		POSBillQRPaymentMethod: 'VietQR',
 
 		BKIncomingDefaultBankName: '',
