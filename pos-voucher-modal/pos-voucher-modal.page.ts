@@ -17,6 +17,7 @@ import { PR_ProgramItemProvider, PR_ProgramPartnerProvider, PR_ProgramProvider, 
 export class POSVoucherModalPage extends PageBase {
 	Code = '';
 	Voucher;
+	SaleOrder;
 	constructor(
 		public pageProvider: PR_ProgramProvider,
 		public programPartnerProvider: PR_ProgramPartnerProvider,
@@ -46,8 +47,20 @@ export class POSVoucherModalPage extends PageBase {
 		// 	Status: 'Approved',
 		// });
 		// super.loadData();
-		this.items = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply).map(p => ({ ...p })); // clone 
-		this.loadedData();
+		// this.items = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply).map(p => ({ ...p })); // clone
+		let voucherCodes = this.promotionService.promotionList.map((p) => p.VoucherCode);
+		let postDTO = {
+			VoucherCodeList: voucherCodes,
+			SaleOrder: this.SaleOrder,
+		};
+		this.pageProvider.commonService
+			.connect('POST', 'PR/Program/CheckVoucher', postDTO)
+			.toPromise()
+			.then((result: any) => {
+				this.items = result;
+			})
+			.catch((err) => this.env.showErrorMessage(err))
+			.finally(() => this.loadedData());
 	}
 
 	loadedData(event?: any, ignoredFromGroup?: boolean): void {
@@ -55,84 +68,75 @@ export class POSVoucherModalPage extends PageBase {
 		this.loadProgram();
 	}
 	loadProgram() {
-		this.items.forEach((i) => {
-			i.Used = false;
-			let find = this.item.Deductions.filter((p) => p.IDProgram == i.Id);
-			if (find && find.length > 0) {
-				if (i.MaxUsagePerCustomer < find.length) i.Used = true;
-			}
+		this.items.forEach((item) => {
+			let i = item.Program;
+			// let find = this.SaleOrder.Deductions.filter((p) => p.IDProgram == i.Id);
+			// if (find && find.length > 0) {
+			// 	if (i.MaxUsagePerCustomer < find.length) i.Used = true;
+			// }
 			if (i.IsByPercent == true) {
-				i.Value = (i.Value * this.item.OriginalTotalBeforeDiscount) / 100;
+				i.Value = (i.Value * this.SaleOrder.OriginalTotalBeforeDiscount) / 100;
 				if (i.Value > i.MaxValue) {
 					i.Value = i.MaxValue;
 				}
 			}
 		});
 	}
+
 	changeCode() {
 		if (this.Code != '') {
-			let date = new Date();
-			date.setHours(0, 0, 0, 0);
-
-			let query = {
-				VoucherCode: this.Code,
-				BetweenDate: date,
-				Type: 'Voucher',
-				CanUse: true,
-				Status: 'Approved',
+			let postDTO = {
+				VoucherCodeList: [this.Code],
+				SaleOrder: this.SaleOrder,
 			};
 			this.pageProvider.commonService
-				.connect('GET', 'PR/Program/CheckVoucher', query)
+				.connect('POST', 'PR/Program/CheckVoucher', postDTO)
 				.toPromise()
-				.then((result: any) => {
-					if (result.length > 0) {
-						this.Voucher = result[0];
-						this.Voucher.Used = false;
-						let find = this.item.Deductions.find((p) => p.IDProgram == this.Voucher.Id);
-						if (find) {
-							this.Voucher.Used = true;
-						}
-						if (this.Voucher.IsByPercent == true) {
-							this.Voucher.Value = (this.Voucher.Value * this.item.OriginalTotalBeforeDiscount) / 100;
-							if (this.Voucher.Value > this.Voucher.MaxValue) {
-								this.Voucher.Value = this.Voucher.MaxValue;
+				.then((voucher: any) => {
+					if (voucher.length > 0) {
+						this.Voucher = voucher[0];
+						if (this.Voucher.Program.IsByPercent == true) {
+							this.Voucher.Program.Value = (this.Voucher.Program.Value * this.SaleOrder.OriginalTotalBeforeDiscount) / 100;
+							if (this.Voucher.Program.Value > this.Voucher.Program.MaxValue) {
+								this.Voucher.Program.Value = this.Voucher.Program.MaxValue;
 							}
-						}
-						if (this.Voucher.NumberOfCopy > 0 && this.Voucher.NumberOfUsed >= this.Voucher.NumberOfCopy) {
-							this.Voucher.Used = true;
 						}
 					} else {
 						this.env.showMessage('Mã Voucher không hợp lệ', 'danger');
 					}
 				})
-				.catch((err) => {
-					const message = (err && err.error && err.error.Message) ? err.error.Message : 'Có lỗi xảy ra khi kiểm tra voucher';
-					this.env.showMessage(message, 'danger');
-				});
+				.catch((err) => this.env.showErrorMessage(err))
+				.finally(() => this.loadedData());
 		}
 	}
+
 	async applyVoucher(line) {
 		// let count = this.item.Deductions.filter((d) => d.Type == 'Voucher').length;
 		// if (count < 2) {
-		let program= {IDProgram:line.Id,VoucherCode: line.VoucherCode}
+		// let program= {IDProgram:line.Id,VoucherCode: line.VoucherCode}
 		let apiPath = {
 			method: 'POST',
 			url: function () {
-				return ApiSetting.apiDomain('PR/Program/ApplyVoucher/');
+				return ApiSetting.apiDomain('PR/Program/UseVoucher/');
 			},
 		};
 		new Promise((resolve, reject) => {
 			this.pageProvider.commonService
 				.connect(apiPath.method, apiPath.url(), {
-					IDSaleOrder: this.item.Id,
-					Programs : [program]
+					// IDSaleOrder: this.SaleOrder.Id,
+					// Date: new Date(),
+					// VoucherCodeList: [line.VoucherCode],
+					VoucherCodeList :[line.VoucherCode],
+					SaleOrder: this.SaleOrder,
+					IsCheckOnly: false,
 				})
 				.toPromise()
 				.then((savedItem: any) => {
 					this.env.showMessage('Saving completed!', 'success');
 					resolve(true);
-					this.modalController.dismiss(this.item);
-				}).catch((err) => {
+					this.modalController.dismiss(this.SaleOrder);
+				})
+				.catch((err) => {
 					this.env.showErrorMessage(err);
 					resolve(false);
 				});
