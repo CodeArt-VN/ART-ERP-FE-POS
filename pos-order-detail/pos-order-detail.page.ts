@@ -258,7 +258,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (!this.item?.Id) {
 			Object.assign(this.item, this.formGroup.getRawValue());
 			this.setOrderValue(this.item);
-			
 		} else {
 			this.patchOrderValue();
 			this.getPayments().then(() => {
@@ -796,7 +795,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			backdropDismiss: true,
 			cssClass: 'modal-change-table',
 			componentProps: {
-				item: this.item,
+				SaleOrder: this.item,
 			},
 		});
 		await modal.present();
@@ -1930,15 +1929,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		let apiPath = {
 			method: 'POST',
 			url: function () {
-				return ApiSetting.apiDomain('PR/Program/DeleteVoucher/');
+				return ApiSetting.apiDomain('PR/Program/UnUseVoucher/');
 			},
 		};
 		new Promise((resolve, reject) => {
 			this.pageProvider.commonService
 				.connect(apiPath.method, apiPath.url(), {
-					IDProgram: p.Id,
-					IDSaleOrder: this.item.Id,
-					IDDeduction: p.IDDeduction,
+					SaleOrder: this.item,
+					VoucherCodeList: [p.VoucherCode]
 				})
 				.toPromise()
 				.then((savedItem: any) => {
@@ -1947,7 +1945,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					this.refresh();
 				})
 				.catch((err) => {
-					this.env.showMessage('Cannot save, please try again!', 'danger');
+					this.env.showErrorMessage(err);
 					reject(err);
 				});
 		});
@@ -2061,7 +2059,5 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	menuItemsPaging(event) {
-		
-	}
+	menuItemsPaging(event) {}
 }
