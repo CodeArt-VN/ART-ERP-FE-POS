@@ -38,6 +38,7 @@ import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.ser
 import { POSService } from '../_services/pos.service';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
+import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-modal.component';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -742,11 +743,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	goToPayment() {
-		let payment = {
+	async goToPayment() {
+			let payment = {
 			IDBranch: this.item.IDBranch,
 			IDStaff: this.env.user.StaffID,
 			IDCustomer: this.item.IDContact,
+			IDTable: this.idTable,
 			IDSaleOrder: this.item.Id,
 			DebtAmount: Math.round(this.item.Debt),
 			IsActiveInputAmount: true,
@@ -756,12 +758,23 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Timestamp: Date.now(),
 			CreatedBy: this.env.user.Email,
 		};
-		let str = window.btoa(JSON.stringify(payment));
-		let code = this.convertUrl(str);
-		let url = environment.appDomain + 'Payment?Code=' + code;
-		window.open(url, '_blank');
+		const modal = await this.modalController.create({
+			component: PaymentModalComponent,
+			id: 'POSPaymentModalPage',
+			canDismiss: true,
+			backdropDismiss: true,
+			cssClass: 'modal-payments',
+			componentProps: {
+				item: payment,
+				paymentStatusList : this.posService.dataSource.paymentStatusList,
+
+			},
+		});
+		await modal.present();
+		// const { data} = await modal.onWillDismiss();
 	}
 
+	
 	private convertUrl(str) {
 		return str.replace('=', '').replace('=', '').replace('+', '-').replace('_', '/');
 	}
