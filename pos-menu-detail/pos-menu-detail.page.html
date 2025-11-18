@@ -124,9 +124,9 @@
 								<datatable-column class="col-kit" name="Kitchen" property="value">
 									<ng-template let-g="row" datatable-cell-template>
 										<ng-container *ngFor="let k of kitchenList">
-											<ion-button
+											<ion-button 
 												[disabled]="!pageConfig.canEdit || submitAttempt"
-												[fill]="k.Id == (g.controls.IDKitchen.value)  ? 'solid' : 'outline'"
+												[fill]=" isHaveKitchen(g,k.Id)  ? 'solid' : 'outline'"
 												expand="block"
 												size="small"
 												(click)="toogleKitchenSet(g, k)"

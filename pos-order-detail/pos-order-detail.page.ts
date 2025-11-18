@@ -968,7 +968,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			this.item.OrderLines.forEach((e) => {
 				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
-				e._IDKitchen = e._item?.IDKitchen;
 				if (e.Remark) {
 					e.Remark = e.Remark.toString();
 				}
@@ -987,7 +986,17 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 			this.sendKitchenAttempt = true;
 			let printItems = this.printData.undeliveredItems;
-			const newKitchenIDList = [...new Set(printItems.map((g) => g._IDKitchen))];
+			// Lấy tất cả ID của kitchen từ nhiều dạng khác nhau
+			let newKitchenIDList = [
+				...new Set(
+					printItems.reduce((acc, g) => {
+						if (Array.isArray(g._IDKitchens)) {
+							return acc.concat(g._IDKitchens); // nếu là array
+						}
+						return acc.concat([g._IDKitchens]); // nếu là số
+					}, [])
+				),
+			];
 			const newKitchenList = this.posService.dataSource.kitchens.filter((d) => newKitchenIDList.includes(d.Id));
 
 			let itemNotPrint = [];
@@ -997,7 +1006,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					await this.setKitchenID(kitchen.Id);
 					if (!kitchen._Printer) {
 						itemNotPrint = printItems
-							.filter((d) => d._IDKitchen == kitchen.Id)
+							.filter((d) => d._IDKitchens.length == 1 &&  d._IDKitchens[0] == kitchen.Id)
 							.map((e) => ({
 								Id: e.Id,
 								Code: e.Code,
@@ -1006,7 +1015,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								Status: e.Status,
 								ItemName: e._item.Name, // để hiển thị item ko in đc
 							}));
-						printItems = printItems.filter((d) => d._IDKitchen != kitchen.Id);
+						printItems = printItems.filter((d) => !d._IDKitchens.includes(kitchen.Id));
 						continue;
 					}
 					if (kitchen.IsPrintList) {
@@ -1015,7 +1024,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						printJobs.push(data);
 					}
 					if (kitchen.IsPrintOneByOne) {
-						for (let i of printItems.filter((d) => d._IDKitchen == kitchen.Id)) {
+						for (let i of printItems.filter((d) => d._IDKitchens.includes(kitchen.Id))) {
 							await this.setItemQuery(i.IDItem);
 							let idJob = `${kitchen.Id}_${this.item?.Id}_${i.Code} | ${new Date().toISOString()}`;
 							let data = this.printPrepare('bill-item-each-' + i.Id, [kitchen._Printer], idJob);
@@ -1107,11 +1116,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								// Collect items based on print result
 								if (idKitchen && !code) {
 									// Print list for kitchen
-									const kitchenItems = printItems.filter((d) => d._IDKitchen == idKitchen);
+									const kitchenItems = printItems.filter((d) => d._IDKitchens.includes(idKitchen));
 									return { isSuccess, items: kitchenItems, idKitchen };
 								} else {
 									// Print one by one
-									const item = printItems.find((d) => d._IDKitchen == idKitchen && d.Code == code);
+									const item = printItems.find((d) => d._IDKitchens.includes(idKitchen)&& d.Code == code);
 									return { isSuccess, items: item ? [item] : [], idKitchen, code };
 								}
 							} catch (error) {
@@ -1443,6 +1452,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							.map((x) => x.Quantity)
 							.reduce((a, b) => +a + +b, 0);
 						line._item = mi;
+						line._IDKitchens = mi.IDKitchens ? [].concat(JSON.parse(mi.IDKitchens)) : [];
 					}
 				}
 

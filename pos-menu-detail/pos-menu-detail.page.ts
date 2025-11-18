@@ -78,32 +78,6 @@ export class POSMenuDetailPage extends PageBase {
 			super.preLoadData(event);
 		});
 	}
-	// loadData(event) {
-	// 	this.menuItemList = [];
-	// 	Promise.all([this.kitchenProvider.read({ Skip: 0, Take: 5000 }), this.menuDetailProvider.read({ IDMenu: this.id, IsDisable: '' })]).then((values) => {
-	// 		this.kitchenList = values[0]['data'];
-	// 		this.menuDetailList = values[1]['data'];
-
-	// 		let counter = 0;
-	// 		this.menuDetailList.forEach((e) => {
-	// 			Promise.all([this.itemProvider.search({ Id: e.IDItem, AllUoM: true }).toPromise()]).then((values) => {
-	// 				let data = values[0][0];
-	// 				if (data) {
-	// 					this.menuItemList.push(data);
-	// 				}
-
-	// 				if (counter == this.menuDetailList.length - 1) {
-	// 					super.loadData(event);
-	// 				}
-	// 				counter++;
-	// 			});
-	// 		});
-
-	// 		if (this.menuDetailList.length == 0) {
-	// 			super.loadData(event);
-	// 		}
-	// 	});
-	// }
 
 	loadedData(event) {
 		super.loadedData(event);
@@ -196,6 +170,8 @@ export class POSMenuDetailPage extends PageBase {
 			Code: [line?.Code],
 			IDItem: [line?.IDItem, Validators.required],
 			IDKitchen: [line?.IDKitchen],
+			IDKitchens: [line?.IDKitchens],
+			IDKitchenArray: [line?.IDKitchens ?[].concat(JSON.parse(line.IDKitchens)):[]],
 
 			Sort: [line?.Sort],
 			IsChecked: [false],
@@ -210,11 +186,18 @@ export class POSMenuDetailPage extends PageBase {
 
 	toogleKitchenSet(group, kit?) {
 		// let data = this.menuDetailList.find((d) => d.IDItem == item.Id);
-		if (group.controls.IDKitchen.value == kit.Id) {
-			group.controls.IDKitchen.setValue(null);
-		} else group.controls.IDKitchen.setValue(kit.Id);
-		group.controls.IDKitchen.markAsDirty();
+		let ids = group.value.IDKitchenArray;
+		if(ids.includes(kit?.Id)){
+			ids = ids.filter(d=> d != kit?.Id);
+		}
+		else ids.push(kit?.Id);
+		group.controls.IDKitchenArray.setValue(ids);
+		group.controls.IDKitchens.setValue(JSON.stringify(ids));
+		group.controls.IDKitchens.markAsDirty();
 		this.saveChange2();
+	}
+	isHaveKitchen(g,id){
+		return g.value.IDKitchenArray.includes(id);
 	}
 	lock(g) {
 		let groups = <FormArray>this.formGroup.controls.Lines;
