@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, ViewChild, ChangeDetectorRef, HostListener } from '@angular/core';
 import { NavController, LoadingController, AlertController, ModalController, PopoverController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
@@ -36,6 +36,7 @@ import QRCode from 'qrcode';
 import { printData, PrintingService } from 'src/app/services/util/printing.service';
 import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
 import { POSService } from '../_services/pos.service';
+import { InputControlComponent } from 'src/app/components/controls/input-control.component';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
 
@@ -72,6 +73,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	Discount;
 	Staff;
 	notifications = [];
+
+	_contactDataSource;
+	@ViewChild('contactInput') contactInput: InputControlComponent;
 
 	constructor(
 		public posService: POSService,
@@ -150,6 +154,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	ngOnInit() {
+
 		this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
 			if (!data.code?.startsWith('signalR:')) return;
 			if (data.id == this.env.user.StaffID) return;
@@ -181,6 +186,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		super.ngOnInit();
 	}
+
 	ngOnDestroy() {
 		this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
 		super.ngOnDestroy();
@@ -223,7 +229,27 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	preLoadData(event?: any): void {
 		const forceReload = event === 'force';
+		this._contactDataSource = this.buildSelectDataSource(
+			(term) => {
+				return this.contactProvider.search({
+					Take: 20,
+					Skip: 0,
+					SkipMCP: true,
+					Term: term ? term : 'BP:' + this.item?.IDContact,
+				});
+			},
+			false,
+			this.formGroup,
+			'IDAddress',
+			'IDAddress',
+			(value) => {
+				this.changedIDAddress(value);
+				this.contactInput?.closeDropdown();
+				this._contactDataSource.loading = false;
 
+			},
+			this.scanner.isFromBarcodeScan$
+		);
 		this.posService
 			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
 			.then(() => {
@@ -1730,14 +1756,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	changeTable() {
 		this.saveSO();
 	}
-	_contactDataSource = this.buildSelectDataSource((term) => {
-		return this.contactProvider.search({
-			Take: 20,
-			Skip: 0,
-			SkipMCP: true,
-			Term: term ? term : 'BP:' + this.item?.IDContact,
-		});
-	});
 
 	async addContact() {
 		const modal = await this.modalController.create({
@@ -1772,6 +1790,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
 			}
+			if (!this._contactDataSource.selected.some((s) => s.Id == address.Id)) {
+					this._contactDataSource.selected.push(address);
+				}
+			this._contactDataSource.selected = [...this._contactDataSource.selected];
+			this._contactDataSource.initSearch();
 		}
 	}
 
@@ -1936,7 +1959,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.pageProvider.commonService
 				.connect(apiPath.method, apiPath.url(), {
 					SaleOrder: this.item,
-					VoucherCodeList: [p.VoucherCode]
+					VoucherCodeList: [p.VoucherCode],
 				})
 				.toPromise()
 				.then((savedItem: any) => {
