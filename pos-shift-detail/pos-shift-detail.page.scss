@@ -1,0 +1,235 @@
+@media print {
+    .bill {
+        color: #000;
+        display: block !important;
+        overflow: hidden !important;
+
+        .title {
+            color: #000;
+            font-size: 13px;
+        }
+        .num{
+            text-align: right;
+        }
+        .header {
+            text-align: center;
+
+            span {
+                display: inline-block;
+                width: 100%;
+            }
+
+            .logo {
+                img {
+                    max-width: 150px;
+                    max-height: 75px;
+                }
+            }
+
+            .brand {
+                font-weight: bold;
+            }
+
+            .address {
+                font-size: 80%;
+                font-style: italic;
+            }
+
+            .phone {}
+
+            .bill-no {
+                font-weight: bold;
+            }
+        }
+
+        .table-info {
+            border: solid;
+            margin: 5px 0;
+            padding: 5px;
+            border-width: 1px 0;
+        }
+
+        .table-info-top {
+            border-top: solid;
+            margin: 5px 0;
+            padding: 5px;
+            border-width: 1px 0;
+        }
+
+        .table-info-bottom {
+            border-bottom: solid;
+            margin: 5px 0;
+            padding: 5px;
+            border-width: 1px 0;
+        }
+
+        .items {
+            margin: 5px 0;
+            line-height: 18px;
+
+            tr {
+                td {
+                    border-bottom: dashed 1px #ccc;
+                    padding: 0 5px;
+                }
+
+                &:last-child td {
+                    border: none !important;
+                }
+            }
+
+            .name {
+                width: 100%;
+                border: none !important;
+            }
+
+            .code {
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+
+            .quantity {
+                font-weight: bold;
+            }
+
+            .total {
+                text-align: right;
+            }
+        }
+
+        .message {
+            text-align: center;
+        }
+
+        .header,
+        .table-info,
+        .table-info-top,
+        .table-info-bottom,
+        .message {
+            padding-left: 12px;
+            padding-right: 8px;
+        }
+
+        .items {
+            padding-left: 8px;
+            padding-right: 4px;
+        }
+    }
+}
+
+.bill {
+    display: none;
+    color: #000;
+    overflow: hidden !important;
+
+    .sheet {
+        box-shadow: none !important;
+    }
+
+    .title {
+        color: #000;
+        font-size: 13px;
+    }
+
+    .header {
+        text-align: center;
+
+        span {
+            display: inline-block;
+            width: 100%;
+        }
+
+        .logo {
+            img {
+                max-width: 150px;
+                max-height: 75px;
+            }
+        }
+
+        .brand {
+            font-weight: bold;
+        }
+
+        .address {
+            font-size: 80%;
+            font-style: italic;
+        }
+
+        .phone {}
+
+        .bill-no {
+            font-weight: bold;
+        }
+    }
+
+    .table-info {
+        border: solid;
+        margin: 5px 0;
+        padding: 5px;
+        border-width: 1px 0;
+    }
+
+    .table-info-top {
+        border-top: solid;
+        margin: 5px 0;
+        padding: 5px;
+        border-width: 1px 0;
+    }
+
+    .table-info-bottom {
+        border-bottom: solid;
+        margin: 5px 0;
+        padding: 5px;
+        border-width: 1px 0;
+    }
+
+    .items {
+        margin: 5px 0;
+
+        tr {
+            td {
+                border-bottom: dashed 1px #ccc;
+                padding-bottom: 5px;
+            }
+
+            &:last-child td {
+                border: none !important;
+            }
+        }
+
+        .name {
+            width: 100%;
+            border: none !important;
+
+            padding-top: 5px;
+            padding-bottom: 2px !important;
+        }
+
+        .code {
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .quantity {
+            font-weight: bold;
+        }
+
+        .total {
+            text-align: right;
+        }
+    }
+
+    .message {
+        text-align: center;
+    }
+
+    .header,
+    .table-info,
+    .table-info-top,
+    .table-info-bottom,
+    .items,
+    .message {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+}

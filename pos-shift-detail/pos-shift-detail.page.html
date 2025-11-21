@@ -17,11 +17,10 @@
 					<form [formGroup]="formGroup">
 						<ion-row>
 							<ion-col size="12" size-sm="12" size-md="6">
-								<app-form-control
-									[field]="{id:'OpeningCash', label:'Opening cash',type:'number',form: formGroup}"></app-form-control>
-								<app-form-control *ngIf="item.Status=='Open'"
-									[field]="{id:'ClosingCash', label:'Closing cash',type:'number',form: formGroup}"></app-form-control>
-								<app-form-control *ngIf="item.Status=='Open'"
+								{{shiftData|json}}
+								<app-form-control [field]="{id:'OpeningCash', label:'Opening cash',type:'number',form: formGroup}"></app-form-control>
+								<app-form-control *ngIf="item.Status=='Open'" [field]="{id:'ClosingCash', label:'Closing cash',type:'number',form: formGroup}"></app-form-control>
+								<!-- <app-form-control *ngIf="item.Status=='Open'"
 									[field]="{id:'CashDifference', label:'Cash difference',type:'span-number',form: formGroup}"></app-form-control>
 
 								<app-form-control *ngIf="item.Status=='Open'"
@@ -37,19 +36,20 @@
 								<app-form-control *ngIf="item.Status=='Open'"
 									[field]="{id:'ZalopayAppAmount', label:'Zalo pay amount',type:'span-number',form: formGroup}"></app-form-control>
 								<app-form-control *ngIf="item.Status=='Open'"
-									[field]="{id:'OtherAmount', label:'Other amount',type:'span-number',form: formGroup}"></app-form-control>
+									[field]="{id:'OtherAmount', label:'Other amount',type:'span-number',form: formGroup}"></app-form-control> -->
 							</ion-col>
 							<ion-col size="12" size-sm="12" size-md="6">
-								<app-form-control (change)="changeDate()"
-									[field]="{id:'StartDate', label:'Start date',type:'datetime-local',form: formGroup}"></app-form-control>
-								<app-form-control (change)="changeDate()"  *ngIf="item.Status=='Open'"
-									[field]="{id:'EndDate', label:'End date',type:'datetime-local',form: formGroup}"></app-form-control>
+								<app-form-control (change)="changeDate()" [field]="{id:'StartDate', label:'Start date',type:'datetime-local',form: formGroup}"></app-form-control>
+								<app-form-control
+									(change)="changeDate()"
+									*ngIf="item.Status=='Open'"
+									[field]="{id:'EndDate', label:'End date',type:'datetime-local',form: formGroup}"
+								></app-form-control>
 								<!-- <app-form-control *ngIf="item.Status=='Open'"
 									[field]="{id:'IDToStaff', label:'Shift Handover',type:'ng-select-staff',dataSource:_staffReceiveDataSource,bindLabel:'FullName',bindValue:'Id',form: formGroup}"></app-form-control> -->
-								<app-form-control
-									[field]="{id:'Status', label:'Status',type:'span-text',form: formGroup}"></app-form-control>
+								<app-form-control [field]="{id:'Status', label:'Status',type:'span-text',form: formGroup}"></app-form-control>
 
-								<app-form-control *ngIf="item.Status=='Open'"
+								<!-- <app-form-control *ngIf="item.Status=='Open'"
 									[field]="{id:'ClosingReason', label:'Closing reason',type:'textarea',form: formGroup}"></app-form-control>
 								<app-form-control *ngIf="item.Status=='Open'"
 									[field]="{id:'DoneOrder', label:'Done order',type:'span-number',form: formGroup}"></app-form-control>
@@ -60,10 +60,9 @@
 								<app-form-control *ngIf="item.Status=='Open'"
 									[field]="{id:'TemporaryBillOrder', label:'Temporary order',type:'span-number',form: formGroup}"></app-form-control>
 								<app-form-control *ngIf="item.Status=='Open'"
-									[field]="{id:'NewOrder', label:'New order',type:'span-number',form: formGroup}"></app-form-control>
+									[field]="{id:'NewOrder', label:'New order',type:'span-number',form: formGroup}"></app-form-control> -->
 							</ion-col>
 						</ion-row>
-
 					</form>
 				</ion-grid>
 			</div>
@@ -72,12 +71,193 @@
 </ion-content>
 <ion-footer>
 	<ion-toolbar>
-		
-		<ion-button slot="end" *ngIf="item.Status == 'Unconfirmed'" (click)="confirm()"
-			color="warning">{{'Confirm shift' |
-			translate}}</ion-button>
-		<ion-button slot="end" *ngIf="item.Status == 'Open' && item.Id" (click)="close()"
-			color="warning">{{'Close shift' |
-			translate}}</ion-button>
+		<ion-button slot="end" *ngIf="item.Status == 'Unconfirmed'" (click)="confirm()" color="warning">{{'Confirm shift' | translate}}</ion-button>
+		@if(item.Status == 'Open' && item.Id) { @if(defaultPrinter){
+		<ion-button slot="end" (click)="print()" color="primary"><ion-icon name="print-outline"></ion-icon>{{'Print' | translate}}</ion-button>
+		}
+		<ion-button slot="end" (click)="close()" color="warning">{{'Close shift' | translate}}</ion-button>
+		}
 	</ion-toolbar>
 </ion-footer>
+@if(shiftData){
+<div id="bill" class="bill">
+	<div class="receipt giao-nhan">
+		<section class="sheet rpt p1 items">
+			<table>
+				<thead>
+					<tr>
+						<td>
+							<div class="page-header-space"></div>
+						</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>
+							<div>
+								<div class="header">
+									<span class="brand">{{branch?.ShortName || branch?.Name}}</span>
+									<span class="address">{{branch?.Address || ''}}</span>
+									<span class="phone">{{branch?.Phone || ''}}</span>
+									<span>{{'Handing over the cashier shift' | translate}}</span>
+									<span>{{'Date' | translate}}: &nbsp; {{shiftData.PrintDate | date:'dd/MM/yyyy'}}</span>
+									<span>{{'Cashier shift' | translate}}: &nbsp; {{item?.Id}}</span>
+									<span>{{'Staff' | translate}}: &nbsp; {{env.user.FullName}}</span>
+
+									<ng-container> </ng-container>
+								</div>
+								<div class="table-info">
+									<table>
+										<tr>
+											<td class="title">{{'Start date' | translate}}</td>
+											<td class="bold">{{(formGroup.controls.StartDate.value) | date: 'HH:mm dd/MM/yyyy'}}</td>
+										</tr>
+										<tr>
+											<td class="title">{{'End date' | translate}}</td>
+											<td class="bold">{{(formGroup.controls.EndDate.value) | date: 'HH:mm dd/MM/yyyy'}}</td>
+										</tr>
+										<tr>
+											<td class="title">{{'Print date' | translate}}</td>
+											<td class="bold">{{shiftData.PrintDate| date: 'HH:mm dd/MM/yyyy'}}</td>
+										</tr>
+										<!-- <tr *ngIf="kitchenQuery=='all'">
+											<td class="title">{{'Customer' | translate}}</td>
+											<td class="bold">
+												{{item._Customer?.Name}}
+												<span *ngIf="item._Customer?.Code"> ({{item._Customer.Code}}) </span>
+											</td>
+										</tr> -->
+									</table>
+									<div class="table-info-top">
+										<table>
+											<tr>
+												<td class="title">1. {{'Total Revenue' | translate}}</td>
+												<td class="bold total">{{formGroup.controls.ExpectedCash.value | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Deduction' | translate}}</td>
+												<td class="bold total">{{shiftData.TotalDeduction | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Service charge' | translate}}</td>
+												<td class="bold total">{{shiftData.ServiceCharge ?? 0 | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'VAT' | translate}}</td>
+												<td class="bold total">{{shiftData.TotalVAT ?? 0| number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Total before tax' | translate}}</td>
+												<td class="bold total">{{shiftData.OriginalTotalAfterDiscount | number:'1.0-0'}}</td>
+											</tr>
+										</table>
+									</div>
+									<div class="table-info-top">
+										<table>
+											<tr>
+												<td class="title">2. {{'Currency revenue' | translate}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Bank card' | translate}}</td>
+												<td class="bold total">{{shiftData.CardAmount | number:'1.0-0'}}</td>
+											</tr>
+											<tr *ngFor="let card of shiftData.TotalRevenueCard">
+												<td class="title">&nbsp; &nbsp;(+){{card.Code | translate}}</td>
+												<td class="bold total">{{card.Total | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Cash' | translate}}</td>
+												<td class="bold total">{{shiftData.CashAmount | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Transfer' | translate}}</td>
+												<td class="bold total">{{shiftData.TransferAmount | number:'1.0-0'}}</td>
+											</tr>
+											<tr *ngFor="let bank of shiftData.TotalRevenueTransfer">
+												<td class="title">&nbsp; &nbsp;(+){{bank.Code | translate}}</td>
+												<td class="bold total">{{bank.Total | number:'1.0-0'}}</td>
+											</tr>
+											@if(shiftData.ZalopayAppAmount>0){
+											<tr>
+												<td class="title">- {{'Partner online' | translate}}</td>
+												<td class="bold total">{{shiftData.ZalopayAppAmount | number:'1.0-0'}}</td>
+											</tr>
+											<tr *ngFor="let bank of shiftData.TotalRevenuePartnerOnline">
+												<td class="title">&nbsp; &nbsp;(+){{bank.Code | translate}}</td>
+												<td class="bold total">{{bank.Total | number:'1.0-0'}}</td>
+											</tr>
+											}
+										</table>
+									</div>
+									<div class="table-info-top">
+										<table>
+											<tr>
+												<td class="title">3. {{'Statistical' | translate}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Total after tax' | translate}}</td>
+												<td class="bold total">{{shiftData.TotalAfterTax | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Number of done orders' | translate}}</td>
+												<td class="bold total">{{shiftData.DoneOrder | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Discount' | translate}}</td>
+												<td class="bold total">{{shiftData.TotalDeduction | number:'1.0-0'}}</td>
+											</tr>
+											<tr *ngFor="let voucher of shiftData?.Vouchers">
+												<td class="title">&nbsp;*{{voucher.Name | translate}}({{voucher.Count}})</td>
+												<td class="bold total">{{voucher.Total | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Avg of guest' | translate}}</td>
+												<td class="bold total">{{shiftData.AverageRevenueGuest | number:'1.0-0'}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Avg of bill' | translate}}</td>
+												<td class="bold total">{{shiftData.AverageRevenueBill| number:'1.0-0'}}</td>
+											</tr>
+										</table>
+									</div>
+									<div class="table-info-top">
+										<table>
+											<tr>
+												<td class="title">4. {{'Revenue by order' | translate}}</td>
+											</tr>
+											<tr>
+												<td class="title">- {{'Number of opening bill' | translate}}</td>
+												<td class="bold total">{{shiftData.TotalBillInit | translate}}</td>
+											</tr>
+
+											<tr>
+												<td class="title">- {{'Number of bill before closed' | translate}}</td>
+												<td class="bold total">{{shiftData.TotalBillBeforeClosed | translate}}</td>
+											</tr>
+										</table>
+									</div>
+								</div>
+							</div>
+						</td>
+						<table class="chu-ky" cellpadding="0" cellspacing="0">
+							<tr>
+								<td>{{'Cashier' | translate}}</td>
+
+								<td>{{'manager' | translate}}</td>
+							</tr>
+						</table>
+					</tr>
+				</tbody>
+				<tfoot>
+					<tr>
+						<td>
+							<div class="page-footer-space"></div>
+						</td>
+					</tr>
+				</tfoot>
+			</table>
+		</section>
+	</div>
+</div>
+
+}

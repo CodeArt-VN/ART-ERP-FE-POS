@@ -23,6 +23,7 @@ import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-m
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { POSNotifyService } from '../_services/pos-notify.service';
 import { POSService } from '../_services/pos.service';
+import { POS_ShiftPService } from '../_services/pos-shift-service';
 
 @Component({
 	selector: 'app-pos-order',
@@ -40,6 +41,7 @@ export class POSOrderPage extends PageBase {
 	notifications = [];
 	constructor(
 		public posService: POSService,
+		public posShiftService: POS_ShiftPService,
 		public pageProvider: SALE_OrderProvider,
 		public tableGroupProvider: POS_TableGroupProvider,
 		public tableProvider: POS_TableProvider,
@@ -70,7 +72,7 @@ export class POSOrderPage extends PageBase {
 		this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
 			if (!data.code?.startsWith('signalR:')) return;
 			if (data.id == this.env.user.StaffID) return; // Bypass notify to self
-
+			
 			switch (data.code) {
 				case 'signalR:POSOrderFromCustomer':
 				case 'signalR:POSOrderPaymentUpdate':
@@ -88,7 +90,8 @@ export class POSOrderPage extends PageBase {
 					break;
 			}
 		});
-
+		this.posShiftService.pageConfig = this.pageConfig;
+		this.posShiftService.initShift();
 		super.ngOnInit();
 	}
 
@@ -176,6 +179,9 @@ export class POSOrderPage extends PageBase {
 					this.env.showMessage(err.message, 'danger');
 				}
 			});
+	}
+	openShift() {
+		this.posShiftService.openShiftModal();
 	}
 
 	checkTable(o, tid) {
