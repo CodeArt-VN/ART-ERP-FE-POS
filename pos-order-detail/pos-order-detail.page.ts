@@ -21,7 +21,7 @@ import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@ang
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { BehaviorSubject, concat, firstValueFrom, lastValueFrom, Observable, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, filter, switchMap, take, tap, toArray } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, filter, switchMap, take, tap, toArray, mergeMap } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
@@ -74,7 +74,17 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	Staff;
 	notifications = [];
 
-	_contactDataSource;
+	_contactDataSource = this.buildSelectDataSource((term) => {
+		return this.contactProvider.search({
+			Take: 20,
+			Skip: 0,
+			SkipMCP: true,
+			Term: term ? term : 'BP:' + this.item?.IDContact,
+		});
+	});
+
+	isEnter = false;
+
 	@ViewChild('contactInput') contactInput: InputControlComponent;
 
 	constructor(
@@ -154,7 +164,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	ngOnInit() {
-
 		this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
 			if (!data.code?.startsWith('signalR:')) return;
 			if (data.id == this.env.user.StaffID) return;
@@ -229,27 +238,39 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	preLoadData(event?: any): void {
 		const forceReload = event === 'force';
-		this._contactDataSource = this.buildSelectDataSource(
-			(term) => {
-				return this.contactProvider.search({
-					Take: 20,
-					Skip: 0,
-					SkipMCP: true,
-					Term: term ? term : 'BP:' + this.item?.IDContact,
-				});
-			},
-			false,
-			this.formGroup,
-			'IDAddress',
-			'IDAddress',
-			(value) => {
-				this.changedIDAddress(value);
-				this.contactInput?.closeDropdown();
-				this._contactDataSource.loading = false;
+		this._contactDataSource.initSearch = () => {
+			this._contactDataSource.loading = false;
+			this._contactDataSource.items$ = concat(
+				of(this._contactDataSource.selected),
+				this._contactDataSource.input$.pipe(
+					distinctUntilChanged(),
+					tap(() => (this._contactDataSource.loading = true)),
+					switchMap((term) => {
+						console.log('search term:', term);
+						return this._contactDataSource.searchFunction(term).pipe(
+							catchError(() => of([])), // empty list on error
+							tap(() => (this._contactDataSource.loading = false)),
+							mergeMap((e: any) => {
+								return new Promise((resolve) => {
+									if (e && e.length === 1 && this.isEnter) {
+										const valueToSet = e[0]['IDAddress'];
+										this.formGroup.get('IDAddress').setValue(valueToSet);
+										this.formGroup.get('IDAddress').markAsDirty();
+										this.changedIDAddress(e[0]);
+										this.contactInput?.closeDropdown();
+										this._contactDataSource.loading = false;
+										// onAutoSelect(e[0]);
+									}
+									this.isEnter = false;
+									resolve(e);
+								});
+							})
+						);
+					})
+				)
+			);
+		};
 
-			},
-			this.scanner.isFromBarcodeScan$
-		);
 		this.posService
 			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
 			.then(() => {
@@ -260,6 +281,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.env.showErrorMessage(err);
 				this.loadedData(event);
 			});
+	}
+
+	onContactKeyDown(obj) {
+		this.isEnter = obj.isEnter;
+		this._contactDataSource.input$.next(obj.term);
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
@@ -276,6 +302,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.get('Code')?.markAsDirty();
 		}
 		super.loadedData(event, ignoredFromGroup);
+		// this.contactInput?.isFromBarcodeScan$.subscribe((obj) => {
+		// 	this.isEnter = obj.isEnter;
+		// 	this._contactDataSource.input$.next(obj.term);
+		// });
 		if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
 			this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
 			return;
@@ -1791,8 +1821,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.getStaffInfo(this.item._Customer.Code);
 			}
 			if (!this._contactDataSource.selected.some((s) => s.Id == address.Id)) {
-					this._contactDataSource.selected.push(address);
-				}
+				this._contactDataSource.selected.push(address);
+			}
 			this._contactDataSource.selected = [...this._contactDataSource.selected];
 			this._contactDataSource.initSearch();
 		}

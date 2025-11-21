@@ -361,6 +361,7 @@
 							</ion-item>
 							<app-input-control #contactInput
 								(change)="changedIDAddress($event)"
+								(selectKeyDown)="onContactKeyDown($event)"
 								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
 							>
 							</app-input-control>
