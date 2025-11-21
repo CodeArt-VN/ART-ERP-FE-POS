@@ -1351,7 +1351,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.printData.printDate = lib.dateFormat(new Date(), 'hh:MM dd/mm/yyyy');
 
 		this.item._Locked = this.noLockStatusList.indexOf(this.item.Status) == -1;
-		this.printData.currentBranch = this.env.branchList.find((d) => d.Id == this.item.IDBranch);
+		this.printData.currentBranch = this.posService.dataSource.branchInfo;
 
 		if (this.item._Locked) {
 			this.pageConfig.canEdit = false;
