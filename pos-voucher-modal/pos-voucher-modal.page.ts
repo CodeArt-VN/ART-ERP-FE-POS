@@ -75,11 +75,21 @@ export class POSVoucherModalPage extends PageBase {
 			// 	if (i.MaxUsagePerCustomer < find.length) i.Used = true;
 			// }
 			if (i.IsByPercent == true) {
+				i.PerCentValue = i.Value;
 				i.Value = (i.Value * this.SaleOrder.OriginalTotalBeforeDiscount) / 100;
 				if (i.Value > i.MaxValue) {
 					i.Value = i.MaxValue;
 				}
 			}
+		});
+		this.items = this.items.sort((a, b) => {
+			// Ưu tiên CanUse = true lên trước
+			if (a.CanUse !== b.CanUse) {
+				return a.CanUse ? -1 : 1;
+			}
+
+			// Tiếp theo sort theo trường Sort (tăng dần)
+			return (a.Sort ?? 0) - (b.Sort ?? 0);
 		});
 	}
 
@@ -96,6 +106,7 @@ export class POSVoucherModalPage extends PageBase {
 					if (voucher.length > 0) {
 						this.Voucher = voucher[0];
 						if (this.Voucher.Program.IsByPercent == true) {
+							this.Voucher.Program.PerCentValue = this.Voucher.Program.Value;
 							this.Voucher.Program.Value = (this.Voucher.Program.Value * this.SaleOrder.OriginalTotalBeforeDiscount) / 100;
 							if (this.Voucher.Program.Value > this.Voucher.Program.MaxValue) {
 								this.Voucher.Program.Value = this.Voucher.Program.MaxValue;
@@ -126,7 +137,7 @@ export class POSVoucherModalPage extends PageBase {
 					// IDSaleOrder: this.SaleOrder.Id,
 					// Date: new Date(),
 					// VoucherCodeList: [line.VoucherCode],
-					VoucherCodeList :[line.VoucherCode],
+					VoucherCodeList: [line.VoucherCode],
 					SaleOrder: this.SaleOrder,
 					IsCheckOnly: false,
 				})

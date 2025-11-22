@@ -24,7 +24,6 @@
 		<ion-button title="{{ 'Refresh' | translate }}" (click)="refresh('force')">
 			<ion-icon slot="icon-only" name="reload-outline"></ion-icon>
 		</ion-button>
-
 	</app-toolbar>
 </ion-header>
 
@@ -360,11 +359,13 @@
 									</ng-template>
 								</ion-modal>
 							</ion-item>
-							<app-input-control
+							<app-input-control #contactInput
 								(change)="changedIDAddress($event)"
+								(selectKeyDown)="onContactKeyDown($event)"
 								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
 							>
 							</app-input-control>
+
 							<div class="text-right" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
 								<ion-button [disabled]="submitAttempt" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="addContact()">
 									<ion-icon slot="start" name="add-circle-outline"></ion-icon>

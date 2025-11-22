@@ -1,0 +1,146 @@
+/* Styles for coupon tiles to match the provided design */
+.coupon {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(90deg, #7b4dfd 0%, #6a3bff 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px 20px;
+  margin: 5px 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  position: relative;
+  min-height: 84px;
+  overflow: visible;
+}
+
+.coupon-left {
+  border-right: none;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  margin-right: 12px;
+  flex: 0 0 72px;
+}
+
+.coupon-left ion-icon {
+  font-size: 36px;
+  color: #fff;
+}
+
+.coupon-right {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.2;
+  border-left: dotted 4px var(--table-row-background);
+}
+
+.coupon-right > span {
+  display: block;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.coupon-right small {
+  display: block;
+  opacity: 0.95;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* dotted vertical separator down the center */
+.coupon::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 110px; /* place seam near left block */
+  width: 2px;
+  background-size: 2px 10px;
+  background-repeat: repeat-y;
+  opacity: 0.95;
+  z-index: 1;
+}
+
+/* circular delete button positioned on seam */
+.del-wrap {
+  position: absolute;
+  left: 110px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+.del-wrap .del-btn {
+  --background: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  color: #ff3b30;
+}
+
+.del-wrap .del-btn ion-icon {
+  font-size: 20px;
+}
+
+/* responsive: single column on small screens */
+@media (max-width: 700px) {
+  .coupon {
+    width: 100%;
+    padding: 12px 16px;
+    min-height: 80px;
+  }
+  .coupon::after, .del-wrap { left: 84px; }
+}
+
+/* Position the apply button on the right inside the coupon */
+.coupon .apply-btn {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  z-index: 4;
+  display: inline-flex !important;
+  width: auto !important;
+  min-width: 92px;
+  height: 36px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-radius: 8px;
+  color: #fff;
+  justify-content: center;
+}
+
+.coupon .apply-btn[disabled] {
+  opacity: 0.5;
+}
+
+@media (max-width: 480px) {
+  .coupon .apply-btn { right: 12px; min-width: 80px; height: 34px; }
+}
+
+/* Gray overlay for disabled coupons */
+.coupon.coupon-disabled {
+  cursor: not-allowed;
+}
+
+.coupon.coupon-disabled::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(200,200,200,0.55);
+  z-index: 6;
+}
+
+.coupon.coupon-disabled .apply-btn {
+  opacity: 0.6;
+}
+
