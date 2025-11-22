@@ -677,7 +677,7 @@
 												<td class="text-right">{{'Discount' | translate}}</td>
 												<td class="text-right">{{'BILL Amount' | translate}}</td>
 											</tr>
-											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery}">
+											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery}">
 												<tr class="small">
 													<td colspan="5" class="name">
 														<strong><span [appTranslateResource]="o._item"></span></strong>
@@ -707,7 +707,7 @@
 												<td>{{'Item' | translate}}</td>
 												<td class="total">{{'Qty' | translate}}</td>
 											</tr>
-											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery} ; let idx = index ">
+											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery} ; let idx = index ">
 												<ng-container *ngIf="o._undeliveredQuantity > 0">
 													<tr>
 														<td>
@@ -878,7 +878,7 @@
 
 	<!-- Kitchen Dishes Printing -->
 	<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
-		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchen':kitchenQuery,'IDItem': itemQuery}; let idx = index">
+		<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery,'IDItem': itemQuery}; let idx = index">
 			<div [id]="'bill-item-each-'+o.Id" class="bill" style="overflow: auto; width: 72mm">
 				<div class="receipt giao-nhan" style="overflow: auto">
 					<section class="sheet rpt p1">

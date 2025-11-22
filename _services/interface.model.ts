@@ -40,7 +40,7 @@ export interface MenuDetail extends POS_MenuDetail {
 	ForeignName?: string;
 	SalesUoM?: number;
 	Price: number;
-
+	IDKitchens:string;
 	IDSalesTaxDefinition?: number;
 	SalesTaxPercent?: number;
 
