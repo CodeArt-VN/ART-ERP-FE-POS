@@ -1,4 +1,5 @@
 import {
+	BRA_Branch,
 	POS_Kitchen,
 	POS_Menu,
 	POS_MenuDetail,
@@ -30,6 +31,7 @@ export interface POSDataSource {
 	tableList: POS_Table[];
 	menuList: Menu[];
 	dealList: any[];
+	branchInfo?: BRA_Branch;
 }
 
 export interface Menu extends POS_Menu {

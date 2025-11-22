@@ -618,8 +618,8 @@
 												(error)="$event.src='assets/logos/logo-the-log.png'"
 										/></span>
 										<span class="brand">{{printData.currentBranch?.ShortName || printData.currentBranch?.Name}}</span>
-										<span class="address">{{printData.currentBranch?.Address || ''}}</span>
-										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
+										<span class="address" *ngIf="printData.currentBranch?.Address">{{printData.currentBranch?.Address || ''}}</span>
+										<span class="phone" *ngIf="printData.currentBranch?.Phone">{{printData.currentBranch?.Phone || ''}}</span>
 
 										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
 											<span class="brand">{{'ORDER' | translate}}</span>
@@ -671,7 +671,7 @@
 									</div>
 									<div class="items" *ngIf="kitchenQuery=='all'">
 										<table>
-											<tr style="font-size: 10px; font-weight: bold">
+											<tr class="bold">
 												<td>{{'Name' | translate}}</td>
 												<td class="text-right">{{'Price' | translate}}</td>
 												<td class="text-right">{{'Quantity' | translate}}</td>
@@ -956,7 +956,4 @@
 	</ng-container>
 
 	<div class="ion-padding"></div>
-	<ion-infinite-scroll color="primary" threshold="30%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
-		<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
-	</ion-infinite-scroll>
 </ion-content>

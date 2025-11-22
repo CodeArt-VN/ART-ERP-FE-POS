@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { EnvService } from 'src/app/services/core/env.service';
 import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
-import { POS_KitchenProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider } from 'src/app/services/static/services.service';
+import { BRA_BranchProvider, POS_KitchenProvider, POS_MenuProvider, POS_TableGroupProvider, POS_TableProvider } from 'src/app/services/static/services.service';
 import { POSDataSource, POSServiceData, POSConfig } from './interface.model';
 import { environment } from 'src/environments/environment';
 import { dog } from 'src/environments/environment';
@@ -51,7 +51,8 @@ export class POSEnviromentDataService {
 		public menuProvider: POS_MenuProvider,
 		public kitchenProvider: POS_KitchenProvider,
 		public tableGroupProvider: POS_TableGroupProvider,
-		public tableProvider: POS_TableProvider
+		public tableProvider: POS_TableProvider,
+		public branchProvider: BRA_BranchProvider
 	) {
 		dog && console.log('🚀 POSEnviromentDataService: Constructor initialized');
 	}
@@ -128,6 +129,7 @@ export class POSEnviromentDataService {
 				this.env.getType('PaymentType'),
 				this.getDeal(),
 				this.getSystemConfig(IDBranch),
+				this.branchProvider.getAnItem(IDBranch),
 			])
 				.then((results: any) => {
 					dog && console.log('✅ All environment data loaded:', results.length, 'items');
@@ -143,6 +145,7 @@ export class POSEnviromentDataService {
 						dealList: results[7],
 						orders: [], // Will be populated by POSOrderService
 						tableGroups: results[2].tableGroups, // Will be populated from table data
+						branchInfo: results[9],
 					};
 
 					let posDataSources: POSServiceData = { SystemConfig: results[8], DataSources: dataSource };
