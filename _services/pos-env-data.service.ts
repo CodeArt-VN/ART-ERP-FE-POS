@@ -38,7 +38,7 @@ export class POSEnviromentDataService {
 		POSIsShowItemImage: true,
 		POSIsReadTheAmount: false,
 		POSBillQRPaymentMethod: 'VietQR',
-		POSPrintingFontSize:10,
+		POSPrintingFontSize: 13,
 		BKIncomingDefaultBankName: '',
 		BKIncomingDefaultBankAccount: '',
 		BKIncomingQRPrefix: '',

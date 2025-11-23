@@ -1016,70 +1016,105 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 	sendKitchenAttempt = false;
-	
-	async handlePartialSuccessItems(partialItems) {
+
+	// Hàm hỏi user về items thất bại và trả về danh sách cuối cùng cần update
+	async askUserAboutFailedItems(failedItems, successItems) {
 		return new Promise(async (resolve, reject) => {
-			// Build message with details for each item
-			let itemsDetails = partialItems.map((item) => {
-				let successKitchens = item.SuccessKitchens.map(k => {
-					const kitchen = this.posService.dataSource.kitchens.find(kt => kt.Id === k);
-					const printerName = kitchen?._Printer?.Name || 'N/A';
-					return `${kitchen?.Name || k} (${printerName})`;
-				}).join(', ');
-				
-				let failedKitchens = item.Errors.map(err => {
-					const kitchen = this.posService.dataSource.kitchens.find(kt => kt.Id === parseInt(err.kitchen));
-					const printerName = kitchen?._Printer?.Name || 'N/A';
-					return `${kitchen?.Name || err.kitchen} - ${printerName} (${err.error})`;
-				}).join(', ');
-				
-				return `<b>${item.ItemName}</b><br>- Đã gửi: ${successKitchens}<br>- Thất bại: ${failedKitchens}`;
-			}).join('<br><br>');
-			
-			this.env.showPrompt(
-				{ 
-					code: 'POS_PARTIAL_PRINT_SUCCESS', 
-					value: itemsDetails 
-				},
-				null,
-				'POS_PRINT_WARNING',
-				'Chuyển sang Đang phục vụ',
-				'Giữ nguyên'
-			).then(() => {
-				dog && console.log('🔄 User chose to move partial success items to Serving status');
-				
-				// User chọn "Chuyển sang Đang phục vụ"
-				const linesToUpdate = partialItems.map(item => ({
-					Id: item.Id,
-					Code: item.Code,
-					ShippedQuantity: item.ShippedQuantity, // Giữ nguyên ShippedQuantity hiện tại
-					IDUoM: item.IDUoM,
-					Status: 'Serving',
-				}));
-				
-				dog && console.log('📝 Updating partial success items:', linesToUpdate.length, 'items');
-				
-				// Save changes
-				this.setOrderValue({ OrderLines: linesToUpdate, Status: 'Scheduled' }, true, false)
-					.then(() => {
-						dog && console.log('✅ Partial success items updated successfully');
-						if (this.item.Id) {
-							this.loadData();
-						}
-						resolve(true);
-					})
-					.catch(err => {
-						dog && console.error('❌ Failed to update partial success items:', err);
-						reject(err);
-					});
-			}).catch(() => {
-				// User chọn "Giữ nguyên" - không làm gì cả
-				dog && console.log('⏭️ User chose to keep partial success items as is');
-				resolve(true);
-			});
+			// Build message
+			let itemsDetails = failedItems
+				.map((item) => {
+					let successKitchens = item.SuccessKitchens.map((k) => {
+						const kitchen = this.posService.dataSource.kitchens.find((kt) => kt.Id === k);
+						const printerName = kitchen?._Printer?.Name || 'N/A';
+						return `${kitchen?.Name || k} (${printerName})`;
+					}).join(', ');
+
+					let failedKitchens = item.Errors.map((err) => {
+						const kitchen = this.posService.dataSource.kitchens.find((kt) => kt.Id === parseInt(err.kitchen));
+						const printerName = kitchen?._Printer?.Name || 'N/A';
+						return `${kitchen?.Name || err.kitchen} - ${printerName} (${err.error})`;
+					}).join(', ');
+
+					let msg = `<b>${item.ItemName}</b>`;
+					if (successKitchens) msg += `<br>- Đã gửi: ${successKitchens}`;
+					if (failedKitchens) msg += `<br>- Thất bại: ${failedKitchens}`;
+					return msg;
+				})
+				.join('<br><br>');
+
+			const hasPartialSuccess = failedItems.some((item) => item.SuccessKitchens.length > 0);
+
+			this.env
+				.showPrompt(
+					{
+						code: hasPartialSuccess ? 'POS_PARTIAL_PRINT_SUCCESS' : 'POS_ITEMS_PRINT_FAILED',
+						value: itemsDetails,
+					},
+					null,
+					'POS_PRINT_WARNING',
+					'Chuyển sang Đang phục vụ',
+					'Giữ nguyên (Không lưu)'
+				)
+				.then(() => {
+					dog && console.log('✅ User agreed to move failed items to Serving');
+
+					// User đồng ý → Tất cả items (success + failed) đều chuyển Serving
+					const allItems = [...successItems, ...failedItems];
+					const finalItems = allItems.map((item) => ({
+						Id: item.Id,
+						Code: item.Code,
+						Quantity: item.Quantity,
+						ShippedQuantity: item.Quantity,
+						IDUoM: item.IDUoM,
+						Status: 'Serving',
+					}));
+
+					resolve(finalItems);
+				})
+				.catch(() => {
+					dog && console.log('❌ User cancelled - only update success items');
+
+					// User không đồng ý → Chỉ update items thành công
+					const finalItems = successItems.map((item) => ({
+						Id: item.Id,
+						Code: item.Code,
+						Quantity: item.Quantity,
+						ShippedQuantity: item.Quantity,
+						IDUoM: item.IDUoM,
+						Status: 'Serving',
+					}));
+
+					resolve(finalItems);
+				});
 		});
 	}
-	
+
+	// Hàm save kết quả print - CHỈ GỌI 1 LẦN DUY NHẤT
+	async savePrintResults(itemsToUpdate) {
+		return new Promise(async (resolve, reject) => {
+			if (itemsToUpdate.length === 0) {
+				dog && console.log('⚠️ No items to update');
+				resolve(true);
+				return;
+			}
+
+			dog && console.log('💾 Saving print results:', itemsToUpdate);
+
+			await this.setOrderValue({ OrderLines: itemsToUpdate, Status: 'Scheduled' }, true, false)
+				.then(() => {
+					dog && console.log('✅ Print results saved successfully');
+					if (this.item.Id) {
+						this.loadData();
+					}
+					resolve(true);
+				})
+				.catch((err) => {
+					dog && console.error('❌ Failed to save print results:', err);
+					reject(err);
+				});
+		});
+	}
+
 	async sendKitchen() {
 		return new Promise(async (resolve, reject) => {
 			// Update printData with current date
@@ -1106,89 +1141,75 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				resolve(false);
 				return;
 			}
-		this.sendKitchenAttempt = true;
-		let printItems = this.printData.undeliveredItems;
-		
-		// Validate items before processing
-		let itemsWithoutMenu = printItems.filter(i => !i._item);
-		let itemsWithoutKitchen = printItems.filter(i => i._item && (!i._IDKitchens || i._IDKitchens.length === 0));
-		
-		// Debug items
-		dog && console.log('📦 Items to print:', printItems.length, 'items');
-		dog && console.log('📋 Print items detail:', printItems.map(i => ({ 
-			Name: i._item?.Name, 
-			IDKitchens: i._IDKitchens,
-			IDKitchensType: typeof i._IDKitchens,
-			IDKitchensIsArray: Array.isArray(i._IDKitchens),
-			IDItem: i.IDItem,
-			FullItem: i._item
-		})));
-		
-		// Show error for items without menu
-		if (itemsWithoutMenu.length > 0) {
-			this.sendKitchenAttempt = false;
-			let itemIds = itemsWithoutMenu.map(i => i.IDItem + ';').join('<br>');
-			this.env.showAlert(
-				{ 
-					code: 'POS_ITEM_NOT_IN_MENU', 
-					value: itemIds 
-				},
-				null,
-				'POS_PRINT_ERROR'
-			);
-			dog && console.error('❌ Items not found in menu:', itemsWithoutMenu);
-			resolve(false);
-			return;
-		}
-		
-		// Show error for items without kitchen
-		if (itemsWithoutKitchen.length > 0) {
-			this.sendKitchenAttempt = false;
-			let itemNames = itemsWithoutKitchen.map(i => i._item?.Name + ';').join('<br>');
-			this.env.showAlert(
-				{ 
-					code: 'POS_ITEM_NO_KITCHEN_ASSIGNMENT', 
-					value: itemNames 
-				},
-				null,
-				'POS_PRINT_ERROR'
-			);
-			dog && console.error('❌ Items without kitchen assignment:', itemsWithoutKitchen);
-			resolve(false);
-			return;
-		}
-		
-		// Lấy tất cả ID của kitchen từ nhiều dạng khác nhau
-		let newKitchenIDList = [
-			...new Set(
-				printItems.reduce((acc, g) => {
-					dog && console.log('🔍 Processing item IDKitchens:', g._IDKitchens, 'Type:', typeof g._IDKitchens, 'IsArray:', Array.isArray(g._IDKitchens));
-					
-					if (!g._IDKitchens || (Array.isArray(g._IDKitchens) && g._IDKitchens.length === 0)) {
-						dog && console.warn('⚠️ Item has no _IDKitchens:', g._item?.Name);
-						return acc;
-					}
-					
-					if (Array.isArray(g._IDKitchens)) {
-						dog && console.log('✅ Adding array:', g._IDKitchens);
-						return acc.concat(g._IDKitchens); // nếu là array
-					}
-					dog && console.log('✅ Adding single value:', g._IDKitchens);
-					return acc.concat([g._IDKitchens]); // nếu là số
-				}, [])
-			),
-		];
-		
-		dog && console.log('🔍 Kitchen IDs needed:', newKitchenIDList);
-		dog && console.log('🏪 Available kitchens:', this.posService.dataSource.kitchens.map(k => ({ 
-			Id: k.Id, 
-			Name: k.Name,
-			HasPrinter: !!k._Printer 
-		})));
-		
-		const newKitchenList = this.posService.dataSource.kitchens.filter((d) => newKitchenIDList.includes(d.Id));
+			this.sendKitchenAttempt = true;
+			let printItems = this.printData.undeliveredItems;
 
-		dog && console.log('🍽️ Kitchen list to process:', newKitchenList.length, 'kitchens', newKitchenList.map(k => k.Name));
+			// Validate items before processing
+			let itemsWithoutMenu = printItems.filter((i) => !i._item);
+			let itemsWithoutKitchen = printItems.filter((i) => i._item && (!i._IDKitchens || i._IDKitchens.length === 0));
+
+		
+
+			// Show error for items without menu
+			if (itemsWithoutMenu.length > 0) {
+				this.sendKitchenAttempt = false;
+				let itemIds = itemsWithoutMenu.map((i) => i.IDItem + ';').join('<br>');
+				this.env.showAlert(
+					{
+						code: 'POS_ITEM_NOT_IN_MENU',
+						value: itemIds,
+					},
+					null,
+					'POS_PRINT_ERROR'
+				);
+				dog && console.error('❌ Items not found in menu:', itemsWithoutMenu);
+				resolve(false);
+				return;
+			}
+
+			// Show error for items without kitchen
+			if (itemsWithoutKitchen.length > 0) {
+				this.sendKitchenAttempt = false;
+				let itemNames = itemsWithoutKitchen.map((i) => i._item?.Name + ';').join('<br>');
+				this.env.showAlert(
+					{
+						code: 'POS_ITEM_NO_KITCHEN_ASSIGNMENT',
+						value: itemNames,
+					},
+					null,
+					'POS_PRINT_ERROR'
+				);
+				dog && console.error('❌ Items without kitchen assignment:', itemsWithoutKitchen);
+				resolve(false);
+				return;
+			}
+
+			// Lấy tất cả ID của kitchen từ nhiều dạng khác nhau
+			let newKitchenIDList = [
+				...new Set(
+					printItems.reduce((acc, g) => {
+						dog && console.log('🔍 Processing item IDKitchens:', g._IDKitchens, 'Type:', typeof g._IDKitchens, 'IsArray:', Array.isArray(g._IDKitchens));
+
+						if (!g._IDKitchens || (Array.isArray(g._IDKitchens) && g._IDKitchens.length === 0)) {
+							dog && console.warn('⚠️ Item has no _IDKitchens:', g._item?.Name);
+							return acc;
+						}
+
+						if (Array.isArray(g._IDKitchens)) {
+							dog && console.log('✅ Adding array:', g._IDKitchens);
+							return acc.concat(g._IDKitchens); // nếu là array
+						}
+						dog && console.log('✅ Adding single value:', g._IDKitchens);
+						return acc.concat([g._IDKitchens]); // nếu là số
+					}, [])
+				),
+			];
+
+			
+
+			const newKitchenList = this.posService.dataSource.kitchens.filter((d) => newKitchenIDList.includes(d.Id));
+
+		
 
 			let itemNotPrint = [];
 			let printJobs: printData[] = [];
@@ -1196,7 +1217,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			const printItemsSnapshot = [...printItems];
 			// Track items that have kitchens without printer
 			const noPrinterKitchenResults = [];
-			
+
 			try {
 				for (let kitchen of newKitchenList.filter((d) => d.Id)) {
 					dog && console.log('🔄 Processing kitchen:', kitchen.Name, 'ID:', kitchen.Id);
@@ -1205,16 +1226,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						dog && console.warn('⚠️ Kitchen has no printer:', kitchen.Name);
 						// Track all items for this kitchen (not just single-kitchen items)
 						let noPrinterItems = printItemsSnapshot.filter((d) => d._IDKitchens.includes(kitchen.Id));
-						
+
 						// Add to results for tracking
 						noPrinterKitchenResults.push({
 							isSuccess: false,
 							items: noPrinterItems,
 							idKitchen: kitchen.Id.toString(),
 							error: 'Kitchen has no printer',
-							kitchenName: kitchen.Name
+							kitchenName: kitchen.Name,
 						});
-						
+
 						// Only add to itemNotPrint if this is the ONLY kitchen for the item
 						let singleKitchenItems = noPrinterItems
 							.filter((d) => d._IDKitchens.length == 1)
@@ -1225,7 +1246,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								IDUoM: e.IDUoM,
 								Status: e.Status,
 								ItemName: e._item.Name,
-								Error: `${kitchen.Name} - N/A (Kitchen has no printer)`
+								Error: `${kitchen.Name} - N/A (Kitchen has no printer)`,
 							}));
 						itemNotPrint.push(...singleKitchenItems);
 						continue;
@@ -1252,7 +1273,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						}
 					}
 				}
-				
+
 				dog && console.log('🖨️ Total print jobs created:', printJobs.length);
 				dog && console.log('⚠️ Items without printer:', itemNotPrint.length);
 				let doneCount = 0;
@@ -1262,24 +1283,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						resolve(true);
 						return;
 					}
-					
+
 					// Tạo message với tên món và lỗi
-					let itemsWithErrors = itemNotPrint.map((i) => {
-						let msg = i.ItemName;
-						if (i.Error) {
-							msg += ` (${i.Error})`;
-						}
-						return msg;
-					}).join('<br>');
-					
+					let itemsWithErrors = itemNotPrint
+						.map((i) => {
+							let msg = i.ItemName;
+							if (i.Error) {
+								msg += ` (${i.Error})`;
+							}
+							return msg;
+						})
+						.join('<br>');
+
 					this.env
-						.showPrompt(
-							{ code: 'POS_ITEMS_PRINT_FAILED', value: itemsWithErrors },
-							'',
-							'POS_PRINT_ERROR',
-							'Ok',
-							"Don't send"
-						)
+						.showPrompt({ code: 'POS_ITEMS_PRINT_FAILED', value: itemsWithErrors }, '', 'POS_PRINT_ERROR', 'Ok', "Don't send")
 						.then(() => {
 							this.checkData(false, true, true)
 								.then((r) => resolve(true))
@@ -1310,7 +1327,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					dog && console.log('🚀 Starting to execute print jobs...');
 					// Collect all lines to update after printing
 					const allSuccessLines = [];
-					
+
 					// Track print status for each item by ID
 					const itemPrintStatus = new Map(); // Key: item.Id, Value: { successKitchens: [], failedKitchens: [] }
 
@@ -1369,7 +1386,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								dog && console.error('Print job failed:', error);
 								const [idsPart] = job.options[0].jobName.split('|').map((s: string) => s.trim());
 								const [idKitchen, IDSO, code] = idsPart.split('_');
-								
+
 								// Get items that failed - use snapshot
 								let failedItems = [];
 								if (idKitchen && !code) {
@@ -1378,12 +1395,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									const item = printItemsSnapshot.find((d) => d._IDKitchens.includes(parseInt(idKitchen)) && d.Code == code);
 									if (item) failedItems = [item];
 								}
-								
+
 								return { isSuccess: false, items: failedItems, error: error?.message || error, idKitchen, code };
 							}
 						})
 					);
-					
+
 					// Merge with noPrinterKitchenResults
 					const results = [...printResults, ...noPrinterKitchenResults];
 					dog && console.log('📊 Total results (print + no-printer):', printResults.length, '+', noPrinterKitchenResults.length, '=', results.length);
@@ -1394,7 +1411,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						if (error) {
 							dog && console.error(`  ❌ Error:`, error);
 						}
-						
+
 						items.forEach((e) => {
 							// Initialize tracking for this item if not exists
 							if (!itemPrintStatus.has(e.Id)) {
@@ -1403,12 +1420,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									totalKitchens: e._IDKitchens.length,
 									successKitchens: [],
 									failedKitchens: [],
-									errors: []
+									errors: [],
 								});
 							}
-							
+
 							const status = itemPrintStatus.get(e.Id);
-							
+
 							// Track which kitchen succeeded/failed
 							if (isSuccess) {
 								status.successKitchens.push(parseInt(idKitchen));
@@ -1420,104 +1437,90 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							}
 						});
 					});
-					
+
 					// Now process each item based on complete print status
+					const fullSuccessItems = []; // Món in thành công 100%
 					const partialSuccessItems = []; // Món in thành công 1 phần
-					
+					const fullFailedItems = []; // Món in thất bại 100%
+
 					itemPrintStatus.forEach((status, itemId) => {
 						const e = status.item;
 						dog && console.log(`📊 Final status for ${e._item?.Name}: ${status.successKitchens.length}/${status.totalKitchens} kitchens success`);
-						
-						// Chỉ chuyển sang Serving nếu TẤT CẢ kitchen đều in thành công
+
+						const itemInfo = {
+							Id: e.Id,
+							Code: e.Code,
+							Quantity: e.Quantity,
+							IDUoM: e.IDUoM,
+							ItemName: e._item?.Name,
+							SuccessKitchens: status.successKitchens,
+							FailedKitchens: status.failedKitchens,
+							Errors: status.errors,
+							TotalKitchens: status.totalKitchens,
+						};
+
 						if (status.successKitchens.length === status.totalKitchens) {
-							const line = {
-								Id: e.Id,
-								Code: e.Code,
-								ShippedQuantity: e.Quantity,
-								IDUoM: e.IDUoM,
-								Status: 'Serving',
-								ItemName: e._item?.Name,
-							};
-							allSuccessLines.push(line);
-							dog && console.log(`  ✅✅ ${e._item?.Name} - ALL kitchens printed successfully → Status: Serving`);
+							// TẤT CẢ kitchen in thành công
+							fullSuccessItems.push(itemInfo);
+							dog && console.log(`  ✅✅ ${e._item?.Name} - ALL kitchens printed successfully`);
 						} else if (status.successKitchens.length > 0) {
-							// Có ít nhất 1 kitchen in thành công nhưng không phải tất cả
-							const line = {
-								Id: e.Id,
-								Code: e.Code,
-								ShippedQuantity: e.ShippedQuantity,
-								IDUoM: e.IDUoM,
-								Status: e.Status,
-								ItemName: e._item?.Name,
-								SuccessKitchens: status.successKitchens,
-								FailedKitchens: status.failedKitchens,
-								Errors: status.errors
-							};
-							partialSuccessItems.push(line);
+							// Có ít nhất 1 kitchen in thành công
+							partialSuccessItems.push(itemInfo);
 							dog && console.log(`  ⚠️ ${e._item?.Name} - Partial success (${status.successKitchens.length}/${status.totalKitchens})`);
 						} else {
 							// Tất cả kitchen đều in thất bại
-							const errorDetails = status.errors.map(err => {
-								const kitchen = this.posService.dataSource.kitchens.find(kt => kt.Id === parseInt(err.kitchen));
-								const printerName = kitchen?._Printer?.Name || 'N/A';
-								return `${kitchen?.Name || err.kitchen} - ${printerName} (${err.error})`;
-							}).join('; ');
-							
-							const line = {
-								Id: e.Id,
-								Code: e.Code,
-								ShippedQuantity: e.ShippedQuantity,
-								IDUoM: e.IDUoM,
-								Status: e.Status,
-								ItemName: e._item?.Name,
-								Error: errorDetails
-							};
-							itemNotPrint.push(line);
+							fullFailedItems.push(itemInfo);
 							dog && console.log(`  ❌❌ ${e._item?.Name} - All kitchens failed`);
 						}
 					});
 
-					// Update all successful lines at once
-					if (allSuccessLines.length > 0) {
-						dog && console.log('✅ Updating all successful lines at once:', allSuccessLines.length, 'items');
-
-						// Must use forceSave = true to save immediately and await
-						await this.setOrderValue({ OrderLines: allSuccessLines, Status: 'Scheduled' }, true, false);
-
-						// After save completes, reload to update UI
-						if (this.item.Id) {
-							dog && console.log('🔄 Reloading item after print to update UI...');
-							await this.loadData();
-						}
-					}
-
 					// Reset flag after processing
 					this.sendKitchenAttempt = false;
 
-					// Handle partial success items first (important!)
-					if (partialSuccessItems.length > 0) {
-						dog && console.log('⚠️ Showing prompt for partial success items...');
-						this.handlePartialSuccessItems(partialSuccessItems)
-							.then(() => {
-								// After handling partial success, check if there are completely failed items
-								if (itemNotPrint.length > 0) {
-									checkItemNotPrint();
-								} else {
-									this.env.showMessage('Sent to kitchen successfully!', 'success');
-									resolve(true);
-								}
+					// KHÔNG LÀM GÌ CẢ - Chỉ hỏi user về items thất bại
+					dog && console.log('📊 Print summary:');
+					dog && console.log('  ✅ Full success:', fullSuccessItems.length);
+					dog && console.log('  ⚠️ Partial success:', partialSuccessItems.length);
+					dog && console.log('  ❌ Full failed:', fullFailedItems.length);
+
+					// Hỏi user về items thất bại (partial + full failed)
+					const itemsNeedUserDecision = [...partialSuccessItems, ...fullFailedItems];
+
+					if (itemsNeedUserDecision.length > 0) {
+						dog && console.log('⚠️ Asking user about failed items...');
+						this.askUserAboutFailedItems(itemsNeedUserDecision, fullSuccessItems)
+							.then((finalItemsToUpdate: any[]) => {
+								// User đã quyết định → Save 1 lần duy nhất
+								dog && console.log('💾 Saving all items at once:', finalItemsToUpdate.length, 'items');
+								this.savePrintResults(finalItemsToUpdate)
+									.then(() => {
+										this.env.showMessage('Sent to kitchen successfully!', 'success');
+										resolve(true);
+									})
+									.catch((err) => reject(err));
 							})
 							.catch(() => {
+								// User cancel
 								reject(false);
 							});
-					} else if (itemNotPrint.length > 0) {
-						// Handle completely failed items
-						dog && console.log('⚠️ Showing prompt for failed items...');
-						checkItemNotPrint();
 					} else {
-						dog && console.log('✅ All items printed successfully!');
-						this.env.showMessage('Sent to kitchen successfully!', 'success');
-						resolve(true);
+						// Tất cả thành công → Save luôn
+						dog && console.log('✅ All items printed successfully! Saving...');
+						const finalItemsToUpdate = fullSuccessItems.map((item) => ({
+							Id: item.Id,
+							Code: item.Code,
+							Quantity: item.Quantity,
+							ShippedQuantity: item.Quantity,
+							IDUoM: item.IDUoM,
+							Status: 'Serving',
+						}));
+
+						this.savePrintResults(finalItemsToUpdate)
+							.then(() => {
+								this.env.showMessage('Sent to kitchen successfully!', 'success');
+								resolve(true);
+							})
+							.catch((err) => reject(err));
 					}
 				} else {
 					dog && console.log('⚠️ No print jobs to execute');
@@ -1547,7 +1550,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				//orientation: 'landscape',
 				duplex: 'duplex',
 				//  autoStyle:content
-				cssStyle: this.posService.systemConfig?.POSPrintingFontSize ? '*{--font-size : '+ this.posService.systemConfig.POSPrintingFontSize + 'px;}' : '',
+				cssStyle:
+					(this.posService.systemConfig?.POSPrintingFontSize ? `*{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}` : '') +
+					`.bold{font-weight:bold}.bill,.sheet{color:#000;font-size:1rem}.sheet table tr{page-break-inside:avoid}.bill{display:block;overflow:hidden!important}.bill .sheet{box-shadow:none!important}.bill .header,.bill .message,.text-center{text-align:center}.bill .header span{display:inline-block;width:100%}.bill .header .logo img{max-width:8.33rem;max-height:4.17rem}.bill .header .brand,.bill .items .quantity{font-weight:700}.bill .header .address{font-size:80%;font-style:italic}.bill .table-info,.bill .table-info-top{border-top:solid;margin:0.28rem 0;padding:0.28rem 0.44rem;border-width:1px 0}.bill .items{margin:0.28rem 0;padding-left:0.44rem;padding-right:0.44rem}.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:0.28rem}.bill .items .name{font-size:1rem;width:100%;padding-top:0.28rem;padding-bottom:2px!important;border:none!important}.bill .items tr:last-child td{border:none!important}.bill .items .total,.text-right{text-align:right}.bill .message{padding-left:0.44rem;padding-right:0.44rem}.page-footer-space{margin-top:0.56rem}.table-info-top td{padding-top:0.28rem}.sheet{margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:'Times New Roman',Times,serif;font-size:0.72rem;background:#fff}.sheet .page-footer,.sheet .page-footer-space{height:10mm}.sheet table{page-break-inside:auto;width:100%;border-collapse:collapse}.sheet table tr{page-break-after:auto}`,
 			};
 		});
 		let data: printData = {
@@ -1813,7 +1818,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						line._IDKitchens = mi.IDKitchens ? [].concat(JSON.parse(mi.IDKitchens)) : [];
 					}
 				}
-			
+
 			if (!foundItem) {
 				dog && console.warn('⚠️ Item NOT found in menuList! IDItem:', line.IDItem, 'Status:', line.Status);
 			}
@@ -2291,7 +2296,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	
 	deleteVoucher(p) {
 		let apiPath = {
 			method: 'POST',
