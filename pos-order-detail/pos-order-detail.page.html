@@ -648,7 +648,7 @@
 											</tr>
 											<tr>
 												<td class="title">{{'Print date' | translate}}</td>
-												<td class="bold">{{printData.printDate}}</td>
+												<td class="bold">{{printData.printDate | date: 'HH:mm dd/MM/yyyy'}}</td>
 											</tr>
 											<tr *ngIf="kitchenQuery=='all'">
 												<td class="title">{{'Cashier' | translate}}</td>
@@ -731,7 +731,7 @@
 											<tr>
 												<td class="title">{{'Printing date' | translate}}</td>
 												<td class="text-right">
-													<span>{{printData.printDate}}</span>
+													<span>{{printData.printDate | date: 'HH:mm dd/MM/yyyy'}}</span>
 												</td>
 											</tr>
 										</table>
@@ -932,7 +932,7 @@
 													<tr>
 														<td class="title">{{'PrintDate' | translate}}</td>
 														<td class="text-right">
-															<span>{{printData.printDate}}</span>
+															<span>{{printData.printDate | date: 'HH:mm dd/MM/yyyy'}}</span>
 														</td>
 													</tr>
 												</table>
