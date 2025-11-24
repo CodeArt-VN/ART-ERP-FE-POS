@@ -3,201 +3,171 @@
 </ion-header>
 <ion-content appScrollbarTheme class="ion-padding">
 	<div class="main-view" *ngIf="item && pageConfig.showSpinner==false">
-		<!-- <ion-grid fixed>
-            <ion-row>
-                
-                <ion-col size="12" size-sm>
-                    <ion-grid>
-                        <ion-row>
-                            <ion-col size="12" size-md="12" size-lg="12" size-xl="5">
-                                <div class="c-control">
-                                    <label class="c-label">{{'Name' | translate}}
-                                        <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                                    </label>
-                                    <input readonly class="c-input" [ngModel]="item.Name" type="text" placeholder="Tên gọi">
-                                </div>
-                                <div class="c-control">
-                                    <label class="c-label">Foreign name
-                                        <span *ngIf="!formGroup.controls.Name.valid && !formGroup.controls.Name.pending && (formGroup.controls.Name.dirty || submitAttempt)" ion-text color="danger">(*)</span>
-                                    </label>
-                                    <input readonly class="c-input" [ngModel]="item.ForeignName" type="text" placeholder="Foreign name">
-                                </div>
-                            </ion-col>
-                            <ion-col size="12" size-md="12" size-lg="12" size-xl="5">
-                                
-                            </ion-col>
-                        </ion-row>
-                    </ion-grid>
-                </ion-col>
-            </ion-row>
-        </ion-grid> -->
-
+		<div id="pos-menu-detail" style="position: absolute"></div>
 		<div class="row-full shadow full-screen">
 			<ion-toolbar color="primary">
 				<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 					<ion-segment-button value="s1">
 						<ion-label>{{'Detailed information' | translate}}</ion-label>
 					</ion-segment-button>
-					<ion-segment-button value="s2">
-						<ion-label>{{'Product' | translate}}</ion-label>
-					</ion-segment-button>
 				</ion-segment>
 			</ion-toolbar>
-
-			<div>
-				<div *ngIf="segmentView == 's1'">
-					<div class="ion-padding">
-						<ion-grid fixed>
-							<form [formGroup]="formGroup">
-								<ion-row class="hr-group">
-									<ion-col class="img-holder" size="12" size-xl="4">
-										<div class="avatar">
-											<div class="avatar-content">
-												<ion-img class="img" #img [src]="Image ? Image : noImage" (ionError)="img.src = noImage"/>		
-												<div class="image-upload">
-													<ion-icon color="primary" size="large" slot="icon-only" name="cloud-upload-outline" (click)="onClickUpload(true, this.item?.Id)"> </ion-icon>
-													<ion-label> {{'Upload image' | translate}}</ion-label>
-												</div>
-											</div>
-														
-										</div>
-									</ion-col>
-									<ion-col size="12" size-xl="8">
-										<!-- <div class="c-control" *ngIf="item.Id">
-                                            <label class="c-label" for="Id">{{'Id' | translate}}</label>
-                                            <input class="c-input" id="Id" formControlName="Id" type="number">
-                                        </div> -->
-										<app-form-control (change)="saveChange()" [field]="{id:'Code', label:'Code', type:'text', form:formGroup}"></app-form-control>
-										<app-form-control (change)="saveChange()" [field]="{id:'Name', label:'Name', type:'text', form:formGroup}"></app-form-control>
-										<app-form-control (change)="saveChange()" [field]="{id:'Sort', label:'Sort', type:'number', form:formGroup}"></app-form-control>
-									</ion-col>
-									<!-- <ion-col size="12" size-sm size-xl="4">
-
-
-                                    </ion-col> -->
-								</ion-row>
-							</form>
-						</ion-grid>
-					</div>
-				</div>
-				<div *ngIf="segmentView == 's2'">
-					<div id="pos-menu-detail" style="position: absolute"></div>
+			<ion-grid fixed>
+				<div class="ion-padding">
 					<form [formGroup]="formGroup">
-						<ng-container formArrayName="Lines">
-							<app-data-table [rows]="formGroup.get('Lines')['controls']" [showSpinner]="pageConfig.showSpinner">
-								<datatable-empty-message subMessage="Please click add new to start...">
-									<ng-template datatable-empty-message-template>
-										<div>
-											<ion-button *ngIf="formGroup.controls.Id.value != null" size="small" (click)="addItemLine({}, true)">
-												<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-												{{ 'Add product' | translate }}
-											</ion-button>
+						<ion-row class="hr-group">
+							<ion-col size="12" size-sm="12" size-md="12" size-xl="3">
+								<ion-list-header class="ion-no-padding">
+									<ion-label color="primary">{{'General information' | translate}}</ion-label>
+								</ion-list-header>
+							</ion-col>
+							<ion-col size="12" size-sm size-xl="4">
+								<app-form-control (change)="saveChange()" [field]="{id:'Code', label:'Code', type:'text', form:formGroup}"></app-form-control>
+								<app-form-control (change)="saveChange()" [field]="{id:'Name', label:'Name', type:'text', form:formGroup}"></app-form-control>
+								<app-form-control (change)="saveChange()" [field]="{id:'Sort', label:'Sort', type:'number', form:formGroup}"></app-form-control>
+							</ion-col>
+							<ion-col size="12" size-sm size-xl="4">
+								<div class="avatar">
+									<div class="avatar-content">
+										<ion-img class="img" #img [src]="Image ? Image : noImage" (ionError)="img.src = noImage"/>		
+										<div class="image-upload">
+											<ion-icon color="primary" size="large" slot="icon-only" name="cloud-upload-outline" (click)="onClickUpload(true, this.item?.Id)"> </ion-icon>
+											<ion-label> {{'Upload image' | translate}}</ion-label>
 										</div>
-									</ng-template>
-								</datatable-empty-message>
-								<datatable-column [checkbox]="true" property="value" *ngIf="pageConfig.canEdit">
-									<ng-template datatable-header-template>
-										<input class="c-checkbox" type="checkbox" (change)="toggleSelectAll()" [checked]="isAllSelected" />
-									</ng-template>
-									<ng-template let-g="row" datatable-cell-template>
-										<app-input-control
-											(change)="changeSelection(g)"
-											[field]="{ id: 'IsChecked', label: 'Checked', type: 'checkbox', form: g }"
-										></app-input-control>
-									</ng-template>
-								</datatable-column>
-								<datatable-column class="col-id" name="No." property="#"></datatable-column>
-								<datatable-column class="col-name item-name" name="Items" property="value">
-									<ng-template let-g="row" datatable-cell-template>
-										<app-input-control
-											[field]="{ id: 'IDItem', label: 'Item', type: 'ng-select-item', form: g,
-										dataSource: g.get('_IDItemDataSource').value,
-										bindValue: 'Id',
-										bindLabel: 'Name',
-										clearable: true,
-										placeholder: 'Type to search...',
-										appendTo: '#pos-menu-detail', }"
-											(change)="saveChange()"
-										></app-input-control>
-									</ng-template>
-								</datatable-column>
-								<datatable-column class="col-kit" name="Kitchen" property="value">
-									<ng-template datatable-header-template>
-										<ng-container *ngFor="let k of kitchenList">
-											<ion-button
-												[disabled]="!pageConfig.canEdit || submitAttempt"
-												[fill]="isKitcheChecked(k) ? 'solid' : 'outline'"
-												size="small"
-												expand="block"
-												(click)="toggleKitchenAll(k)"
-											>
-												{{ k.Name }}
-											</ion-button>
-										</ng-container>
-									</ng-template>
-									<ng-template let-g="row" datatable-cell-template>
-										<ng-container *ngFor="let k of kitchenList">
-											<ion-button 
-												[disabled]="!pageConfig.canEdit || submitAttempt"
-												[fill]=" isHaveKitchen(g,k.Id)  ? 'solid' : 'outline'"
-												expand="block"
-												size="small"
-												(click)="toogleKitchenSet(g, k)"
-											>
-												{{k.Name}}
-											</ion-button>
-										</ng-container>
-									</ng-template>
-								</datatable-column>
-								<datatable-column class="col-del" name="" property="value" *ngIf="pageConfig.canEdit">
-									<ng-template let-g="row" let-idx="idx" datatable-cell-template>
-										<ion-icon
-											size="large"
-											[title]="g.controls.IsDisabled.value?'Locked':'Lock item'"
-											(click)="lock(g)"
-											[color]="g.controls.IsDisabled.value ? 'danger':'success' "
-											class="min-btn"
-											[name]=" g.controls.IsDisabled.value ? 'bag-remove-outline':'bag-check-outline' "
-										></ion-icon>
-									</ng-template>
-								</datatable-column>
-								<datatable-column class="col-del" name="" property="value" *ngIf="pageConfig.canEdit">
-									<ng-template datatable-header-template>
-										<ion-icon
-											color="danger"
-											class="min-btn clickable"
-											title="{{ 'SELECTED_ITEMS' | translate: { COUNT: selectedLines.controls?.length } }}"
-											name="trash-outline"
-											(click)="removeSelectedItems()"
-										></ion-icon>
-									</ng-template>
-									<ng-template let-g="row" let-idx="idx" datatable-cell-template>
-										<ion-icon color="danger" class="min-btn clickable" name="trash-outline" (click)="removeLine(idx)"></ion-icon>
-									</ng-template>
-								</datatable-column>
-								<datatable-column class="col-icon large" name="Image" property="value">
-									<ng-template let-g="row" let-idx="idx" datatable-cell-template>
-										<div class="img-wrapper">
-											<ion-img  slot="start" #img [src]="g.controls.Image?.value" (ionError)="img.src = noImage"></ion-img>				
-										</div>
-									</ng-template>
-								</datatable-column>
-								<datatable-column class="col-code" name="Upload" property="value" *ngIf="pageConfig.canEdit">
-									<ng-template let-g="row" let-idx="idx" datatable-cell-template>										
-										<ion-icon color="primary"  class="min-btn clickable" name="cloud-upload-outline" *ngIf="pageConfig.canEdit && g.controls.Id?.value > 0" (click)="onClickUpload(false, g.controls.Id?.value)"></ion-icon>
-									</ng-template>
-								</datatable-column>
-							</app-data-table>
-						</ng-container>
+									</div>		
+								</div>
+								
+							</ion-col>
+
+						</ion-row>
+						<ion-row class="hr-group">
+							<ion-col size="12" size-sm="12" size-md="12" size-xl="3">
+								<ion-list-header class="ion-no-padding">
+									<ion-label color="primary">{{'Product' | translate}}</ion-label>
+								</ion-list-header>
+							</ion-col>
+							<ion-col size="12" size-sm size-xl="9">
+								<ng-container formArrayName="Lines">
+									<div class="table-contain">
+										<app-data-table [rows]="formGroup.get('Lines')['controls']" [showSpinner]="pageConfig.showSpinner">
+											<datatable-empty-message subMessage="Please click add new to start...">
+												<ng-template datatable-empty-message-template>
+													<div>
+														<ion-button *ngIf="formGroup.controls.Id.value != null" size="small" (click)="addItemLine({}, true)">
+															<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+															{{ 'Add product' | translate }}
+														</ion-button>
+													</div>
+												</ng-template>
+											</datatable-empty-message>
+											<datatable-column [checkbox]="true" property="value" *ngIf="pageConfig.canEdit">
+												<ng-template datatable-header-template>
+													<input class="c-checkbox" type="checkbox" (change)="toggleSelectAll()" [checked]="isAllSelected" />
+												</ng-template>
+												<ng-template let-g="row" datatable-cell-template>
+													<app-input-control
+														(change)="changeSelection(g)"
+														[field]="{ id: 'IsChecked', label: 'Checked', type: 'checkbox', form: g }"
+													></app-input-control>
+												</ng-template>
+											</datatable-column>
+											<datatable-column class="col-id" name="No." property="#"></datatable-column>
+											<datatable-column class="col-name item-name" name="Items" property="value">
+												<ng-template let-g="row" datatable-cell-template>
+													<app-input-control
+														[field]="{ id: 'IDItem', label: 'Item', type: 'ng-select-item', form: g,
+													dataSource: g.get('_IDItemDataSource').value,
+													bindValue: 'Id',
+													bindLabel: 'Name',
+													clearable: true,
+													placeholder: 'Type to search...',
+													appendTo: '#pos-menu-detail', }"
+														(change)="saveChange()"
+													></app-input-control>
+												</ng-template>
+											</datatable-column>
+											<datatable-column class="col-kit" name="Kitchen" property="value">
+												<ng-template datatable-header-template>
+													<ng-container *ngFor="let k of kitchenList">
+														<ion-button
+															[disabled]="!pageConfig.canEdit || submitAttempt"
+															[fill]="isKitcheChecked(k) ? 'solid' : 'outline'"
+															expand="block"
+															size="small"
+															(click)="toggleKitchenAll(k)"
+														>
+															{{ k.Name }}
+														</ion-button>
+													</ng-container>
+												</ng-template>
+												<ng-template let-g="row" datatable-cell-template>
+													<ng-container *ngFor="let k of kitchenList">
+														<ion-button 
+															[disabled]="!pageConfig.canEdit || submitAttempt"
+															[fill]=" isHaveKitchen(g,k.Id)  ? 'solid' : 'outline'"
+															expand="block"
+															size="small"
+															(click)="toogleKitchenSet(g, k)"
+														>
+															{{k.Name}}
+														</ion-button>
+													</ng-container>
+												</ng-template>
+											</datatable-column>
+											<datatable-column class="col-del" name="" property="value" *ngIf="pageConfig.canEdit">
+												<ng-template let-g="row" let-idx="idx" datatable-cell-template>
+													<ion-icon
+														size="large"
+														[title]="g.controls.IsDisabled.value?'Locked':'Lock item'"
+														(click)="lock(g)"
+														[color]="g.controls.IsDisabled.value ? 'danger':'success' "
+														class="min-btn"
+														[name]=" g.controls.IsDisabled.value ? 'bag-remove-outline':'bag-check-outline' "
+													></ion-icon>
+												</ng-template>
+											</datatable-column>
+											<datatable-column class="col-del" name="" property="value" *ngIf="pageConfig.canEdit">
+												<ng-template datatable-header-template>
+													<ion-icon
+														color="danger"
+														class="min-btn clickable"
+														title="{{ 'SELECTED_ITEMS' | translate: { COUNT: selectedLines.controls?.length } }}"
+														name="trash-outline"
+														(click)="removeSelectedItems()"
+													></ion-icon>
+												</ng-template>
+												<ng-template let-g="row" let-idx="idx" datatable-cell-template>
+													<ion-icon color="danger" class="min-btn clickable" name="trash-outline" (click)="removeLine(idx)"></ion-icon>
+												</ng-template>
+											</datatable-column>
+											<datatable-column class="col-icon large" name="Image" property="value">
+												<ng-template let-g="row" let-idx="idx" datatable-cell-template>
+													<div class="img-wrapper">
+														<ion-img  slot="start" #img [src]="g.controls.Image?.value" (ionError)="img.src = noImage"></ion-img>				
+													</div>
+												</ng-template>
+											</datatable-column>
+											<datatable-column class="col-code" name="Upload" property="value" *ngIf="pageConfig.canEdit">
+												<ng-template let-g="row" let-idx="idx" datatable-cell-template>										
+													<ion-icon color="primary"  class="min-btn clickable" name="cloud-upload-outline" *ngIf="pageConfig.canEdit && g.controls.Id?.value > 0" (click)="onClickUpload(false, g.controls.Id?.value)"></ion-icon>
+												</ng-template>
+											</datatable-column>
+										</app-data-table>
+									</div>
+								</ng-container>
+								
+								<div class="ion-padding" *ngIf="pageConfig.canEdit && !formGroup.invalid">
+									<ion-button fill="clear" size="small" (click)="addItemLine({}, true)">
+										<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+										{{ 'Add product' | translate }}
+									</ion-button>
+								</div>
+							</ion-col>
+						
+						</ion-row>
 					</form>
-					<div class="ion-padding" *ngIf="pageConfig.canEdit && !formGroup.invalid">
-						<ion-button fill="clear" size="small" (click)="addItemLine({}, true)">
-							<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-							{{ 'Add product' | translate }}
-						</ion-button>
-					</div>
 				</div>
-			</div>
+			</ion-grid>
 		</div>
 	</div>
 	<input type="file" #uploadImage class="hide-all" (change)="onFileSelected($event)" accept="image/*" />

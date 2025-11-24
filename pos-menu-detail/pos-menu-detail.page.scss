@@ -170,25 +170,60 @@
 	cursor: pointer;
 }
 
-.avatar {
-	width: 100%;
+.img-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 24px;
+}
+
+.img-holder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 150px;
 }
 
 .avatar-content {
+	width: 100%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 }
 
 .avatar-content .img {
-	width: 100%;
-	height: 200px;
-	object-fit: contain;
+	width: 120px;
+	height: 120px;
+	border-radius: 8px;
+	border: 1px solid #ccc;
+	background-color: #fff;
+	object-fit: cover;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+	margin-bottom: 8px;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	overflow: hidden;
+}
+
+.avatar-content .img:hover {
+	transform: scale(1.03);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .image-upload {
-	text-align: center;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	color: var(--ion-color-primary);
+	font-size: 13px;
+}
+
+.image-upload ion-icon {
+	font-size: 28px;
+}
+
+.image-upload ion-label {
+	font-weight: 500;
+	color: #555;
 }
