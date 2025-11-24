@@ -199,6 +199,39 @@ export class POSMenuDetailPage extends PageBase {
 	isHaveKitchen(g,id){
 		return g.value.IDKitchenArray.includes(id);
 	}
+
+    toggleKitchenAll(kit) {
+        const groups = <FormArray>this.formGroup.controls.Lines;
+        if (!groups || groups.length === 0) return;
+
+        const isAllIncluded = groups.controls.every((g) => {
+            const arr = Array.isArray(g.value.IDKitchenArray) ? g.value.IDKitchenArray : [];
+            return arr.includes(kit?.Id);
+        });
+
+        groups.controls.forEach((g) => {
+            let ids = Array.isArray(g.value.IDKitchenArray) ? g.value.IDKitchenArray.slice() : [];
+            if (isAllIncluded) {
+                ids = ids.filter((id) => id != kit?.Id);
+            } else {
+                if (!ids.includes(kit?.Id)) ids.push(kit?.Id);
+            }
+            g.get('IDKitchenArray').setValue(ids);
+            g.get('IDKitchens').setValue(JSON.stringify(ids));
+            g.get('IDKitchens').markAsDirty();
+        });
+        this.saveChange2();
+    }
+
+    isKitcheChecked(kit) {
+        const groups = <FormArray>this.formGroup.controls.Lines;
+        if (!groups || groups.length === 0) return false;
+        return groups.controls.every((g) => {
+            const arr = Array.isArray(g.value.IDKitchenArray) ? g.value.IDKitchenArray : [];
+            return arr.includes(kit?.Id);
+        });
+    }
+
 	lock(g) {
 		let groups = <FormArray>this.formGroup.controls.Lines;
 		let isDisable = !g.controls.IsDisabled.value;

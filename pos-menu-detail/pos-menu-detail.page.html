@@ -122,6 +122,19 @@
 									</ng-template>
 								</datatable-column>
 								<datatable-column class="col-kit" name="Kitchen" property="value">
+									<ng-template datatable-header-template>
+										<ng-container *ngFor="let k of kitchenList">
+											<ion-button
+												[disabled]="!pageConfig.canEdit || submitAttempt"
+												[fill]="isKitcheChecked(k) ? 'solid' : 'outline'"
+												size="small"
+												expand="block"
+												(click)="toggleKitchenAll(k)"
+											>
+												{{ k.Name }}
+											</ion-button>
+										</ng-container>
+									</ng-template>
 									<ng-template let-g="row" datatable-cell-template>
 										<ng-container *ngFor="let k of kitchenList">
 											<ion-button 
