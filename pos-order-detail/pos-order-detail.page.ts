@@ -192,7 +192,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					break;
 			}
 		});
-
+		// if(!this.item.Id) this.formGroup.get('NumberOfGuests')?.markAsDirty();
 		super.ngOnInit();
 	}
 
@@ -314,6 +314,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (!this.item?.Id) {
 			Object.assign(this.item, this.formGroup.getRawValue());
 			this.setOrderValue(this.item);
+			this.formGroup.get('NumberOfGuests').markAsDirty();
 		} else {
 			this.patchOrderValue();
 			this.getPayments().then(() => {
@@ -1988,9 +1989,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						}
 					}
 
-					let numberOfGuests = this.formGroup.get('NumberOfGuests');
-					numberOfGuests.setValue(this.item.OrderLines?.map((x) => x.Quantity).reduce((a, b) => +a + +b, 0));
-					numberOfGuests.markAsDirty();
+					// let numberOfGuests = this.formGroup.get('NumberOfGuests');
+					// numberOfGuests.setValue(this.item.OrderLines?.map((x) => x.Quantity).reduce((a, b) => +a + +b, 0));
+					// numberOfGuests.markAsDirty();
 
 					const parentElement = this.numberOfGuestsInput?.nativeElement?.parentElement;
 					if (parentElement) {
@@ -2087,6 +2088,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					}
 				}
 			}
+			this.item.DailyBillNo = savedItem.DailyBillNo;
+			this.item.Tables = savedItem.Tables;
 		}
 	}
 

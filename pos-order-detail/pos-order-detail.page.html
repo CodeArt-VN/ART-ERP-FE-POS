@@ -373,21 +373,17 @@
 								</ion-button>
 							</div>
 						</div>
-						<div class="c-control">
-							<app-input-control
-								(change)="setOrderValue([])"
-								[field]="{id:'NumberOfGuests', label:'NumberOfGuests', type:'number',form:formGroup}"
-							></app-input-control>
-						</div>
+						<app-form-control
+							(change)="setOrderValue([])"
+							[field]="{id:'NumberOfGuests', label:'Number of guests', type:'number',form:formGroup}"
+						></app-form-control>
 
-						<div class="c-control">
-							<app-input-control
-								(change)="setOrderValue([])"
-								style="text-align: left; min-height: 3.8rem; height: auto"
-								[field]="{id:'Tables',label:'Tables',type:'ng-select',dataSource:posService.dataSource.tableList,clearable:true,bindLabel:'Name',bindValue:'Id',multiple:true,placeholder:'Select Table', form: formGroup,appendTo:'#pos-order-detail-page'}"
-							>
-							</app-input-control>
-						</div>
+						<app-form-control
+							(change)="setOrderValue([])"
+							style="text-align: left; min-height: 3.8rem; height: auto"
+							[field]="{id:'Tables',label:'Tables',type:'ng-select',dataSource:posService.dataSource.tableList,clearable:true,bindLabel:'Name',bindValue:'Id',multiple:true,placeholder:'Select Table', form: formGroup,appendTo:'#pos-order-detail-page'}"
+						>
+						</app-form-control>
 						<app-form-control
 							[field]="{id:'Status', type : 'ng-select-status', form : formGroup,  dataSource: posService.dataSource.orderStatusList, bindLabel:'Name',  bindValue: 'Code'}"
 						>
@@ -636,10 +632,16 @@
 									</div>
 									<div class="table-info">
 										<table>
+											<tr *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done'">
+												<td class="title">{{'Bill number' | translate}}</td>
+												<td>
+													<span class="bold" >{{item.DailyBillNo}}</span>
+												</td>
+											</tr>
 											<tr>
 												<td class="title">{{'Table' | translate}}</td>
 												<td>
-													<span class="bold" *ngFor="let t of printData.selectedTables">{{t.Name}}; </span>
+													<span class="bold" *ngFor="let t of printData.selectedTables; let j = index">{{t.Name}}<span *ngIf="printData.selectedTables.length>0 && j < printData.selectedTables.length - 1">;</span> </span>
 												</td>
 											</tr>
 											<tr>
