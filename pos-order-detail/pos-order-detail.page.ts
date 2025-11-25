@@ -1759,7 +1759,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.item.CalcOriginalTotalAdditionsPercent = 0;
 		this.item.AdditionsAmountPercent = 0;
 		this.item.OriginalDiscountFromSalesmanPercent = 0;
-
+		this.item.VATSummary = [];
 		for (let m of this.posService.dataSource.menuList) for (let mi of m.Items) mi.BookedQuantity = 0;
 
 		for (let line of this.item.OrderLines) {
@@ -1804,7 +1804,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			line._OriginalTotalAfterDiscountFromSalesman = line.CalcTotalOriginal - line.OriginalDiscountFromSalesman;
 
 			this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman;
+			const rate = line.TaxRate;
+			this.item.VATSummary = this.item.VATSummary || [];
+			let vatItem = this.item.VATSummary.find(x => x.Rate === rate);
 
+			if (!vatItem) {
+				vatItem = {
+					Rate: rate,
+					Tax: 0,
+					AdditionsTax: 0
+				};
+				this.item.VATSummary.push(vatItem);
+			}
+			vatItem.Tax += line.OriginalTax;
+			vatItem.AdditionsTax += (line.CalcOriginalTotalAdditions - line.AdditionsAmount);
 			//Lấy hình & hiển thị thông tin số lượng đặt hàng lên menu
 			let foundItem = false;
 			for (let m of this.posService.dataSource.menuList)

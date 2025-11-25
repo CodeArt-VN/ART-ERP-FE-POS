@@ -53,6 +53,7 @@
 						</div>
 
 						<div class="coupon-right">
+							<span>{{i.Program.Name}}</span>
 							<span *ngIf="!i.Program.IsByPercent">{{'Reduce' | translate}} {{i.Program.Value | number: '1.0-0'}}</span>
 							<span *ngIf="i.Program.IsByPercent" >{{'Reduce' | translate}} {{i.Program.PerCentValue }}% <span *ngIf="i.Program.MaxValue > 0">{{'Max' | translate}} {{i.Program.MaxValue | number: '1.0-0'}} </span></span>
 

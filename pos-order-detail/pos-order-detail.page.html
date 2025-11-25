@@ -783,10 +783,12 @@
 														<span>{{item.OriginalTotalAfterDiscount + item.AdditionsAmount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
-												<tr>
-													<td class="title">{{'VAT' | translate}} [ {{item.OriginalTaxPercent}}% ]</td>
+												<tr *ngFor="let vat of item.VATSummary">
+													<td class="title">
+														{{ 'VAT' | translate }} [ {{vat.Rate}}% ]
+													</td>
 													<td class="text-right bold">
-														<span>{{item.OriginalTax + item.AdditionsTax | number: '1.0-0'}}</span>
+														<span>{{ (vat.Tax + vat.AdditionsTax) | number:'1.0-0' }}</span>
 													</td>
 												</tr>
 											</table>
