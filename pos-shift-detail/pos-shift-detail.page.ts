@@ -276,8 +276,8 @@ export class POSShiftDetailPage extends PageBase {
 				this.shiftData.AverageRevenueBill = this.shiftData.TotalAfterTax / orders.data.length;
 				this.shiftData.AverageRevenueGuest =
 					this.shiftData.TotalAfterTax / orders.data.filter((o) => o.OrderStatus == 'Done').reduce((sum, order) => sum + (order._Order?.NumberOfGuests || 0), 0);
-				this.shiftData.TotalBillInit = 0; // k biết
-				this.shiftData.TotalBillBeforeClosed = orders.data.length;
+				this.shiftData.TotalBillInit = Math.min(...orders.data.map((o)=>o._Order.DailyBillNo?? 0));
+				this.shiftData.TotalBillLastest = Math.max(...orders.data.map((o)=>o._Order.DailyBillNo?? 0));
 				this.shiftData.TotalDeduction = orders.data
 					.filter((o) => o.OrderStatus == 'Done')
 					.reduce((sum, order) => {
@@ -404,7 +404,7 @@ export interface ShiftData {
 	AverageRevenueGuest?: number;
 	Vouchers?: any[];
 	TotalBillInit?: number;
-	TotalBillBeforeClosed?: number;
+	TotalBillLastest?: number;
 	TotalRevenueItemGroup?: ItemGroupRevenue;
 }
 export interface RevenueData {
