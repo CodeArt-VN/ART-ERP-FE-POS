@@ -319,7 +319,7 @@
 
 	<!-- POS config modal -->
 	<!-- (willDismiss)="onVRPWillDismiss($event)" -->
-	<ion-modal [isOpen]="isOpenConfigPOS">
+	<ion-modal [isOpen]="isOpenConfigPOS" (willDismiss)="isOpenConfigPOS = false">
 		<ng-template>
 			<ion-header collapse="fade">
 				<ion-toolbar>
