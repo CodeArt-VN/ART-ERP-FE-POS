@@ -3,25 +3,20 @@ import { NavController, ModalController, AlertController, LoadingController, Pop
 import { EnvService } from 'src/app/services/core/env.service';
 import { PageBase } from 'src/app/page-base';
 import {
-	POS_BillTableProvider,
 	POS_MenuProvider,
 	POS_TableGroupProvider,
 	POS_TableProvider,
 	POS_TerminalProvider,
-	SALE_OrderProvider,
-	SYS_ConfigProvider,
-	SYS_PrinterProvider,
+	SALE_OrderProvider, SYS_PrinterProvider
 } from 'src/app/services/static/services.service';
 import { POSSplitModalPage } from '../pos-split-modal/pos-split-modal.page';
 import { POSMergeModalPage } from '../pos-merge-modal/pos-merge-modal.page';
 import { Location } from '@angular/common';
 import { POSChangeTableModalPage } from '../pos-change-table-modal/pos-change-table-modal.page';
-import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { dog, environment } from 'src/environments/environment';
+import { dog } from 'src/environments/environment';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
-import { POSNotifyModalPage } from 'src/app/modals/pos-notify-modal/pos-notify-modal.page';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { POSNotifyService } from '../_services/pos-notify.service';
 import { POSService } from '../_services/pos.service';
@@ -45,18 +40,14 @@ export class POSOrderPage extends PageBase {
 	POSconfigDTO: any = {};
 	terminalList = [];
 	printerList = [];
-	sysConfig: any = {};
 	constructor(
 		public posService: POSService,
 		public posShiftService: POS_ShiftPService,
 		public posTerminalProvider: POS_TerminalProvider,
 		public sysPrinterProvider: SYS_PrinterProvider,
 		public pageProvider: SALE_OrderProvider,
-		public tableGroupProvider: POS_TableGroupProvider,
-		public tableProvider: POS_TableProvider,
-		public menuProvider: POS_MenuProvider,
+	
 		public modalController: ModalController,
-		public sysConfigProvider: SYS_ConfigProvider,
 		public popoverCtrl: PopoverController,
 		public alertCtrl: AlertController,
 		public loadingController: LoadingController,
@@ -117,37 +108,19 @@ export class POSOrderPage extends PageBase {
 
 		Promise.all([
 			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
-			this.posTerminalProvider.read({ IDBranch: this.env.selectedBranch }),
 			this.sysPrinterProvider.read({ IDBranch: this.env.selectedBranch }),
-			this.env.getStorage('POSConfig_' + this.env.selectedBranch),
+			this.posTerminalProvider.read({ IDBranch: this.env.selectedBranch }),
+			this.env.getStorage('POSTerminalConfig'),
 		])
 			.then((values: any) => {
 				this.tableGroupList = this.posService.dataSource.tableGroups;
 				this.soStatusList = this.posService.dataSource.orderStatusList;
-				this.sysConfig = this.posService.systemConfig;
-				console.log('✅ POSOrderPage: SystemConfig loaded', this.sysConfig);
-				this.terminalList = values[1].data || [];
-				this.printerList = values[2].data || [];
+				this.printerList = values[1].data || [];
+				this.terminalList = values[2].data || [];
+
 				if (values[3]) {
 					this.POSconfigDTO = values[3];
-				}else{
-					this.POSconfigDTO.IDTerminal = this.terminalList.length > 0 ? this.terminalList[0].Id : 0;
-					this.POSconfigDTO.IDPrinter = this.printerList.length > 0 ? this.printerList[0].Id : 0;
-					this.POSconfigDTO.defaultPrinter = this.printerList.find((p) => p.Id == this.POSconfigDTO.IDPrinter);
-					this.env.setStorage('POSConfig_' + this.env.selectedBranch, this.POSconfigDTO);
 				}
-				super.preLoadData(event);
-			})
-			.catch((err) => {
-				this.env.showErrorMessage(err);
-				this.loadedData(event);
-			});
-
-		this.posService
-			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
-			.then(() => {
-				this.tableGroupList = this.posService.dataSource.tableGroups;
-				this.soStatusList = this.posService.dataSource.orderStatusList;
 				super.preLoadData(event);
 			})
 			.catch((err) => {
@@ -187,12 +160,12 @@ export class POSOrderPage extends PageBase {
 
 	onTerminalChange(e) {
 		this.POSconfigDTO.IDTerminal = this.POSconfigDTO.IDTerminal || 0;
-		this.env.setStorage('POSConfig_' + this.env.selectedBranch, this.POSconfigDTO);
+		this.env.setStorage('POSTerminalConfig', this.POSconfigDTO, { enable: true, timeToLive: 365 * 24 * 60 });
 	}
 	onPrinterChange(e) {
 		this.POSconfigDTO.IDPrinter = this.POSconfigDTO.IDPrinter || 0;
 		this.POSconfigDTO.defaultPrinter = this.printerList.find((p) => p.Id == this.POSconfigDTO.IDPrinter);
-		this.env.setStorage('POSConfig_' + this.env.selectedBranch, this.POSconfigDTO);
+		this.env.setStorage('POSTerminalConfig', this.POSconfigDTO, { enable: true, timeToLive: 365 * 24 * 60 });
 	}
 
 	private CheckPOSNewOrderLines() {

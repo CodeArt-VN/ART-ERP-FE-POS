@@ -514,29 +514,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	getBillPrinter() {
-		this.env.getStorage('POSConfig_' + this.env.selectedBranch).then((data) => {
+		this.env.getStorage('POSTerminalConfig').then((data) => {
 			if (data && data.defaultPrinter) {
 				this.defaultPrinter = [data.defaultPrinter];
 			}
-		});
-	}
-
-	getDefaultPrinter() {
-		return new Promise((resolve, reject) => {
-			this.printerTerminalProvider
-				.read({
-					IDBranch: this.env.selectedBranch,
-					IsDeleted: false,
-					IsDisabled: false,
-				})
-				.then(async (results: any) => {
-					this.defaultPrinter.push(results['data']?.[0]?.['Printer']);
-					this.defaultPrinter = [...new Map(this.defaultPrinter.map((item: any) => [item?.['Id'], item])).values()];
-					resolve(this.defaultPrinter);
-				})
-				.catch((err) => {
-					reject(err);
-				});
 		});
 	}
 
@@ -1601,7 +1582,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					newTerminalList.push({ Printer: Info });
 				});
 			} else {
-				this.env.showMessage('Recheck Receipt Printer information!', 'warning');
+				this.env.showMessage('POS_NO_BILL_PRINTER_MESSAGE', 'warning', null, null, true);
 				this.submitAttempt = false;
 				return;
 			}
@@ -1616,9 +1597,48 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 				let printerInfo = newTerminalList[index]['Printer'];
 				let printing = this.printPrepare('bill', [printerInfo]);
-				await this.printingService.print([printing]);
-				this.checkData(receipt, !receipt, sendEachItem);
-				resolve(true);
+				
+				try {
+					const printResults = await this.printingService.print([printing]);
+					
+					// Check print results for errors
+					if (printResults && printResults.length > 0) {
+						const failedResults = printResults.filter(r => r.status === 'error');
+						if (failedResults.length > 0) {
+							const errorMessages = failedResults.map(r => {
+								const printerName = r.printer || printerInfo.Name || printerInfo.Code || 'N/A';
+								const errorMsg = r.error || 'Unknown error';
+								return `${printerName}: ${errorMsg}`;
+							}).join('<br>');
+							
+							this.env.showAlert(
+								{
+									code: 'POS_RECEIPT_ERROR_MESSAGE',
+									value: errorMessages
+								},
+								null,
+								'POS_PRINT_ERROR_HEADER'
+							);
+						}
+					}
+					
+					this.checkData(receipt, !receipt, sendEachItem);
+					resolve(true);
+				} catch (error) {
+					dog && console.error('Print error in sendPrint:', error);
+					const printerName = printerInfo.Name || printerInfo.Code || 'N/A';
+					this.env.showAlert(
+						{
+							code: 'POS_RECEIPT_ERROR_DETAIL',
+							printerName: printerName,
+							error: error.message || error
+						},
+						null,
+						'POS_PRINT_ERROR_HEADER'
+					);
+					this.submitAttempt = false;
+					reject(error);
+				}
 			}
 		});
 	}

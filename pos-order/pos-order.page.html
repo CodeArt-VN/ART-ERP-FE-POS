@@ -345,7 +345,7 @@
 						<ion-item>
 							<ion-icon color="danger" slot="start" name="print-outline"></ion-icon>
 							<ion-select placeholder="{{'Select printer' | translate}}" [(ngModel)]="POSconfigDTO.IDPrinter" (ionChange)="onPrinterChange($event)" interface="popover">
-								<div slot="label">{{'Print bill all' | translate}}</div>
+								<div slot="label">{{'Print bill by printer' | translate}}</div>
 								<ion-select-option *ngFor="let t of printerList" [value]="t.Id">{{t.Name}}</ion-select-option>
 							</ion-select>
 						</ion-item>
@@ -354,19 +354,19 @@
 					<ion-list [inset]="true">
 						<ion-item>
 							<ion-label>{{'Bank name' | translate}}</ion-label>
-							<ion-note slot="end">{{sysConfig.BKIncomingDefaultBankName.Name}}</ion-note>
+							<ion-note slot="end">{{posService.systemConfig.BKIncomingDefaultBankName.Name}}</ion-note>
 						</ion-item>
 						<ion-item>
 							<ion-label>{{'Bank account' | translate}}</ion-label>
-							<ion-note slot="end">{{sysConfig.BKIncomingDefaultBankAccount}}</ion-note>
+							<ion-note slot="end">{{posService.systemConfig.BKIncomingDefaultBankAccount}}</ion-note>
 						</ion-item>
 						<ion-item>
 							<ion-label>{{'Default payment provider' | translate}}</ion-label>
-							<ion-note slot="end">{{sysConfig.POSDefaultPaymentProvider}}</ion-note>
+							<ion-note slot="end">{{posService.systemConfig.POSDefaultPaymentProvider}}</ion-note>
 						</ion-item>
 						<ion-item>
 							<ion-label>{{'Bill QR payment method' | translate}}</ion-label>
-							<ion-note slot="end">{{sysConfig.POSBillQRPaymentMethod}}</ion-note>
+							<ion-note slot="end">{{posService.systemConfig.POSBillQRPaymentMethod}}</ion-note>
 						</ion-item>
 					</ion-list>
 				</div>

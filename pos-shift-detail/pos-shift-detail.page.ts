@@ -160,20 +160,15 @@ export class POSShiftDetailPage extends PageBase {
 	}
 
 	getDefaultPrinter() {
+		
+
 		return new Promise((resolve, reject) => {
-			this.printerTerminalProvider
-				.read({
-					IDBranch: this.env.selectedBranch,
-					IsDeleted: false,
-					IsDisabled: false,
-				})
-				.then(async (results: any) => {
-					this.defaultPrinter = results['data']?.[0]?.['Printer'];
-					resolve(this.defaultPrinter);
-				})
-				.catch((err) => {
-					reject(err);
-				});
+			this.env.getStorage('POSTerminalConfig').then((data) => {
+				if (data && data.defaultPrinter) {
+					this.defaultPrinter = [data.defaultPrinter];
+				}
+				resolve(this.defaultPrinter);
+			});
 		});
 	}
 	confirm() {
