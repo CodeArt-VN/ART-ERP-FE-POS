@@ -470,7 +470,7 @@
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="item && pageConfig.canEdit && !posService.systemConfig.POSSettleAtCheckout" style="flex-wrap: nowrap">
+				<ion-row *ngIf="(item && pageConfig.canEdit && !posService.systemConfig.POSSettleAtCheckout) || (item.Debt == 0 && item.Status == 'TemporaryBill')" style="flex-wrap: nowrap">
 					<ion-col>
 						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>{{'Settle bill' | translate}}</ion-text>

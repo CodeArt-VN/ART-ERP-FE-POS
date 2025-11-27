@@ -48,7 +48,7 @@ export class POSVoucherModalPage extends PageBase {
 		// });
 		// super.loadData();
 		// this.items = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply).map(p => ({ ...p })); // clone
-		let voucherCodes = this.promotionService.promotionList.map((p) => p.VoucherCode);
+		let voucherCodes = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply).map((p) => p.VoucherCode);
 		let postDTO = {
 			VoucherCodeList: voucherCodes,
 			SaleOrder: this.SaleOrder,

@@ -145,3 +145,19 @@
   opacity: 0.6;
 }
 
+.hr-group-voucher {
+  border-bottom: 3px dashed var(--menu-right-border-color);
+  padding-top: 20px;
+  padding-bottom: 20px;
+
+  &.first {
+    padding-top: 0 !important;
+  }
+
+  &:last-child {
+    border-bottom: none;
+    &.border {
+      border-bottom: 1px dashed var(--menu-right-border-color);
+    }
+  }
+}
