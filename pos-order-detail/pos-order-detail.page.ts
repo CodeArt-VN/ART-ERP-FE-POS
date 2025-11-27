@@ -39,6 +39,7 @@ import { POSService } from '../_services/pos.service';
 import { InputControlComponent } from 'src/app/components/controls/input-control.component';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
+import { co } from '@fullcalendar/core/internal-common';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -336,8 +337,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		}
 
-		this.getDefaultPrinter();
-
+		this.getBillPrinter();
 		if (this.posService.systemConfig.SODefaultBusinessPartner) {
 			this._contactDataSource.selected.push(this.posService.systemConfig.SODefaultBusinessPartner);
 		}
@@ -511,6 +511,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	removeNotification(j) {
 		this.notifications.splice(j, 1);
 		this.env.setStorage('Notifications', this.notifications);
+	}
+
+	getBillPrinter() {
+		this.env.getStorage('POSConfig_' + this.env.selectedBranch).then((data) => {
+			if (data && data.defaultPrinter) {
+				this.defaultPrinter = [data.defaultPrinter];
+			}
+		});
 	}
 
 	getDefaultPrinter() {
@@ -1149,8 +1157,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			let itemsWithoutMenu = printItems.filter((i) => !i._item);
 			let itemsWithoutKitchen = printItems.filter((i) => i._item && (!i._IDKitchens || i._IDKitchens.length === 0));
 
-		
-
 			// Show error for items without menu
 			if (itemsWithoutMenu.length > 0) {
 				this.sendKitchenAttempt = false;
@@ -1206,11 +1212,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				),
 			];
 
-			
-
 			const newKitchenList = this.posService.dataSource.kitchens.filter((d) => newKitchenIDList.includes(d.Id));
-
-		
 
 			let itemNotPrint = [];
 			let printJobs: printData[] = [];
@@ -1807,18 +1809,18 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.item.OriginalDiscountFromSalesman += line.OriginalDiscountFromSalesman;
 			const rate = line.TaxRate;
 			this.item.VATSummary = this.item.VATSummary || [];
-			let vatItem = this.item.VATSummary.find(x => x.Rate === rate);
+			let vatItem = this.item.VATSummary.find((x) => x.Rate === rate);
 
 			if (!vatItem) {
 				vatItem = {
 					Rate: rate,
 					Tax: 0,
-					AdditionsTax: 0
+					AdditionsTax: 0,
 				};
 				this.item.VATSummary.push(vatItem);
 			}
 			vatItem.Tax += line.OriginalTax;
-			vatItem.AdditionsTax += (line.CalcOriginalTotalAdditions - line.AdditionsAmount);
+			vatItem.AdditionsTax += line.CalcOriginalTotalAdditions - line.AdditionsAmount;
 			//Lấy hình & hiển thị thông tin số lượng đặt hàng lên menu
 			let foundItem = false;
 			for (let m of this.posService.dataSource.menuList)
