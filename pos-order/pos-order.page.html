@@ -1,5 +1,8 @@
 <ion-header>
 	<app-toolbar [page]="this" [ShowAdd]="false" [ShowSearch]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false">
+		<ion-button (click)="isOpenConfigPOS = true">
+			<ion-icon slot="icon-only" name="cog-outline"></ion-icon>
+		</ion-button>
 		<ion-button
 			*ngIf="pageConfig.canCloseShift"
 			[ngClass]="{'blink': posShiftService.currentShift && posShiftService.currentShift.Status == 'Unconfirmed'}"
@@ -94,7 +97,11 @@
 				</div>
 			</div>
 		</app-page-message>
-		<div class="ion-padding" style="min-height: calc(100vh - 110px)"  *ngIf="!pageConfig.canCloseShift || (pageConfig.canCloseShift && posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed')">
+		<div
+			class="ion-padding"
+			style="min-height: calc(100vh - 110px)"
+			*ngIf="!pageConfig.canCloseShift || (pageConfig.canCloseShift && posShiftService.currentShift && posShiftService.currentShift.Status != 'Unconfirmed')"
+		>
 			<ion-grid fixed>
 				<ng-container *ngFor="let g of tableGroupList | filter:{Id:segmentView}">
 					<ion-row>
@@ -309,4 +316,68 @@
 			</ion-infinite-scroll>
 		</div>
 	</ng-container>
+
+	<!-- POS config modal -->
+	<!-- (willDismiss)="onVRPWillDismiss($event)" -->
+	<ion-modal [isOpen]="isOpenConfigPOS">
+		<ng-template>
+			<ion-header collapse="fade">
+				<ion-toolbar>
+					<ion-title>{{'POS config' | translate}}</ion-title>
+					<ion-buttons slot="end">
+						<ion-button (click)="isOpenConfigPOS=false" fill="clear">
+							<ion-icon slot="icon-only" name="close"></ion-icon>
+						</ion-button>
+					</ion-buttons>
+				</ion-toolbar>
+			</ion-header>
+			<ion-content appScrollbarTheme>
+				<div style="min-height: 0%">
+					<ion-list [inset]="true">
+						<ion-item>
+							<ion-icon color="danger" slot="start" name="desktop-outline"></ion-icon>
+							<ion-select placeholder="{{'Select terminal' | translate}}" [(ngModel)]="POSconfigDTO.IDTerminal" (ionChange)="onTerminalChange($event)" interface="popover">
+								<div slot="label">{{'Terminal' | translate}}</div>
+								<ion-select-option *ngFor="let t of terminalList" [value]="t.Id">{{t.Name}}</ion-select-option>
+							</ion-select>
+						</ion-item>
+
+						<ion-item>
+							<ion-icon color="danger" slot="start" name="print-outline"></ion-icon>
+							<ion-select placeholder="{{'Select printer' | translate}}" [(ngModel)]="POSconfigDTO.IDPrinter" (ionChange)="onPrinterChange($event)" interface="popover">
+								<div slot="label">{{'Print bill all' | translate}}</div>
+								<ion-select-option *ngFor="let t of printerList" [value]="t.Id">{{t.Name}}</ion-select-option>
+							</ion-select>
+						</ion-item>
+					</ion-list>
+
+					<ion-list [inset]="true">
+						<ion-item>
+							<ion-label>{{'Bank name' | translate}}</ion-label>
+							<ion-note slot="end">{{sysConfig.BKIncomingDefaultBankName.Name}}</ion-note>
+						</ion-item>
+						<ion-item>
+							<ion-label>{{'Bank account' | translate}}</ion-label>
+							<ion-note slot="end">{{sysConfig.BKIncomingDefaultBankAccount}}</ion-note>
+						</ion-item>
+						<ion-item>
+							<ion-label>{{'Default payment provider' | translate}}</ion-label>
+							<ion-note slot="end">{{sysConfig.POSDefaultPaymentProvider}}</ion-note>
+						</ion-item>
+						<ion-item>
+							<ion-label>{{'Bill QR payment method' | translate}}</ion-label>
+							<ion-note slot="end">{{sysConfig.POSBillQRPaymentMethod}}</ion-note>
+						</ion-item>
+					</ion-list>
+				</div>
+			</ion-content>
+			<ion-footer collapse="fade">
+				<ion-toolbar>
+					<buttons slot="end">
+						<ion-button (click)="isOpenConfigPOS = false" fill="outline" color="warning">{{'Close' | translate}}</ion-button>
+					</buttons>
+				</ion-toolbar>
+			</ion-footer>
+		</ng-template>
+	</ion-modal>
 </ion-content>
