@@ -21,6 +21,7 @@
 			</ion-row>
 
 			<ion-row *ngIf="Voucher" class="hr-group-voucher" [class.first]="true">
+				<div class="group-label">{{'Result' | translate}}</div>
 				<ion-col size="12">
 					<div class="coupon" [class.coupon-disabled]="!Voucher.CanUse">
 						<div class="coupon-left">
@@ -44,6 +45,7 @@
 			</ion-row>
 
 			<ion-row class="hr-group-voucher" [class.first]="!Voucher">
+				<div class="group-label">{{'Promo' | translate}}</div>
 				<ion-col size="12" *ngFor="let i of items; let j = index;">
 					<div class="coupon" [class.coupon-disabled]="!i.CanUse">
 						<div class="coupon-left">
