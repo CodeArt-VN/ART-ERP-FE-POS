@@ -1818,7 +1818,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
 			this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
 			line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
-			line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
+			//line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
+			line.AdditionsAmount = line.CalcOriginalTotalAdditions;
 			this.item.AdditionsAmount += line.AdditionsAmount;
 			this.item.AdditionsTax += line.CalcOriginalTotalAdditions - line.AdditionsAmount;
 			this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
