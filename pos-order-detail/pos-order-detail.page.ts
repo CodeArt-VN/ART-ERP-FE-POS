@@ -39,7 +39,6 @@ import { POSService } from '../_services/pos.service';
 import { InputControlComponent } from 'src/app/components/controls/input-control.component';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
-import { co } from '@fullcalendar/core/internal-common';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -87,7 +86,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	isEnter = false;
 
 	@ViewChild('contactInput') contactInput: InputControlComponent;
-
+	paymentSuccessTriggered = false; // check signalr payment success
 	constructor(
 		public posService: POSService,
 		public pageProvider: SALE_OrderProvider,
@@ -184,7 +183,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				case 'signalR:POSOrderMergedFromStaff':
 				case 'signalR:POSSupport':
 				case 'signalR:POSCallToPay':
+					this.refresh();
+					break;
 				case 'signalR:POSPaymentSuccess':
+					this.paymentSuccessTriggered = true;
 					this.refresh();
 					break;
 
@@ -1816,7 +1818,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
 			this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
 			line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
-			line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
+			//line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
+			line.AdditionsAmount = line.CalcOriginalTotalAdditions;
 			this.item.AdditionsAmount += line.AdditionsAmount;
 			this.item.AdditionsTax += line.CalcOriginalTotalAdditions - line.AdditionsAmount;
 			this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
@@ -2073,6 +2076,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
 		if (savedItem) {
+			this.item = savedItem;
 			if (form.controls.IDContact.value != savedItem.IDContact) this.changedIDAddress(savedItem._Customer);
 
 			if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
@@ -2265,7 +2269,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						this.item.IsDebt = true;
 					}
 
-					if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done') {
+					if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done' && this.paymentSuccessTriggered) {
 						this.env.showMessage('The order has been paid, the system will automatically close this bill.');
 						this.formGroup.enable();
 						this.doneOrder();
@@ -2332,6 +2336,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			changed.Status = 'Done';
 			this.setOrderValue(changed, true);
 		}
+		this.paymentSuccessTriggered = false; // reset flag
 	}
 
 	deleteVoucher(p) {

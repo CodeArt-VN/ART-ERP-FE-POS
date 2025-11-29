@@ -20,32 +20,32 @@
 				</ion-col>
 			</ion-row>
 
-			<ion-row *ngIf="Voucher">
+			<ion-row *ngIf="Voucher" class="hr-group-voucher" [class.first]="true">
+				<div class="group-label">{{'Result' | translate}}</div>
 				<ion-col size="12">
-					<ion-card>
-						<ion-card-header class="ion-text-center">
-							<ion-text>{{Voucher.Program.Name}}</ion-text>
-							<ng-container *ngIf="Voucher.Program.Remark != null">
-								<ion-icon class="ion-float-right" id="voucher-trigger" name="help-circle-outline"></ion-icon>
-								<ion-popover trigger="voucher-trigger" triggerAction="click">
-									<ng-template>
-										<ion-content class="ion-padding">{{Voucher.Program.Remark}}</ion-content>
-									</ng-template>
-								</ion-popover>
-							</ng-container>
-						</ion-card-header>
-						<ion-card-content>
-							<div class="ion-text-center">
-								<ion-text color="danger"><h4>{{Voucher.Program.Value | number: '1.0-0'}} đ</h4></ion-text>
-							</div>
-							<ion-button expand="block" size="small" [disabled]="!Voucher.CanUse" slot="end" (click)="applyVoucher(Voucher)">{{'Áp dụng' | translate}}</ion-button>
-							<!-- <ion-button expand="block" size="small" [disabled]="Voucher.Used" *ngIf="Voucher.Used == true" slot="end">{{'Đã áp dụng' | translate}}</ion-button> -->
-						</ion-card-content>
-					</ion-card>
+					<div class="coupon" [class.coupon-disabled]="!Voucher.CanUse">
+						<div class="coupon-left">
+							<ion-icon size="large" name="ticket-outline"></ion-icon>
+						</div>
+
+						<div class="coupon-right">
+							<span>{{Voucher.Program.Name}}</span>
+							<span *ngIf="!Voucher.Program.IsByPercent">{{'Reduce' | translate}} {{Voucher.Program.Value | number: '1.0-0'}}</span>
+							<span *ngIf="Voucher.Program.IsByPercent" >{{'Reduce' | translate}} {{Voucher.Program.PerCentValue }}% <span *ngIf="Voucher.Program.MaxValue > 0">{{'Max' | translate}} {{Voucher.Program.MaxValue | number: '1.0-0'}} </span></span>
+
+							<small *ngIf="Voucher.Program.MinOrderValue">
+								{{'For orders from' | translate}} {{Voucher.Program.MinOrderValue | number: '1.0-0'}}
+								<span *ngIf="Voucher.Program.MaxValue"> - {{'Maximum'| translate}} {{Voucher.Program.MaxValue | number: '1.0-0'}}</span>
+							</small>
+							<small *ngIf="Voucher.Program.ToDate">{{'Expiry' | translate}}: {{Voucher.Program.ToDate | date: 'dd/MM/yyyy'}}</small>
+						</div>
+						<ion-button class="apply-btn" expand="block" size="small" [disabled]="!Voucher.CanUse" slot="end" (click)="applyVoucher(Voucher)">{{'Áp dụng' | translate}}</ion-button>
+					</div>
 				</ion-col>
 			</ion-row>
 
-			<ion-row>
+			<ion-row class="hr-group-voucher" [class.first]="!Voucher">
+				<div class="group-label">{{'Promo' | translate}}</div>
 				<ion-col size="12" *ngFor="let i of items; let j = index;">
 					<div class="coupon" [class.coupon-disabled]="!i.CanUse">
 						<div class="coupon-left">
