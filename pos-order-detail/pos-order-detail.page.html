@@ -87,12 +87,20 @@
 									[formGroup]="g"
 									*ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')"
 								>
-									<div style="display: flex">
-										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
-										<div class="od-info" *ngIf="line._item">
-											<div class="od-name">
-												<small class="od-id">#{{line._item.Id}}</small>&nbsp;
-												<span [appTranslateResource]="line._item"></span>
+								<div style="display: flex">
+									<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
+									<div class="od-info" *ngIf="line._item" (click)="openComboModal(line,true)">
+										<div class="od-name">
+											<small class="od-id">#{{line._item.Id}}</small>&nbsp;
+											<span [appTranslateResource]="line._item">
+												</span>
+													@if(line.SubOrders?.length > 0){
+														@for( sub of line.SubOrders;track sub.IDItem){
+															<br/>
+														&nbsp;<span class="bold">{{sub.Quantity}} {{sub._UoM.Name}}</span>
+															 &nbsp;<span [appTranslateResource]="sub._Item"></span>
+														}
+													}
 											</div>
 											<div class="od-price">
 												<span
@@ -614,11 +622,11 @@
 												(error)="$event.src='assets/logos/logo-the-log.png'"
 										/></span>
 										<span class="brand">{{printData.currentBranch?.ShortName || printData.currentBranch?.Name}}</span>
-										<span class="address" *ngIf="printData.currentBranch?.Address">{{printData.currentBranch?.Address || ''}}</span>
-										<span class="phone" *ngIf="printData.currentBranch?.Phone">{{printData.currentBranch?.Phone || ''}}</span>
+										<span class="address">{{printData.currentBranch?.Address || ''}}</span>
+										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
 
 										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
-											<span class="brand">{{'ORDER' | translate}}</span>
+											<span class="brand">{{'ORDER' | translate}}</span>	
 											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="item.Status == 'TemporaryBill'">

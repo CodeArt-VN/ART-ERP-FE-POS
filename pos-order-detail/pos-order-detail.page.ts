@@ -39,6 +39,7 @@ import { POSService } from '../_services/pos.service';
 import { InputControlComponent } from 'src/app/components/controls/input-control.component';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
+import { ComboModalPage } from './combo-modal/combo-modal.page';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -305,6 +306,228 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.get('Code')?.markAsDirty();
 		}
 		super.loadedData(event, ignoredFromGroup);
+		for (let m of this.posService.dataSource.menuList)
+			for (let mi of m.Items) {
+				if (mi.BOMs && mi.BOMs.length > 0) {
+					mi.BOMs.sort((a, b) => {
+						if (a.Sort !== b.Sort) return a.Sort - b.Sort;
+						return a.Id - b.Id;
+					});
+
+					// 	{
+					// 		Id: 126888,
+					// 		Type: 'Group',
+					// 		Name: 'GROUP',
+					// 		MaxSelect: 1,
+					// 		IsRequired: 1,
+					// 		AllowMultiple: false,
+					// 		MinSelect: null,
+					// 		ExtraPrice: null,
+					// 		Quantity: 0,
+					// 		Sort: 35,
+					// 		MaxQuantity: 1,
+					// 	},
+					// 	{
+					// 		Id: 126890,
+					// 		Type: 'Item',
+					// 		IDItem: 3,
+					// 		IDUoM: 67421,
+					// 		Name: 'Mì heo',
+					// 		MaxSelect: 0,
+					// 		IsRequired: 0,
+					// 		AllowMultiple: null,
+					// 		MinSelect: null,
+					// 		ExtraPrice: null,
+					// 		Quantity: 1,
+					// 		Sort: 35,
+					// 		MaxQuantity: 1,
+					// 		_UoM: {
+					// 			Id: 3396,
+					// 			Name: 'Phần',
+					// 		},
+					// 		_Item: {
+					// 			Id: 3,
+					// 			Name: 'Mì heo',
+					// 		},
+					// 	},
+					// 	{
+					// 		Id: 126891,
+					// 		Type: 'Item',
+					// 		IDItem: 4,
+					// 		IDUoM: 67422,
+					// 		Name: 'Cơm heo',
+					// 		MaxSelect: 0,
+					// 		IsRequired: 0,
+					// 		AllowMultiple: null,
+					// 		MinSelect: null,
+					// 		ExtraPrice: null,
+					// 		Quantity: 1,
+					// 		Sort: 35,
+					// 		MaxQuantity: 1,
+					// 		_UoM: {
+					// 			Id: 3396,
+					// 			Name: 'Phần',
+					// 		},
+					// 		_Item: {
+					// 			Id: 4,
+					// 			Name: 'Cơm heo',
+					// 		},
+					// 	},
+					// 	{
+					// 		Id: 126892,
+					// 		Type: 'Group',
+					// 		Name: 'GROUP 2',
+					// 		MaxSelect: 2,
+					// 		IsRequired: true,
+					// 		AllowMultiple: true,
+					// 		MinSelect: 1,
+					// 		ExtraPrice: null,
+					// 		Quantity: null,
+					// 		Sort: 35,
+					// 		MaxQuantity: 2,
+					// 	},
+					// 	{
+					// 		Id: 126893,
+					// 		IDItem: 3394,
+					// 		Type: 'Item',
+					// 		Name: '7 up',
+					// 		MaxSelect: null,
+					// 		IsRequired: null,
+					// 		AllowMultiple: true,
+					// 		MinSelect: null,
+					// 		ExtraPrice: null,
+					// 		Quantity: null,
+					// 		Sort: 35,
+					// 		MaxQuantity: 2,
+					// 		_UoM: {
+					// 			Id: 3396,
+					// 			Name: 'Ly',
+					// 		},
+					// 		_Item: {
+					// 			Id: 3394,
+					// 			Name: '7 up',
+					// 		},
+					// 	},
+					// 	{
+					// 		Id: 126894,
+					// 		IDItem: 3395,
+					// 		Type: 'Item',
+					// 		Name: 'Coca',
+					// 		MaxSelect: null,
+					// 		IsRequired: false,
+					// 		AllowMultiple: true,
+					// 		MinSelect: null,
+					// 		ExtraPrice: null,
+					// 		Quantity: null,
+					// 		Sort: 35,
+					// 		MaxQuantity: null,
+					// 		_UoM: {
+					// 			Id: 3396,
+					// 			Name: 'Ly',
+					// 		},
+					// 		_Item: {
+					// 			Id: 3395,
+					// 			Name: 'Coca',
+					// 		},
+					// 	},
+					// 	{
+					// 		Id: 126895,
+					// 		IDItem: 3396,
+					// 		Type: 'Item',
+					// 		Name: 'Pepsi',
+					// 		MaxSelect: 1,
+					// 		IsRequired: false,
+					// 		AllowMultiple: true,
+					// 		MinSelect: 1,
+					// 		ExtraPrice: null,
+					// 		Quantity: null,
+					// 		Sort: 35,
+					// 		MaxQuantity: null,
+					// 		_UoM: {
+					// 			Id: 3396,
+					// 			Name: 'Ly',
+					// 		},
+					// 		_Item: {
+					// 			Id: 3396,
+					// 			Name: 'Pepsi',
+					// 		},
+					// 	},
+					// 	{
+					// 		Id: 126894,
+					// 		Type: 'Group',
+					// 		Name: 'GROUP 3',
+					// 		MaxSelect: null,
+					// 		IsRequired: false,
+					// 		AllowMultiple: true,
+					// 		MinSelect: null,
+					// 		ExtraPrice: null,
+					// 		Quantity: null,
+					// 		Sort: 35,
+					// 		MaxQuantity: null,
+					// 	},
+					// 	{
+					// 		Id: 126895,
+					// 		IDItem: 3396,
+					// 		IDUoM: 3396,
+					// 		Type: 'Item',
+					// 		Name: 'Gói tương ớt',
+					// 		MaxSelect: null,
+					// 		IsRequired: 1,
+					// 		AllowMultiple: true,
+					// 		MinSelect: 1,
+					// 		ExtraPrice: 5000,
+					// 		Quantity: 1,
+					// 		Sort: 35,
+					// 		MaxQuantity: null,
+					// 		_UoM: {
+					// 			Id: 3396,
+					// 			Name: 'Gói',
+					// 		},
+					// 		_Item: {
+					// 			Id: 3396,
+					// 			Name: 'Gói tương ớt',
+					// 		},
+					// 	},
+					// 	{
+					// 		Id: 126894,
+					// 		IDItem: 3397,
+					// 		IDUoM: 3397,
+					// 		Type: 'Item',
+					// 		Name: 'Gói tương cà',
+					// 		MaxSelect: 1,
+					// 		IsRequired: 1,
+					// 		AllowMultiple: true,
+					// 		MinSelect: 1,
+					// 		ExtraPrice: 10000,
+					// 		Quantity: null,
+					// 		Sort: 35,
+					// 		MaxQuantity: 2,
+					// 		_UoM: {
+					// 			Id: 3397,
+					// 			Name: 'Gói',
+					// 		},
+					// 		_Item: {
+					// 			Id: 3397,
+					// 			Name: 'Gói tương cà',
+					// 		},
+					// 	},
+					// ];
+					let groups = [];
+					let currentGroup: any = {};
+					currentGroup.Items = [];
+					for (let g of mi.BOMs) {
+						if (g.Type == 'Group') {
+							currentGroup = g;
+							currentGroup.Items = [];
+							groups.push(currentGroup);
+						} else {
+							currentGroup.Items.push(g);
+						}
+					}
+					mi.Groups = groups;
+				}
+			}
+
 		// this.contactInput?.isFromBarcodeScan$.subscribe((obj) => {
 		// 	this.isEnter = obj.isEnter;
 		// 	this._contactDataSource.input$.next(obj.term);
@@ -598,7 +821,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		if (!line) {
 			line = {
-				IDOrder: this.item.Id,
+				// IDOrder: this.item.Id,
 				Id: 0,
 				Code: lib.generateUID(this.env.user.StaffID),
 				Type: 'TableService',
@@ -615,16 +838,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				UoMSwapAlter: 1,
 				BaseQuantity: 0,
 				ShippedQuantity: 0,
-
+				Name: item.Name,
 				Remark: null,
 				IsPromotionItem: false,
 				IDPromotion: null,
-
+				Groups: item.Groups,
 				OriginalDiscountFromSalesman: 0,
-
+				SubOrders: [],
 				CreatedDate: new Date(),
+				_item: item,
 			};
-
+			if (item.Groups?.length > 0) {
+				let rs = await this.openComboModal(line);
+				if (!rs) return;
+			}
 			this.item.OrderLines.push(line);
 
 			this.addOrderLine(line);
@@ -698,7 +925,103 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		}
 	}
+	async openComboModal(line, markAsDirty = false) {
+		let item = line._item;
 
+		if (item.Groups == null || item.Groups.length == 0) return null;
+		if (this.submitAttempt) {
+			let element = document.getElementById('item' + item.Id);
+			if (element) {
+				element = element.parentElement;
+				element.classList.add('shake');
+				setTimeout(() => {
+					element.classList.remove('shake');
+				}, 400);
+			}
+			return;
+		}
+		if (item.Groups?.length > 0) {
+			const modal = await this.modalController.create({
+				component: ComboModalPage,
+				backdropDismiss: true,
+				cssClass: 'modal90',
+				componentProps: {
+					item: line,
+					canEdit: this.pageConfig.canEdit && !['TemporaryBill', 'Cancelled', 'Done'].includes(this.item.Status) && line.Status == 'New',
+				},
+			});
+			await modal.present();
+			const { data, role } = await modal.onWillDismiss();
+			console.log(data);
+			if (data) {
+				let uom = item.UoMs.find((d) => d.Id == line.IDUoM);
+				let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
+				let UoMPrice = price.NewPrice ? price.NewPrice : price.Price;
+				line.UoMPrice = UoMPrice;
+				let oldSubOrder = line.SubOrders;
+				line.SubOrders = [];
+				line._item.Groups.forEach((subOrder) => {
+					Object.keys(data).forEach((key) => {
+						if (subOrder.Id == key) {
+							Object.keys(data[key]).forEach((i) => {
+								let bom = subOrder.Items.find((b) => b.IDUoM == i);
+								if (bom) {
+									let oldBOM = oldSubOrder.find((b) => b.IDUoM == i);
+									if (oldBOM) {
+										oldBOM.Quantity = data[key][i];
+									} else
+										oldSubOrder.push({
+											Id: 0,
+											IDItem: bom.IDItem,
+											Quantity: data[key][i],
+											IDUoM: bom.IDUoM,
+											UoMPrice: bom.ExtraPrice ? bom.ExtraPrice : 0,
+											_UoM: bom._UoM,
+											_Item: bom._Item,
+											Status: 'New',
+											IDTax: item.IDSalesTaxDefinition,
+											TaxRate: item.SaleVAT,
+											Code: lib.generateUID(this.env.user.StaffID),
+										});
+									if (bom.ExtraPrice > 0) {
+										line.UoMPrice += bom.ExtraPrice * data[key][i];
+									}
+								}
+							});
+						}
+					});
+				});
+				const selected = [];
+				Object.keys(data).forEach((gId) => {
+					Object.keys(data[gId]).forEach((uId) => {
+						selected.push({
+							GroupId: +gId,
+							IDUoM: +uId,
+							Quantity: data[gId][uId],
+						});
+					});
+				});
+				const removed = oldSubOrder.filter((so) => !selected.some((s) => s.IDUoM === so.IDUoM));
+				oldSubOrder = oldSubOrder.filter((so) => selected.some((s) => s.IDUoM === so.IDUoM));
+				let deletedLines = this.formGroup.get('DeletedLines').value || [];
+
+				removed.forEach((r) => {
+					if (r.Id > 0) {
+						deletedLines.push(r.Id);
+					}
+				});
+
+				this.formGroup.get('DeletedLines').setValue(deletedLines);
+				this.formGroup.get('DeletedLines').markAsDirty();
+				line.SubOrders = oldSubOrder;
+				if (markAsDirty) {
+					this.setOrderValue({ OrderLines: [line] });
+				}
+				return line;
+			} else return null;
+		}
+		return null;
+	}
 	async openQuickMemo(line) {
 		if (this.submitAttempt) return;
 		if (line.Status != 'New') return;
@@ -1670,7 +1993,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			.toPromise()
 			.then((savedItem: any) => {
 				dog && console.log('getQRPayment', savedItem);
-
+				this.item.Status = 'TemporaryBill';
+				this.formGroup.controls.Status.setValue('TemporaryBill');
 				this.GenQRCode(savedItem)
 					.then(() => {
 						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
@@ -1916,7 +2240,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private addOrderLine(line) {
 		let groups = <FormArray>this.formGroup.controls.OrderLines;
 		let group = this.formBuilder.group({
-			IDOrder: [line.IDOrder],
+			// IDOrder: [line.IDOrder],
 			Id: new FormControl({ value: line.Id, disabled: true }),
 			Code: [line.Code],
 
@@ -1947,7 +2271,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				value: line.CreatedDate,
 				disabled: true,
 			}),
-
+			SubOrders: [line?.SubOrders || []],
 			// OriginalTotalBeforeDiscount
 			// OriginalPromotion
 			// OriginalDiscount1
@@ -2116,14 +2440,37 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			//Update lines
 			for (let sl of savedItem.OrderLines) {
 				let idx = this.item.OrderLines.findIndex((d) => d.Code == sl.Code);
-				if (idx != -1) {
-					if (this.item.OrderLines[idx].Id < 1) {
-						this.item.OrderLines[idx].Id = sl.Id;
-						this.formGroup.controls.OrderLines['controls'][idx].controls['Id'].setValue(sl.Id);
-					}
-					if (this.item.OrderLines[idx].Status != sl.Status) {
-						this.item.OrderLines[idx].Status = sl.Status;
-						this.formGroup.controls.OrderLines['controls'][idx].controls['Status'].setValue(sl.Status);
+				if (idx == -1) continue;
+				const feLine = this.item.OrderLines[idx];
+				const fgLine = this.formGroup.controls.OrderLines['controls'][idx];
+				if (feLine.Id < 1 && sl.Id > 0) {
+					feLine.Id = sl.Id;
+					fgLine.controls['Id'].setValue(sl.Id);
+				}
+				if (feLine.Status !== sl.Status) {
+					feLine.Status = sl.Status;
+					fgLine.controls['Status'].setValue(sl.Status);
+				}
+				if (feLine.SubOrders && sl.SubOrders) {
+					for (let beSub of sl.SubOrders) {
+						const idxSub = feLine.SubOrders.findIndex((x) => x.Code === beSub.Code);
+						if (idxSub === -1) continue;
+
+						const feSub = feLine.SubOrders[idxSub];
+
+						// ⭐ đúng logic: update khi BE trả về Id > 0
+						if (feSub.Id < 1 && beSub.Id > 0) {
+							feSub.Id = beSub.Id;
+
+							// Nếu có FormArray cho SubOrders → update luôn
+							const subOrders = [...fgLine.controls.SubOrders.value]; // clone array
+
+							subOrders[idxSub] = {
+								...subOrders[idxSub],
+								Id: beSub.Id,
+							};
+							fgLine.controls.SubOrders.setValue(subOrders);
+						}
 					}
 				}
 			}

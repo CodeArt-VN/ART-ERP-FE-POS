@@ -10,6 +10,7 @@ import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { DeactivateGuard } from './deactivate-guard';
+import { ComboModalPage } from './combo-modal/combo-modal.page';
 const routes: Routes = [
 	{
 		path: '',
@@ -20,6 +21,6 @@ const routes: Routes = [
 
 @NgModule({
 	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, PipesModule, RouterModule.forChild(routes)],
-	declarations: [POSOrderDetailPage, POSVoucherModalPage, POSContactModalPage, POSInvoiceModalPage],
+	declarations: [POSOrderDetailPage, POSVoucherModalPage, POSContactModalPage, POSInvoiceModalPage, ComboModalPage],
 })
 export class POSOrderDetailPageModule {}

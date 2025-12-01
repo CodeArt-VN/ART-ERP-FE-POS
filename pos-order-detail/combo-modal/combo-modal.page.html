@@ -1,0 +1,131 @@
+<ion-header>
+	<ion-toolbar>
+		<ion-title>{{ item?._item?.Name }}: {{item.UoMPrice|number:'1.0-0'}}đ</ion-title>
+		<ion-buttons slot="end">
+			<ion-button color="secondary" (click)="closeModal()">
+				<ion-icon slot="icon-only" name="close"></ion-icon>
+			</ion-button>
+		</ion-buttons>
+	</ion-toolbar>
+</ion-header>
+
+<ion-content appScrollbarTheme class="header-table">
+	<div class="row-full shadow full-screen">
+		<ion-list class="combo-list">
+			<!-- Lặp qua các group -->
+			<div *ngFor="let g of item?._item.Groups" class="group-container">
+				<!-- GROUP HEADER -->
+				<div class="group-header-row">
+					<div class="group-title">{{ g.Name }}</div>
+
+					<div class="group-info">
+						<span *ngIf="g.AllowMultiple" class="tagCustom multi">Multi</span>
+						<span *ngIf="!g.AllowMultiple" class="tagCustom single">Single</span>
+						<span *ngIf="g.MinSelect" class="tagCustom warn">Min: {{ g.MinSelect }}</span>
+						<span *ngIf="g.MaxSelect" class="tagCustom warn">Max: {{ g.MaxSelect }}</span>
+						<span *ngIf="g.MaxQuantity" class="tagCustom qty">MaxQty: {{ g.MaxQuantity }}</span>
+					</div>
+				</div>
+
+				<!-- GROUP ITEMS -->
+				<div class="group-box" [ngClass]="{ 'invalid-group': !validateGroup(g) }">
+					<!-- MULTI SELECT -->
+					<ng-container *ngIf="g.AllowMultiple">
+						<ion-item *ngFor="let i of g.Items" class="combo-item" lines="none">
+							<ion-checkbox
+								[disabled]="!canEdit"
+								slot="start"
+								[checked]="isSelected(g, i)"
+								[disabled]="disableCheckbox(g, i)"
+								(ionChange)="toggleItem(g, i)"
+							></ion-checkbox>
+
+							<ion-label class="item-info">
+								<div class="item-row">
+									<div class="item-name">{{ i._Item.Name }}</div>
+									<!-- QUANTITY BOX -->
+									<div class="qty-box" *ngIf="isSelected(g, i)">
+										<ion-icon name="remove-circle-outline" *ngIf="canEdit" (click)="decQty(i, g)"></ion-icon>
+										<span>{{ selectedItems[g.Id][i.IDUoM] }}</span>
+										<ion-icon
+											*ngIf="canEdit && (i.MaxQuantity == null || selectedItems[g.Id][i.IDUoM] < i.MaxQuantity) && (g.MaxQuantity == null || getGroupTotalQty(g) < g.MaxQuantity)"
+											name="add-circle-outline"
+											(click)="incQty(i, g)"
+										></ion-icon>
+									</div>
+								</div>
+								<div class="item-sub">
+									<span class="uom">{{ i._UoM?.Name }}</span>
+									<span class="price" *ngIf="i.ExtraPrice > 0">+{{ i.ExtraPrice | number:'1.0-0' }}</span>
+								</div>
+							</ion-label>
+						</ion-item>
+					</ng-container>
+
+					<!-- SINGLE SELECT -->
+					<ng-container *ngIf="!g.AllowMultiple">
+						<ion-item *ngFor="let i of g.Items" class="combo-item" lines="none">
+							<ion-checkbox [disabled]="!canEdit" slot="start" [checked]="isSelected(g, i)" (ionChange)="onCheckboxChangeSingle(g, i, $event)"></ion-checkbox>
+
+							<ion-label class="item-info">
+								<div class="item-row">
+									<div class="item-name">{{ i._Item.Name }}</div>
+
+									<div class="qty-box" *ngIf="isSelected(g, i)">
+										<ion-icon
+											*ngIf="canEdit && !(g.IsRequired && !g.AllowMultiple && i.Quantity == 1)"
+											name="remove-circle-outline"
+											(click)="decQty(i, g)"
+										></ion-icon>
+										<span>{{ selectedItems[g.Id][i.IDUoM] }}</span>
+										<ion-icon
+											*ngIf="canEdit && (i.MaxQuantity == null || selectedItems[g.Id][i.IDUoM] < i.MaxQuantity) 
+							&& (g.MaxQuantity == null || getGroupTotalQty(g) < g.MaxQuantity)"
+											name="add-circle-outline"
+											(click)="incQty(i, g)"
+										></ion-icon>
+									</div>
+								</div>
+
+								<div class="item-sub">
+									<span class="uom">{{ i._UoM?.Name }}</span>
+									<span class="price" *ngIf="i.ExtraPrice > 0">+{{ i.ExtraPrice | number:'1.0-0' }}</span>
+								</div>
+							</ion-label>
+						</ion-item>
+					</ng-container>
+				</div>
+				<!-- group-box -->
+			</div>
+			<!-- group-container -->
+		</ion-list>
+	</div>
+</ion-content>
+<ion-footer>
+	<ion-toolbar>
+		<ion-grid>
+			<ion-row class="ion-align-items-center">
+				<!-- Cột tiền -->
+				<ion-col size="7">
+					<!-- Hàng tổng tiền -->
+					<div class="summary-box">
+						<div class="summary-row">
+							<span>{{'Total addition' | translate}}:</span>
+							<span class="price">+{{ totalExtra | number:'1.0-0' }} đ</span>
+						</div>
+
+						<div class="summary-row total">
+							<span>{{'Total' | translate}}:</span>
+							<span class="price">{{ finalTotal | number:'1.0-0' }} đ</span>
+						</div>
+					</div>
+				</ion-col>
+				<ion-col size="5" class="ion-text-right">
+					<ion-button *ngIf="canEdit" [disabled]="!isAllGroupsValid()" expand="block" color="primary" (click)="confirmSelection()">
+						{{ 'Confirm' | translate }}
+					</ion-button>
+				</ion-col>
+			</ion-row>
+		</ion-grid>
+	</ion-toolbar>
+</ion-footer>

@@ -45,7 +45,8 @@ export interface MenuDetail extends POS_MenuDetail {
 	IDKitchens:string;
 	IDSalesTaxDefinition?: number;
 	SalesTaxPercent?: number;
-
+	Groups?: any[];
+	BOMs?: any[];
 	UoMs?: any[]; // Danh sách UoM của item không cần tạo interface
 	BookedQuantity?: number;
 }

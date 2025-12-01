@@ -1,0 +1,151 @@
+.combo-list {
+  padding: 8px !important;
+}
+
+/* HEADER NHÓM */
+.group-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.group-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ion-color-dark);
+}
+
+/* Tag styling */
+.group-info {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tagCustom {
+  padding: 2px 6px;
+   font-size: 0.75rem;
+  border-radius: 6px;
+  background: #f0f0f0;
+  color: #444;
+}
+
+.tagCustom.multi {
+  background: var(--ion-color-primary-tint);
+  color: var(--ion-color-primary-contrast);
+}
+
+.tagCustom.single {
+  background: #d9eaff;
+  color: #004a99;
+}
+
+.tagCustom.warn {
+  background: #ffe6cc;
+  color: #b55a00;
+}
+
+.tagCustom.qty {
+  background: #e6e6ff;
+  color: #3b2fb8;
+}
+
+/* BOX GROUP */
+.group-box {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 16px;
+  border: 1px solid #dadada;
+}
+.invalid-group {
+  border-color: var(--ion-color-danger) !important;
+  box-shadow: 0 0 3px var(--ion-color-danger);
+}
+/* ITEM STYLE */
+.combo-item {
+  --inner-border-width: 0px !important; /* remove underline */
+  --border-style: none !important;
+}
+
+.item-info {
+  margin-left: 12px;
+  width: 100%;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #222;
+}
+
+.item-sub {
+  display: flex;
+  gap: 14px;
+  margin-top: 3px;
+  font-size: 13px;
+  color: #777;
+}
+
+.price {
+  color: #e85b00;
+  font-weight: 600;
+}
+
+/* QUANTITY SELECTOR */
+.qty-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-box ion-icon {
+  font-size: 32px;
+  color: #0099ff;
+  cursor: pointer;
+}
+
+.summary-box {
+  padding: 10px 16px;
+  background: #f7f7f7;
+  border-top: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.summary-row.total {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;  /* label bên trái, tiền ép qua phải */
+  align-items: center;
+  width: 100%;
+  margin: 4px 0;
+}
+
+.summary-row .price {
+  text-align: right;
+  margin-left: auto;               /* ép sát qua bên phải */
+  font-weight: 600;
+}
+
+.summary-row.total .price {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
