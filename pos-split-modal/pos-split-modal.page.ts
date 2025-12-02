@@ -146,7 +146,7 @@ export class POSSplitModalPage extends PageBase {
 			}
 
 			this.orderDetailProvider.read({ IDOrder: this.selectedOrder.Id }).then((result: any) => {
-				this.items = result.data;
+				this.items = result.data.filter(d=> !d.IDParent);
 				this.item.SplitedOrders[0].OrderLines = JSON.parse(JSON.stringify(this.items));
 				this.item.SplitedOrders[1].OrderLines = JSON.parse(JSON.stringify(this.items));
 
@@ -161,6 +161,7 @@ export class POSSplitModalPage extends PageBase {
 						.search({
 							IgnoredBranch: true,
 							Id: JSON.stringify(ids),
+							IDSO : this.selectedOrder.Id
 						})
 						.toPromise()
 						.then((result: any) => {
