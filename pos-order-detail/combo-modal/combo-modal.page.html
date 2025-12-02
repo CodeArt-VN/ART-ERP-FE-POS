@@ -42,7 +42,7 @@
 
 							<ion-label class="item-info">
 								<div class="item-row">
-									<div class="item-name">{{ i._Item.Name }}</div>
+									<div class="item-name">{{ i._Item.Name }}&nbsp;<span *ngIf="i.MaxQuantity" class="tagCustom warn">Max: {{i.MaxQuantity}}</span></div>
 									<!-- QUANTITY BOX -->
 									<div class="qty-box" *ngIf="isSelected(g, i)">
 										<ion-icon name="remove-circle-outline" *ngIf="canEdit" (click)="decQty(i, g)"></ion-icon>
@@ -69,11 +69,11 @@
 
 							<ion-label class="item-info">
 								<div class="item-row">
-									<div class="item-name">{{ i._Item.Name }}</div>
+									<div class="item-name">{{ i._Item.Name }}&nbsp;<span *ngIf="i.MaxQuantity" class="tagCustom warn">Max: {{i.MaxQuantity}}</span></div>
 
 									<div class="qty-box" *ngIf="isSelected(g, i)">
 										<ion-icon
-											*ngIf="canEdit && !(g.IsRequired && !g.AllowMultiple && i.Quantity == 1)"
+											*ngIf="canEdit && !(g.IsRequired && !g.AllowMultiple && selectedItems[g.Id][i.IDUoM] == i.MaxQuantity)"
 											name="remove-circle-outline"
 											(click)="decQty(i, g)"
 										></ion-icon>

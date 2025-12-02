@@ -314,204 +314,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						return a.Id - b.Id;
 					});
 
-					// 	{
-					// 		Id: 126888,
-					// 		Type: 'Group',
-					// 		Name: 'GROUP',
-					// 		MaxSelect: 1,
-					// 		IsRequired: 1,
-					// 		AllowMultiple: false,
-					// 		MinSelect: null,
-					// 		ExtraPrice: null,
-					// 		Quantity: 0,
-					// 		Sort: 35,
-					// 		MaxQuantity: 1,
-					// 	},
-					// 	{
-					// 		Id: 126890,
-					// 		Type: 'Item',
-					// 		IDItem: 3,
-					// 		IDUoM: 67421,
-					// 		Name: 'Mì heo',
-					// 		MaxSelect: 0,
-					// 		IsRequired: 0,
-					// 		AllowMultiple: null,
-					// 		MinSelect: null,
-					// 		ExtraPrice: null,
-					// 		Quantity: 1,
-					// 		Sort: 35,
-					// 		MaxQuantity: 1,
-					// 		_UoM: {
-					// 			Id: 3396,
-					// 			Name: 'Phần',
-					// 		},
-					// 		_Item: {
-					// 			Id: 3,
-					// 			Name: 'Mì heo',
-					// 		},
-					// 	},
-					// 	{
-					// 		Id: 126891,
-					// 		Type: 'Item',
-					// 		IDItem: 4,
-					// 		IDUoM: 67422,
-					// 		Name: 'Cơm heo',
-					// 		MaxSelect: 0,
-					// 		IsRequired: 0,
-					// 		AllowMultiple: null,
-					// 		MinSelect: null,
-					// 		ExtraPrice: null,
-					// 		Quantity: 1,
-					// 		Sort: 35,
-					// 		MaxQuantity: 1,
-					// 		_UoM: {
-					// 			Id: 3396,
-					// 			Name: 'Phần',
-					// 		},
-					// 		_Item: {
-					// 			Id: 4,
-					// 			Name: 'Cơm heo',
-					// 		},
-					// 	},
-					// 	{
-					// 		Id: 126892,
-					// 		Type: 'Group',
-					// 		Name: 'GROUP 2',
-					// 		MaxSelect: 2,
-					// 		IsRequired: true,
-					// 		AllowMultiple: true,
-					// 		MinSelect: 1,
-					// 		ExtraPrice: null,
-					// 		Quantity: null,
-					// 		Sort: 35,
-					// 		MaxQuantity: 2,
-					// 	},
-					// 	{
-					// 		Id: 126893,
-					// 		IDItem: 3394,
-					// 		Type: 'Item',
-					// 		Name: '7 up',
-					// 		MaxSelect: null,
-					// 		IsRequired: null,
-					// 		AllowMultiple: true,
-					// 		MinSelect: null,
-					// 		ExtraPrice: null,
-					// 		Quantity: null,
-					// 		Sort: 35,
-					// 		MaxQuantity: 2,
-					// 		_UoM: {
-					// 			Id: 3396,
-					// 			Name: 'Ly',
-					// 		},
-					// 		_Item: {
-					// 			Id: 3394,
-					// 			Name: '7 up',
-					// 		},
-					// 	},
-					// 	{
-					// 		Id: 126894,
-					// 		IDItem: 3395,
-					// 		Type: 'Item',
-					// 		Name: 'Coca',
-					// 		MaxSelect: null,
-					// 		IsRequired: false,
-					// 		AllowMultiple: true,
-					// 		MinSelect: null,
-					// 		ExtraPrice: null,
-					// 		Quantity: null,
-					// 		Sort: 35,
-					// 		MaxQuantity: null,
-					// 		_UoM: {
-					// 			Id: 3396,
-					// 			Name: 'Ly',
-					// 		},
-					// 		_Item: {
-					// 			Id: 3395,
-					// 			Name: 'Coca',
-					// 		},
-					// 	},
-					// 	{
-					// 		Id: 126895,
-					// 		IDItem: 3396,
-					// 		Type: 'Item',
-					// 		Name: 'Pepsi',
-					// 		MaxSelect: 1,
-					// 		IsRequired: false,
-					// 		AllowMultiple: true,
-					// 		MinSelect: 1,
-					// 		ExtraPrice: null,
-					// 		Quantity: null,
-					// 		Sort: 35,
-					// 		MaxQuantity: null,
-					// 		_UoM: {
-					// 			Id: 3396,
-					// 			Name: 'Ly',
-					// 		},
-					// 		_Item: {
-					// 			Id: 3396,
-					// 			Name: 'Pepsi',
-					// 		},
-					// 	},
-					// 	{
-					// 		Id: 126894,
-					// 		Type: 'Group',
-					// 		Name: 'GROUP 3',
-					// 		MaxSelect: null,
-					// 		IsRequired: false,
-					// 		AllowMultiple: true,
-					// 		MinSelect: null,
-					// 		ExtraPrice: null,
-					// 		Quantity: null,
-					// 		Sort: 35,
-					// 		MaxQuantity: null,
-					// 	},
-					// 	{
-					// 		Id: 126895,
-					// 		IDItem: 3396,
-					// 		IDUoM: 3396,
-					// 		Type: 'Item',
-					// 		Name: 'Gói tương ớt',
-					// 		MaxSelect: null,
-					// 		IsRequired: 1,
-					// 		AllowMultiple: true,
-					// 		MinSelect: 1,
-					// 		ExtraPrice: 5000,
-					// 		Quantity: 1,
-					// 		Sort: 35,
-					// 		MaxQuantity: null,
-					// 		_UoM: {
-					// 			Id: 3396,
-					// 			Name: 'Gói',
-					// 		},
-					// 		_Item: {
-					// 			Id: 3396,
-					// 			Name: 'Gói tương ớt',
-					// 		},
-					// 	},
-					// 	{
-					// 		Id: 126894,
-					// 		IDItem: 3397,
-					// 		IDUoM: 3397,
-					// 		Type: 'Item',
-					// 		Name: 'Gói tương cà',
-					// 		MaxSelect: 1,
-					// 		IsRequired: 1,
-					// 		AllowMultiple: true,
-					// 		MinSelect: 1,
-					// 		ExtraPrice: 10000,
-					// 		Quantity: null,
-					// 		Sort: 35,
-					// 		MaxQuantity: 2,
-					// 		_UoM: {
-					// 			Id: 3397,
-					// 			Name: 'Gói',
-					// 		},
-					// 		_Item: {
-					// 			Id: 3397,
-					// 			Name: 'Gói tương cà',
-					// 		},
-					// 	},
-					// ];
 					let groups = [];
 					let currentGroup: any = {};
 					currentGroup.Items = [];
@@ -773,7 +575,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	canSaveOrder = false;
-	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '') {
+	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '', code = '') {
 		if (item.IsDisabled) {
 			return;
 		}
@@ -815,11 +617,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		let line;
 		if (quantity == 1) {
 			line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+			if(code) line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New' && d.Code == code); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		} else {
 			line = this.item.OrderLines[idx]; //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		}
 
-		if (!line) {
+		if (!line || (item.BOMs?.length > 0 && status == '' )) {
 			line = {
 				// IDOrder: this.item.Id,
 				Id: 0,
@@ -1861,7 +1664,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				//  autoStyle:content
 				cssStyle:
 					`body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}` +
-					`.bold{font-weight:bold}.bill,.sheet{color:#000;font-size:1rem}.sheet table tr{page-break-inside:avoid}.bill{display:block;overflow:hidden!important}.bill .sheet{box-shadow:none!important}.bill .header,.bill .message,.text-center{text-align:center}.bill .header span{display:inline-block;width:100%}.bill .header .logo img{max-width:8.33rem;max-height:4.17rem}.bill .header .brand,.bill .items .quantity{font-weight:700}.bill .header .address{font-size:80%;font-style:italic}.bill .table-info,.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px 8px;border-width:1px 0}.bill .items{margin:5px 0;padding-left:8px;padding-right:8px}.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}.bill .items .name{font-size:1rem;width:100%;padding-top:5px;padding-bottom:2px!important;border:none!important}.bill .items tr:last-child td{border:none!important}.bill .items .total,.text-right{text-align:right}.bill .message{padding-left:8px;padding-right:8px}.page-footer-space{margin-top:10px}.table-info-top td{padding-top:5px}.sheet{margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:'Times New Roman',Times,serif;font-size:0.72rem;background:#fff}.sheet .page-footer,.sheet .page-footer-space{height:10mm}.sheet table{page-break-inside:auto;width:100%;border-collapse:collapse}.sheet table tr{page-break-after:auto}`,
+					`.bold{font-weight: bold}.bill,.sheet{color: #000;font-size: 1rem}.sheet table tr{page-break-inside: avoid}.bill{display: block;overflow: hidden !important}.bill .sheet{box-shadow: none !important}.bill .header,.bill .message,.text-center{text-align: center}.bill .header span{display: inline-block;width: 100%}.bill .header .logo img{max-width: 8.33rem;max-height: 4.17rem}.bill .header .brand,.bill .items .quantity{font-weight: 700}.bill .header .address{font-size: 80%;font-style: italic}.bill .table-info,.bill .table-info-top{border-top: solid;margin: 5px 0;padding: 5px 8px;border-width: 1px 0}.bill .items{margin: 5px 0;padding-left: 8px;padding-right: 8px}.bill .items tr td{border-bottom: 1px dashed #ccc;padding-bottom: 5px}.bill .items .name{font-size: 1rem;width: 100%;padding-top: 5px;padding-bottom: 2px !important;border: none !important}.bill .items tr.subOrder td{border-bottom: none !important}.bill .items tr.subOrder.isLast td{border-bottom: 1px dashed #ccc !important;padding-bottom: 5px}.bill .items tr:last-child td{border: none !important}.bill .items tr.subOrder.isLast:last-child td{border: none !important}.bill .items .total,.text-right{text-align: right}.bill .message{padding-left: 8px;padding-right: 8px}.page-footer-space{margin-top: 10px}.table-info-top td{padding-top: 5px}.sheet{margin: 0;overflow: hidden;position: relative;box-sizing: border-box;page-break-after: always;font-family: "Times New Roman", Times, serif;font-size: 0.72rem;background: #fff}.sheet .page-footer,.sheet .page-footer-space{height: 10mm}.sheet table{page-break-inside: auto;width: 100%;border-collapse: collapse}.sheet table tr{page-break-after: auto}`,
 			};
 		});
 		let data: printData = {

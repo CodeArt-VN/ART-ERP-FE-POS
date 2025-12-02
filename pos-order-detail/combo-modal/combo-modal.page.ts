@@ -15,7 +15,7 @@ export class ComboModalPage implements OnInit {
 	@Input() item: any;
 	basePrice: number = 0;
 	selectedItems: any = {}; // { groupId: { itemId: quantity } }
-	canEdit : boolean = true;
+	canEdit: boolean = true;
 	constructor(
 		public pageProvider: SALE_OrderProvider,
 		public env: EnvService,
@@ -149,7 +149,8 @@ export class ComboModalPage implements OnInit {
 
 		if (isChecked) {
 			// Chọn item mới
-			this.selectedItems[g.Id][item.IDUoM] = 1; // hoặc default quantity
+			if (!g.AllowMultiple && item.MaxQuantity) this.selectedItems[g.Id][item.IDUoM] = item.MaxQuantity;
+			else this.selectedItems[g.Id][item.IDUoM] = 1; // hoặc default quantity
 		} else delete this.selectedItems[g.Id];
 		// Force UI update nếu cần
 		this.selectedItems = { ...this.selectedItems };
