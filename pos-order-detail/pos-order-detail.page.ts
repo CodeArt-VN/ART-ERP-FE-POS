@@ -617,12 +617,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		let line;
 		if (quantity == 1) {
 			line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
-			if(code) line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New' && d.Code == code); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+			if (code) line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New' && d.Code == code); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		} else {
 			line = this.item.OrderLines[idx]; //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		}
 
-		if (!line || (item.BOMs?.length > 0 && status == '' )) {
+		if (!line || (item.BOMs?.length > 0 && status == '')) {
 			line = {
 				// IDOrder: this.item.Id,
 				Id: 0,
@@ -674,6 +674,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				}
 			} else if (line.Quantity + quantity > 0) {
 				line.Quantity += quantity;
+				if (line.SubOrders && line.SubOrders.length > 0) {
+					line.SubOrders.forEach((so) => {
+						let orginalQty = so.Quantity / (line.Quantity - quantity);
+						so.Quantity = orginalQty * line.Quantity;
+					});
+				}
 				this.setOrderValue({
 					OrderLines: [
 						{
@@ -691,6 +697,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 						.then((_) => {
 							line.Quantity += quantity;
+							if (line.SubOrders && line.SubOrders.length > 0) {
+								line.SubOrders.forEach((so) => {
+									let orginalQty = so.Quantity / (line.Quantity - quantity);
+									so.Quantity = orginalQty * line.Quantity;
+								});
+							}
 							this.setOrderValue({
 								OrderLines: [
 									{
@@ -709,6 +721,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 							.then((_) => {
 								line.Quantity += quantity;
+								if (line.SubOrders && line.SubOrders.length > 0) {
+									line.SubOrders.forEach((so) => {
+										let orginalQty = so.Quantity / (line.Quantity - quantity);
+										so.Quantity = orginalQty * line.Quantity;
+									});
+								}
 								this.setOrderValue({
 									OrderLines: [
 										{
@@ -771,14 +789,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								if (bom) {
 									let oldBOM = oldSubOrder.find((b) => b.IDUoM == i);
 									if (oldBOM) {
-										oldBOM.Quantity = data[key][i];
+										oldBOM.Quantity = data[key][i] * line.Quantity;
 									} else
 										oldSubOrder.push({
 											Id: 0,
 											IDItem: bom.IDItem,
-											Quantity: data[key][i],
+											Quantity: data[key][i] * line.Quantity,
 											IDUoM: bom.IDUoM,
-											UoMPrice: bom.ExtraPrice ? bom.ExtraPrice : 0,
+											UoMPrice: bom.ExtraPrice ? bom.ExtraPrice * data[key][i] * line.Quantity : 0,
 											_UoM: bom._UoM,
 											_Item: bom._Item,
 											Status: 'New',
@@ -1725,31 +1743,33 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 				let printerInfo = newTerminalList[index]['Printer'];
 				let printing = this.printPrepare('bill', [printerInfo]);
-				
+
 				try {
 					const printResults = await this.printingService.print([printing]);
-					
+
 					// Check print results for errors
 					if (printResults && printResults.length > 0) {
-						const failedResults = printResults.filter(r => r.status === 'error');
+						const failedResults = printResults.filter((r) => r.status === 'error');
 						if (failedResults.length > 0) {
-							const errorMessages = failedResults.map(r => {
-								const printerName = r.printer || printerInfo.Name || printerInfo.Code || 'N/A';
-								const errorMsg = r.error || 'Unknown error';
-								return `${printerName}: ${errorMsg}`;
-							}).join('<br>');
-							
+							const errorMessages = failedResults
+								.map((r) => {
+									const printerName = r.printer || printerInfo.Name || printerInfo.Code || 'N/A';
+									const errorMsg = r.error || 'Unknown error';
+									return `${printerName}: ${errorMsg}`;
+								})
+								.join('<br>');
+
 							this.env.showAlert(
 								{
 									code: 'POS_RECEIPT_ERROR_MESSAGE',
-									value: errorMessages
+									value: errorMessages,
 								},
 								null,
 								'POS_PRINT_ERROR_HEADER'
 							);
 						}
 					}
-					
+
 					this.checkData(receipt, !receipt, sendEachItem);
 					resolve(true);
 				} catch (error) {
@@ -1759,7 +1779,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						{
 							code: 'POS_RECEIPT_ERROR_DETAIL',
 							printerName: printerName,
-							error: error.message || error
+							error: error.message || error,
 						},
 						null,
 						'POS_PRINT_ERROR_HEADER'

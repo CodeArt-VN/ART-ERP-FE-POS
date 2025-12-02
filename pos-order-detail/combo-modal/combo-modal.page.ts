@@ -37,7 +37,7 @@ export class ComboModalPage implements OnInit {
 			g.Items?.forEach((i) => (i.Quantity = i.Quantity || 1));
 			this.item?.SubOrders?.forEach((sub) => {
 				if (g.Items.some((i) => i.IDUoM === sub.IDUoM && i.IDItem === sub.IDItem) && !this.selectedItems[g.Id][sub.IDUoM]) {
-					this.selectedItems[g.Id][sub.IDUoM] = sub.Quantity;
+					this.selectedItems[g.Id][sub.IDUoM] = sub.Quantity/this.item.Quantity;
 				}
 			});
 		}

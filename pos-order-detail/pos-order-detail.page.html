@@ -714,8 +714,13 @@
 														<td class="name">--<span>{{g._Item.Name}}</span></td>
 														<td><span *ngIf="g.UoMPrice>0">+{{g.UoMPrice | number: '1.0-0'}}</span></td>
 														<td class="quantity total">
-															<span>{{g.Quantity}} x {{o.Quantity}}</span>
+															<span>{{g.Quantity}}</span>
 														</td>
+														<td class="total">
+													</td>
+													<td class="total">
+														<span>+{{g.Quantity * g.UoMPrice | number: '1.0-0'}}</span>
+													</td>
 													</tr>
 												</ng-container>
 												}
@@ -747,7 +752,7 @@
 														<tr class="small subOrder" [class.isLast]="isLast">
 															<td class="name">--<span>{{g._Item.Name}}</span></td>
 															<td class="quantity total">
-																<span>{{g.Quantity}} x {{o.Quantity}}</span>
+																<span>{{g.Quantity}}</span>
 															</td>
 														</tr>
 													</ng-container>
