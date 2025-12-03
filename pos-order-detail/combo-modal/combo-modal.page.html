@@ -33,10 +33,9 @@
 					<ng-container *ngIf="g.AllowMultiple">
 						<ion-item *ngFor="let i of g.Items" class="combo-item" lines="none">
 							<ion-checkbox
-								[disabled]="!canEdit"
 								slot="start"
 								[checked]="isSelected(g, i)"
-								[disabled]="disableCheckbox(g, i)"
+								[disabled]="!canEdit ||disableCheckbox(g, i)"
 								(ionChange)="toggleItem(g, i)"
 							></ion-checkbox>
 
@@ -106,7 +105,7 @@
 		<ion-grid>
 			<ion-row class="ion-align-items-center">
 				<!-- Cột tiền -->
-				<ion-col size="7">
+				<ion-col size="8">
 					<!-- Hàng tổng tiền -->
 					<div class="summary-box">
 						<div class="summary-row">
@@ -120,7 +119,7 @@
 						</div>
 					</div>
 				</ion-col>
-				<ion-col size="5" class="ion-text-right">
+				<ion-col size="4" class="ion-text-right">
 					<ion-button *ngIf="canEdit" [disabled]="!isAllGroupsValid()" expand="block" color="primary" (click)="confirmSelection()">
 						{{ 'Confirm' | translate }}
 					</ion-button>

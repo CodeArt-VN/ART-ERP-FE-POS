@@ -149,3 +149,14 @@
   font-size: 1.1rem;
   font-weight: 700;
 }
+ion-item.combo-item {
+  --ion-item-background: transparent;
+}
+
+ion-item.combo-item ion-checkbox ,.qty-box ion-icon {
+  pointer-events: auto;
+}
+
+ion-item.combo-item::part(native) {
+  pointer-events: none;
+}

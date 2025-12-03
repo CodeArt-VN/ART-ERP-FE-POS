@@ -195,8 +195,8 @@
 											<input [disabled]="true" class="c-input" [ngModel]="o" (ngModelChange)="item.SplitedOrders[jdx].TableName = $event" />
 										</td>
 									</tr>
-
-									<tr *ngFor="let i of items; let idx = index;">
+									@for( i of items;track i.Id ){
+									<tr>
 										<td class="label">
 											<ng-select
 												[disabled]="true"
@@ -240,6 +240,27 @@
 											/>
 										</td>
 									</tr>
+									@if(i.SubOrders && i.SubOrders.length>0){
+									<tr *ngFor="let sub of i.SubOrders; let idx = index;">
+										<td class="label">
+												<input style="text-align:left"
+												[disabled]="true"
+												type="text"
+												class="c-input"
+												 [value]="'---' + sub.ItemName"
+											/>
+										</td>
+										<td style="padding-left: 5px !important" class="UoM col-total c-control" *ngFor="let d of i.splitDetail; let jdx = index;">
+											<input
+												type="text"
+												[disabled]="true"
+												class="c-input"
+												thousandSeparator=","
+												[value]="d.Quantity == 0 ? 0 : d.Quantity*sub.OriginalQuantity"
+											/>
+										</td>
+									</tr>
+									} }
 								</table>
 							</div>
 						</div>

@@ -65,14 +65,17 @@ export class ComboModalPage implements OnInit {
 	}
 	incQty(i, g) {
 		if (!this.isSelected(g, i)) return;
+		this.selectedItems[g.Id][i.IDUoM]+= i.Quantity;
 		const total = this.getGroupTotalQty(g);
-		if ((g.MaxQuantity && total >= g.MaxQuantity) || (i.MaxQuantity && this.selectedItems[g.Id][i.IDUoM] >= i.MaxQuantity)) return;
-		this.selectedItems[g.Id][i.IDUoM]++;
+		if ((g.MaxQuantity && total > g.MaxQuantity) || (i.MaxQuantity && this.selectedItems[g.Id][i.IDUoM] > i.MaxQuantity)){
+			this.selectedItems[g.Id][i.IDUoM]-= i.Quantity;
+		}
+		
 	}
 
 	decQty(i, g) {
 		if (!this.isSelected(g, i)) return;
-		this.selectedItems[g.Id][i.IDUoM]--;
+		this.selectedItems[g.Id][i.IDUoM]-= i.Quantity;
 		if (this.selectedItems[g.Id][i.IDUoM] <= 0) delete this.selectedItems[g.Id][i.IDUoM];
 	}
 
@@ -149,7 +152,7 @@ export class ComboModalPage implements OnInit {
 
 		if (isChecked) {
 			// Chọn item mới
-			if (!g.AllowMultiple && item.MaxQuantity) this.selectedItems[g.Id][item.IDUoM] = item.MaxQuantity;
+			if (!g.AllowMultiple && item.MaxQuantity) this.selectedItems[g.Id][item.IDUoM] = item.Quantity;
 			else this.selectedItems[g.Id][item.IDUoM] = 1; // hoặc default quantity
 		} else delete this.selectedItems[g.Id];
 		// Force UI update nếu cần

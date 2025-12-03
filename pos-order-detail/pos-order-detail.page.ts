@@ -674,11 +674,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				}
 			} else if (line.Quantity + quantity > 0) {
 				line.Quantity += quantity;
+				let subOrders = [];
 				if (line.SubOrders && line.SubOrders.length > 0) {
 					line.SubOrders.forEach((so) => {
 						let orginalQty = so.Quantity / (line.Quantity - quantity);
 						so.Quantity = orginalQty * line.Quantity;
 					});
+					subOrders = line.SubOrders;
+					if (line.Id) {
+						subOrders = [
+							...line.SubOrders?.map((so) => {
+								return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
+							}),
+						];
+					}
 				}
 				this.setOrderValue({
 					OrderLines: [
@@ -687,6 +696,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							Code: line.Code,
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
+							SubOrders: subOrders,
 						},
 					],
 					Status: 'New',
@@ -697,11 +707,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 						.then((_) => {
 							line.Quantity += quantity;
+							let subOrders = [];
 							if (line.SubOrders && line.SubOrders.length > 0) {
 								line.SubOrders.forEach((so) => {
 									let orginalQty = so.Quantity / (line.Quantity - quantity);
 									so.Quantity = orginalQty * line.Quantity;
 								});
+								subOrders = line.SubOrders;
+								if (line.Id) {
+									subOrders = [
+										...line.SubOrders?.map((so) => {
+											return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
+										}),
+									];
+								}
 							}
 							this.setOrderValue({
 								OrderLines: [
@@ -710,6 +729,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 										Code: line.Code,
 										IDUoM: line.IDUoM,
 										Quantity: line.Quantity,
+										SubOrders: subOrders,
 									},
 								],
 							});
@@ -721,11 +741,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 							.then((_) => {
 								line.Quantity += quantity;
+								let subOrders = [];
 								if (line.SubOrders && line.SubOrders.length > 0) {
 									line.SubOrders.forEach((so) => {
 										let orginalQty = so.Quantity / (line.Quantity - quantity);
 										so.Quantity = orginalQty * line.Quantity;
 									});
+									subOrders = line.SubOrders;
+									if (line.Id) {
+										subOrders = [
+											...line.SubOrders?.map((so) => {
+												return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
+											}),
+										];
+									}
 								}
 								this.setOrderValue({
 									OrderLines: [
@@ -734,6 +763,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 											Code: line.Code,
 											IDUoM: line.IDUoM,
 											Quantity: line.Quantity,
+											SubOrders: subOrders,
 										},
 									],
 								});
