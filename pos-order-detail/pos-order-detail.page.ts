@@ -39,6 +39,7 @@ import { POSService } from '../_services/pos.service';
 import { InputControlComponent } from 'src/app/components/controls/input-control.component';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
+import { ComboModalPage } from './combo-modal/combo-modal.page';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -305,6 +306,30 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.get('Code')?.markAsDirty();
 		}
 		super.loadedData(event, ignoredFromGroup);
+		for (let m of this.posService.dataSource.menuList)
+			for (let mi of m.Items) {
+				if (mi.BOMs && mi.BOMs.length > 0) {
+					mi.BOMs.sort((a, b) => {
+						if (a.Sort !== b.Sort) return a.Sort - b.Sort;
+						return a.Id - b.Id;
+					});
+
+					let groups = [];
+					let currentGroup: any = {};
+					currentGroup.Items = [];
+					for (let g of mi.BOMs) {
+						if (g.Type == 'Group') {
+							currentGroup = g;
+							currentGroup.Items = [];
+							groups.push(currentGroup);
+						} else {
+							currentGroup.Items.push(g);
+						}
+					}
+					mi.Groups = groups;
+				}
+			}
+
 		// this.contactInput?.isFromBarcodeScan$.subscribe((obj) => {
 		// 	this.isEnter = obj.isEnter;
 		// 	this._contactDataSource.input$.next(obj.term);
@@ -550,7 +575,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	canSaveOrder = false;
-	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '') {
+	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '', code = '') {
 		if (item.IsDisabled) {
 			return;
 		}
@@ -592,13 +617,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		let line;
 		if (quantity == 1) {
 			line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
+			if (code) line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New' && d.Code == code); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		} else {
 			line = this.item.OrderLines[idx]; //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		}
 
-		if (!line) {
+		if (!line || (item.BOMs?.length > 0 && status == '')) {
 			line = {
-				IDOrder: this.item.Id,
+				// IDOrder: this.item.Id,
 				Id: 0,
 				Code: lib.generateUID(this.env.user.StaffID),
 				Type: 'TableService',
@@ -615,16 +641,20 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				UoMSwapAlter: 1,
 				BaseQuantity: 0,
 				ShippedQuantity: 0,
-
+				Name: item.Name,
 				Remark: null,
 				IsPromotionItem: false,
 				IDPromotion: null,
-
+				Groups: item.Groups,
 				OriginalDiscountFromSalesman: 0,
-
+				SubOrders: [],
 				CreatedDate: new Date(),
+				_item: item,
 			};
-
+			if (item.Groups?.length > 0) {
+				let rs = await this.openComboModal(line);
+				if (!rs) return;
+			}
 			this.item.OrderLines.push(line);
 
 			this.addOrderLine(line);
@@ -644,6 +674,21 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				}
 			} else if (line.Quantity + quantity > 0) {
 				line.Quantity += quantity;
+				let subOrders = [];
+				if (line.SubOrders && line.SubOrders.length > 0) {
+					line.SubOrders.forEach((so) => {
+						let orginalQty = so.Quantity / (line.Quantity - quantity);
+						so.Quantity = orginalQty * line.Quantity;
+					});
+					subOrders = line.SubOrders;
+					if (line.Id) {
+						subOrders = [
+							...line.SubOrders?.map((so) => {
+								return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
+							}),
+						];
+					}
+				}
 				this.setOrderValue({
 					OrderLines: [
 						{
@@ -651,6 +696,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							Code: line.Code,
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
+							SubOrders: subOrders,
 						},
 					],
 					Status: 'New',
@@ -661,6 +707,21 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 						.then((_) => {
 							line.Quantity += quantity;
+							let subOrders = [];
+							if (line.SubOrders && line.SubOrders.length > 0) {
+								line.SubOrders.forEach((so) => {
+									let orginalQty = so.Quantity / (line.Quantity - quantity);
+									so.Quantity = orginalQty * line.Quantity;
+								});
+								subOrders = line.SubOrders;
+								if (line.Id) {
+									subOrders = [
+										...line.SubOrders?.map((so) => {
+											return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
+										}),
+									];
+								}
+							}
 							this.setOrderValue({
 								OrderLines: [
 									{
@@ -668,6 +729,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 										Code: line.Code,
 										IDUoM: line.IDUoM,
 										Quantity: line.Quantity,
+										SubOrders: subOrders,
 									},
 								],
 							});
@@ -679,6 +741,21 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 							.then((_) => {
 								line.Quantity += quantity;
+								let subOrders = [];
+								if (line.SubOrders && line.SubOrders.length > 0) {
+									line.SubOrders.forEach((so) => {
+										let orginalQty = so.Quantity / (line.Quantity - quantity);
+										so.Quantity = orginalQty * line.Quantity;
+									});
+									subOrders = line.SubOrders;
+									if (line.Id) {
+										subOrders = [
+											...line.SubOrders?.map((so) => {
+												return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
+											}),
+										];
+									}
+								}
 								this.setOrderValue({
 									OrderLines: [
 										{
@@ -686,6 +763,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 											Code: line.Code,
 											IDUoM: line.IDUoM,
 											Quantity: line.Quantity,
+											SubOrders: subOrders,
 										},
 									],
 								});
@@ -698,7 +776,103 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		}
 	}
+	async openComboModal(line, markAsDirty = false) {
+		let item = line._item;
 
+		if (item.Groups == null || item.Groups.length == 0) return null;
+		if (this.submitAttempt) {
+			let element = document.getElementById('item' + item.Id);
+			if (element) {
+				element = element.parentElement;
+				element.classList.add('shake');
+				setTimeout(() => {
+					element.classList.remove('shake');
+				}, 400);
+			}
+			return;
+		}
+		if (item.Groups?.length > 0) {
+			const modal = await this.modalController.create({
+				component: ComboModalPage,
+				backdropDismiss: true,
+				cssClass: 'modal90',
+				componentProps: {
+					item: line,
+					canEdit: this.pageConfig.canEdit && !['TemporaryBill', 'Cancelled', 'Done'].includes(this.item.Status) && line.Status == 'New',
+				},
+			});
+			await modal.present();
+			const { data, role } = await modal.onWillDismiss();
+			console.log(data);
+			if (data) {
+				let uom = item.UoMs.find((d) => d.Id == line.IDUoM);
+				let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
+				let UoMPrice = price.NewPrice ? price.NewPrice : price.Price;
+				line.UoMPrice = UoMPrice;
+				let oldSubOrder = line.SubOrders;
+				line.SubOrders = [];
+				line._item.Groups.forEach((subOrder) => {
+					Object.keys(data).forEach((key) => {
+						if (subOrder.Id == key) {
+							Object.keys(data[key]).forEach((i) => {
+								let bom = subOrder.Items.find((b) => b.IDUoM == i);
+								if (bom) {
+									let oldBOM = oldSubOrder.find((b) => b.IDUoM == i);
+									if (oldBOM) {
+										oldBOM.Quantity = data[key][i] * line.Quantity;
+									} else
+										oldSubOrder.push({
+											Id: 0,
+											IDItem: bom.IDItem,
+											Quantity: data[key][i] * line.Quantity,
+											IDUoM: bom.IDUoM,
+											UoMPrice: bom.ExtraPrice ? bom.ExtraPrice * data[key][i] * line.Quantity : 0,
+											_UoM: bom._UoM,
+											_Item: bom._Item,
+											Status: 'New',
+											IDTax: item.IDSalesTaxDefinition,
+											TaxRate: item.SaleVAT,
+											Code: lib.generateUID(this.env.user.StaffID),
+										});
+									if (bom.ExtraPrice > 0) {
+										line.UoMPrice += bom.ExtraPrice * data[key][i];
+									}
+								}
+							});
+						}
+					});
+				});
+				const selected = [];
+				Object.keys(data).forEach((gId) => {
+					Object.keys(data[gId]).forEach((uId) => {
+						selected.push({
+							GroupId: +gId,
+							IDUoM: +uId,
+							Quantity: data[gId][uId],
+						});
+					});
+				});
+				const removed = oldSubOrder.filter((so) => !selected.some((s) => s.IDUoM === so.IDUoM));
+				oldSubOrder = oldSubOrder.filter((so) => selected.some((s) => s.IDUoM === so.IDUoM));
+				let deletedLines = this.formGroup.get('DeletedLines').value || [];
+
+				removed.forEach((r) => {
+					if (r.Id > 0) {
+						deletedLines.push(r.Id);
+					}
+				});
+
+				this.formGroup.get('DeletedLines').setValue(deletedLines);
+				this.formGroup.get('DeletedLines').markAsDirty();
+				line.SubOrders = oldSubOrder;
+				if (markAsDirty) {
+					this.setOrderValue({ OrderLines: [line] });
+				}
+				return line;
+			} else return null;
+		}
+		return null;
+	}
 	async openQuickMemo(line) {
 		if (this.submitAttempt) return;
 		if (line.Status != 'New') return;
@@ -1538,7 +1712,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				//  autoStyle:content
 				cssStyle:
 					`body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}` +
-					`.bold{font-weight:bold}.bill,.sheet{color:#000;font-size:1rem}.sheet table tr{page-break-inside:avoid}.bill{display:block;overflow:hidden!important}.bill .sheet{box-shadow:none!important}.bill .header,.bill .message,.text-center{text-align:center}.bill .header span{display:inline-block;width:100%}.bill .header .logo img{max-width:8.33rem;max-height:4.17rem}.bill .header .brand,.bill .items .quantity{font-weight:700}.bill .header .address{font-size:80%;font-style:italic}.bill .table-info,.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px 8px;border-width:1px 0}.bill .items{margin:5px 0;padding-left:8px;padding-right:8px}.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}.bill .items .name{font-size:1rem;width:100%;padding-top:5px;padding-bottom:2px!important;border:none!important}.bill .items tr:last-child td{border:none!important}.bill .items .total,.text-right{text-align:right}.bill .message{padding-left:8px;padding-right:8px}.page-footer-space{margin-top:10px}.table-info-top td{padding-top:5px}.sheet{margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:'Times New Roman',Times,serif;font-size:0.72rem;background:#fff}.sheet .page-footer,.sheet .page-footer-space{height:10mm}.sheet table{page-break-inside:auto;width:100%;border-collapse:collapse}.sheet table tr{page-break-after:auto}`,
+					`.bold{font-weight: bold}.bill,.sheet{color: #000;font-size: 1rem}.sheet table tr{page-break-inside: avoid}.bill{display: block;overflow: hidden !important}.bill .sheet{box-shadow: none !important}.bill .header,.bill .message,.text-center{text-align: center}.bill .header span{display: inline-block;width: 100%}.bill .header .logo img{max-width: 8.33rem;max-height: 4.17rem}.bill .header .brand,.bill .items .quantity{font-weight: 700}.bill .header .address{font-size: 80%;font-style: italic}.bill .table-info,.bill .table-info-top{border-top: solid;margin: 5px 0;padding: 5px 8px;border-width: 1px 0}.bill .items{margin: 5px 0;padding-left: 8px;padding-right: 8px}.bill .items tr td{border-bottom: 1px dashed #ccc;padding-bottom: 5px}.bill .items .name{font-size: 1rem;width: 100%;padding-top: 5px;padding-bottom: 2px !important;border: none !important}.bill .items tr.subOrder td{border-bottom: none !important}.bill .items tr.subOrder.isLast td{border-bottom: 1px dashed #ccc !important;padding-bottom: 5px}.bill .items tr:last-child td{border: none !important}.bill .items tr.subOrder.isLast:last-child td{border: none !important}.bill .items .total,.text-right{text-align: right}.bill .message{padding-left: 8px;padding-right: 8px}.page-footer-space{margin-top: 10px}.table-info-top td{padding-top: 5px}.sheet{margin: 0;overflow: hidden;position: relative;box-sizing: border-box;page-break-after: always;font-family: "Times New Roman", Times, serif;font-size: 0.72rem;background: #fff}.sheet .page-footer,.sheet .page-footer-space{height: 10mm}.sheet table{page-break-inside: auto;width: 100%;border-collapse: collapse}.sheet table tr{page-break-after: auto}`,
 			};
 		});
 		let data: printData = {
@@ -1599,31 +1773,33 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 				let printerInfo = newTerminalList[index]['Printer'];
 				let printing = this.printPrepare('bill', [printerInfo]);
-				
+
 				try {
 					const printResults = await this.printingService.print([printing]);
-					
+
 					// Check print results for errors
 					if (printResults && printResults.length > 0) {
-						const failedResults = printResults.filter(r => r.status === 'error');
+						const failedResults = printResults.filter((r) => r.status === 'error');
 						if (failedResults.length > 0) {
-							const errorMessages = failedResults.map(r => {
-								const printerName = r.printer || printerInfo.Name || printerInfo.Code || 'N/A';
-								const errorMsg = r.error || 'Unknown error';
-								return `${printerName}: ${errorMsg}`;
-							}).join('<br>');
-							
+							const errorMessages = failedResults
+								.map((r) => {
+									const printerName = r.printer || printerInfo.Name || printerInfo.Code || 'N/A';
+									const errorMsg = r.error || 'Unknown error';
+									return `${printerName}: ${errorMsg}`;
+								})
+								.join('<br>');
+
 							this.env.showAlert(
 								{
 									code: 'POS_RECEIPT_ERROR_MESSAGE',
-									value: errorMessages
+									value: errorMessages,
 								},
 								null,
 								'POS_PRINT_ERROR_HEADER'
 							);
 						}
 					}
-					
+
 					this.checkData(receipt, !receipt, sendEachItem);
 					resolve(true);
 				} catch (error) {
@@ -1633,7 +1809,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						{
 							code: 'POS_RECEIPT_ERROR_DETAIL',
 							printerName: printerName,
-							error: error.message || error
+							error: error.message || error,
 						},
 						null,
 						'POS_PRINT_ERROR_HEADER'
@@ -1670,7 +1846,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			.toPromise()
 			.then((savedItem: any) => {
 				dog && console.log('getQRPayment', savedItem);
-
+				this.item.Status = 'TemporaryBill';
+				this.formGroup.controls.Status.setValue('TemporaryBill');
 				this.GenQRCode(savedItem)
 					.then(() => {
 						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
@@ -1916,7 +2093,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private addOrderLine(line) {
 		let groups = <FormArray>this.formGroup.controls.OrderLines;
 		let group = this.formBuilder.group({
-			IDOrder: [line.IDOrder],
+			// IDOrder: [line.IDOrder],
 			Id: new FormControl({ value: line.Id, disabled: true }),
 			Code: [line.Code],
 
@@ -1947,7 +2124,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				value: line.CreatedDate,
 				disabled: true,
 			}),
-
+			SubOrders: [line?.SubOrders || []],
 			// OriginalTotalBeforeDiscount
 			// OriginalPromotion
 			// OriginalDiscount1
@@ -2116,14 +2293,37 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			//Update lines
 			for (let sl of savedItem.OrderLines) {
 				let idx = this.item.OrderLines.findIndex((d) => d.Code == sl.Code);
-				if (idx != -1) {
-					if (this.item.OrderLines[idx].Id < 1) {
-						this.item.OrderLines[idx].Id = sl.Id;
-						this.formGroup.controls.OrderLines['controls'][idx].controls['Id'].setValue(sl.Id);
-					}
-					if (this.item.OrderLines[idx].Status != sl.Status) {
-						this.item.OrderLines[idx].Status = sl.Status;
-						this.formGroup.controls.OrderLines['controls'][idx].controls['Status'].setValue(sl.Status);
+				if (idx == -1) continue;
+				const feLine = this.item.OrderLines[idx];
+				const fgLine = this.formGroup.controls.OrderLines['controls'][idx];
+				if (feLine.Id < 1 && sl.Id > 0) {
+					feLine.Id = sl.Id;
+					fgLine.controls['Id'].setValue(sl.Id);
+				}
+				if (feLine.Status !== sl.Status) {
+					feLine.Status = sl.Status;
+					fgLine.controls['Status'].setValue(sl.Status);
+				}
+				if (feLine.SubOrders && sl.SubOrders) {
+					for (let beSub of sl.SubOrders) {
+						const idxSub = feLine.SubOrders.findIndex((x) => x.Code === beSub.Code);
+						if (idxSub === -1) continue;
+
+						const feSub = feLine.SubOrders[idxSub];
+
+						// ⭐ đúng logic: update khi BE trả về Id > 0
+						if (feSub.Id < 1 && beSub.Id > 0) {
+							feSub.Id = beSub.Id;
+
+							// Nếu có FormArray cho SubOrders → update luôn
+							const subOrders = [...fgLine.controls.SubOrders.value]; // clone array
+
+							subOrders[idxSub] = {
+								...subOrders[idxSub],
+								Id: beSub.Id,
+							};
+							fgLine.controls.SubOrders.setValue(subOrders);
+						}
 					}
 				}
 			}

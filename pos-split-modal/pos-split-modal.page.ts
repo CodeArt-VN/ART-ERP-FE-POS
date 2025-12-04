@@ -15,6 +15,7 @@ import { FormBuilder, Validators, FormControl, FormArray } from '@angular/forms'
 import { NgSelectConfig } from '@ng-select/ng-select';
 import { concat, of, Subject } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { lib } from 'src/app/services/static/global-functions';
 
 @Component({
 	selector: 'app-pos-split-modal',
@@ -109,19 +110,29 @@ export class POSSplitModalPage extends PageBase {
 				SubType: this.selectedOrder.SubType,
 				Status: this.selectedOrder.Status,
 			});
-			this.item.SplitedOrders.push({
-				isFirst: false,
-				IDContact: null,
-				IDAddress: null,
-				ContactName: null,
-				IDTable: null,
-				IDType: 293,
-				TableName: null,
-				Type: this.selectedOrder.Type,
-				SubType: this.selectedOrder.SubType,
-				Status: this.selectedOrder.Status,
-			});
-
+			// this.item.SplitedOrders.push({
+			// 	isFirst: false,
+			// 	IDContact: null,
+			// 	IDAddress: null,
+			// 	ContactName: null,
+			// 	IDTable: null,
+			// 	IDType: 293,
+			// 	TableName: null,
+			// 	Type: this.selectedOrder.Type,
+			// 	SubType: this.selectedOrder.SubType,
+			// 	Status: this.selectedOrder.Status,
+			// });
+	// isFirst: false,
+	// 		IDContact: null,
+	// 		IDAddress: null,
+	// 		ContactName: null,
+	// 		IDTable: null,
+	// 		IDType: 293,
+	// 		TableName: null,
+	// 		Type: this.selectedOrder.Type,
+	// 		SubType: this.selectedOrder.SubType,
+	// 		Status: this.selectedOrder.Status,
+	// 		OrderLines: JSON.parse(JSON.stringify(this.items)),
 			this.initOrderedContacts.push({
 				Id: this.selectedOrder.IDContact,
 				IDAddress: this.selectedOrder.IDAddress,
@@ -146,9 +157,18 @@ export class POSSplitModalPage extends PageBase {
 			}
 
 			this.orderDetailProvider.read({ IDOrder: this.selectedOrder.Id }).then((result: any) => {
-				this.items = result.data;
+				this.items = result.data.filter((d) => !d.IDParent);
+				this.items.forEach((i) => {
+					i.SubOrders = [];
+					result.data
+						.filter((d) => d.IDParent == i.Id)
+						.forEach((j) => {
+							j.OriginalQuantity = j.Quantity / i.Quantity;
+							i.SubOrders.push(j);
+						});
+				});
 				this.item.SplitedOrders[0].OrderLines = JSON.parse(JSON.stringify(this.items));
-				this.item.SplitedOrders[1].OrderLines = JSON.parse(JSON.stringify(this.items));
+				this.addSplitedOrder();
 
 				this.calcOrders();
 
@@ -162,6 +182,7 @@ export class POSSplitModalPage extends PageBase {
 							IgnoredBranch: true,
 							Id: JSON.stringify(ids),
 							IDSO : this.selectedOrder.Id,
+							IDSO: this.selectedOrder.Id,
 						})
 						.toPromise()
 						.then((result: any) => {
@@ -200,6 +221,7 @@ export class POSSplitModalPage extends PageBase {
 				counts[order.TableName]++;
 				result.push(order.TableName + '-' + counts[order.TableName]);
 			} else {
+				if(!order.TableName) order.TableName = 'Unknown-'+i;
 				counts[order.TableName] = 1;
 				result.push(order.TableName);
 			}
@@ -362,7 +384,7 @@ export class POSSplitModalPage extends PageBase {
 	}
 
 	addSplitedOrder() {
-		this.item.SplitedOrders.push({
+		let newSplitOrder = {
 			isFirst: false,
 			IDContact: null,
 			IDAddress: null,
@@ -374,7 +396,15 @@ export class POSSplitModalPage extends PageBase {
 			SubType: this.selectedOrder.SubType,
 			Status: this.selectedOrder.Status,
 			OrderLines: JSON.parse(JSON.stringify(this.items)),
+		};
+		newSplitOrder.OrderLines.forEach((i) => {
+			i.Code = lib.generateUID(this.env.user.StaffID);
+			i.SubOrders.forEach((sub) => {
+				sub.Code = lib.generateUID(this.env.user.StaffID);
+			});
 		});
+		this.item.SplitedOrders.push(newSplitOrder);
+
 		this.calcOrders();
 		this.checkValid();
 	}
@@ -547,19 +577,29 @@ export class POSSplitModalPage extends PageBase {
 
 	splitSaleOrder() {
 		let publishEventCode = this.pageConfig.pageName;
-
 		return new Promise((resolve, reject) => {
 			if (!this.isCanSplit) {
 				this.env.showMessage('Please check customer name and order must have at least 01 item.', 'warning');
 			} else if (this.submitAttempt == false) {
 				this.submitAttempt = true;
-
+				
 				if (!this.item.IDBranch) {
 					this.item.IDBranch = this.env.selectedBranch;
 				}
-
+				
+				let postItem = lib.cloneObject(this.item);
+				postItem.SplitedOrders.forEach((so) => {
+					
+					so.OrderLines.forEach((ol) => {
+					if(!so.isFirst)ol.Id = 0;
+						ol.SubOrders.forEach((sub=>{
+							sub.Quantity = ol.Quantity * sub.OriginalQuantity;
+							if(!so.isFirst)sub.Id = 0;
+						}));
+					});
+				});		
 				this.pageProvider.commonService
-					.connect('POST', 'SALE/Order/SplitPosOrder/', this.item)
+					.connect('POST', 'SALE/Order/SplitPosOrder/', postItem)
 					.toPromise()
 					.then((savedItem: any) => {
 						if (publishEventCode) {
