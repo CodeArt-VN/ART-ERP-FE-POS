@@ -161,6 +161,7 @@ export class POSSplitModalPage extends PageBase {
 						.search({
 							IgnoredBranch: true,
 							Id: JSON.stringify(ids),
+							IDSO : this.selectedOrder.Id,
 						})
 						.toPromise()
 						.then((result: any) => {
