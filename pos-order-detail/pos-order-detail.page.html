@@ -89,10 +89,14 @@
 								>
 									<div style="display: flex">
 										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
-										<div class="od-info" *ngIf="line._item">
+										<div class="od-info" *ngIf="line._item" (click)="openComboModal(line,true)">
 											<div class="od-name">
 												<small class="od-id">#{{line._item.Id}}</small>&nbsp;
-												<span [appTranslateResource]="line._item"></span>
+												<span [appTranslateResource]="line._item"> </span>
+												@if(line.SubOrders?.length > 0){ @for( sub of line.SubOrders;track sub.IDItem){
+												<br />
+												&nbsp;<span class="bold">{{sub.Quantity}} {{sub._UoM.Name}}</span> &nbsp;<span [appTranslateResource]="sub._Item"></span>
+												} }
 											</div>
 											<div class="od-price">
 												<span
@@ -116,7 +120,7 @@
 											color="danger"
 											class="ion-float-right ion-no-padding remark-btn"
 											size="small"
-											(click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx, line.Status);"
+											(click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx, line.Status, line.Code);"
 										>
 											<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 										</ion-button>
@@ -125,7 +129,7 @@
 											[disabled]="submitAttempt || line._Locked "
 											class="ion-float-right qty-btn"
 											size="small"
-											(click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status); line._isShowFoC = false;"
+											(click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status, line.Code); line._isShowFoC = false;"
 										>
 											<ion-icon slot="icon-only" name="add"></ion-icon>
 										</ion-button>
@@ -134,7 +138,7 @@
 											[disabled]="submitAttempt || line._Locked "
 											class="ion-float-right qty-btn"
 											size="small"
-											(click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status); line._isShowFoC = false;"
+											(click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status, line.Code); line._isShowFoC = false;"
 										>
 											<ion-icon slot="icon-only" name="remove"></ion-icon>
 										</ion-button>
@@ -359,7 +363,8 @@
 									</ng-template>
 								</ion-modal>
 							</ion-item>
-							<app-input-control #contactInput
+							<app-input-control
+								#contactInput
 								(change)="changedIDAddress($event)"
 								(selectKeyDown)="onContactKeyDown($event)"
 								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
@@ -373,10 +378,7 @@
 								</ion-button>
 							</div>
 						</div>
-						<app-form-control
-							(change)="setOrderValue([])"
-							[field]="{id:'NumberOfGuests', label:'Number of guests', type:'number',form:formGroup}"
-						></app-form-control>
+						<app-form-control (change)="setOrderValue([])" [field]="{id:'NumberOfGuests', label:'Number of guests', type:'number',form:formGroup}"></app-form-control>
 
 						<app-form-control
 							(change)="setOrderValue([])"
@@ -470,7 +472,10 @@
 						</ion-button>
 					</ion-col>
 				</ion-row>
-				<ion-row *ngIf="(item && pageConfig.canEdit && !posService.systemConfig.POSSettleAtCheckout) || (item.Debt == 0 && item.Status == 'TemporaryBill')" style="flex-wrap: nowrap">
+				<ion-row
+					*ngIf="(item && pageConfig.canEdit && !posService.systemConfig.POSSettleAtCheckout) || (item.Debt == 0 && item.Status == 'TemporaryBill')"
+					style="flex-wrap: nowrap"
+				>
 					<ion-col>
 						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()" [disabled]="submitAttempt || !item.Id">
 							<ion-text>{{'Settle bill' | translate}}</ion-text>
@@ -614,8 +619,8 @@
 												(error)="$event.src='assets/logos/logo-the-log.png'"
 										/></span>
 										<span class="brand">{{printData.currentBranch?.ShortName || printData.currentBranch?.Name}}</span>
-										<span class="address" *ngIf="printData.currentBranch?.Address">{{printData.currentBranch?.Address || ''}}</span>
-										<span class="phone" *ngIf="printData.currentBranch?.Phone">{{printData.currentBranch?.Phone || ''}}</span>
+										<span class="address">{{printData.currentBranch?.Address || ''}}</span>
+										<span class="phone">{{printData.currentBranch?.Phone || ''}}</span>
 
 										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
 											<span class="brand">{{'ORDER' | translate}}</span>
@@ -635,13 +640,15 @@
 											<tr *ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done'">
 												<td class="title">{{'Bill number' | translate}}</td>
 												<td>
-													<span class="bold" >{{item.DailyBillNo}}</span>
+													<span class="bold">{{item.DailyBillNo}}</span>
 												</td>
 											</tr>
 											<tr>
 												<td class="title">{{'Table' | translate}}</td>
 												<td>
-													<span class="bold" *ngFor="let t of printData.selectedTables; let j = index">{{t.Name}}<span *ngIf="printData.selectedTables.length>0 && j < printData.selectedTables.length - 1">;</span> </span>
+													<span class="bold" *ngFor="let t of printData.selectedTables; let j = index"
+														>{{t.Name}}<span *ngIf="printData.selectedTables.length>0 && j < printData.selectedTables.length - 1">;</span>
+													</span>
 												</td>
 											</tr>
 											<tr>
@@ -681,12 +688,12 @@
 												<td class="text-right">{{'BILL Amount' | translate}}</td>
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery}">
-												<tr class="small">
+												<tr class="small" [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
 													<td colspan="5" class="name">
 														<strong><span [appTranslateResource]="o._item"></span></strong>
 													</td>
 												</tr>
-												<tr class="small">
+												<tr class="small" [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
 													<td>&#8203;</td>
 													<td class="od-price total">
 														<span>{{o.UoMPrice | number: '1.0-0'}}</span>
@@ -701,6 +708,22 @@
 														<span>{{o.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
+												@if(o.SubOrders && o.SubOrders.length >0){
+												<ng-container *ngFor="let g of o.SubOrders; let isLast = last">
+													<tr class="small subOrder" [class.isLast]="isLast">
+														<td class="name">--<span>{{g._Item.Name}}</span></td>
+														<td><span *ngIf="g.UoMPrice>0">+{{g.UoMPrice | number: '1.0-0'}}</span></td>
+														<td class="quantity total">
+															<span>{{g.Quantity}}</span>
+														</td>
+														<td class="total">
+													</td>
+													<td class="total">
+														<span>+{{g.Quantity * g.UoMPrice | number: '1.0-0'}}</span>
+													</td>
+													</tr>
+												</ng-container>
+												}
 											</ng-container>
 										</table>
 									</div>
@@ -712,7 +735,7 @@
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery} ; let idx = index ">
 												<ng-container *ngIf="o._undeliveredQuantity > 0">
-													<tr>
+													<tr  [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
 														<td>
 															{{idx + 1}}.
 															<strong><span [appTranslateResource]="o._item"></span></strong>
@@ -721,9 +744,19 @@
 															<span class="bold quantity">{{o._undeliveredQuantity}}</span>
 														</td>
 													</tr>
-													<tr *ngIf="o.Remark">
+													<tr *ngIf="o.Remark"  [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
 														<td colspan="2">Note: {{o.Remark}}</td>
 													</tr>
+													@if(o.SubOrders && o.SubOrders.length >0){
+													<ng-container *ngFor="let g of o.SubOrders; let isLast = last">
+														<tr class="small subOrder" [class.isLast]="isLast">
+															<td class="name">--<span>{{g._Item.Name}}</span></td>
+															<td class="quantity total">
+																<span>{{g.Quantity}}</span>
+															</td>
+														</tr>
+													</ng-container>
+													}
 												</ng-container>
 											</ng-container>
 										</table>
@@ -786,9 +819,7 @@
 													</td>
 												</tr>
 												<tr *ngFor="let vat of item.VATSummary">
-													<td class="title">
-														{{ 'VAT' | translate }} [ {{vat.Rate}}% ]
-													</td>
+													<td class="title">{{ 'VAT' | translate }} [ {{vat.Rate}}% ]</td>
 													<td class="text-right bold">
 														<span>{{ (vat.Tax + vat.AdditionsTax) | number:'1.0-0' }}</span>
 													</td>
