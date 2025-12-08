@@ -5,7 +5,6 @@
 /* HEADER NHÓM */
 .group-header-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
 }
@@ -25,7 +24,7 @@
 
 .tagCustom {
   padding: 2px 6px;
-   font-size: 0.75rem;
+  font-size: 0.75rem;
   border-radius: 6px;
   background: #f0f0f0;
   color: #444;
@@ -59,19 +58,24 @@
   margin-bottom: 16px;
   border: 1px solid #dadada;
 }
+
 .invalid-group {
   border-color: var(--ion-color-danger) !important;
   box-shadow: 0 0 3px var(--ion-color-danger);
 }
+
 /* ITEM STYLE */
 .combo-item {
-  --inner-border-width: 0px !important; /* remove underline */
+  --inner-border-width: 0px !important;
+  /* remove underline */
   --border-style: none !important;
 }
 
 .item-info {
   margin-left: 12px;
   width: 100%;
+  position: relative;
+
 }
 
 .item-row {
@@ -101,6 +105,10 @@
 
 /* QUANTITY SELECTOR */
 .qty-box {
+  position: absolute;
+  top:20px;
+  right:-8px;
+  bottom:20px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -133,7 +141,8 @@
 
 .summary-row {
   display: flex;
-  justify-content: space-between;  /* label bên trái, tiền ép qua phải */
+  justify-content: space-between;
+  /* label bên trái, tiền ép qua phải */
   align-items: center;
   width: 100%;
   margin: 4px 0;
@@ -141,7 +150,8 @@
 
 .summary-row .price {
   text-align: right;
-  margin-left: auto;               /* ép sát qua bên phải */
+  margin-left: auto;
+  /* ép sát qua bên phải */
   font-weight: 600;
 }
 
@@ -149,14 +159,73 @@
   font-size: 1.1rem;
   font-weight: 700;
 }
-ion-item.combo-item {
-  --ion-item-background: transparent;
+
+ion-button[disabled] ion-icon {
+  background-color: var(--ion-color-light);
+  color: var(--ion-color-medium) !important;
 }
 
-ion-item.combo-item ion-checkbox ,.qty-box ion-icon {
-  pointer-events: auto;
+.group-box {
+	border: 1px solid #ddd;
+	padding: 10px;
+	border-radius: 6px;
+	margin-bottom: 12px;
+	position: relative;
 }
 
-ion-item.combo-item::part(native) {
-  pointer-events: none;
+.group-box.invalid-group {
+	border-color: #e74c3c;
 }
+
+.group-title {
+	position: relative;
+	display: inline-block;
+}
+
+.error-marker {
+	color: #e74c3c;
+	font-weight: bold;
+	margin-left: 6px;
+	cursor: pointer;
+	font-size: 18px;
+}
+
+
+.popover-errors {
+	padding: 10px;
+	max-width: 240px;
+	font-size: 13px;
+	color: #e74c3c;
+	white-space: pre-line;
+}
+
+// ion-item.combo-item {
+//   --ion-item-background: transparent;
+// }
+
+// ion-item.combo-item ion-checkbox ,.qty-box ion-icon {
+//   pointer-events: auto;
+// }
+
+// ion-item.combo-item::part(native) {
+//   pointer-events: none;
+// }
+// ion-radio {
+//   --border-radius: 50%;
+//   --inner-border-radius: 50%;
+
+//   --color: #ddd;
+//   --color-checked: #000;
+// }
+
+// ion-radio.ios::part(container) {
+//   width: 20px;
+//   height: 20px;
+
+//   border: 2px solid #ddd;
+//   border-radius: 50%;
+// }
+
+// .radio-checked.ios::part(container) {
+//   border-color: #000;
+// }
