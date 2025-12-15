@@ -461,7 +461,7 @@
 							(click)="sendPrint();"
 							[disabled]="submitAttempt || !item.Id"
 						>
-							In phiếu
+							{{'Print bill'| translate}}
 						</ion-button>
 					</ion-col>
 				</ion-row>
@@ -597,7 +597,7 @@
 			margin-top: 10px;
 		}
 	</style>
-	<div id="bill" class="bill" *ngIf="item?.OrderLines?.length">
+	<div id="bill" #bill class="bill" *ngIf="item?.OrderLines?.length">
 		<div class="receipt giao-nhan">
 			<section class="sheet rpt p1">
 				<table>
