@@ -63,7 +63,6 @@ export class POSInvoiceModalPage extends PageBase {
 				Phone1: [''],
 				Contact: [''],
 			}),
-			_OptionCode: [''],
 		});
 		this.formGroup = formBuilder.group({
 			Id: [0],
@@ -75,6 +74,7 @@ export class POSInvoiceModalPage extends PageBase {
 				Phone1: [''],
 				Contact: [''],
 			}),
+			_OptionCode: [''],
 		});
 	}
 
@@ -95,12 +95,15 @@ export class POSInvoiceModalPage extends PageBase {
 		this.LoadTaxCodeDataSource(this.item);
 		if (this.id == this._IdDefaultBusinessPartner) {
 			this._isDefaultBP = true;
-			this.taxInfoGroup.controls._OptionCode.setValue('AddNew');
+			this.formGroup.controls._OptionCode.setValue('AddNew');
 			this.taxInfoGroup.controls.Id.setValue(0);
 			this.taxInfoGroup.controls.Id.markAsDirty();
+			this.formGroup.controls.Name.setValue(null);
+			this.formGroup.controls.WorkPhone.setValue(null);
+		} else {
+			this.taxInfoGroup.disable();
+			this.formGroup.controls._OptionCode.enable();
 		}
-		this.taxInfoGroup.disable();
-		this.taxInfoGroup.controls._OptionCode.enable();
 
 		if (this._canAddEInvoiceInfo) {
 			this.TaxCodeDataSource.push({
@@ -116,7 +119,7 @@ export class POSInvoiceModalPage extends PageBase {
 			this.TaxCodeDataSource = i.TaxInfos;
 			let taxDefault = this.TaxCodeDataSource.find((d) => d.Id == this.idTaxInfo);
 			if (taxDefault) {
-				this.taxInfoGroup.controls._OptionCode.setValue(taxDefault.Id);
+				this.formGroup.controls._OptionCode.setValue(taxDefault.Id);
 				this.changeSelectTaxCode(taxDefault);
 			}
 		}
@@ -139,7 +142,7 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 	Apply(apply = false) {
 		if (apply) {
-			if (this.taxInfoGroup.controls._OptionCode.value == '') {
+			if (this.formGroup.controls._OptionCode.value == '') {
 				let submitItem = {
 					Id: this.id,
 					Address: this.item.Address,
@@ -156,10 +159,8 @@ export class POSInvoiceModalPage extends PageBase {
 				this.formGroup.controls.Id.markAsDirty();
 				this.formGroup.addControl('IsPersonal', new FormControl({ value: true, disabled: false }));
 				this.formGroup.controls.IsPersonal.markAsDirty();
-				let WorkPhone = this.taxInfoGroup.controls.WorkPhone.value;
-				let Name = this.taxInfoGroup.controls.Name.value;
-				this.formGroup.controls.Name.setValue(Name);
-				this.formGroup.controls.Name.markAsDirty();
+				let WorkPhone = this.formGroup.controls.WorkPhone.value;
+				let Name = this.formGroup.controls.Name.value;
 				this.formGroup.controls.Address['controls'].Id.setValue(0);
 				this.formGroup.controls.Address['controls'].Phone1.patchValue(WorkPhone);
 				this.formGroup.controls.Address['controls'].Contact.patchValue(Name);
@@ -209,15 +210,17 @@ export class POSInvoiceModalPage extends PageBase {
 				this.isShowInfo = false;
 				break;
 			case 'AddNew':
+				this.resetTaxInfoGroup();
 				this.isShowInfo = true;
 				this.taxInfoGroup.enable();
 				this.taxInfoGroup.controls.Id.setValue(0);
 				this.taxInfoGroup.controls.Id.markAsDirty();
+				this.checkRuleHasTax(this.optionalTax, false);
 				break;
 			default:
 				this.isShowInfo = true;
 				this.taxInfoGroup.disable();
-				this.taxInfoGroup.controls._OptionCode.enable();
+				this.formGroup.controls._OptionCode.enable();
 				this.taxInfoGroup.patchValue(i);
 				if (!i.TaxCode) {
 					this.checkRuleHasTax('noTax', false);
@@ -228,6 +231,12 @@ export class POSInvoiceModalPage extends PageBase {
 				}
 				break;
 		}
+	}
+
+	resetTaxInfoGroup() {
+		this.taxInfoGroup.reset();
+		this.taxInfoGroup.controls.IDPartner.setValue(this.item.Id);
+		this.taxInfoGroup.controls.IDPartner.markAsDirty();
 	}
 
 	changeTaxCode(event) {

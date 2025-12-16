@@ -12,6 +12,8 @@
 	</ion-toolbar>
 </ion-header>
 <ion-content appScrollbarTheme>
+	<div id="ng-select" style="position: absolute; z-index: 30005"></div>
+
 	<div class="ion-padding">
 		<form [formGroup]="taxInfoGroup">
 			<ion-grid fixed>
@@ -30,7 +32,7 @@
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
 						<app-form-control
 							*ngIf="!_isDefaultBP"
-							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:taxInfoGroup}"
+							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:formGroup , appendTo: '#ng-select'}"
 							(change)="changeSelectTaxCode($event)"
 						></app-form-control>
 					</ion-col>
@@ -40,15 +42,15 @@
 							<ion-label color="primary">{{'Customer information' | translate}}</ion-label>
 						</ion-list-header>
 
-						<app-form-control [field]="{id:'Name', label:'Customer', type:'text',form:taxInfoGroup}"></app-form-control>
+						<app-form-control [field]="{id:'Name', label:'Customer', type:'text',form:formGroup}"></app-form-control>
 
-						<app-form-control [field]="{id:'WorkPhone', label:'Work phone', type:'text',form:taxInfoGroup}"></app-form-control>
+						<app-form-control [field]="{id:'WorkPhone', label:'Work phone', type:'text',form:formGroup}"></app-form-control>
 					</ion-col>
 					<ion-col size="12" size-sm size-xl="12">
 						<ion-list-header *ngIf="isShowInfo || _isDefaultBP" class="ion-no-padding">
 							<ion-label color="primary">{{'Invoice information' | translate}}</ion-label>
 						</ion-list-header>
-						<ion-radio-group *ngIf="_isDefaultBP || taxInfoGroup.controls._OptionCode.value =='AddNew'" [value]="optionalTax" (ionChange)="hasTaxChange($event)">
+						<ion-radio-group *ngIf="_isDefaultBP || formGroup.controls._OptionCode.value =='AddNew'" [value]="optionalTax" (ionChange)="hasTaxChange($event)">
 							<ion-col size="6">
 								<ion-radio value="hasTax" labelPlacement="end" aria-label="Has tax identification number"
 									>{{'Has tax identification number' | translate}}</ion-radio
