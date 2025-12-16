@@ -37,7 +37,7 @@ export class ComboModalPage implements OnInit {
 			g.Items?.forEach((i) => (i.Quantity = i.Quantity || 1));
 			this.item?.SubOrders?.forEach((sub) => {
 				if (g.Items.some((i) => i.IDUoM === sub.IDUoM && i.IDItem === sub.IDItem) && !this.selectedItems[g.Id][sub.IDUoM]) {
-					this.selectedItems[g.Id][sub.IDUoM] = sub.Quantity/this.item.Quantity;
+					this.selectedItems[g.Id][sub.IDUoM] = sub.Quantity / this.item.Quantity;
 				}
 			});
 		}
@@ -65,17 +65,16 @@ export class ComboModalPage implements OnInit {
 	}
 	incQty(i, g) {
 		if (!this.isSelected(g, i)) return;
-		this.selectedItems[g.Id][i.IDUoM]+= i.Quantity;
+		this.selectedItems[g.Id][i.IDUoM] += i.Quantity;
 		const total = this.getGroupTotalQty(g);
-		if ((g.MaxQuantity && total > g.MaxQuantity) || (i.MaxQuantity && this.selectedItems[g.Id][i.IDUoM] > i.MaxQuantity)){
-			this.selectedItems[g.Id][i.IDUoM]-= i.Quantity;
+		if ((g.MaxQuantity && total > g.MaxQuantity) || (i.MaxQuantity && this.selectedItems[g.Id][i.IDUoM] > i.MaxQuantity)) {
+			this.selectedItems[g.Id][i.IDUoM] -= i.Quantity;
 		}
-		
 	}
 
 	decQty(i, g) {
 		if (!this.isSelected(g, i)) return;
-		this.selectedItems[g.Id][i.IDUoM]-= i.Quantity;
+		this.selectedItems[g.Id][i.IDUoM] -= i.Quantity;
 		if (this.selectedItems[g.Id][i.IDUoM] <= 0) delete this.selectedItems[g.Id][i.IDUoM];
 	}
 
@@ -92,16 +91,28 @@ export class ComboModalPage implements OnInit {
 		const totalQty = itemKeys.reduce((s, k) => s + selected[k], 0);
 
 		// CASE 1 — Required: phải chọn ít nhất 1
-		if (g.IsRequired && itemKeys.length === 0) return false;
+		if (g.IsRequired && itemKeys.length === 0) {
+			g.Message = 'Required';
+			return false;
+		}
 
 		// CASE 2 — MinSelect: số item được chọn < min
-		if (g.MinSelect && itemKeys.length < g.MinSelect) return false;
+		if (g.MinSelect && itemKeys.length < g.MinSelect) {
+			g.Message = 'Min select is ' + g.MinSelect;
+			return false;
+		}
 
 		// CASE 3 — MaxSelect: chọn nhiều hơn max
-		if (g.MaxSelect && itemKeys.length > g.MaxSelect) return false;
+		if (g.MaxSelect && itemKeys.length > g.MaxSelect) {
+			g.Message = 'Max select is ' + g.MaxSelect;
+			return false;
+		}
 
 		// CASE 4 — MaxQuantity của cả group
-		if (g.MaxQuantity && totalQty > g.MaxQuantity) return false;
+		if (g.MaxQuantity && totalQty > g.MaxQuantity) {
+			g.Message = 'Max quantity is ' + g.MaxQuantity;
+			return false;
+		}
 
 		// CASE 5 — kiểm tra từng item
 		for (const itemId of itemKeys) {
@@ -111,11 +122,15 @@ export class ComboModalPage implements OnInit {
 			if (!item) continue;
 
 			// Item max qty
-			if (item.MaxQuantity && qty > item.MaxQuantity) return false;
+			if (item.MaxQuantity && qty > item.MaxQuantity) {
+				g.Message = `${item.Name} exceeds max quantity (${item.MaxQuantity}).`
+				return false;
+			}
 
 			// Không cho 0 quantity
 			if (qty <= 0) return false;
 		}
+		g.Message = '';
 		return true;
 	}
 	/** Đóng modal */
@@ -140,22 +155,21 @@ export class ComboModalPage implements OnInit {
 		if (!keys.length) return null;
 		return +keys[0]; // ép kiểu sang number
 	}
-	onCheckboxChangeSingle(g, item, ev) {
-		const isChecked = ev.detail.checked;
+	onRadioChange(g: any, ev: any) {
+		const selectedId = ev.detail.value; // Đây là ID của item vừa được chọn
 
-		// Bỏ hết lựa chọn cũ của group
-		if (g.IsRequired && !isChecked) {
-			ev.target.checked = true;
-			return;
-		} // không cho bỏ chọn nếu bắt buộc
+		// Xóa nhóm cũ
 		this.selectedItems[g.Id] = {};
 
-		if (isChecked) {
-			// Chọn item mới
-			if (!g.AllowMultiple && item.MaxQuantity) this.selectedItems[g.Id][item.IDUoM] = item.Quantity;
-			else this.selectedItems[g.Id][item.IDUoM] = 1; // hoặc default quantity
-		} else delete this.selectedItems[g.Id];
-		// Force UI update nếu cần
+		// Tìm item đang được chọn
+		const item = g.Items.find((x) => x.IDUoM === selectedId);
+		if (!item) return;
+
+		// Gán quantity
+		if (item.MaxQuantity) this.selectedItems[g.Id][item.IDUoM] = item.Quantity ?? 1;
+		else this.selectedItems[g.Id][item.IDUoM] = 1;
+
+		// Force UI update
 		this.selectedItems = { ...this.selectedItems };
 	}
 	isAllGroupsValid(): boolean {
@@ -190,5 +204,20 @@ export class ComboModalPage implements OnInit {
 	}
 	get finalTotal() {
 		return this.item.UoMPrice + this.totalExtra;
+	}
+	canIncrease(i: any, g: any): boolean {
+		// quyền chỉnh sửa
+		if (!this.canEdit) return false;
+
+		// lấy qty đã chọn (0 nếu chưa có)
+		const selQty = this.selectedItems?.[g.Id]?.[i.IDUoM] ?? 0;
+
+		// kiểm tra max quantity trên item
+		if (i.MaxQuantity != null && selQty >= i.MaxQuantity) return false;
+
+		// kiểm tra max quantity của group (tổng nhóm)
+		if (g.MaxQuantity != null && this.getGroupTotalQty(g) >= g.MaxQuantity) return false;
+
+		return true;
 	}
 }

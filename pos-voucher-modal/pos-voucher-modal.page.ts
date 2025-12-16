@@ -145,7 +145,7 @@ export class POSVoucherModalPage extends PageBase {
 				.then((savedItem: any) => {
 					this.env.showMessage('Saving completed!', 'success');
 					resolve(true);
-					this.modalController.dismiss(this.SaleOrder);
+					this.modalController.dismiss(savedItem);
 				})
 				.catch((err) => {
 					this.env.showErrorMessage(err);

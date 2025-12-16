@@ -39,6 +39,7 @@ import { POSService } from '../_services/pos.service';
 import { InputControlComponent } from 'src/app/components/controls/input-control.component';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
+import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-modal.component';
 import { ComboModalPage } from './combo-modal/combo-modal.page';
 
 @Component({
@@ -49,13 +50,14 @@ import { ComboModalPage } from './combo-modal/combo-modal.page';
 })
 export class POSOrderDetailPage extends PageBase implements CanComponentDeactivate {
 	@ViewChild('numberOfGuestsInput') numberOfGuestsInput: ElementRef;
+	@ViewChild('bill', { static: false }) billRef: ElementRef;
 	isOpenMemoModal = false;
 	AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
 	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png'; //No image for menu item
 	segmentView = '0';
 	idTable: any; //Default table
 	paymentList = [];
-
+	subPromotion: any;
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];
 	noLockLineStatusList = ['New', 'Waiting'];
 	checkDoneLineStatusList = ['Done', 'Canceled', 'Returned'];
@@ -80,7 +82,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Take: 20,
 			Skip: 0,
 			SkipMCP: true,
-			Term: term ? term : 'BP:' + this.item?.IDContact,
+			Keyword: term ,
 		});
 	});
 
@@ -198,12 +200,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					break;
 			}
 		});
+		this.subPromotion = this.promotionService.appliedPromotions$.subscribe((list) => {
+			this.promotionAppliedPrograms = list;
+		});
 		// if(!this.item.Id) this.formGroup.get('NumberOfGuests')?.markAsDirty();
 		super.ngOnInit();
 	}
 
 	ngOnDestroy() {
 		this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
+		this.subPromotion.unsubscribe();
 		super.ngOnDestroy();
 	}
 
@@ -347,6 +353,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.get('NumberOfGuests').markAsDirty();
 		} else {
 			this.patchOrderValue();
+			this.promotionService.getPromotionProgram(this.item.Id);
 			this.getPayments().then(() => {
 				if (this.posService.systemConfig.POSBillQRPaymentMethod == 'VietQR') {
 					this.GenQRCode(null);
@@ -360,7 +367,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					}
 				}
 			});
-			this.getPromotionProgram();
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
 			}
@@ -488,35 +494,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			await this.env.setStorage('Notifications', this.notifications);
 		}
 	}
-
-	// async setStorageNotification(Id, IDBranch, IDSaleOrder, Type, Name, Code, Message, Url) {
-	//   let notification = {
-	//     Id: Id,
-	//     IDBranch: IDBranch,
-	//     IDSaleOrder: IDSaleOrder,
-	//     Type: Type,
-	//     Name: Name,
-	//     Code: Code,
-	//     Message: Message,
-	//     Url: Url,
-	//     Watched: false,
-	//   };
-	//   const notifications = await this.env.getStorage('Notifications').then((result) => {
-	//     if (result) {
-	//       return result;
-	//     } else {
-	//       return [];
-	//     }
-	//   });
-	//   if(notifications.some(d=> d.Id ==notification.Id && d.IDBranch == notification.IDBranch &&
-	//     d.IDSaleOrder == notification.IDSaleOrder && d.Type == notification.Type && d.Name == notification.Name && d.Code == notification.Code && d.Message == notification.Message && d.Url == notification.Url
-	//   )){
-	//     return;
-	//   }
-	//   notifications.unshift(notification);
-	//   this.env.setStorage('Notifications', notifications);
-	//   this.notifications.unshift(notification);
-	// }
 
 	async goToNofication(i, j) {
 		this.notifications[j].Watched = true;
@@ -797,7 +774,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			const modal = await this.modalController.create({
 				component: ComboModalPage,
 				backdropDismiss: true,
-				cssClass: 'modal90',
+				cssClass: 'modal-combo',
 				componentProps: {
 					item: line,
 					canEdit: this.pageConfig.canEdit && !['TemporaryBill', 'Cancelled', 'Done'].includes(this.item.Status) && line.Status == 'New',
@@ -966,26 +943,53 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	goToPayment() {
+	async goToPayment() {
+		await this.setKitchenID('all');
+		await this.setItemQuery('all');
+
 		let payment = {
 			IDBranch: this.item.IDBranch,
 			IDStaff: this.env.user.StaffID,
 			IDCustomer: this.item.IDContact,
+			IDTable: this.idTable,
 			IDSaleOrder: this.item.Id,
 			DebtAmount: Math.round(this.item.Debt),
 			IsActiveInputAmount: true,
-			IsActiveTypeCash: true,
 			ReturnUrl: window.location.href,
-			Lang: this.env.language.current,
 			Timestamp: Date.now(),
 			CreatedBy: this.env.user.Email,
+			SaleOrder: this.item,
 		};
-		let str = window.btoa(JSON.stringify(payment));
-		let code = this.convertUrl(str);
-		let url = environment.appDomain + 'Payment?Code=' + code;
-		window.open(url, '_blank');
+		const modal = await this.modalController.create({
+			component: PaymentModalComponent,
+			id: 'POSPaymentModalPage',
+			canDismiss: true,
+			backdropDismiss: true,
+			cssClass: 'modal-payments',
+			componentProps: {
+				item: payment,
+				paymentStatusList: this.posService.dataSource.paymentStatusList,
+				canEditVoucher: this.item.Status != 'Done',
+				ZPIsActive: this.posService.systemConfig.ZPIsActive,
+				EDCCVCB_IsActive : this.posService.systemConfig.EDCCVCB_IsActive,
+				billElement: this.billRef.nativeElement,
+				calcFunction: this.recalculateOrder,
+				onUpdateItem: (updated) => this.updateItemFromPayment(updated),
+				cssStyle:
+					`body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}` +
+					`.bold{font-weight: bold}.bill,.sheet{color: #000;font-size: 1rem}.sheet table tr{page-break-inside: avoid}.bill{display: block;overflow: hidden !important}.bill .sheet{box-shadow: none !important}.bill .header,.bill .message,.text-center{text-align: center}.bill .header span{display: inline-block;width: 100%}.bill .header .logo img{max-width: 8.33rem;max-height: 4.17rem}.bill .header .brand,.bill .items .quantity{font-weight: 700}.bill .header .address{font-size: 80%;font-style: italic}.bill .table-info,.bill .table-info-top{border-top: solid;margin: 5px 0;padding: 5px 8px;border-width: 1px 0}.bill .items{margin: 5px 0;padding-left: 8px;padding-right: 8px}.bill .items tr td{border-bottom: 1px dashed #ccc;padding-bottom: 5px}.bill .items .name{font-size: 1rem;width: 100%;padding-top: 5px;padding-bottom: 2px !important;border: none !important}.bill .items tr.subOrder td{border-bottom: none !important}.bill .items tr.subOrder.isLast td{border-bottom: 1px dashed #ccc !important;padding-bottom: 5px}.bill .items tr:last-child td{border: none !important}.bill .items tr.subOrder.isLast:last-child td{border: none !important}.bill .items .total,.text-right{text-align: right}.bill .message{padding-left: 8px;padding-right: 8px}.page-footer-space{margin-top: 10px}.table-info-top td{padding-top: 5px}.sheet{margin: 0;overflow: hidden;position: relative;box-sizing: border-box;page-break-after: always;font-family: "Times New Roman", Times, serif;font-size: 0.72rem;background: #fff}.sheet .page-footer,.sheet .page-footer-space{height: 10mm}.sheet table{page-break-inside: auto;width: 100%;border-collapse: collapse}.sheet table tr{page-break-after: auto}`,
+			},
+		});
+		await modal.present();
+		// const { data} = await modal.onWillDismiss();
 	}
-
+	recalculateOrder() {
+		// xử lý voucher ở đây
+		// tính lại order
+		// update bill DOM
+		this.calcOrder();
+		return this.billRef.nativeElement; // trả bill mới
+	}
 	private convertUrl(str) {
 		return str.replace('=', '').replace('=', '').replace('+', '-').replace('_', '/');
 	}
@@ -1028,6 +1032,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.item = data;
 			this.refresh();
 		}
+	}
+
+	async updateItemFromPayment(updatedItem) {
+		this.item = updatedItem;
+		await this.loadedData();
+		return this.item;
 	}
 
 	InvoiceRequired() {
@@ -1691,6 +1701,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		});
 	}
+
 	printPrepare(element, printers, jobName = '') {
 		let content = document.getElementById(element);
 		//let ele = this.printingService.applyAllStyles(content);
@@ -2536,29 +2547,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	deleteVoucher(p) {
-		let apiPath = {
-			method: 'POST',
-			url: function () {
-				return ApiSetting.apiDomain('PR/Program/UnUseVoucher/');
-			},
-		};
-		new Promise((resolve, reject) => {
-			this.pageProvider.commonService
-				.connect(apiPath.method, apiPath.url(), {
-					SaleOrder: this.item,
-					VoucherCodeList: [p.VoucherCode],
-				})
-				.toPromise()
-				.then((savedItem: any) => {
-					this.env.showMessage('Saving completed!', 'success');
-					resolve(true);
-					this.refresh();
-				})
-				.catch((err) => {
-					this.env.showErrorMessage(err);
-					reject(err);
-				});
-		});
+		this.promotionService
+			.deleteVoucher(this.item, [p.VoucherCode])
+			.then(() => {
+				this.refresh();
+			})
+			.catch((err) => {
+				this.env.showErrorMessage(err);
+			});
 	}
 
 	async setKitchenID(value, ms = 1) {
