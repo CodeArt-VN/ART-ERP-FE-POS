@@ -2354,20 +2354,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	getPromotionProgram() {
-		this.programProvider.commonService
-			.connect('GET', 'PR/Program/AppliedProgramInSaleOrder', {
-				IDSO: this.id,
-			})
-			.toPromise()
-			.then((data: any) => {
-				this.promotionAppliedPrograms = data;
-			})
-			.catch((err) => {
-				dog && console.log(err);
-			});
-	}
-
 	changeTable() {
 		this.saveSO();
 	}
