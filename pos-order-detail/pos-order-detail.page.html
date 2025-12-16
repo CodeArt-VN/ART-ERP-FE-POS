@@ -273,25 +273,6 @@
 							<ion-text color="primary" class="clickable" (click)="processPayments()">{{'Refunds' | translate}}</ion-text>
 							<ion-text class="c-value" color="dark"> {{item.Debt * -1 | number: '1.0-0'}} </ion-text>
 						</label>
-
-						<span class="c-label" style="margin-top: 15px" *ngIf="item?.OrderLines?.length > 0">
-							<label class="InvoiceOptions">
-								<input
-									class="c-checkbox"
-									(click)="InvoiceRequired()"
-									[(ngModel)]="this.item.IsInvoiceRequired"
-									[ngModelOptions]="{standalone: true}"
-									type="checkbox"
-								/>
-								<ion-icon color="primary" name="receipt"></ion-icon>
-								<ion-label
-									[ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}"
-									[color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'"
-								>
-									{{'Issue invoice' | translate}}
-								</ion-label>
-							</label>
-						</span>
 					</div>
 				</div>
 			</div>
@@ -370,13 +351,53 @@
 								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
 							>
 							</app-input-control>
+							<ion-row>
+								<ion-col size="6">
+									<div *ngIf="item?.OrderLines?.length > 0">
+										<ion-button
+											[fill]="this.item.IsInvoiceRequired ? 'solid' : 'outline'"
+											style="margin-top: 5px; margin-bottom: 9px"
+											size="small"
+											(click)="InvoiceRequired()"
+										>
+											<ion-icon [color]="this.item.IsInvoiceRequired ? 'light':'primary'" name="receipt"></ion-icon>
+											<ion-label
+												[ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}"
+												[color]="this.item.IsInvoiceRequired ? 'light' : 'medium'"
+											>
+												{{'Issue invoice' | translate}}
+											</ion-label>
+										</ion-button>
+									</div>
+								</ion-col>
+								<ion-col size="6">
+									<div *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
+										<ion-button [disabled]="submitAttempt" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="addContact()">
+											<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+											{{'Create new customer' | translate}}
+										</ion-button>
+									</div>
+								</ion-col>
+							</ion-row>
 
-							<div class="text-right" *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
-								<ion-button [disabled]="submitAttempt" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="addContact()">
-									<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-									{{'Create new customer' | translate}}
-								</ion-button>
-							</div>
+							<!-- <span class="c-label" style="margin-top: 15px" *ngIf="item?.OrderLines?.length > 0">
+								<label class="InvoiceOptions">
+									<input
+										class="c-checkbox"
+										(click)="InvoiceRequired()"
+										[(ngModel)]="this.item.IsInvoiceRequired"
+										[ngModelOptions]="{standalone: true}"
+										type="checkbox"
+									/>
+									<ion-icon color="primary" name="receipt"></ion-icon>
+									<ion-label
+										[ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}"
+										[color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'"
+									>
+										{{'Issue invoice' | translate}}
+									</ion-label>
+								</label>
+							</span> -->
 						</div>
 						<app-form-control (change)="setOrderValue([])" [field]="{id:'NumberOfGuests', label:'Number of guests', type:'number',form:formGroup}"></app-form-control>
 
@@ -716,11 +737,10 @@
 														<td class="quantity total">
 															<span>{{g.Quantity}}</span>
 														</td>
+														<td class="total"></td>
 														<td class="total">
-													</td>
-													<td class="total">
-														<span>+{{g.Quantity * g.UoMPrice | number: '1.0-0'}}</span>
-													</td>
+															<span>+{{g.Quantity * g.UoMPrice | number: '1.0-0'}}</span>
+														</td>
 													</tr>
 												</ng-container>
 												}
@@ -735,7 +755,7 @@
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery} ; let idx = index ">
 												<ng-container *ngIf="o._undeliveredQuantity > 0">
-													<tr  [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
+													<tr [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
 														<td>
 															{{idx + 1}}.
 															<strong><span [appTranslateResource]="o._item"></span></strong>
@@ -744,7 +764,7 @@
 															<span class="bold quantity">{{o._undeliveredQuantity}}</span>
 														</td>
 													</tr>
-													<tr *ngIf="o.Remark"  [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
+													<tr *ngIf="o.Remark" [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
 														<td colspan="2">Note: {{o.Remark}}</td>
 													</tr>
 													@if(o.SubOrders && o.SubOrders.length >0){

@@ -7,6 +7,7 @@ import { FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms'
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 import { el } from '@fullcalendar/core/internal-common';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
 	selector: 'app-pos-invoice-modal',
@@ -19,11 +20,19 @@ export class POSInvoiceModalPage extends PageBase {
 	IsShowApply = false;
 	IsShowSpinner = false;
 	isNoTax = false;
-	optionalTax = '';
+	optionalTax = 'hasTax';
 	taxInfoGroup: FormGroup;
 	_isDefaultBP = false;
+	_IdDefaultBusinessPartner = 0;
 	_IsCreateCustomer = false;
-	_canEditEInvoiceInfo = false;
+	_canAddEInvoiceInfo = false;
+	idTaxInfo = 0;
+
+	textDefault = 'Guest customer';
+	textNewTaxInfo = 'New tax info';
+	TaxCodeDataSource = [];
+	isShowInfo = false;
+	isAddNew = false;
 	constructor(
 		public pageProvider: CRM_ContactProvider,
 		public partnerTaxInfoProvider: CRM_PartnerTaxInfoProvider,
@@ -34,7 +43,8 @@ export class POSInvoiceModalPage extends PageBase {
 		public formBuilder: FormBuilder,
 		public cdr: ChangeDetectorRef,
 		public loadingController: LoadingController,
-		public commonService: CommonService
+		public commonService: CommonService,
+		public translate: TranslateService
 	) {
 		super();
 		this.pageConfig.isDetailPage = true;
@@ -55,6 +65,7 @@ export class POSInvoiceModalPage extends PageBase {
 				Phone1: [''],
 				Contact: [''],
 			}),
+			_OptionCode: [''],
 		});
 		this.formGroup = formBuilder.group({
 			Id: [0],
@@ -69,17 +80,28 @@ export class POSInvoiceModalPage extends PageBase {
 		});
 	}
 
+	preLoadData(event) {
+		Promise.all([this.translate.get(['Guest customer', 'New tax info']).toPromise()]).then((value: any) => {
+			this.textDefault = value[0]['Guest customer'];
+			this.textNewTaxInfo = value[0]['New tax info'];
+			super.preLoadData(event);
+		});
+	}
+
 	loadedData(event) {
 		super.loadedData(event);
 		if (this.item) {
 			this.taxInfoGroup.controls.IDPartner.setValue(this.item.Id);
 			this.taxInfoGroup.controls.IDPartner.markAsDirty();
 		}
+		if (this.id == this._IdDefaultBusinessPartner) this._isDefaultBP = true;
+		this.LoadTaxCodeDataSource(this.item);
 		if (this.item?.TaxInfos.length > 0) {
-			let taxInfos = this.item.TaxInfos.sort((a, b) => Number(b.IsDefault) - Number(a.IsDefault));
+			let taxInfos = this.item.TaxInfos.sort((a, b) => Number(b.IsDefault) - Number(a.IsDefault)).filter((d) => d.IsDefault);
 			if (taxInfos.length > 0) {
 				let taxInfo = taxInfos[0];
-				this.taxInfoGroup.patchValue(taxInfo);
+				this.taxInfoGroup.controls._OptionCode.setValue(taxInfo.Id);
+				this.changeSelectTaxCode(taxInfo);
 				// this.formGroup.controls.TaxCode.setValue(taxInfo.TaxCode);
 				// this.formGroup.controls.CompanyName.setValue(taxInfo.CompanyName);
 				// this.formGroup.controls.Email.setValue(taxInfo.Email);
@@ -93,9 +115,11 @@ export class POSInvoiceModalPage extends PageBase {
 				// this.formGroup.controls.TaxCode.updateValueAndValidity();
 			}
 		}
-
-		if (!this._canEditEInvoiceInfo) {
-			this.taxInfoGroup.disable();
+		if (this._canAddEInvoiceInfo) {
+			this.TaxCodeDataSource.push({
+				Id: 'AddNew',
+				CompanyName: this.textNewTaxInfo,
+			});
 		}
 
 		if (!this.formGroup.invalid) {
@@ -103,6 +127,29 @@ export class POSInvoiceModalPage extends PageBase {
 			this.IsShowApply = true;
 		}
 	}
+
+	LoadTaxCodeDataSource(i) {
+		this.TaxCodeDataSource = [];
+		if (i?.TaxInfos) {
+			this.TaxCodeDataSource = i.TaxInfos;
+			let taxDefault = this.TaxCodeDataSource.find((d) => d.Id == this.idTaxInfo);
+			if (taxDefault) {
+				this.taxInfoGroup.controls._OptionCode.setValue(taxDefault.Id);
+				this.changeSelectTaxCode(taxDefault);
+			}
+		}
+		if (i?.TaxInfos?.length) {
+			this.TaxCodeDataSource.unshift({
+				CompanyName: '----------',
+				disabled: true,
+			});
+		}
+		this.TaxCodeDataSource.unshift({
+			Id: '',
+			CompanyName: this.textDefault,
+		});
+	}
+
 	async saveChange() {
 		super.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider);
 		this.IsShowSave = false;
@@ -133,12 +180,33 @@ export class POSInvoiceModalPage extends PageBase {
 				this.saveChange2().then((savedItem: any) => {
 					this.taxInfoGroup.controls.IDPartner.setValue(savedItem.Id);
 					this.taxInfoGroup.controls.IDPartner.markAsDirty();
-					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider);
-					this.modalController.dismiss(savedItem);
+					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
+						let submitItem = {
+							Id: savedItem.Id,
+							Address: savedItem.Address,
+							IDTaxInfo: taxInfo.Id,
+							TaxCode: taxInfo.TaxCode,
+						};
+						this.modalController.dismiss(submitItem);
+					});
 				});
+			} else if (this.taxInfoGroup.controls._OptionCode.value == '') {
+				let submitItem = {
+					IDContact: this.id,
+					IDTaxInfo: null,
+					TaxCode: null,
+				};
+				this.modalController.dismiss(submitItem);
 			} else {
-				this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider);
-				this.modalController.dismiss(undefined);
+				this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
+					let submitItem = {
+						IDContact: this.id,
+						IDTaxInfo: taxInfo.Id,
+						TaxCode: taxInfo.TaxCode,
+					};
+					this.modalController.dismiss(submitItem);
+				});
+				// this.modalController.dismiss(undefined);
 			}
 		} else {
 			this.modalController.dismiss(undefined);
@@ -149,6 +217,32 @@ export class POSInvoiceModalPage extends PageBase {
 		this.IsShowApply = false;
 		this.formGroup.reset();
 	}
+
+	changeSelectTaxCode(i) {
+		console.log('Selected tax code: ', i);
+		switch (i.Id) {
+			case '':
+				this.isShowInfo = false;
+				break;
+			case 'AddNew':
+				this.isShowInfo = true;
+				this.taxInfoGroup.controls.Id.setValue(0);
+				this.taxInfoGroup.controls.Id.markAsDirty();
+				break;
+			default:
+				this.isShowInfo = true;
+				this.taxInfoGroup.patchValue(i);
+				if (i.IdentityCardNumber && !i.TaxCode) {
+					this.checkRuleHasTax('noTax');
+					this.optionalTax = 'noTax';
+				} else {
+					this.checkRuleHasTax('hasTax');
+					this.optionalTax = 'hasTax';
+				}
+				break;
+		}
+	}
+
 	changeTaxCode(event) {
 		let value = event.target.value;
 		this.IsShowSave = true;
@@ -185,18 +279,30 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 
 	hasTaxChange(e) {
-		this.formGroup.reset();
+		// this.formGroup.reset();
 		this.optionalTax = e.target.value;
-		if (e.target.value == 'noTax') {
-			this.isNoTax = true;
-			this.formGroup.controls.TaxCode.clearValidators();
-			this.formGroup.controls.CompanyName.enable();
-			this.formGroup.controls.BillingAddress.enable();
-			this.formGroup.controls.TaxCode.updateValueAndValidity();
+		this.checkRuleHasTax(e.target.value);
+		if (this.optionalTax == 'noTax' && this.taxInfoGroup.controls.TaxCode.value != '') {
+			this.taxInfoGroup.controls.TaxCode.setValue(null);
+			this.taxInfoGroup.controls.TaxCode.markAsDirty();
+		}
+	}
+
+	checkRuleHasTax(e) {
+		if (e == 'noTax') {
+			this.taxInfoGroup.controls.IdentityCardNumber.setValidators([Validators.required]);
+			this.taxInfoGroup.controls.IdentityCardNumber.updateValueAndValidity();
+			this.taxInfoGroup.controls.TaxCode.clearValidators();
+			this.taxInfoGroup.controls.CompanyName.enable();
+			this.taxInfoGroup.controls.BillingAddress.enable();
+			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
 		} else {
-			this.isNoTax = false;
-			this.formGroup.controls.CompanyName.disable();
-			this.formGroup.controls.BillingAddress.disable();
+			this.taxInfoGroup.controls.TaxCode.setValidators([Validators.required]);
+			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
+			this.taxInfoGroup.controls.IdentityCardNumber.clearValidators();
+			this.taxInfoGroup.controls.IdentityCardNumber.updateValueAndValidity();
+			this.taxInfoGroup.controls.CompanyName.disable();
+			this.taxInfoGroup.controls.BillingAddress.disable();
 		}
 	}
 
