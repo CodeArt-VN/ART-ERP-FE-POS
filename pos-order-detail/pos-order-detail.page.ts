@@ -774,7 +774,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			const modal = await this.modalController.create({
 				component: ComboModalPage,
 				backdropDismiss: true,
-				cssClass: 'modal90',
+				cssClass: 'modal-combo',
 				componentProps: {
 					item: line,
 					canEdit: this.pageConfig.canEdit && !['TemporaryBill', 'Cancelled', 'Done'].includes(this.item.Status) && line.Status == 'New',
