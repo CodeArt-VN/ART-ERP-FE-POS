@@ -1035,21 +1035,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env.showMessage('The order is locked and cannot be edited', 'warning');
 			return false;
 		}
-		// if (!this.item._Customer) {
-		// 	this.env.showMessage('Please select a customer', 'warning');
-		// 	return false;
-		// }
-		// if (this.item._Customer.Id == 922) {
-		// 	this.env.showMessage('Cannot issue invoice for walk-in customer', 'warning');
-		// 	return false;
-		// }
-		if (!this.item.IsInvoiceRequired) {
-			this.processInvoice();
-		} else {
-			this.formGroup.controls.IsInvoiceRequired.patchValue(false);
-			this.formGroup.controls.IsInvoiceRequired.markAsDirty();
-			this.saveChange();
-		}
+		this.processInvoice();
 	}
 
 	async processInvoice() {
@@ -1061,6 +1047,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				_IdDefaultBusinessPartner: this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				_canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
+				idTaxInfo : this.formGroup.controls.IDTaxInfo.value
 			},
 		});
 		await modal.present();
@@ -1077,8 +1064,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			this.changedIDAddress({ Id: data.Id, IDAddress: data.Address?.Id });
 			this.saveChange();
-		} else {
-			this.item.IsInvoiceRequired = false;
 		}
 	}
 
