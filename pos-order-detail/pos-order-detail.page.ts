@@ -309,10 +309,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		for (let m of this.posService.dataSource.menuList)
 			for (let mi of m.Items) {
 				if (mi.BOMs && mi.BOMs.length > 0) {
-					mi.BOMs.sort((a, b) => {
-						if (a.Sort !== b.Sort) return a.Sort - b.Sort;
-						return a.Id - b.Id;
-					});
+					// mi.BOMs.sort((a, b) => {
+					// 	if (a.Sort !== b.Sort) return a.Sort - b.Sort;
+					// 	return a.Id - b.Id;
+					// });
 
 					let groups = [];
 					let currentGroup: any = {};
@@ -1037,10 +1037,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env.showMessage('Please select a customer', 'warning');
 			return false;
 		}
-		if (this.item._Customer.Id == 922) {
-			this.env.showMessage('Cannot issue invoice for walk-in customer', 'warning');
-			return false;
-		}
+		// if (this.item._Customer.Id == 922) {
+		// 	this.env.showMessage('Cannot issue invoice for walk-in customer', 'warning');
+		// 	return false;
+		// }
 		if (this.item.IsInvoiceRequired == false) {
 			this.processInvoice();
 		} else {
@@ -1051,20 +1051,31 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async processInvoice() {
+		let _IdBusinessPartner = null;
+		if (typeof this.posService.systemConfig.SODefaultBusinessPartner == 'object') {
+			try {
+				_IdBusinessPartner = JSON.parse(JSON.stringify(this.posService.systemConfig.SODefaultBusinessPartner))?.Id;
+			} catch (e) {}
+		}
+
 		const modal = await this.modalController.create({
 			component: POSInvoiceModalPage,
 			canDismiss: true,
 			cssClass: 'my-custom-class',
 			componentProps: {
 				id: this.item.IDContact,
+				_isDefaultBP: _IdBusinessPartner == this.item.IDContact,
+				_canEditEInvoice: this.pageConfig.canEditEInvoiceInfo,
 			},
 		});
 		await modal.present();
 		const { data } = await modal.onWillDismiss();
-		if (data == true) {
+		console.log('Dismiss : ', data);
+		if (data !== undefined) {
 			this.item.IsInvoiceRequired = true;
 			this.formGroup.controls.IsInvoiceRequired.patchValue(true);
 			this.formGroup.controls.IsInvoiceRequired.markAsDirty();
+			this.changedIDAddress({ Id: data.Id, IDAddress: data.Address?.Id });
 			this.saveChange();
 		} else {
 			this.item.IsInvoiceRequired = false;
