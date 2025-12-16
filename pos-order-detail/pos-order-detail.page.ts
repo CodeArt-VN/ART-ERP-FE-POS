@@ -1058,7 +1058,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			canDismiss: true,
 			cssClass: 'my-custom-class',
 			componentProps: {
-				id: this.item.IDContact ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
+				id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				_IdDefaultBusinessPartner: this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				_canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
 			},

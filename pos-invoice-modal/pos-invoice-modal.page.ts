@@ -157,7 +157,15 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 	Apply(apply = false) {
 		if (apply) {
-			if (this._isDefaultBP) {
+			if (this.taxInfoGroup.controls._OptionCode.value == '') {
+				let submitItem = {
+					Id: this.id,
+					Address: this.item.Address,
+					IDTaxInfo: null,
+					TaxCode: null,
+				};
+				this.modalController.dismiss(submitItem);
+			} else if (this._isDefaultBP) {
 				if (this.taxInfoGroup.controls.IsDefault) {
 					this.formGroup.controls.TaxCode.setValue(this.taxInfoGroup.controls.TaxCode.value);
 					this.formGroup.controls.TaxCode.markAsDirty();
@@ -190,17 +198,11 @@ export class POSInvoiceModalPage extends PageBase {
 						this.modalController.dismiss(submitItem);
 					});
 				});
-			} else if (this.taxInfoGroup.controls._OptionCode.value == '') {
-				let submitItem = {
-					IDContact: this.id,
-					IDTaxInfo: null,
-					TaxCode: null,
-				};
-				this.modalController.dismiss(submitItem);
 			} else {
 				this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
 					let submitItem = {
-						IDContact: this.id,
+						Id: this.id,
+						Address: this.item.Address,
 						IDTaxInfo: taxInfo.Id,
 						TaxCode: taxInfo.TaxCode,
 					};
