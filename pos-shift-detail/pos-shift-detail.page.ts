@@ -26,10 +26,10 @@ export class POSShiftDetailPage extends PageBase {
 	formGroup: FormGroup;
 	defaultPrinter;
 	_staffDataSource = this.buildSelectDataSource((term) => {
-		return this.staffProvider.search({ Take: 20, Skip: 0, Term: term });
+		return this.staffProvider.search({ Take: 20, Skip: 0, Keyword: term  });
 	});
 	_staffReceiveDataSource = this.buildSelectDataSource((term) => {
-		return this.staffProvider.search({ Take: 20, Skip: 0, Term: term });
+		return this.staffProvider.search({ Take: 20, Skip: 0, Keyword: term  });
 	});
 	confirmingRequest = false;
 	constructor(
