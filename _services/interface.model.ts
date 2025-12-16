@@ -239,4 +239,6 @@ export interface POSConfig {
 	BKIncomingDefaultBankAccount?: string;
 	BKIncomingQRPrefix?: string;
 	BKIncomingQRSuffix?: string;
+	ZPIsActive: boolean;
+	EDCCVCB_IsActive: boolean;
 }
