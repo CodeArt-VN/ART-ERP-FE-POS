@@ -82,7 +82,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Take: 20,
 			Skip: 0,
 			SkipMCP: true,
-			Term: term ? term : 'BP:' + this.item?.IDContact,
+			Keyword: term ,
 		});
 	});
 
@@ -953,9 +953,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			IDSaleOrder: this.item.Id,
 			DebtAmount: Math.round(this.item.Debt),
 			IsActiveInputAmount: true,
-			IsActiveTypeCash: true,
 			ReturnUrl: window.location.href,
-			Lang: this.env.language.current,
 			Timestamp: Date.now(),
 			CreatedBy: this.env.user.Email,
 			SaleOrder: this.item,
@@ -970,6 +968,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				item: payment,
 				paymentStatusList: this.posService.dataSource.paymentStatusList,
 				canEditVoucher: this.item.Status != 'Done',
+				ZPIsActive: this.posService.systemConfig.ZPIsActive,
+				EDCCVCB_IsActive : this.posService.systemConfig.EDCCVCB_IsActive,
 				billElement: this.billRef.nativeElement,
 				calcFunction: this.recalculateOrder,
 				onUpdateItem: (updated) => this.updateItemFromPayment(updated),
