@@ -14,7 +14,7 @@ export class POSEnviromentDataService {
 	// Reactive state for config and data
 	defaultPOSConfig: POSConfig = {
 		IsAutoSave: true,
-		SODefaultBusinessPartner: 123,
+		SODefaultBusinessPartner: null,
 		IsUseIPWhitelist: false,
 		IPWhitelistInput: '',
 		IsRequireOTP: false,

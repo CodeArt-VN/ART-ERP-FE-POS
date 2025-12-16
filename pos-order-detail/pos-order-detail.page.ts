@@ -128,6 +128,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.idTable = this.route.snapshot?.paramMap?.get('table');
 		this.idTable = typeof this.idTable == 'string' ? parseInt(this.idTable) : this.idTable;
 		this.formGroup = formBuilder.group({
+			IDTaxInfo: [],
+			TaxCode: [],
 			Id: new FormControl({ value: 0, disabled: true }),
 			Code: [],
 			Name: [],
@@ -1033,15 +1035,15 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env.showMessage('The order is locked and cannot be edited', 'warning');
 			return false;
 		}
-		if (!this.item._Customer) {
-			this.env.showMessage('Please select a customer', 'warning');
-			return false;
-		}
+		// if (!this.item._Customer) {
+		// 	this.env.showMessage('Please select a customer', 'warning');
+		// 	return false;
+		// }
 		// if (this.item._Customer.Id == 922) {
 		// 	this.env.showMessage('Cannot issue invoice for walk-in customer', 'warning');
 		// 	return false;
 		// }
-		if (this.item.IsInvoiceRequired == false) {
+		if (!this.item.IsInvoiceRequired) {
 			this.processInvoice();
 		} else {
 			this.formGroup.controls.IsInvoiceRequired.patchValue(false);
@@ -1051,21 +1053,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async processInvoice() {
-		let _IdBusinessPartner = null;
-		if (typeof this.posService.systemConfig.SODefaultBusinessPartner == 'object') {
-			try {
-				_IdBusinessPartner = JSON.parse(JSON.stringify(this.posService.systemConfig.SODefaultBusinessPartner))?.Id;
-			} catch (e) {}
-		}
-
 		const modal = await this.modalController.create({
 			component: POSInvoiceModalPage,
 			canDismiss: true,
 			cssClass: 'my-custom-class',
 			componentProps: {
-				id: this.item.IDContact,
-				_isDefaultBP: _IdBusinessPartner == this.item.IDContact,
-				_canEditEInvoice: this.pageConfig.canEditEInvoiceInfo,
+				id: this.item.IDContact ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
+				_IdDefaultBusinessPartner: this.posService.systemConfig.SODefaultBusinessPartner.Id,
+				_canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
 			},
 		});
 		await modal.present();
@@ -1075,6 +1070,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.item.IsInvoiceRequired = true;
 			this.formGroup.controls.IsInvoiceRequired.patchValue(true);
 			this.formGroup.controls.IsInvoiceRequired.markAsDirty();
+			this.formGroup.controls.IDTaxInfo.setValue(data.IDTaxInfo);
+			this.formGroup.controls.IDTaxInfo.markAsDirty();
+			this.formGroup.controls.TaxCode.setValue(data.TaxCode);
+			this.formGroup.controls.TaxCode.markAsDirty();
+
 			this.changedIDAddress({ Id: data.Id, IDAddress: data.Address?.Id });
 			this.saveChange();
 		} else {
