@@ -1619,7 +1619,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							TotalKitchens: status.totalKitchens,
 						};
 
-						if (status.successKitchens.length === status.totalKitchens) {
+						if (new Set(status.successKitchens).size === status.totalKitchens) {
 							// TẤT CẢ kitchen in thành công
 							fullSuccessItems.push(itemInfo);
 							dog && console.log(`  ✅✅ ${e._item?.Name} - ALL kitchens printed successfully`);
