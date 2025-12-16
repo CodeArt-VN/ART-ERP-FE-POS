@@ -12,84 +12,68 @@
 	</ion-toolbar>
 </ion-header>
 <ion-content appScrollbarTheme>
-	<form [formGroup]="formGroup">
-		<ion-grid fixed>
-			<ion-row>
-				<ion-col>
-					<div class="c-control">
-						<label class="c-label" for="Name"
-							>{{'Customer' | translate}}
-							<span
-								*ngIf="!formGroup['controls'].Name.valid && !formGroup['controls'].Name.pending && (formGroup['controls'].Name.dirty || submitAttempt)"
-								ion-text
-								color="danger"
-								>(*)</span
-							>
-						</label>
-						<input class="c-input" id="Name" formControlName="Name" type="text" />
-					</div>
-					<div class="c-control">
-						<label class="c-label" for="TaxCode"
-							>Mã số thuế
-							<span
-								*ngIf="!formGroup['controls'].TaxCode.valid && !formGroup['controls'].TaxCode.pending && (formGroup['controls'].TaxCode.dirty || submitAttempt)"
-								ion-text
-								color="danger"
-								>(*)</span
-							>
-						</label>
-						<input (change)="changeTaxCode($event)" class="c-input" id="TaxCode" formControlName="TaxCode" type="text" />
-					</div>
-					<div class="c-control">
-						<label class="c-label" for="Email"
-							>Email
-							<span
-								*ngIf="!formGroup['controls'].Email.valid && !formGroup['controls'].Email.pending && (formGroup['controls'].Email.dirty || submitAttempt)"
-								ion-text
-								color="danger"
-								>(*)</span
-							>
-						</label>
-						<input (change)="saveChange()" class="c-input" id="Email" formControlName="Email" type="text" />
-					</div>
+	<div class="ion-padding">
+		<form [formGroup]="taxInfoGroup">
+			<ion-grid fixed>
+				<ion-row>
+					<!-- <ion-radio-group [value]="optionalTax" (ionChange)="hasTaxChange($event)">
+							<ion-col size="6">
+								<ion-radio value="hasTax" labelPlacement="end" aria-label="Has tax identification number"
+									>{{'Has tax identification number' | translate}}</ion-radio
+								>
+							</ion-col>
+							<ion-col size="6">
+								<ion-radio value="noTax" labelPlacement="end" aria-label="No tax identification number">{{'No tax identification number' | translate}}</ion-radio>
+							</ion-col>
+						</ion-radio-group> -->
 
-					<div class="c-control">
-						<label class="c-label" for="CompanyName"
-							>{{'Tên Công Ty' | translate}}
-							<span
-								*ngIf="!formGroup['controls'].CompanyName.valid && !formGroup['controls'].CompanyName.pending && (formGroup['controls'].CompanyName.dirty || submitAttempt)"
-								ion-text
-								color="danger"
-								>(*)</span
-							>
-						</label>
-						<input class="c-input" id="CompanyName" formControlName="CompanyName" type="text" />
-					</div>
-					<div class="c-control">
-						<label class="c-label" for="BillingAddress"
-							>{{'Địa chỉ công ty' | translate}}
-							<span
-								*ngIf="!formGroup['controls'].BillingAddress.valid && !formGroup['controls'].BillingAddress.pending && (formGroup['controls'].BillingAddress.dirty || submitAttempt)"
-								ion-text
-								color="danger"
-								>(*)</span
-							>
-						</label>
-						<input class="c-input" id="BillingAddress" formControlName="BillingAddress" type="text" />
-					</div>
-					<div *ngIf="IsShowSave" class="c-control ion-text-right">
-						<label class="c-label" for=""></label>
-						<ion-button expand="block" (click)="saveChange()">
-							<ion-text *ngIf="!IsShowSpinner">{{'Cập nhật' | translate}}</ion-text>
-							<ion-spinner *ngIf="IsShowSpinner" name="dots"></ion-spinner>
-						</ion-button>
-					</div>
-					<div *ngIf="IsShowApply" class="c-control ion-text-right">
-						<label class="c-label" for=""></label>
-						<ion-button expand="block" (click)="Apply(true)">{{'Áp dụng' | translate}}</ion-button>
-					</div>
-				</ion-col>
-			</ion-row>
-		</ion-grid>
-	</form>
+					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+						<ion-radio-group *ngIf="isShowInfo" [value]="optionalTax" (ionChange)="hasTaxChange($event)">
+							<ion-col size="6">
+								<ion-radio value="hasTax" labelPlacement="end" aria-label="Has tax identification number"
+									>{{'Has tax identification number' | translate}}</ion-radio
+								>
+							</ion-col>
+							<ion-col size="6">
+								<ion-radio value="noTax" labelPlacement="end" aria-label="No tax identification number">{{'No tax identification number' | translate}}</ion-radio>
+							</ion-col>
+						</ion-radio-group>
+
+						<ion-list-header class="ion-no-padding">
+							<ion-label color="primary">{{'Invoice information' | translate}}</ion-label>
+						</ion-list-header>
+					</ion-col>
+					<ion-col size="12" size-sm size-xl="12">
+						<app-form-control
+							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:taxInfoGroup}"
+							(change)="changeSelectTaxCode($event)"
+						></app-form-control>
+						<ng-container *ngIf="isShowInfo">
+							<app-form-control [field]="{id:'TaxCode', label:'Tax code', type:'text',form:taxInfoGroup}" (change)="changeTaxCode($event)"></app-form-control>
+
+							<app-form-control [field]="{id:'CompanyName', label:'Company name', type:'text',form:taxInfoGroup}"></app-form-control>
+
+							<app-form-control [field]="{id:'BillingAddress', label:'Billing address', type:'text',form:taxInfoGroup}"></app-form-control>
+
+							<app-form-control [field]="{id:'Name', label:'Customer', type:'text',form:taxInfoGroup}"></app-form-control>
+
+							<app-form-control [field]="{id:'IdentityCardNumber', label:'Identity card number', type:'text',form:taxInfoGroup}"></app-form-control>
+
+							<app-form-control [field]="{id:'Email', label:'Email', type:'text',form:taxInfoGroup}"></app-form-control>
+
+							<app-form-control [field]="{id:'WorkPhone', label:'Work phone', type:'text',form:taxInfoGroup}"></app-form-control>
+
+							<app-form-control [field]="{id:'IsDefault', label:'Default tax info', type:'checkbox',form:taxInfoGroup}"></app-form-control>
+						</ng-container>
+					</ion-col>
+				</ion-row>
+			</ion-grid>
+		</form>
+	</div>
 </ion-content>
+
+<ion-footer>
+	<div class="ion-padding">
+		<ion-button size="small" [disabled]="!_canAddEInvoiceInfo" expand="block" (click)="Apply(true)">{{'Áp dụng' | translate}}</ion-button>
+	</div>
+</ion-footer>

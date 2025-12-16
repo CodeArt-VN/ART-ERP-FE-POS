@@ -14,7 +14,7 @@ export class POSEnviromentDataService {
 	// Reactive state for config and data
 	defaultPOSConfig: POSConfig = {
 		IsAutoSave: true,
-		SODefaultBusinessPartner: 123,
+		SODefaultBusinessPartner: null,
 		IsUseIPWhitelist: false,
 		IPWhitelistInput: '',
 		IsRequireOTP: false,
@@ -43,6 +43,8 @@ export class POSEnviromentDataService {
 		BKIncomingDefaultBankAccount: '',
 		BKIncomingQRPrefix: '',
 		BKIncomingQRSuffix: '',
+		ZPIsActive:false,
+		EDCCVCB_IsActive : false
 	};
 
 	constructor(
@@ -128,7 +130,7 @@ export class POSEnviromentDataService {
 				this.env.getStatus('POSOrderDetail'),
 				this.env.getType('PaymentType'),
 				this.getDeal(),
-				this.getSystemConfig(IDBranch),
+				this.getSystemConfig(IDBranch,forceReload),
 				this.branchProvider.getAnItem(IDBranch),
 			])
 				.then((results: any) => {

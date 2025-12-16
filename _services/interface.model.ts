@@ -42,7 +42,7 @@ export interface MenuDetail extends POS_MenuDetail {
 	ForeignName?: string;
 	SalesUoM?: number;
 	Price: number;
-	IDKitchens:string;
+	IDKitchens: string;
 	IDSalesTaxDefinition?: number;
 	SalesTaxPercent?: number;
 	Groups?: any[];
@@ -207,9 +207,33 @@ export interface CartFormData {
 	customerEmail: string;
 }
 
+export interface BusinessPartner {
+	Id: number;
+	Code: string;
+	Name: string;
+	WorkPhone: string | null;
+	IsStaff: boolean;
+	IDAddress: number;
+	Address: Address;
+	Status: 'Approved' | 'Pending' | 'Rejected' | string;
+}
+
+export interface Address {
+	Id: number;
+	AddressLine1: string;
+	AddressLine2: string | null;
+	Ward: string | null;
+	District: string | null;
+	Province: string | null;
+	Country: string | null;
+	Contact: string;
+	Phone1: string;
+	Phone2: string | null;
+}
+
 export interface POSConfig {
 	IsAutoSave: boolean;
-	SODefaultBusinessPartner: number;
+	SODefaultBusinessPartner: BusinessPartner;
 	IsUseIPWhitelist: boolean;
 	IPWhitelistInput: string;
 	IsRequireOTP: boolean;
@@ -232,11 +256,13 @@ export interface POSConfig {
 	POSServiceCharge: number;
 	POSIsShowItemImage: boolean;
 	POSBillQRPaymentMethod: string;
-	POSIsReadTheAmount:boolean;
-	POSPrintingFontSize:number;
+	POSIsReadTheAmount: boolean;
+	POSPrintingFontSize: number;
 	// QR Code Payment
 	BKIncomingDefaultBankName?: any;
 	BKIncomingDefaultBankAccount?: string;
 	BKIncomingQRPrefix?: string;
 	BKIncomingQRSuffix?: string;
+	ZPIsActive: boolean;
+	EDCCVCB_IsActive: boolean;
 }

@@ -122,17 +122,17 @@ export class POSSplitModalPage extends PageBase {
 			// 	SubType: this.selectedOrder.SubType,
 			// 	Status: this.selectedOrder.Status,
 			// });
-	// isFirst: false,
-	// 		IDContact: null,
-	// 		IDAddress: null,
-	// 		ContactName: null,
-	// 		IDTable: null,
-	// 		IDType: 293,
-	// 		TableName: null,
-	// 		Type: this.selectedOrder.Type,
-	// 		SubType: this.selectedOrder.SubType,
-	// 		Status: this.selectedOrder.Status,
-	// 		OrderLines: JSON.parse(JSON.stringify(this.items)),
+			// isFirst: false,
+			// 		IDContact: null,
+			// 		IDAddress: null,
+			// 		ContactName: null,
+			// 		IDTable: null,
+			// 		IDType: 293,
+			// 		TableName: null,
+			// 		Type: this.selectedOrder.Type,
+			// 		SubType: this.selectedOrder.SubType,
+			// 		Status: this.selectedOrder.Status,
+			// 		OrderLines: JSON.parse(JSON.stringify(this.items)),
 			this.initOrderedContacts.push({
 				Id: this.selectedOrder.IDContact,
 				IDAddress: this.selectedOrder.IDAddress,
@@ -220,7 +220,7 @@ export class POSSplitModalPage extends PageBase {
 				counts[order.TableName]++;
 				result.push(order.TableName + '-' + counts[order.TableName]);
 			} else {
-				if(!order.TableName) order.TableName = 'Unknown-'+i;
+				if (!order.TableName) order.TableName = 'Unknown-' + i;
 				counts[order.TableName] = 1;
 				result.push(order.TableName);
 			}
@@ -581,22 +581,21 @@ export class POSSplitModalPage extends PageBase {
 				this.env.showMessage('Please check customer name and order must have at least 01 item.', 'warning');
 			} else if (this.submitAttempt == false) {
 				this.submitAttempt = true;
-				
+
 				if (!this.item.IDBranch) {
 					this.item.IDBranch = this.env.selectedBranch;
 				}
-				
+
 				let postItem = lib.cloneObject(this.item);
 				postItem.SplitedOrders.forEach((so) => {
-					
 					so.OrderLines.forEach((ol) => {
-					if(!so.isFirst)ol.Id = 0;
-						ol.SubOrders.forEach((sub=>{
+						if (!so.isFirst) ol.Id = 0;
+						ol.SubOrders.forEach((sub) => {
 							sub.Quantity = ol.Quantity * sub.OriginalQuantity;
-							if(!so.isFirst)sub.Id = 0;
-						}));
+							if (!so.isFirst) sub.Id = 0;
+						});
 					});
-				});		
+				});
 				this.pageProvider.commonService
 					.connect('POST', 'SALE/Order/SplitPosOrder/', postItem)
 					.toPromise()
