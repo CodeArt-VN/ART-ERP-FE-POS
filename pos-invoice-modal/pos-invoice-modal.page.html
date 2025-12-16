@@ -28,7 +28,27 @@
 						</ion-radio-group> -->
 
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
-						<ion-radio-group *ngIf="isShowInfo" [value]="optionalTax" (ionChange)="hasTaxChange($event)">
+						<app-form-control
+							*ngIf="!_isDefaultBP"
+							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:taxInfoGroup}"
+							(change)="changeSelectTaxCode($event)"
+						></app-form-control>
+					</ion-col>
+
+					<ion-col *ngIf="_isDefaultBP" size="12" size-sm="12" size-md="12" size-xl="12">
+						<ion-list-header class="ion-no-padding">
+							<ion-label color="primary">{{'Customer information' | translate}}</ion-label>
+						</ion-list-header>
+
+						<app-form-control [field]="{id:'Name', label:'Customer', type:'text',form:taxInfoGroup}"></app-form-control>
+
+						<app-form-control [field]="{id:'WorkPhone', label:'Work phone', type:'text',form:taxInfoGroup}"></app-form-control>
+					</ion-col>
+					<ion-col size="12" size-sm size-xl="12">
+						<ion-list-header *ngIf="isShowInfo || _isDefaultBP" class="ion-no-padding">
+							<ion-label color="primary">{{'Invoice information' | translate}}</ion-label>
+						</ion-list-header>
+						<ion-radio-group *ngIf="_isDefaultBP || taxInfoGroup.controls._OptionCode.value =='AddNew'" [value]="optionalTax" (ionChange)="hasTaxChange($event)">
 							<ion-col size="6">
 								<ion-radio value="hasTax" labelPlacement="end" aria-label="Has tax identification number"
 									>{{'Has tax identification number' | translate}}</ion-radio
@@ -38,32 +58,31 @@
 								<ion-radio value="noTax" labelPlacement="end" aria-label="No tax identification number">{{'No tax identification number' | translate}}</ion-radio>
 							</ion-col>
 						</ion-radio-group>
+						<ng-container *ngIf="isShowInfo || _isDefaultBP">
+							<app-form-control
+								*ngIf="optionalTax == 'hasTax'"
+								[field]="{id:'TaxCode', label:'Tax code', type:'text',form:taxInfoGroup}"
+								(change)="changeTaxCode($event)"
+							></app-form-control>
 
-						<ion-list-header class="ion-no-padding">
-							<ion-label color="primary">{{'Invoice information' | translate}}</ion-label>
-						</ion-list-header>
-					</ion-col>
-					<ion-col size="12" size-sm size-xl="12">
-						<app-form-control
-							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:taxInfoGroup}"
-							(change)="changeSelectTaxCode($event)"
-						></app-form-control>
-						<ng-container *ngIf="isShowInfo">
-							<app-form-control [field]="{id:'TaxCode', label:'Tax code', type:'text',form:taxInfoGroup}" (change)="changeTaxCode($event)"></app-form-control>
+							<app-form-control
+								*ngIf="optionalTax == 'noTax'"
+								[field]="{id:'CompanyName', label:'Personal / organization name', type:'text',form:taxInfoGroup}"
+							></app-form-control>
 
-							<app-form-control [field]="{id:'CompanyName', label:'Company name', type:'text',form:taxInfoGroup}"></app-form-control>
+							<app-form-control *ngIf="optionalTax == 'hasTax'" [field]="{id:'CompanyName', label:'Company name', type:'text',form:taxInfoGroup}"></app-form-control>
 
-							<app-form-control [field]="{id:'BillingAddress', label:'Billing address', type:'text',form:taxInfoGroup}"></app-form-control>
-
-							<app-form-control [field]="{id:'Name', label:'Customer', type:'text',form:taxInfoGroup}"></app-form-control>
-
-							<app-form-control [field]="{id:'IdentityCardNumber', label:'Identity card number', type:'text',form:taxInfoGroup}"></app-form-control>
+							<app-form-control [field]="{id:'BillingAddress', label:'Address', type:'text',form:taxInfoGroup}"></app-form-control>
+							<app-form-control
+								*ngIf="optionalTax == 'noTax'"
+								[field]="{id:'IdentityCardNumber', label:'Identity card number', type:'text',form:taxInfoGroup}"
+							></app-form-control>
 
 							<app-form-control [field]="{id:'Email', label:'Email', type:'text',form:taxInfoGroup}"></app-form-control>
-
-							<app-form-control [field]="{id:'WorkPhone', label:'Work phone', type:'text',form:taxInfoGroup}"></app-form-control>
-
-							<app-form-control [field]="{id:'IsDefault', label:'Default tax info', type:'checkbox',form:taxInfoGroup}"></app-form-control>
+							<app-form-control
+								*ngIf="isShowInfo || _isDefaultBP"
+								[field]="{id:'IsDefault', label:'Default tax info', type:'checkbox',form:taxInfoGroup}"
+							></app-form-control>
 						</ng-container>
 					</ion-col>
 				</ion-row>

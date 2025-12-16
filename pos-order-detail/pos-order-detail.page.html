@@ -354,16 +354,10 @@
 							<ion-row>
 								<ion-col size="6">
 									<div *ngIf="item?.OrderLines?.length > 0">
-										<ion-button
-											[fill]="this.item.IsInvoiceRequired ? 'solid' : 'outline'"
-											style="margin-top: 5px; margin-bottom: 9px"
-											size="small"
-											(click)="InvoiceRequired()"
-										>
-											<ion-icon [color]="this.item.IsInvoiceRequired ? 'light':'primary'" name="receipt"></ion-icon>
+										<ion-button fill="clear" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="InvoiceRequired()">
 											<ion-label
 												[ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}"
-												[color]="this.item.IsInvoiceRequired ? 'light' : 'medium'"
+												[color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'"
 											>
 												{{'Issue invoice' | translate}}
 											</ion-label>

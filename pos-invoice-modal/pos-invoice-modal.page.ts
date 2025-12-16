@@ -52,12 +52,10 @@ export class POSInvoiceModalPage extends PageBase {
 		this.taxInfoGroup = formBuilder.group({
 			IDPartner: [''],
 			Id: [''],
-			Name: ['', Validators.required],
 			TaxCode: ['', Validators.required],
 			CompanyName: new FormControl({ value: '', disabled: true }, Validators.required),
 			Email: ['', Validators.required],
 			BillingAddress: new FormControl({ value: '', disabled: true }, Validators.required),
-			WorkPhone: ['', Validators.required],
 			IdentityCardNumber: [''],
 			IsDefault: [''],
 			Address: this.formBuilder.group({
@@ -94,37 +92,21 @@ export class POSInvoiceModalPage extends PageBase {
 			this.taxInfoGroup.controls.IDPartner.setValue(this.item.Id);
 			this.taxInfoGroup.controls.IDPartner.markAsDirty();
 		}
-		if (this.id == this._IdDefaultBusinessPartner) this._isDefaultBP = true;
 		this.LoadTaxCodeDataSource(this.item);
-		if (this.item?.TaxInfos.length > 0) {
-			let taxInfos = this.item.TaxInfos.sort((a, b) => Number(b.IsDefault) - Number(a.IsDefault)).filter((d) => d.IsDefault);
-			if (taxInfos.length > 0) {
-				let taxInfo = taxInfos[0];
-				this.taxInfoGroup.controls._OptionCode.setValue(taxInfo.Id);
-				this.changeSelectTaxCode(taxInfo);
-				// this.formGroup.controls.TaxCode.setValue(taxInfo.TaxCode);
-				// this.formGroup.controls.CompanyName.setValue(taxInfo.CompanyName);
-				// this.formGroup.controls.Email.setValue(taxInfo.Email);
-				// this.formGroup.controls.BillingAddress.setValue(taxInfo.BillingAddress);
-				// this.formGroup.controls.IdentityCardNumber.setValue(taxInfo.IdentityCardNumber);
-				// this.formGroup.controls.Id.setValue(taxInfo.Id);
-
-				// this.formGroup.controls.CompanyName.enable();
-				// this.formGroup.controls.BillingAddress.enable();
-				// this.formGroup.controls.TaxCode.clearValidators();
-				// this.formGroup.controls.TaxCode.updateValueAndValidity();
-			}
+		if (this.id == this._IdDefaultBusinessPartner) {
+			this._isDefaultBP = true;
+			this.taxInfoGroup.controls._OptionCode.setValue('AddNew');
+			this.taxInfoGroup.controls.Id.setValue(0);
+			this.taxInfoGroup.controls.Id.markAsDirty();
 		}
+		this.taxInfoGroup.disable();
+		this.taxInfoGroup.controls._OptionCode.enable();
+
 		if (this._canAddEInvoiceInfo) {
 			this.TaxCodeDataSource.push({
 				Id: 'AddNew',
 				CompanyName: this.textNewTaxInfo,
 			});
-		}
-
-		if (!this.formGroup.invalid) {
-			this.IsShowSave = false;
-			this.IsShowApply = true;
 		}
 	}
 
@@ -228,17 +210,20 @@ export class POSInvoiceModalPage extends PageBase {
 				break;
 			case 'AddNew':
 				this.isShowInfo = true;
+				this.taxInfoGroup.enable();
 				this.taxInfoGroup.controls.Id.setValue(0);
 				this.taxInfoGroup.controls.Id.markAsDirty();
 				break;
 			default:
 				this.isShowInfo = true;
+				this.taxInfoGroup.disable();
+				this.taxInfoGroup.controls._OptionCode.enable();
 				this.taxInfoGroup.patchValue(i);
-				if (i.IdentityCardNumber && !i.TaxCode) {
-					this.checkRuleHasTax('noTax');
+				if (!i.TaxCode) {
+					this.checkRuleHasTax('noTax', false);
 					this.optionalTax = 'noTax';
 				} else {
-					this.checkRuleHasTax('hasTax');
+					this.checkRuleHasTax('hasTax', false);
 					this.optionalTax = 'hasTax';
 				}
 				break;
@@ -290,14 +275,16 @@ export class POSInvoiceModalPage extends PageBase {
 		}
 	}
 
-	checkRuleHasTax(e) {
+	checkRuleHasTax(e, isEnable = true) {
 		if (e == 'noTax') {
-			this.taxInfoGroup.controls.IdentityCardNumber.setValidators([Validators.required]);
-			this.taxInfoGroup.controls.IdentityCardNumber.updateValueAndValidity();
 			this.taxInfoGroup.controls.TaxCode.clearValidators();
-			this.taxInfoGroup.controls.CompanyName.enable();
-			this.taxInfoGroup.controls.BillingAddress.enable();
+			if (isEnable) {
+				this.taxInfoGroup.controls.CompanyName.enable();
+				this.taxInfoGroup.controls.BillingAddress.enable();
+			}
 			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
+			this.taxInfoGroup.controls.BillingAddress.clearValidators();
+			this.taxInfoGroup.controls.BillingAddress.updateValueAndValidity();
 		} else {
 			this.taxInfoGroup.controls.TaxCode.setValidators([Validators.required]);
 			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
