@@ -6,7 +6,6 @@ import { CRM_ContactProvider, CRM_PartnerTaxInfoProvider } from 'src/app/service
 import { FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
-import { el } from '@fullcalendar/core/internal-common';
 import { TranslateService } from '@ngx-translate/core';
 
 @Component({
@@ -140,6 +139,7 @@ export class POSInvoiceModalPage extends PageBase {
 		this.IsShowSave = false;
 		this.IsShowApply = true;
 	}
+
 	Apply(apply = false) {
 		if (apply) {
 			if (this.formGroup.controls._OptionCode.value == '') {
@@ -182,15 +182,26 @@ export class POSInvoiceModalPage extends PageBase {
 					});
 				});
 			} else {
-				this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
+				if (this.taxInfoGroup.disabled) {
 					let submitItem = {
 						Id: this.id,
 						Address: this.item.Address,
-						IDTaxInfo: taxInfo.Id,
-						TaxCode: taxInfo.TaxCode,
+						IDTaxInfo: this.taxInfoGroup.controls.Id.value,
+						TaxCode: this.taxInfoGroup.controls.TaxCode.value,
 					};
 					this.modalController.dismiss(submitItem);
-				});
+				} else {
+					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
+						let submitItem = {
+							Id: this.id,
+							Address: this.item.Address,
+							IDTaxInfo: taxInfo.Id,
+							TaxCode: taxInfo.TaxCode,
+						};
+						this.modalController.dismiss(submitItem);
+					});
+				}
+
 				// this.modalController.dismiss(undefined);
 			}
 		} else {
