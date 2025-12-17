@@ -483,7 +483,7 @@
 				<ion-row *ngIf="( item && pageConfig.canEdit && !posService.systemConfig.POSEnableTemporaryPayment) || item.Status == 'TemporaryBill'" style="flex-wrap: nowrap">
 					<ion-col size="12">
 						<ion-button *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()" [disabled]="submitAttempt || !item.Id">
-							<ion-text>{{'Bill please' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>
+							<ion-text>{{'Payment' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>
 						</ion-button>
 					</ion-col>
 				</ion-row>
@@ -897,8 +897,9 @@
 											</table>
 										</div>
 
-										<div class="message" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
-											<div>Quét mã thanh toán</div>
+										<div class="message qr-section" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
+											<div
+											>{{'Scan QRCode'}}</div>
 											<div style="font-size: 10px">(ZaloPay | Ngân hàng | Ví điện tử)</div>
 											<div style="display: block; margin-left: auto; margin-right: auto; width: 150px; height: 150px">
 												<img class="qrc" [src]="VietQRCode" />

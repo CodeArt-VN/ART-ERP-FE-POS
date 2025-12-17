@@ -972,7 +972,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				canEditVoucher: this.item.Status != 'Done',
 				ZPIsActive: this.posService.systemConfig.ZPIsActive,
 				EDCCVCB_IsActive : this.posService.systemConfig.EDCCVCB_IsActive,
-				billElement: this.billRef.nativeElement,
+				billElement: this.billRef,
 				calcFunction: this.recalculateOrder,
 				onUpdateItem: (updated) => this.updateItemFromPayment(updated),
 				cssStyle:
