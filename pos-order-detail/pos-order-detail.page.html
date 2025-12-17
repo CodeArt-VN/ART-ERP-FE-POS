@@ -320,80 +320,47 @@
 						<span *ngIf="item?.Tables?.length && !item?.OrderLines?.length">{{'Please choose products' | translate}}</span>
 					</div>
 					<div class="total">
-						<div class="c-control">
-							<ion-item *ngIf="Staff" lines="none" class="staff-info">
-								<ion-avatar class="clickable" id="open-modal-staff-info" slot="start">
-									<img alt="Silhouette of mountains" [src]="Staff.avatarURL" />
-								</ion-avatar>
-								<ion-text>
-									<ion-label>
-										<small>{{Staff.DepartmentName}}</small>
-									</ion-label>
-									<ion-label>
-										<small>{{Staff.JobTitleName}}</small>
-									</ion-label>
-								</ion-text>
-								<ion-modal trigger="open-modal-staff-info">
-									<ng-template>
-										<ion-content>
-											<ion-button fill="clear" style="position: absolute; right: 0" color="secondary" (click)="closeModal()">
-												<ion-icon slot="icon-only" name="close"></ion-icon>
-											</ion-button>
-											<ion-img width="100%" alt="Silhouette of mountains" [src]="Staff.avatarURL"></ion-img>
-										</ion-content>
-									</ng-template>
-								</ion-modal>
-							</ion-item>
-							<app-input-control
-								#contactInput
-								(change)="changedIDAddress($event)"
-								(selectKeyDown)="onContactKeyDown($event)"
-								[field]="{id:'IDAddress',label:'Contact',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
-							>
-							</app-input-control>
-							<ion-row>
-								<ion-col size="6">
-									<div *ngIf="item?.OrderLines?.length > 0">
-										<ion-button fill="clear" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="InvoiceRequired()">
-											<ion-label
-												[ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}"
-												[color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'"
-											>
-												{{'Issue invoice' | translate}}
-											</ion-label>
+						<ion-item *ngIf="Staff" lines="none" class="staff-info">
+							<ion-avatar class="clickable" id="open-modal-staff-info" slot="start">
+								<img alt="Silhouette of mountains" [src]="Staff.avatarURL" />
+							</ion-avatar>
+							<ion-text>
+								<ion-label>
+									<small>{{Staff.DepartmentName}}</small>
+								</ion-label>
+								<ion-label>
+									<small>{{Staff.JobTitleName}}</small>
+								</ion-label>
+							</ion-text>
+							<ion-modal trigger="open-modal-staff-info">
+								<ng-template>
+									<ion-content>
+										<ion-button fill="clear" style="position: absolute; right: 0" color="secondary" (click)="closeModal()">
+											<ion-icon slot="icon-only" name="close"></ion-icon>
 										</ion-button>
-									</div>
-								</ion-col>
-								<ion-col size="6">
-									<div *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer">
-										<ion-button [disabled]="submitAttempt" style="margin-top: 5px; margin-bottom: 9px" size="small" (click)="addContact()">
-											<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-											{{'Create new customer' | translate}}
-										</ion-button>
-									</div>
-								</ion-col>
-							</ion-row>
+										<ion-img width="100%" alt="Silhouette of mountains" [src]="Staff.avatarURL"></ion-img>
+									</ion-content>
+								</ng-template>
+							</ion-modal>
+						</ion-item>
+						<app-form-control
+							#contactInput
+							(change)="changedIDAddress($event)"
+							(selectKeyDown)="onContactKeyDown($event)"
+							[field]="{id:'IDAddress',label:'Customer',type:'ng-select-bp', dataSource:_contactDataSource, bindLabel:'Name',bindValue:'IDAddress',form: formGroup, placeholder:'Search for name, code or phone number',  appendTo:'#pos-order-detail-page'}"
+						>
+						</app-form-control>
 
-							<!-- <span class="c-label" style="margin-top: 15px" *ngIf="item?.OrderLines?.length > 0">
-								<label class="InvoiceOptions">
-									<input
-										class="c-checkbox"
-										(click)="InvoiceRequired()"
-										[(ngModel)]="this.item.IsInvoiceRequired"
-										[ngModelOptions]="{standalone: true}"
-										type="checkbox"
-									/>
-									<ion-icon color="primary" name="receipt"></ion-icon>
-									<ion-label
-										[ngStyle]="{'font-weight': this.item.IsInvoiceRequired ? 'bold' : 'normal'}"
-										[color]="this.item.IsInvoiceRequired ? 'primary' : 'medium'"
-									>
-										{{'Issue invoice' | translate}}
-									</ion-label>
-								</label>
-							</span> -->
+						<div *ngIf="item?.OrderLines?.length > 0" class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
+							<ion-button size="small" fill="outline" (click)="InvoiceRequired()">
+								<ion-label> {{'Issue invoice' | translate}} </ion-label>
+							</ion-button>
+
+							<ion-button *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" [disabled]="submitAttempt" size="small" fill="outline" (click)="addContact()">
+								<ion-icon slot="start" name="add-circle-outline"></ion-icon>
+								{{'Create new customer' | translate}}
+							</ion-button>
 						</div>
-						<app-form-control (change)="setOrderValue([])" [field]="{id:'NumberOfGuests', label:'Number of guests', type:'number',form:formGroup}"></app-form-control>
 
 						<app-form-control
 							(change)="setOrderValue([])"
@@ -401,7 +368,15 @@
 							[field]="{id:'Tables',label:'Tables',type:'ng-select',dataSource:posService.dataSource.tableList,clearable:true,bindLabel:'Name',bindValue:'Id',multiple:true,placeholder:'Select Table', form: formGroup,appendTo:'#pos-order-detail-page'}"
 						>
 						</app-form-control>
+
 						<app-form-control
+							(change)="setOrderValue([])"
+							[inline]="true"
+							[field]="{id:'NumberOfGuests', label:'Number of guests', type:'number',form:formGroup}"
+						></app-form-control>
+
+						<app-form-control
+							[inline]="true"
 							[field]="{id:'Status', type : 'ng-select-status', form : formGroup,  dataSource: posService.dataSource.orderStatusList, bindLabel:'Name',  bindValue: 'Code'}"
 						>
 						</app-form-control>
@@ -898,8 +873,7 @@
 										</div>
 
 										<div class="message qr-section" *ngIf="VietQRCode && item.Status == 'TemporaryBill'">
-											<div
-											>{{'Scan QRCode'}}</div>
+											<div>{{'Scan QRCode'}}</div>
 											<div style="font-size: 10px">(ZaloPay | Ngân hàng | Ví điện tử)</div>
 											<div style="display: block; margin-left: auto; margin-right: auto; width: 150px; height: 150px">
 												<img class="qrc" [src]="VietQRCode" />

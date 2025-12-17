@@ -965,7 +965,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			id: 'POSPaymentModalPage',
 			canDismiss: true,
 			backdropDismiss: true,
-			cssClass: 'modal-payments',
+			cssClass: 'modal90vh',
 			componentProps: {
 				item: payment,
 				paymentStatusList: this.posService.dataSource.paymentStatusList,
@@ -1052,7 +1052,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		const modal = await this.modalController.create({
 			component: POSInvoiceModalPage,
 			canDismiss: true,
-			cssClass: 'my-custom-class',
+			cssClass: 'modal90vh',
 			componentProps: {
 				id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				_IdDefaultBusinessPartner: this.posService.systemConfig.SODefaultBusinessPartner.Id,

@@ -63,6 +63,7 @@ export class POSInvoiceModalPage extends PageBase {
 				Phone1: [''],
 				Contact: [''],
 			}),
+			optionalTax: ['hasTax'],
 		});
 		this.formGroup = formBuilder.group({
 			Id: [0],
@@ -288,8 +289,8 @@ export class POSInvoiceModalPage extends PageBase {
 
 	hasTaxChange(e) {
 		// this.formGroup.reset();
-		this.optionalTax = e.target.value;
-		this.checkRuleHasTax(e.target.value);
+		this.optionalTax = this.taxInfoGroup.controls.optionalTax.value;
+		this.checkRuleHasTax(this.optionalTax);
 		if (this.optionalTax == 'noTax' && this.taxInfoGroup.controls.TaxCode.value != '') {
 			this.taxInfoGroup.controls.TaxCode.setValue(null);
 			this.taxInfoGroup.controls.TaxCode.markAsDirty();

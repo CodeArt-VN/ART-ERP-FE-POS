@@ -1,6 +1,6 @@
-<ion-header>
+<ion-header collapse="fade">
 	<ion-toolbar>
-		<ion-title>Thông tin xuất hóa đơn</ion-title>
+		<ion-title>{{'Billing address' | translate}}</ion-title>
 		<ion-buttons slot="primary">
 			<ion-button title="{{'Close' | translate}}" color="primary" (click)="reset()">
 				<ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
@@ -18,20 +18,8 @@
 		<form [formGroup]="taxInfoGroup">
 			<ion-grid fixed>
 				<ion-row>
-					<!-- <ion-radio-group [value]="optionalTax" (ionChange)="hasTaxChange($event)">
-							<ion-col size="6">
-								<ion-radio value="hasTax" labelPlacement="end" aria-label="Has tax identification number"
-									>{{'Has tax identification number' | translate}}</ion-radio
-								>
-							</ion-col>
-							<ion-col size="6">
-								<ion-radio value="noTax" labelPlacement="end" aria-label="No tax identification number">{{'No tax identification number' | translate}}</ion-radio>
-							</ion-col>
-						</ion-radio-group> -->
-
-					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+					<ion-col size="12" size-sm="12" size-md="12" size-xl="12" *ngIf="!_isDefaultBP">
 						<app-form-control
-							*ngIf="!_isDefaultBP"
 							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:formGroup , appendTo: '#ng-select'}"
 							(change)="changeSelectTaxCode($event)"
 						>
@@ -49,28 +37,21 @@
 					</ion-col>
 
 					<ion-col *ngIf="_isDefaultBP" size="12" size-sm="12" size-md="12" size-xl="12">
-						<ion-list-header class="ion-no-padding">
-							<ion-label color="primary">{{'Customer information' | translate}}</ion-label>
-						</ion-list-header>
-
 						<app-form-control [field]="{id:'Name', label:'Customer', type:'text',form:formGroup}"></app-form-control>
-
 						<app-form-control [field]="{id:'WorkPhone', label:'Work phone', type:'text',form:formGroup}"></app-form-control>
 					</ion-col>
-					<ion-col size="12" size-sm size-xl="12">
+					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
 						<ion-list-header *ngIf="isShowInfo || _isDefaultBP" class="ion-no-padding">
 							<ion-label color="primary">{{'Invoice information' | translate}}</ion-label>
 						</ion-list-header>
-						<ion-radio-group *ngIf="_isDefaultBP || formGroup.controls._OptionCode.value =='AddNew'" [value]="optionalTax" (ionChange)="hasTaxChange($event)">
-							<ion-col size="6">
-								<ion-radio value="hasTax" labelPlacement="end" aria-label="Has tax identification number"
-									>{{'Has tax identification number' | translate}}</ion-radio
-								>
-							</ion-col>
-							<ion-col size="6">
-								<ion-radio value="noTax" labelPlacement="end" aria-label="No tax identification number">{{'No tax identification number' | translate}}</ion-radio>
-							</ion-col>
-						</ion-radio-group>
+					</ion-col>
+					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
+						<app-form-control
+							*ngIf="_isDefaultBP || formGroup.controls._OptionCode.value =='AddNew'"
+							[field]="{id:'optionalTax', label:'Tax code', type:'radio',form:taxInfoGroup, dataSource: [{Code: 'hasTax', Name: 'Has tax identification number'}, {Code: 'noTax', Name: 'No tax identification number'}] }"
+							(change)="hasTaxChange($event)"
+						></app-form-control>
+
 						<ng-container *ngIf="isShowInfo || _isDefaultBP">
 							<app-form-control
 								*ngIf="optionalTax == 'hasTax'"
@@ -104,8 +85,11 @@
 	</div>
 </ion-content>
 
-<ion-footer>
-	<div class="ion-padding">
-		<ion-button size="small" [disabled]="!_canAddEInvoiceInfo" expand="block" (click)="Apply(true)">{{'Áp dụng' | translate}}</ion-button>
-	</div>
+<ion-footer collapse="fade">
+	<ion-toolbar>
+		<div slot="end">
+			<ion-button (click)="Apply()" color="medium">{{'Cancel' | translate}}</ion-button>
+			<ion-button [disabled]="!_canAddEInvoiceInfo" (click)="Apply(true)" [strong]="true" color="success">{{'Apply' | translate}}</ion-button>
+		</div>
+	</ion-toolbar>
 </ion-footer>
