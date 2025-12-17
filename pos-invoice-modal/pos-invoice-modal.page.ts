@@ -51,6 +51,7 @@ export class POSInvoiceModalPage extends PageBase {
 		this.taxInfoGroup = formBuilder.group({
 			IDPartner: [''],
 			Id: [''],
+			Name: ['', Validators.required],
 			TaxCode: ['', Validators.required],
 			CompanyName: new FormControl({ value: '', disabled: true }, Validators.required),
 			Email: ['', Validators.required],
@@ -298,19 +299,23 @@ export class POSInvoiceModalPage extends PageBase {
 	checkRuleHasTax(e, isEnable = true) {
 		if (e == 'noTax') {
 			this.taxInfoGroup.controls.TaxCode.clearValidators();
+			this.taxInfoGroup.controls.CompanyName.clearValidators();
+
 			if (isEnable) {
-				this.taxInfoGroup.controls.CompanyName.enable();
 				this.taxInfoGroup.controls.BillingAddress.enable();
 			}
 			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
+			this.taxInfoGroup.controls.CompanyName.updateValueAndValidity();
+
 			this.taxInfoGroup.controls.BillingAddress.clearValidators();
 			this.taxInfoGroup.controls.BillingAddress.updateValueAndValidity();
 		} else {
+			this.taxInfoGroup.controls.Name.clearValidators();
+			this.taxInfoGroup.controls.Name.updateValueAndValidity();
 			this.taxInfoGroup.controls.TaxCode.setValidators([Validators.required]);
 			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
 			this.taxInfoGroup.controls.IdentityCardNumber.clearValidators();
 			this.taxInfoGroup.controls.IdentityCardNumber.updateValueAndValidity();
-			this.taxInfoGroup.controls.CompanyName.disable();
 			this.taxInfoGroup.controls.BillingAddress.disable();
 		}
 	}

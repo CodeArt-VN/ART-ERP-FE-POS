@@ -34,7 +34,18 @@
 							*ngIf="!_isDefaultBP"
 							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:formGroup , appendTo: '#ng-select'}"
 							(change)="changeSelectTaxCode($event)"
-						></app-form-control>
+						>
+							<ng-template input-control-template ng-label-tmp let-i="item">
+								<span *ngIf="i.CompanyName">{{i.CompanyName}}</span>
+								<span *ngIf="!i.CompanyName">{{i.Name}}</span>
+							</ng-template>
+							<ng-template input-control-template ng-option-tmp let-i="item" let-search="searchTerm">
+								<div *ngIf="i">
+									<span *ngIf="i.CompanyName">{{i.CompanyName}}</span>
+									<span *ngIf="!i.CompanyName">{{i.Name}}</span>
+								</div>
+							</ng-template>
+						</app-form-control>
 					</ion-col>
 
 					<ion-col *ngIf="_isDefaultBP" size="12" size-sm="12" size-md="12" size-xl="12">
@@ -69,7 +80,7 @@
 
 							<app-form-control
 								*ngIf="optionalTax == 'noTax'"
-								[field]="{id:'CompanyName', label:'Personal / organization name', type:'text',form:taxInfoGroup}"
+								[field]="{id:'Name', label:'Personal / organization name', type:'text',form:taxInfoGroup}"
 							></app-form-control>
 
 							<app-form-control *ngIf="optionalTax == 'hasTax'" [field]="{id:'CompanyName', label:'Company name', type:'text',form:taxInfoGroup}"></app-form-control>
