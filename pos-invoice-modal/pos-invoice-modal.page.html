@@ -88,7 +88,7 @@
 <ion-footer collapse="fade">
 	<ion-toolbar>
 		<div slot="end">
-			<ion-button (click)="Apply()" color="medium">{{'Cancel' | translate}}</ion-button>
+			<ion-button (click)="Apply()" fill="outline" color="warning">{{'Cancel' | translate}}</ion-button>
 			<ion-button [disabled]="!_canAddEInvoiceInfo" (click)="Apply(true)" [strong]="true" color="success">{{'Apply' | translate}}</ion-button>
 		</div>
 	</ion-toolbar>
