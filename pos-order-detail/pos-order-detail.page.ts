@@ -82,7 +82,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Take: 20,
 			Skip: 0,
 			SkipMCP: true,
-			Keyword: term ,
+			Keyword: term,
 		});
 	});
 
@@ -971,7 +971,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				paymentStatusList: this.posService.dataSource.paymentStatusList,
 				canEditVoucher: this.item.Status != 'Done',
 				ZPIsActive: this.posService.systemConfig.ZPIsActive,
-				EDCCVCB_IsActive : this.posService.systemConfig.EDCCVCB_IsActive,
+				EDCCVCB_IsActive: this.posService.systemConfig.EDCCVCB_IsActive,
 				billElement: this.billRef,
 				calcFunction: this.recalculateOrder,
 				onUpdateItem: (updated) => this.updateItemFromPayment(updated),
@@ -1057,7 +1057,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				_IdDefaultBusinessPartner: this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				_canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
-				idTaxInfo : this.formGroup.controls.IDTaxInfo.value
+				idTaxInfo: this.formGroup.controls.IDTaxInfo.value,
+				onUpdateContact: (address) => this.changedIDAddress(address),
 			},
 		});
 		await modal.present();
@@ -1072,7 +1073,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.controls.TaxCode.setValue(data.TaxCode);
 			this.formGroup.controls.TaxCode.markAsDirty();
 
-			this.changedIDAddress({ Id: data.Id, IDAddress: data.Address?.Id });
+			// this.changedIDAddress({ Id: data.Id, IDAddress: data.Address?.Id });
 			this.saveChange();
 		}
 	}

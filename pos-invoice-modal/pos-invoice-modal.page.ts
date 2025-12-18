@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Input } from '@angular/core';
 import { PageBase } from 'src/app/page-base';
 import { ModalController, NavController, LoadingController } from '@ionic/angular';
 import { EnvService } from 'src/app/services/core/env.service';
@@ -32,6 +32,9 @@ export class POSInvoiceModalPage extends PageBase {
 	TaxCodeDataSource = [];
 	isShowInfo = false;
 	isAddNew = false;
+
+	@Input() onUpdateContact: Function;
+
 	constructor(
 		public pageProvider: CRM_ContactProvider,
 		public partnerTaxInfoProvider: CRM_PartnerTaxInfoProvider,
@@ -57,19 +60,20 @@ export class POSInvoiceModalPage extends PageBase {
 			Email: ['', Validators.required],
 			BillingAddress: new FormControl({ value: '', disabled: true }, Validators.required),
 			IdentityCardNumber: [''],
-			IsDefault: [''],
+			IsDefault: [false],
 			Address: this.formBuilder.group({
 				Id: [''],
 				Phone1: [''],
 				Contact: [''],
 			}),
+			WorkPhone: [''],
 			optionalTax: ['hasTax'],
 		});
 		this.formGroup = formBuilder.group({
 			Id: [0],
 			WorkPhone: ['', Validators.required],
 			Name: ['', Validators.required],
-			TaxCode: [''],
+			Email: [''],
 			Address: this.formBuilder.group({
 				Id: [''],
 				Phone1: [''],
@@ -102,16 +106,27 @@ export class POSInvoiceModalPage extends PageBase {
 			this.formGroup.controls.Name.setValue(null);
 			this.formGroup.controls.WorkPhone.setValue(null);
 		} else {
+			this._isDefaultBP = false;
 			this.taxInfoGroup.disable();
 			this.formGroup.controls._OptionCode.enable();
 		}
 
-		if (this._canAddEInvoiceInfo) {
-			this.TaxCodeDataSource.push({
-				Id: 'AddNew',
-				CompanyName: this.textNewTaxInfo,
-			});
-		}
+		// if (this._canAddEInvoiceInfo) {
+		// 	this.TaxCodeDataSource.push({
+		// 		Id: 'AddNew',
+		// 		CompanyName: this.textNewTaxInfo,
+		// 	});
+		// }
+	}
+
+	addNewTaxInfo() {
+		this.formGroup.controls._OptionCode.setValue('AddNew');
+		this.resetTaxInfoGroup();
+		this.isShowInfo = true;
+		this.taxInfoGroup.enable();
+		this.taxInfoGroup.controls.Id.setValue(0);
+		this.taxInfoGroup.controls.Id.markAsDirty();
+		this.checkRuleHasTax(this.optionalTax, false);
 	}
 
 	LoadTaxCodeDataSource(i) {
@@ -122,6 +137,8 @@ export class POSInvoiceModalPage extends PageBase {
 			if (taxDefault) {
 				this.formGroup.controls._OptionCode.setValue(taxDefault.Id);
 				this.changeSelectTaxCode(taxDefault);
+			} else {
+				this.formGroup.controls._OptionCode.setValue('');
 			}
 		}
 		if (i?.TaxInfos?.length) {
@@ -147,13 +164,14 @@ export class POSInvoiceModalPage extends PageBase {
 			if (this.formGroup.controls._OptionCode.value == '') {
 				let submitItem = {
 					Id: this.id,
+					IDAddress: this.item.Address.Id,
 					Address: this.item.Address,
 					IDTaxInfo: null,
 					TaxCode: null,
 				};
 				this.modalController.dismiss(submitItem);
 			} else if (this._isDefaultBP) {
-				if (this.taxInfoGroup.controls.IsDefault) {
+				if (this.taxInfoGroup.controls.IsDefault.value) {
 					this.formGroup.controls.TaxCode.setValue(this.taxInfoGroup.controls.TaxCode.value);
 					this.formGroup.controls.TaxCode.markAsDirty();
 				}
@@ -176,10 +194,12 @@ export class POSInvoiceModalPage extends PageBase {
 					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
 						let submitItem = {
 							Id: savedItem.Id,
+							IDAddress: savedItem.Address.Id,
 							Address: savedItem.Address,
 							IDTaxInfo: taxInfo.Id,
 							TaxCode: taxInfo.TaxCode,
 						};
+						this.onUpdateContact(submitItem);
 						this.modalController.dismiss(submitItem);
 					});
 				});
@@ -188,18 +208,22 @@ export class POSInvoiceModalPage extends PageBase {
 					let submitItem = {
 						Id: this.id,
 						Address: this.item.Address,
+						IDAddress: this.item.Address.Id,
 						IDTaxInfo: this.taxInfoGroup.controls.Id.value,
 						TaxCode: this.taxInfoGroup.controls.TaxCode.value,
 					};
+					this.onUpdateContact(submitItem);
 					this.modalController.dismiss(submitItem);
 				} else {
 					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
 						let submitItem = {
 							Id: this.id,
 							Address: this.item.Address,
+							IDAddress: this.item.Address.Id,
 							IDTaxInfo: taxInfo.Id,
 							TaxCode: taxInfo.TaxCode,
 						};
+						this.onUpdateContact(submitItem);
 						this.modalController.dismiss(submitItem);
 					});
 				}
@@ -221,14 +245,6 @@ export class POSInvoiceModalPage extends PageBase {
 		switch (i.Id) {
 			case '':
 				this.isShowInfo = false;
-				break;
-			case 'AddNew':
-				this.resetTaxInfoGroup();
-				this.isShowInfo = true;
-				this.taxInfoGroup.enable();
-				this.taxInfoGroup.controls.Id.setValue(0);
-				this.taxInfoGroup.controls.Id.markAsDirty();
-				this.checkRuleHasTax(this.optionalTax, false);
 				break;
 			default:
 				this.isShowInfo = true;
@@ -328,5 +344,53 @@ export class POSInvoiceModalPage extends PageBase {
 		this.taxInfoGroup.controls.WorkPhone.markAsDirty();
 		this.IsShowApply = true;
 		this.IsShowSave = false;
+	}
+
+	checkPhoneNumber() {
+		if (this.formGroup.controls.WorkPhone.valid) {
+			this.pageProvider
+				.search({
+					WorkPhone_eq: this.formGroup.controls.WorkPhone.value,
+				})
+				.toPromise()
+				.then((result: any) => {
+					if (result.length == 0 && result.findIndex((e) => e.Id == this.id)) {
+						this.formGroup.controls.WorkPhone.setErrors(null);
+						// this.formGroup.controls.Address['controls'].Phone1.setValue(this.formGroup.controls.WorkPhone.value);
+						// this.formGroup.controls.Address['controls'].Phone1.markAsDirty();
+						// this.saveChange();
+					} else {
+						console.log(result);
+						let contact = result[0];
+						let message = {
+							Name: contact.Name,
+							WorkPhone: contact.WorkPhone,
+							Header: '',
+							SubHeader: '',
+							Message: `Số điện thoại '${contact.WorkPhone}' đã được sử dụng bởi khách hàng '${contact.Name}' `,
+						};
+						this.env
+							.showPrompt(
+								{
+									code: '{WorkPhone} is already in use by customer {Name}',
+									Name: contact.Name,
+									WorkPhone: contact.WorkPhone,
+								},
+								'',
+								'Would you like to select this customer?'
+							)
+							.then((_) => {
+								this.id = contact.Id;
+								this.onUpdateContact(contact);
+								this.refresh();
+							})
+							.catch((e) => {
+								this.formGroup.controls.WorkPhone.setValue(null);
+							});
+
+						// this.env.showMessage(message.Message, 'danger', message, 5000, true, message.SubHeader, message.Header);
+					}
+				});
+		}
 	}
 }
