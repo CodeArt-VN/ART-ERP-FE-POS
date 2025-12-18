@@ -3,10 +3,11 @@ import { PageBase } from 'src/app/page-base';
 import { ModalController, NavController, LoadingController } from '@ionic/angular';
 import { EnvService } from 'src/app/services/core/env.service';
 import { CRM_ContactProvider, CRM_PartnerTaxInfoProvider } from 'src/app/services/static/services.service';
-import { FormBuilder, Validators, FormGroup, FormControl } from '@angular/forms';
+import { FormBuilder, Validators, FormGroup, FormControl, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 import { TranslateService } from '@ngx-translate/core';
+import { TreePageModule } from '../../_template/tree/tree.module';
 
 @Component({
 	selector: 'app-pos-invoice-modal',
@@ -26,15 +27,16 @@ export class POSInvoiceModalPage extends PageBase {
 	_IsCreateCustomer = false;
 	_canAddEInvoiceInfo = false;
 	idTaxInfo = 0;
-
+	address: any;
 	textDefault = 'Guest customer';
-	textNewTaxInfo = 'New tax info';
 	TaxCodeDataSource = [];
 	isShowInfo = false;
 	isAddNew = false;
+	taxInfoList = [];
+	isCheck = false;
+	isValid = true;
 
 	@Input() onUpdateContact: Function;
-
 	constructor(
 		public pageProvider: CRM_ContactProvider,
 		public partnerTaxInfoProvider: CRM_PartnerTaxInfoProvider,
@@ -57,7 +59,7 @@ export class POSInvoiceModalPage extends PageBase {
 			Name: ['', Validators.required],
 			TaxCode: ['', Validators.required],
 			CompanyName: new FormControl({ value: '', disabled: true }, Validators.required),
-			Email: ['', Validators.required],
+			Email: ['', [Validators.required, multiEmailValidator()]],
 			BillingAddress: new FormControl({ value: '', disabled: true }, Validators.required),
 			IdentityCardNumber: [''],
 			IsDefault: [false],
@@ -73,7 +75,7 @@ export class POSInvoiceModalPage extends PageBase {
 			Id: [0],
 			WorkPhone: ['', Validators.required],
 			Name: ['', Validators.required],
-			Email: [''],
+			Email: ['', Validators.email],
 			Address: this.formBuilder.group({
 				Id: [''],
 				Phone1: [''],
@@ -84,20 +86,22 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 
 	preLoadData(event) {
-		Promise.all([this.translate.get(['Guest customer', 'New tax info']).toPromise()]).then((value: any) => {
+		Promise.all([this.translate.get(['Guest customer']).toPromise()]).then((value: any) => {
 			this.textDefault = value[0]['Guest customer'];
-			this.textNewTaxInfo = value[0]['New tax info'];
 			super.preLoadData(event);
+		});
+	}
+
+	loadData(event?: any, forceReload?: boolean): void {
+		this.partnerTaxInfoProvider.read({ IDPartner: this.id }).then((data: any) => {
+			this.taxInfoList = data['data'];
+			this.loadedData(event);
 		});
 	}
 
 	loadedData(event) {
 		super.loadedData(event);
-		if (this.item) {
-			this.taxInfoGroup.controls.IDPartner.setValue(this.item.Id);
-			this.taxInfoGroup.controls.IDPartner.markAsDirty();
-		}
-		this.LoadTaxCodeDataSource(this.item);
+		this.LoadTaxCodeDataSource(this.taxInfoList);
 		if (this.id == this._IdDefaultBusinessPartner) {
 			this._isDefaultBP = true;
 			this.formGroup.controls._OptionCode.setValue('AddNew');
@@ -105,18 +109,18 @@ export class POSInvoiceModalPage extends PageBase {
 			this.taxInfoGroup.controls.Id.markAsDirty();
 			this.formGroup.controls.Name.setValue(null);
 			this.formGroup.controls.WorkPhone.setValue(null);
+			this.formGroup.controls.Email.setValue(null);
+			this.checkRuleHasTax(this.optionalTax, false);
 		} else {
 			this._isDefaultBP = false;
 			this.taxInfoGroup.disable();
-			this.formGroup.controls._OptionCode.enable();
+			this.isCheck = true;
+			// this.formGroup.controls._OptionCode.enable();
 		}
 
-		// if (this._canAddEInvoiceInfo) {
-		// 	this.TaxCodeDataSource.push({
-		// 		Id: 'AddNew',
-		// 		CompanyName: this.textNewTaxInfo,
-		// 	});
-		// }
+		this.formGroup.get('WorkPhone')?.valueChanges.subscribe((value) => {
+			if (this.isCheck) this.isCheck = false;
+		});
 	}
 
 	addNewTaxInfo() {
@@ -131,8 +135,8 @@ export class POSInvoiceModalPage extends PageBase {
 
 	LoadTaxCodeDataSource(i) {
 		this.TaxCodeDataSource = [];
-		if (i?.TaxInfos) {
-			this.TaxCodeDataSource = i.TaxInfos;
+		if (i) {
+			this.TaxCodeDataSource = i;
 			let taxDefault = this.TaxCodeDataSource.find((d) => d.Id == this.idTaxInfo);
 			if (taxDefault) {
 				this.formGroup.controls._OptionCode.setValue(taxDefault.Id);
@@ -141,7 +145,7 @@ export class POSInvoiceModalPage extends PageBase {
 				this.formGroup.controls._OptionCode.setValue('');
 			}
 		}
-		if (i?.TaxInfos?.length) {
+		if (i?.length) {
 			this.TaxCodeDataSource.unshift({
 				CompanyName: '----------',
 				disabled: true,
@@ -164,8 +168,7 @@ export class POSInvoiceModalPage extends PageBase {
 			if (this.formGroup.controls._OptionCode.value == '') {
 				let submitItem = {
 					Id: this.id,
-					IDAddress: this.item.Address.Id,
-					Address: this.item.Address,
+					IDAddress: this.address?.Address?.Id,
 					IDTaxInfo: null,
 					TaxCode: null,
 				};
@@ -195,7 +198,6 @@ export class POSInvoiceModalPage extends PageBase {
 						let submitItem = {
 							Id: savedItem.Id,
 							IDAddress: savedItem.Address.Id,
-							Address: savedItem.Address,
 							IDTaxInfo: taxInfo.Id,
 							TaxCode: taxInfo.TaxCode,
 						};
@@ -207,8 +209,7 @@ export class POSInvoiceModalPage extends PageBase {
 				if (this.taxInfoGroup.disabled) {
 					let submitItem = {
 						Id: this.id,
-						Address: this.item.Address,
-						IDAddress: this.item.Address.Id,
+						IDAddress: this.address?.Address?.Id,
 						IDTaxInfo: this.taxInfoGroup.controls.Id.value,
 						TaxCode: this.taxInfoGroup.controls.TaxCode.value,
 					};
@@ -218,8 +219,7 @@ export class POSInvoiceModalPage extends PageBase {
 					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
 						let submitItem = {
 							Id: this.id,
-							Address: this.item.Address,
-							IDAddress: this.item.Address.Id,
+							IDAddress: this.address?.Address?.Id,
 							IDTaxInfo: taxInfo.Id,
 							TaxCode: taxInfo.TaxCode,
 						};
@@ -264,8 +264,9 @@ export class POSInvoiceModalPage extends PageBase {
 
 	resetTaxInfoGroup() {
 		this.taxInfoGroup.reset();
-		this.taxInfoGroup.controls.IDPartner.setValue(this.item.Id);
+		this.taxInfoGroup.controls.IDPartner.setValue(this.id);
 		this.taxInfoGroup.controls.IDPartner.markAsDirty();
+		this.taxInfoGroup.controls.optionalTax.setValue('hasTax');
 	}
 
 	changeTaxCode(event) {
@@ -326,6 +327,8 @@ export class POSInvoiceModalPage extends PageBase {
 
 			this.taxInfoGroup.controls.BillingAddress.clearValidators();
 			this.taxInfoGroup.controls.BillingAddress.updateValueAndValidity();
+			this.taxInfoGroup.controls.Name.setValidators([Validators.required]);
+			this.taxInfoGroup.controls.Name.updateValueAndValidity();
 		} else {
 			this.taxInfoGroup.controls.Name.clearValidators();
 			this.taxInfoGroup.controls.Name.updateValueAndValidity();
@@ -333,6 +336,8 @@ export class POSInvoiceModalPage extends PageBase {
 			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
 			this.taxInfoGroup.controls.IdentityCardNumber.clearValidators();
 			this.taxInfoGroup.controls.IdentityCardNumber.updateValueAndValidity();
+
+			this.taxInfoGroup.controls.CompanyName.disable();
 			this.taxInfoGroup.controls.BillingAddress.disable();
 		}
 	}
@@ -351,24 +356,19 @@ export class POSInvoiceModalPage extends PageBase {
 			this.pageProvider
 				.search({
 					WorkPhone_eq: this.formGroup.controls.WorkPhone.value,
+					skipMCP: true,
 				})
 				.toPromise()
 				.then((result: any) => {
 					if (result.length == 0 && result.findIndex((e) => e.Id == this.id)) {
 						this.formGroup.controls.WorkPhone.setErrors(null);
-						// this.formGroup.controls.Address['controls'].Phone1.setValue(this.formGroup.controls.WorkPhone.value);
-						// this.formGroup.controls.Address['controls'].Phone1.markAsDirty();
-						// this.saveChange();
+						this.isCheck = true;
+						this.isValid = true;
 					} else {
+						this.isCheck = true;
+						this.isValid = false;
 						console.log(result);
 						let contact = result[0];
-						let message = {
-							Name: contact.Name,
-							WorkPhone: contact.WorkPhone,
-							Header: '',
-							SubHeader: '',
-							Message: `Số điện thoại '${contact.WorkPhone}' đã được sử dụng bởi khách hàng '${contact.Name}' `,
-						};
 						this.env
 							.showPrompt(
 								{
@@ -381,6 +381,8 @@ export class POSInvoiceModalPage extends PageBase {
 							)
 							.then((_) => {
 								this.id = contact.Id;
+								this.address = contact;
+								this.isValid = true;
 								this.onUpdateContact(contact);
 								this.refresh();
 							})
@@ -393,4 +395,23 @@ export class POSInvoiceModalPage extends PageBase {
 				});
 		}
 	}
+}
+
+export function multiEmailValidator(): ValidatorFn {
+	return (control: AbstractControl): ValidationErrors | null => {
+		if (!control.value) {
+			return null; // cho phép rỗng
+		}
+
+		const emails = control.value
+			.split(';')
+			.map((e: string) => e.trim())
+			.filter((e: string) => e.length > 0);
+
+		const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+		const invalidEmails = emails.filter((e) => !emailRegex.test(e));
+
+		return invalidEmails.length > 0 ? { multiEmailInvalid: { invalidEmails } } : null;
+	};
 }
