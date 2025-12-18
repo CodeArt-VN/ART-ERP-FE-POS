@@ -7,7 +7,8 @@ import {
 	POS_TableGroupProvider,
 	POS_TableProvider,
 	POS_TerminalProvider,
-	SALE_OrderProvider, SYS_PrinterProvider
+	SALE_OrderProvider,
+	SYS_PrinterProvider,
 } from 'src/app/services/static/services.service';
 import { POSSplitModalPage } from '../pos-split-modal/pos-split-modal.page';
 import { POSMergeModalPage } from '../pos-merge-modal/pos-merge-modal.page';
@@ -46,7 +47,7 @@ export class POSOrderPage extends PageBase {
 		public posTerminalProvider: POS_TerminalProvider,
 		public sysPrinterProvider: SYS_PrinterProvider,
 		public pageProvider: SALE_OrderProvider,
-	
+
 		public modalController: ModalController,
 		public popoverCtrl: PopoverController,
 		public alertCtrl: AlertController,
@@ -91,7 +92,6 @@ export class POSOrderPage extends PageBase {
 			}
 		});
 		this.posShiftService.pageConfig = this.pageConfig;
-		this.posShiftService.initShift();
 		super.ngOnInit();
 	}
 
@@ -117,6 +117,7 @@ export class POSOrderPage extends PageBase {
 				this.soStatusList = this.posService.dataSource.orderStatusList;
 				this.printerList = values[1].data || [];
 				this.terminalList = values[2].data || [];
+				if(this.tableGroupList.length>0)this.posShiftService.initShift();
 
 				if (values[3]) {
 					this.POSconfigDTO = values[3];
@@ -250,6 +251,18 @@ export class POSOrderPage extends PageBase {
 		} else {
 			super.refresh();
 		}
+	}
+
+	archiveItems(publishEventCode?: string): void {
+		this.pageProvider.disable(this.selectedItems, !this.query.IsDisabled).then(() => {
+			if (this.query.IsDisabled) {
+				this.env.showMessage('Reopened {{value}} lines!', 'success', this.selectedItems.length);
+			} else {
+				this.env.showMessage('Archived {{value}} lines!', 'success', this.selectedItems.length);
+			}
+			this.removeSelectedItems();
+			this.refresh();
+		});
 	}
 
 	segmentChanged(ev: any) {
