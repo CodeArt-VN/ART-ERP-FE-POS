@@ -1271,8 +1271,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 
 			dog && console.log('💾 Saving print results:', itemsToUpdate);
-
-			await this.setOrderValue({ OrderLines: itemsToUpdate, Status: 'Scheduled' }, true, false)
+			let postItem:any = {
+				OrderLines: itemsToUpdate,
+			}
+			if(this.item.Status == 'New') postItem.Status = 'Scheduled'
+			await this.setOrderValue(postItem, true, false)
 				.then(() => {
 					dog && console.log('✅ Print results saved successfully');
 					if (this.item.Id) {
