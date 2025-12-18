@@ -561,7 +561,7 @@
 										</span>
 
 										<ion-button
-											[disabled]="i.IsDisabled"
+											[disabled]="i.IsDisabled || !i.IDSalesTaxDefinition"
 											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
 											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
 											class="ion-float-right add-to-cart-btn"
