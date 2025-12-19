@@ -8,6 +8,7 @@ import { ApiSetting } from 'src/app/services/static/api-setting';
 import { CommonService } from 'src/app/services/core/common.service';
 import { TranslateService } from '@ngx-translate/core';
 import { TreePageModule } from '../../_template/tree/tree.module';
+import { dog } from 'src/environments/environment';
 
 @Component({
 	selector: 'app-pos-invoice-modal',
@@ -19,8 +20,6 @@ export class POSInvoiceModalPage extends PageBase {
 	IsShowSave = true;
 	IsShowApply = false;
 	IsShowSpinner = false;
-	isNoTax = false;
-	optionalTax = 'hasTax';
 	taxInfoGroup: FormGroup;
 	_isDefaultBP = false;
 	_IdDefaultBusinessPartner = 0;
@@ -31,7 +30,6 @@ export class POSInvoiceModalPage extends PageBase {
 	textDefault = 'Guest customer';
 	TaxCodeDataSource = [];
 	isShowInfo = false;
-	isAddNew = false;
 	taxInfoList = [];
 	IsPhoneChecked = false;
 	IsPhoneValid = true;
@@ -69,7 +67,7 @@ export class POSInvoiceModalPage extends PageBase {
 				Contact: [''],
 			}),
 			WorkPhone: [''],
-			optionalTax: ['hasTax'],
+			IsCorpTaxInfo: [true],
 		});
 		this.formGroup = formBuilder.group({
 			Id: [0],
@@ -110,7 +108,7 @@ export class POSInvoiceModalPage extends PageBase {
 			this.formGroup.controls.Name.setValue(null);
 			this.formGroup.controls.WorkPhone.setValue(null);
 			this.formGroup.controls.Email.setValue(null);
-			this.checkRuleHasTax(this.optionalTax, false);
+			this.checkRuleHasTax(this.taxInfoGroup.controls.IsCorpTaxInfo.value, false);
 		} else {
 			this._isDefaultBP = false;
 			this.taxInfoGroup.disable();
@@ -133,7 +131,7 @@ export class POSInvoiceModalPage extends PageBase {
 		this.taxInfoGroup.enable();
 		this.taxInfoGroup.controls.Id.setValue(0);
 		this.taxInfoGroup.controls.Id.markAsDirty();
-		this.checkRuleHasTax(this.optionalTax, false);
+		this.checkRuleHasTax(this.taxInfoGroup.controls.IsCorpTaxInfo.value, false);
 	}
 
 	LoadTaxCodeDataSource(i) {
@@ -244,7 +242,7 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 
 	changeSelectTaxCode(i) {
-		console.log('Selected tax code: ', i);
+		dog && console.log('Selected tax code: ', i);
 		switch (i.Id) {
 			case '':
 				this.isShowInfo = false;
@@ -255,11 +253,11 @@ export class POSInvoiceModalPage extends PageBase {
 				this.formGroup.controls._OptionCode.enable();
 				this.taxInfoGroup.patchValue(i);
 				if (!i.TaxCode) {
-					this.checkRuleHasTax('noTax', false);
-					this.optionalTax = 'noTax';
+					this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(false);
+					this.checkRuleHasTax(false, false);
 				} else {
-					this.checkRuleHasTax('hasTax', false);
-					this.optionalTax = 'hasTax';
+					this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(true);
+					this.checkRuleHasTax(true, false);
 				}
 				break;
 		}
@@ -269,7 +267,7 @@ export class POSInvoiceModalPage extends PageBase {
 		this.taxInfoGroup.reset();
 		this.taxInfoGroup.controls.IDPartner.setValue(this.id);
 		this.taxInfoGroup.controls.IDPartner.markAsDirty();
-		this.taxInfoGroup.controls.optionalTax.setValue('hasTax');
+		this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(true);
 	}
 
 	changeTaxCode(event) {
@@ -325,16 +323,16 @@ export class POSInvoiceModalPage extends PageBase {
 
 	hasTaxChange(e) {
 		// this.formGroup.reset();
-		this.optionalTax = this.taxInfoGroup.controls.optionalTax.value;
-		this.checkRuleHasTax(this.optionalTax);
-		if (this.optionalTax == 'noTax' && this.taxInfoGroup.controls.TaxCode.value != '') {
+		const isCorpTaxInfo = this.taxInfoGroup.controls.IsCorpTaxInfo.value;
+		this.checkRuleHasTax(isCorpTaxInfo);
+		if (!isCorpTaxInfo && this.taxInfoGroup.controls.TaxCode.value != '') {
 			this.taxInfoGroup.controls.TaxCode.setValue(null);
 			this.taxInfoGroup.controls.TaxCode.markAsDirty();
 		}
 	}
 
 	checkRuleHasTax(e, isEnable = true) {
-		if (e == 'noTax') {
+		if (!e) {
 			this.taxInfoGroup.controls.TaxCode.clearValidators();
 			this.taxInfoGroup.controls.CompanyName.clearValidators();
 
@@ -386,7 +384,7 @@ export class POSInvoiceModalPage extends PageBase {
 					} else {
 						this.IsPhoneChecked = true;
 						this.IsPhoneValid = false;
-						console.log(result);
+						dog && console.log(result);
 						let contact = result[0];
 						this.env
 							.showPrompt(

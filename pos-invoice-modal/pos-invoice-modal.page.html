@@ -67,27 +67,27 @@
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
 						<app-form-control
 							*ngIf="_isDefaultBP || formGroup.controls._OptionCode.value =='AddNew'"
-							[field]="{id:'optionalTax', label:'Tax code', type:'radio',form:taxInfoGroup, dataSource: [{Code: 'hasTax', Name: 'Has tax identification number'}, {Code: 'noTax', Name: 'No tax identification number'}] }"
+							[field]="{id:'IsCorpTaxInfo', label:'Tax code', type:'radio',form:taxInfoGroup, dataSource: [{Code: true, Name: 'Has tax identification number'}, {Code: false, Name: 'No tax identification number'}] }"
 							(change)="hasTaxChange($event)"
 						></app-form-control>
 
 						<ng-container *ngIf="isShowInfo || _isDefaultBP">
 							<app-form-control
-								*ngIf="optionalTax == 'hasTax'"
+								*ngIf="taxInfoGroup.controls.IsCorpTaxInfo.value"
 								[field]="{id:'TaxCode', label:'Tax code', type:'text',form:taxInfoGroup}"
 								(change)="changeTaxCode($event)"
 							></app-form-control>
 
 							<app-form-control
-								*ngIf="optionalTax == 'noTax'"
+								*ngIf="!taxInfoGroup.controls.IsCorpTaxInfo.value"
 								[field]="{id:'Name', label:'Personal / organization name', type:'text',form:taxInfoGroup}"
 							></app-form-control>
 
-							<app-form-control *ngIf="optionalTax == 'hasTax'" [field]="{id:'CompanyName', label:'Company name', type:'text',form:taxInfoGroup}"></app-form-control>
+							<app-form-control *ngIf="taxInfoGroup.controls.IsCorpTaxInfo.value" [field]="{id:'CompanyName', label:'Company name', type:'text',form:taxInfoGroup}"></app-form-control>
 
 							<app-form-control [field]="{id:'BillingAddress', label:'Address', type:'text',form:taxInfoGroup}"></app-form-control>
 							<app-form-control
-								*ngIf="optionalTax == 'noTax'"
+								*ngIf="!taxInfoGroup.controls.IsCorpTaxInfo.value"
 								[field]="{id:'IdentityCardNumber', label:'Identity card number', type:'text',form:taxInfoGroup}"
 							></app-form-control>
 
