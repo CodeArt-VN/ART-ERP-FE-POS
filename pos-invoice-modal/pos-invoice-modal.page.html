@@ -34,7 +34,7 @@
 								</div>
 							</ng-template>
 						</app-form-control>
-						<div *ngIf="!_isDefaultBP" class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
+						<div *ngIf="!_isDefaultBP && _canAddEInvoiceInfo" class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
 							<ion-button size="small" fill="outline" (click)="addNewTaxInfo()">
 								<ion-icon slot="start" name="add-circle-outline"></ion-icon>
 								{{'Create new tax info' | translate}}
@@ -44,7 +44,8 @@
 
 					<ion-col *ngIf="_isDefaultBP" size="12" size-sm="12" size-md="12" size-xl="12">
 						<app-form-control [field]="{id:'WorkPhone', label:'Phone number', type:'text',form:formGroup}"></app-form-control>
-
+						<ion-text color="success" *ngIf="isCheck && isValid"> {{'Valid phone number' | translate}} </ion-text>
+						<ion-text color="danger" *ngIf="isCheck && !isValid"> {{'Invalid phone number or already in use' | translate}} </ion-text>
 						<div class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
 							<ion-button size="small" fill="outline" (click)="checkPhoneNumber()"> {{'Check' | translate}} </ion-button>
 						</div>
@@ -102,7 +103,7 @@
 	<ion-toolbar>
 		<div slot="end">
 			<ion-button (click)="Apply()" fill="outline" color="warning">{{'Cancel' | translate}}</ion-button>
-			<ion-button [disabled]="!_canAddEInvoiceInfo" (click)="Apply(true)" [strong]="true" color="success">{{'Apply' | translate}}</ion-button>
+			<ion-button [disabled]="!_canAddEInvoiceInfo || IsShowSpinner || !isValid || !isCheck" (click)="Apply(true)" [strong]="true" color="success">{{'Apply' | translate}}</ion-button>
 		</div>
 	</ion-toolbar>
 </ion-footer>
