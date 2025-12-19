@@ -113,7 +113,7 @@ export class POSVoucherModalPage extends PageBase {
 							}
 						}
 					} else {
-						this.env.showMessage('Mã Voucher không hợp lệ', 'danger');
+						this.env.showMessage('Voucher code is not valid', 'danger');
 					}
 				})
 				.catch((err) => this.env.showErrorMessage(err))

@@ -59,6 +59,7 @@
 	<ion-fab *ngIf="pageConfig.isShowFeature && item && posService.dataSource" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2"></div>
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 180px)">
+			
 			<!-- Dishes -->
 			<div class="box" *ngIf="item?.OrderLines?.length">
 				<ion-toolbar style="border-bottom: solid 0.55px var(--menu-right-border-color)">
@@ -191,6 +192,8 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- Promotion / Voucher -->
 			<div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0 ">
 				<div class="box-content">
 					<div class="check-out">
@@ -219,7 +222,9 @@
 					</div>
 				</div>
 			</div>
-			<div class="box ion-padding">
+
+			<!-- Payment summary -->
+			<div class="box ion-padding" *ngIf="item?.OrderLines?.length > 0">
 				<div class="box-content">
 					<div class="check-out">
 						<label class="c-label"
@@ -277,6 +282,7 @@
 				</div>
 			</div>
 
+			<!-- Payment details -->
 			<div class="box ion-padding" *ngIf="paymentList.length">
 				<div class="box-content">
 					<div class="check-out">
@@ -311,18 +317,18 @@
 				</div>
 			</div>
 
-			<!-- Contact -->
+			<!-- Order info -->
 			<div class="box header-box ion-padding">
 				<div class="header-name">
 					<div class="bill-for">
-						<span>{{(item?.OrderDate || printData.printDate) | date: 'HH:mm dd/MM'}} </span>
+						<span *ngIf="item?.OrderDate">{{item?.OrderDate | date: 'HH:mm dd/MM'}} </span>
 						<span *ngIf="!item?.Tables?.length">{{'Please choose a table' | translate}}</span>
 						<span *ngIf="item?.Tables?.length && !item?.OrderLines?.length">{{'Please choose products' | translate}}</span>
 					</div>
 					<div class="total">
 						<ion-item *ngIf="Staff" lines="none" class="staff-info">
 							<ion-avatar class="clickable" id="open-modal-staff-info" slot="start">
-								<img alt="Silhouette of mountains" [src]="Staff.avatarURL" />
+								<ion-img #img [src]="Staff.avatarURL" (ionError)="img.src = 'assets/avartar-empty.jpg'"></ion-img>
 							</ion-avatar>
 							<ion-text>
 								<ion-label>
@@ -338,7 +344,7 @@
 										<ion-button fill="clear" style="position: absolute; right: 0" color="secondary" (click)="closeModal()">
 											<ion-icon slot="icon-only" name="close"></ion-icon>
 										</ion-button>
-										<ion-img width="100%" alt="Silhouette of mountains" [src]="Staff.avatarURL"></ion-img>
+										<ion-img #img2 width="100%" [src]="Staff.avatarURL" (ionError)="img2.src = 'assets/avartar-empty.jpg'"></ion-img>
 									</ion-content>
 								</ng-template>
 							</ion-modal>
@@ -532,6 +538,10 @@
 							<span class="tag right" *ngIf="i.IsDisabled">
 								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
 							</span>
+							<span class="tag right" *ngIf="!i.IDSalesTaxDefinition">
+								<ion-text class="tag-content" color="danger"> {{'Check tax definition' | translate}} </ion-text>
+							</span>
+							
 							<div class="card" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage}" [id]="'item'+i.Id">
 								<ion-img
 									*ngIf="posService.systemConfig.POSIsShowItemImage"

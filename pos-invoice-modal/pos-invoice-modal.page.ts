@@ -33,8 +33,8 @@ export class POSInvoiceModalPage extends PageBase {
 	isShowInfo = false;
 	isAddNew = false;
 	taxInfoList = [];
-	isCheck = false;
-	isValid = true;
+	IsPhoneChecked = false;
+	IsPhoneValid = true;
 
 	@Input() onUpdateContact: Function;
 	constructor(
@@ -114,13 +114,16 @@ export class POSInvoiceModalPage extends PageBase {
 		} else {
 			this._isDefaultBP = false;
 			this.taxInfoGroup.disable();
-			this.isCheck = true;
+			this.IsPhoneChecked = true;
 			// this.formGroup.controls._OptionCode.enable();
 		}
 
-		this.formGroup.get('WorkPhone')?.valueChanges.subscribe((value) => {
-			if (this.isCheck) this.isCheck = false;
+		const workPhoneSubscription = this.formGroup.get('WorkPhone')?.valueChanges.subscribe((value) => {
+			if (this.IsPhoneChecked) this.IsPhoneChecked = false;
 		});
+		if (workPhoneSubscription) {
+			this.subscriptions.push(workPhoneSubscription);
+		}
 	}
 
 	addNewTaxInfo() {
@@ -288,12 +291,28 @@ export class POSInvoiceModalPage extends PageBase {
 				.connect(apiPath.method, apiPath.url(), this.query)
 				.toPromise()
 				.then((result: any) => {
-					this.patchValue(result);
 					this.IsShowSpinner = false;
+					if (result.Success === false || !result.TenChinhThuc) {
+						// API trả về lỗi hoặc không tìm thấy thông tin
+						const errorMessage = result?.Message || 'INVALID_TAX_CODE';
+						this.env.showMessage(errorMessage, 'danger');
+						// Enable các field để người dùng nhập thủ công
+						this.taxInfoGroup.controls.CompanyName.enable();
+						this.taxInfoGroup.controls.BillingAddress.enable();
+					} else {
+						// API thành công, tự động điền thông tin
+						this.patchValue(result);
+						// Disable lại các field vì đã có dữ liệu từ API
+						this.taxInfoGroup.controls.CompanyName.disable();
+						this.taxInfoGroup.controls.BillingAddress.disable();
+					}
 				})
 				.catch((err) => {
-					this.env.showMessage('Mã số thuế không hợp lệ!', 'danger');
 					this.IsShowSpinner = false;
+					this.env.showMessage('INVALID_TAX_CODE', 'danger');
+					// Enable các field để người dùng nhập thủ công khi có lỗi
+					this.taxInfoGroup.controls.CompanyName.enable();
+					this.taxInfoGroup.controls.BillingAddress.enable();
 				});
 		}
 	}
@@ -360,29 +379,29 @@ export class POSInvoiceModalPage extends PageBase {
 				})
 				.toPromise()
 				.then((result: any) => {
-					if (result.length == 0 && result.findIndex((e) => e.Id == this.id)) {
+					if (result.length == 0 || result.some((e) => e.Id == this.id)) {
 						this.formGroup.controls.WorkPhone.setErrors(null);
-						this.isCheck = true;
-						this.isValid = true;
+						this.IsPhoneChecked = true;
+						this.IsPhoneValid = true;
 					} else {
-						this.isCheck = true;
-						this.isValid = false;
+						this.IsPhoneChecked = true;
+						this.IsPhoneValid = false;
 						console.log(result);
 						let contact = result[0];
 						this.env
 							.showPrompt(
+								
+								'Would you like to select this customer?',
 								{
-									code: '{WorkPhone} is already in use by customer {Name}',
+									code: 'WORKPHONE_ALREADY_IN_USE',
 									Name: contact.Name,
 									WorkPhone: contact.WorkPhone,
-								},
-								'',
-								'Would you like to select this customer?'
+								}
 							)
 							.then((_) => {
 								this.id = contact.Id;
 								this.address = contact;
-								this.isValid = true;
+								this.IsPhoneValid = true;
 								this.onUpdateContact(contact);
 								this.refresh();
 							})

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { NavController, LoadingController, AlertController, ModalController, PopoverController } from '@ionic/angular';
 import { PageBase } from 'src/app/page-base';
 import { ActivatedRoute } from '@angular/router';
@@ -20,8 +20,8 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { BehaviorSubject, concat, firstValueFrom, lastValueFrom, Observable, of, Subject } from 'rxjs';
-import { catchError, distinctUntilChanged, filter, switchMap, take, tap, toArray, mergeMap } from 'rxjs/operators';
+import { concat, of } from 'rxjs';
+import { catchError, distinctUntilChanged, switchMap, tap, mergeMap } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
@@ -30,7 +30,6 @@ import { dog, environment } from 'src/environments/environment';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
-import { ApiSetting } from 'src/app/services/static/api-setting';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
 import QRCode from 'qrcode';
 import { printData, PrintingService } from 'src/app/services/util/printing.service';

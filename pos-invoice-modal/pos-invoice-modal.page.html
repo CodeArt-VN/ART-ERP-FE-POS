@@ -18,6 +18,8 @@
 		<form [formGroup]="taxInfoGroup">
 			<ion-grid fixed>
 				<ion-row>
+					
+					<!-- Exist business partner -->
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12" *ngIf="!_isDefaultBP">
 						<app-form-control
 							[field]="{id:'_OptionCode', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:formGroup , appendTo: '#ng-select'}"
@@ -37,21 +39,26 @@
 						<div *ngIf="!_isDefaultBP && _canAddEInvoiceInfo" class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
 							<ion-button size="small" fill="outline" (click)="addNewTaxInfo()">
 								<ion-icon slot="start" name="add-circle-outline"></ion-icon>
-								{{'Create new tax info' | translate}}
+								{{'Add invoice information' | translate}}
 							</ion-button>
 						</div>
 					</ion-col>
 
+					<!-- Default business partner -->
 					<ion-col *ngIf="_isDefaultBP" size="12" size-sm="12" size-md="12" size-xl="12">
-						<app-form-control [field]="{id:'WorkPhone', label:'Phone number', type:'text',form:formGroup}"></app-form-control>
-						<ion-text color="success" *ngIf="isCheck && isValid"> {{'Valid phone number' | translate}} </ion-text>
-						<ion-text color="danger" *ngIf="isCheck && !isValid"> {{'Invalid phone number or already in use' | translate}} </ion-text>
-						<div class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
-							<ion-button size="small" fill="outline" (click)="checkPhoneNumber()"> {{'Check' | translate}} </ion-button>
+					<app-form-control [field]="{id:'WorkPhone', label:'Phone number', type:'text',form:formGroup}"></app-form-control>
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-top: -15px; margin-bottom: 1.25rem;">
+						<div>
+							<ion-text color="success" *ngIf="IsPhoneChecked && IsPhoneValid"> {{'Valid phone number' | translate}} </ion-text>
+							<ion-text color="danger" *ngIf="IsPhoneChecked && !IsPhoneValid"> {{'Invalid phone number or already in use' | translate}} </ion-text>
 						</div>
+						<ion-button size="small" fill="outline" [disabled]="!formGroup.controls.WorkPhone.value || !formGroup.controls.WorkPhone.valid" (click)="checkPhoneNumber()"> {{'Check' | translate}} </ion-button>
+					</div>
 						<app-form-control [field]="{id:'Name', label:'Customer', type:'text',form:formGroup}"></app-form-control>
-						<app-form-control [field]="{id:'Email', label:'Email', type:'text',form:formGroup}"></app-form-control>
+						<!-- <app-form-control [field]="{id:'Email', label:'Email', type:'text',form:formGroup}"></app-form-control> -->
 					</ion-col>
+
+					<!-- Invoice information -->
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
 						<ion-list-header *ngIf="isShowInfo || _isDefaultBP" class="ion-no-padding">
 							<ion-label color="primary">{{'Invoice information' | translate}}</ion-label>
@@ -103,7 +110,9 @@
 	<ion-toolbar>
 		<div slot="end">
 			<ion-button (click)="Apply()" fill="outline" color="warning">{{'Cancel' | translate}}</ion-button>
-			<ion-button [disabled]="!_canAddEInvoiceInfo || IsShowSpinner || !isValid || !isCheck" (click)="Apply(true)" [strong]="true" color="success">{{'Apply' | translate}}</ion-button>
+			<ion-button [disabled]="!_canAddEInvoiceInfo || IsShowSpinner || !IsPhoneValid || !IsPhoneChecked" (click)="Apply(true)" [strong]="true" color="success">
+				{{'Apply' | translate}}
+			</ion-button>
 		</div>
 	</ion-toolbar>
 </ion-footer>
