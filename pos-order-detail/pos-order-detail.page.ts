@@ -2408,6 +2408,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				});
 		}
 	}
+
+	getSelectedTaxInfo() {
+		if (!this.item?.IDTaxInfo || !this.item?._Customer?.TaxAddresses) {
+			return null;
+		}
+		return this.item._Customer.TaxAddresses.find((tax) => tax.Id === this.item.IDTaxInfo) || null;
+	}
 	discountFromSalesman(line, form) {
 		let OriginalDiscountFromSalesman = form.controls.OriginalDiscountFromSalesman.value;
 		if (OriginalDiscountFromSalesman == '') {

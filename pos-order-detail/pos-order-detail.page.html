@@ -359,7 +359,12 @@
 
 						<div *ngIf="item?.OrderLines?.length > 0" class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
 							<ion-button size="small" fill="outline" (click)="InvoiceRequired()">
-								<ion-label> {{'Issue invoice' | translate}} </ion-label>
+								<ion-label> 
+									{{'Issue invoice' | translate}} 
+									<span *ngIf="getSelectedTaxInfo()">
+										{{getSelectedTaxInfo()?.CompanyName || getSelectedTaxInfo()?.Name}}
+									</span>
+								</ion-label>
 							</ion-button>
 
 							<ion-button *ngIf="pageConfig.canEdit && pageConfig.canAddCustomer" [disabled]="submitAttempt" size="small" fill="outline" (click)="addContact()">
