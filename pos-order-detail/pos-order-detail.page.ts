@@ -2349,7 +2349,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	async addContact() {
 		const modal = await this.modalController.create({
 			component: POSContactModalPage,
-			cssClass: 'my-custom-class',
+			cssClass: 'modal90vh',
 			componentProps: {
 				item: null,
 			},

@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header collapse="fade">
 	<ion-toolbar>
 		<ion-title>{{item.Status == 'Unconfirmed'? 'Confirm shift':item.Status == 'Open'? 'Close shift':'Shift' }}</ion-title>
 
@@ -9,7 +9,7 @@
 		</ion-buttons>
 	</ion-toolbar>
 </ion-header>
-<ion-content appScrollbarTheme class="ion-padding" fullscreen>
+<ion-content appScrollbarTheme class="ion-padding">
 	<div class="main-view">
 		<div class="row-full shadow full-screen">
 			<div>
@@ -69,14 +69,27 @@
 		</div>
 	</div>
 </ion-content>
-<ion-footer>
+<ion-footer collapse="fade">
 	<ion-toolbar>
-		<ion-button slot="end" *ngIf="item.Status == 'Unconfirmed'" (click)="confirm()" color="warning">{{'Confirm shift' | translate}}</ion-button>
-		@if(item.Status == 'Open' && item.Id) { @if(defaultPrinter){
-		<ion-button slot="end" (click)="print()" color="primary"><ion-icon name="print-outline"></ion-icon>{{'Print' | translate}}</ion-button>
-		}
-		<ion-button slot="end" (click)="close()" color="warning">{{'Close shift' | translate}}</ion-button>
-		}
+		<div slot="start">
+        </div>
+		
+		<div slot="end">
+			<ion-button [strong]="true" *ngIf="item.Status == 'Unconfirmed'" (click)="confirm()">{{'Confirm shift' | translate}}</ion-button>
+			@if(item.Status == 'Open' && item.Id) { @if(defaultPrinter){
+			<ion-button fill="outline" (click)="print()">
+				{{'Print' | translate}}
+			</ion-button>
+			}
+			<ion-button fill="outline" (click)="close()" color="warning">
+				{{'Close shift' | translate}}
+			</ion-button>
+			}
+            <ion-button fill="outline" color="warning" (click)="closeModal()">
+                {{'Cancel' | translate}}
+            </ion-button>
+        </div>
+
 	</ion-toolbar>
 </ion-footer>
 @if(shiftData){
