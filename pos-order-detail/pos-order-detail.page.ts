@@ -199,8 +199,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					break;
 			}
 		});
-		this.subPromotion = this.promotionService.appliedPromotions$.subscribe((list) => {
-			this.promotionAppliedPrograms = list;
+		this.subPromotion = this.promotionService.voucherBySOObs$.subscribe((map) => {
+			this.promotionAppliedPrograms = map[this.id] || [];
 		});
 		// if(!this.item.Id) this.formGroup.get('NumberOfGuests')?.markAsDirty();
 		super.ngOnInit();
@@ -209,6 +209,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	ngOnDestroy() {
 		this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
 		this.subPromotion.unsubscribe();
+		this.promotionService.clearMemory(this.id);
+
 		super.ngOnDestroy();
 	}
 
@@ -1271,10 +1273,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 
 			dog && console.log('💾 Saving print results:', itemsToUpdate);
-			let postItem:any = {
+			let postItem: any = {
 				OrderLines: itemsToUpdate,
-			}
-			if(this.item.Status == 'New') postItem.Status = 'Scheduled'
+			};
+			if (this.item.Status == 'New') postItem.Status = 'Scheduled';
 			await this.setOrderValue(postItem, true, false)
 				.then(() => {
 					dog && console.log('✅ Print results saved successfully');

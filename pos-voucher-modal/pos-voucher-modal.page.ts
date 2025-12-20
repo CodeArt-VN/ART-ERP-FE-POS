@@ -122,36 +122,10 @@ export class POSVoucherModalPage extends PageBase {
 	}
 
 	async applyVoucher(line) {
-		// let count = this.item.Deductions.filter((d) => d.Type == 'Voucher').length;
-		// if (count < 2) {
-		// let program= {IDProgram:line.Id,VoucherCode: line.VoucherCode}
-		let apiPath = {
-			method: 'POST',
-			url: function () {
-				return ApiSetting.apiDomain('PR/Program/UseVoucher/');
-			},
-		};
-		new Promise((resolve, reject) => {
-			this.pageProvider.commonService
-				.connect(apiPath.method, apiPath.url(), {
-					// IDSaleOrder: this.SaleOrder.Id,
-					// Date: new Date(),
-					// VoucherCodeList: [line.VoucherCode],
-					VoucherCodeList: [line.VoucherCode],
-					SaleOrder: this.SaleOrder,
-					IsCheckOnly: false,
-				})
-				.toPromise()
-				.then((savedItem: any) => {
-					this.env.showMessage('Saving completed!', 'success');
-					resolve(true);
-					this.modalController.dismiss(savedItem);
-				})
-				.catch((err) => {
-					this.env.showErrorMessage(err);
-					resolve(false);
-				});
+		this.promotionService.applyVoucher(this.SaleOrder,line.VoucherCode).then(savedItem=>{
+			this.modalController.dismiss(savedItem);
 		});
+	
 		// } else {
 		// 	this.env.showMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
 		// }
