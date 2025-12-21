@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header collapse="fade">
 	<ion-toolbar>
 		<ion-title>{{'Discount' | translate}}</ion-title>
 		<ion-buttons slot="primary">
@@ -52,12 +52,21 @@
 				</ion-col>
 			</ion-row>
 		</ion-grid>
-		<ion-row class="sticky-btn">
-			<ion-col>
-				<div class="c-control ion-text-center">
-					<ion-button expand="block" (click)="applyDiscount(true)">{{'Apply' | translate}}</ion-button>
-				</div>
-			</ion-col>
-		</ion-row>
 	</div>
 </ion-content>
+<ion-footer collapse="fade">
+	<ion-toolbar>
+		<div slot="start">
+        </div>
+		
+		<div slot="end">
+			<ion-button [strong]="true" (click)="applyDiscount(true)">
+				{{'Apply' | translate}}
+			</ion-button>
+            <ion-button fill="outline" color="warning" (click)="closeModal()" >
+                {{'Cancel' | translate}}
+            </ion-button>
+        </div>
+		
+	</ion-toolbar>
+</ion-footer>

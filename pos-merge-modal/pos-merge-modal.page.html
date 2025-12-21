@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header collapse="fade">
 	<ion-toolbar>
 		<ion-buttons slot="start" class="ion-hide-sm-down_">
 			<ion-button color="dark" class="ion-hide-sm-down_"> {{'Merge' | translate}} {{selectedOrders.length}} {{'Order' | translate}} </ion-button>
@@ -68,11 +68,25 @@
                         </ion-button>
                     </div> -->
 
-					<div class="c-control ion-text-right">
-						<ion-button [disabled]="submitAttempt" (click)="mergeSaleOrders()">{{'Merge order' | translate}}</ion-button>
-					</div>
 				</ion-col>
 			</ion-row>
 		</ion-grid>
 	</div>
 </ion-content>
+<ion-footer collapse="fade">
+	<ion-toolbar>
+		<div slot="start">
+        </div>
+		
+		<div slot="end">
+			<ion-button [strong]="true" [disabled]="submitAttempt" (click)="mergeSaleOrders()">
+				{{'Merge order' | translate}}
+			</ion-button>
+            <ion-button fill="outline" color="warning" (click)="closeModal()" >
+                {{'Cancel' | translate}}
+            </ion-button>
+        </div>
+		
+	</ion-toolbar>
+</ion-footer>
+

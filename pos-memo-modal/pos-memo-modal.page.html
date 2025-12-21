@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header collapse="fade">
 	<ion-toolbar class="no-padding">
 		<ion-buttons slot="start" class="ion-hide-sm-down_">
 			<ion-button color="dark"> Ghi chú </ion-button>
@@ -47,10 +47,6 @@
 			<div class="c-control" style="margin-bottom: 0px !important">
 				<label class="c-label" for="Remark"
 					>{{'Ghi chú' | translate}}
-					<ion-button color="danger" *ngIf="!item._Locked " class="ion-float-right" size="small" (click)="Remark = null;">
-						<ion-icon slot="start" name="remove-circle-outline"></ion-icon>
-						{{'Xóa tất cả' | translate}}
-					</ion-button>
 				</label>
 				<textarea
 					rows="3"
@@ -64,9 +60,28 @@
 				>
 				</textarea>
 			</div>
-			<div *ngIf="!item._Locked">
-				<ion-button expand="block" [disabled]="submitAttempt" (click)="dismiss(true)">{{'Áp dụng ghi chú'}}</ion-button>
-			</div>
+			
 		</div>
 	</div>
 </ion-content>
+<ion-footer collapse="fade">
+	<ion-toolbar>
+		<div slot="start">
+			
+        </div>
+		
+		<div slot="end">
+
+			<ion-button *ngIf="!item._Locked" [strong]="true" [disabled]="submitAttempt" (click)="dismiss(true)">
+				{{'Apply' | translate}}
+			</ion-button>
+			<ion-button *ngIf="!item._Locked" fill="outline" color="danger" (click)="Remark = null;">
+				{{'Delete all' | translate}}
+			</ion-button>
+            <ion-button fill="outline" color="warning" (click)="closeModal()" >
+                {{'Cancel' | translate}}
+            </ion-button>
+        </div>
+		
+	</ion-toolbar>
+</ion-footer>

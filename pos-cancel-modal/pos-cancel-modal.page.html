@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header collapse="fade">
 	<ion-toolbar>
 		<ion-title>{{'Cancellation reason' | translate}}</ion-title>
 		<ion-buttons slot="primary">
@@ -32,8 +32,20 @@
 		</ion-radio-group>
 	</ion-list>
 </ion-content>
-<ion-footer>
+<ion-footer collapse="fade">
 	<ion-toolbar>
-		<ion-button color="danger" (click)="dismiss('confirm')" expand="block">{{'Agree' | translate}}</ion-button>
+		<div slot="start">
+			
+        </div>
+		
+		<div slot="end">
+			<ion-button [strong]="true" color="danger" (click)="dismiss('confirm')">
+				{{'Agree' | translate}}
+			</ion-button>
+            <ion-button fill="outline" color="warning" (click)="closeModal()" >
+                {{'Cancel' | translate}}
+            </ion-button>
+        </div>
+		
 	</ion-toolbar>
 </ion-footer>
