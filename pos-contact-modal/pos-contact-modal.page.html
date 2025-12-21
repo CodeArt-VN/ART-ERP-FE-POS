@@ -47,21 +47,12 @@
 </ion-content>
 <ion-footer collapse="fade">
 	<ion-toolbar>
-		<div slot="start">
-			
-        </div>
-		
+		<div slot="start"></div>
+
 		<div slot="end">
-			<ion-button *ngIf="IsBtnNew" [strong]="true" (click)="saveChange()">
-				{{'Add customer' | translate}}
-			</ion-button>
-			<ion-button *ngIf="IsBtnApply" [strong]="true" (click)="Apply(true)">
-				{{'Apply' | translate}}
-			</ion-button>
-            <ion-button fill="outline" color="warning" (click)="closeModal()" >
-                {{'Cancel' | translate}}
-            </ion-button>
-        </div>
-		
+			<ion-button fill="outline" color="warning" (click)="closeModal()"> {{'Cancel' | translate}} </ion-button>
+			<ion-button *ngIf="IsBtnNew" [strong]="true" (click)="saveChange()"> {{'Add customer' | translate}} </ion-button>
+			<ion-button *ngIf="IsBtnApply" [strong]="true" (click)="Apply(true)"> {{'Apply' | translate}} </ion-button>
+		</div>
 	</ion-toolbar>
 </ion-footer>

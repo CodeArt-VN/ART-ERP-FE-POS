@@ -216,7 +216,7 @@
 									<ion-col size="12" size-sm size-xl="8">
 										<div class="c-control ion-text-right">
 											<ion-button *ngIf="pageConfig.canEdit" (click)="saveChange()" [disabled]="!formGroup.dirty">{{'Booking saved' | translate}}</ion-button>
-											<ion-button *ngIf="item.Id && formGroup.dirty" (click)="refresh()" color="warning">{{'Change cancel' | translate}}</ion-button>
+											<ion-button *ngIf="item.Id && formGroup.dirty" (click)="refresh()" color="warning">{{'Discard changes' | translate}}</ion-button>
 											<ion-button *ngIf="item.Id && pageConfig.canDelete" (click)="delete()" color="danger">{{'Delete' | translate}}</ion-button>
 										</div>
 									</ion-col>

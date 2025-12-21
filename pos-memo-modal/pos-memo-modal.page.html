@@ -45,9 +45,7 @@
 		</ion-grid>
 		<div class="sticky-btn">
 			<div class="c-control" style="margin-bottom: 0px !important">
-				<label class="c-label" for="Remark"
-					>{{'Ghi chú' | translate}}
-				</label>
+				<label class="c-label" for="Remark">{{'Ghi chú' | translate}} </label>
 				<textarea
 					rows="3"
 					class="c-input remark"
@@ -60,28 +58,17 @@
 				>
 				</textarea>
 			</div>
-			
 		</div>
 	</div>
 </ion-content>
 <ion-footer collapse="fade">
 	<ion-toolbar>
-		<div slot="start">
-			
-        </div>
-		
-		<div slot="end">
+		<div slot="start"></div>
 
-			<ion-button *ngIf="!item._Locked" [strong]="true" [disabled]="submitAttempt" (click)="dismiss(true)">
-				{{'Apply' | translate}}
-			</ion-button>
-			<ion-button *ngIf="!item._Locked" fill="outline" color="danger" (click)="Remark = null;">
-				{{'Delete all' | translate}}
-			</ion-button>
-            <ion-button fill="outline" color="warning" (click)="closeModal()" >
-                {{'Cancel' | translate}}
-            </ion-button>
-        </div>
-		
+		<div slot="end">
+			<ion-button fill="outline" color="warning" (click)="closeModal()"> {{'Cancel' | translate}} </ion-button>
+			<ion-button *ngIf="!item._Locked" [strong]="true" [disabled]="submitAttempt" (click)="dismiss(true)"> {{'Apply' | translate}} </ion-button>
+			<ion-button *ngIf="!item._Locked" fill="outline" color="danger" (click)="Remark = null;"> {{'Delete all' | translate}} </ion-button>
+		</div>
 	</ion-toolbar>
 </ion-footer>

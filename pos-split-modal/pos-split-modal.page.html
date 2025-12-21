@@ -166,8 +166,6 @@
 					</div>
 				</ion-col>
 			</ion-row>
-
-			
 		</ion-grid>
 	</div>
 
@@ -237,12 +235,7 @@
 									@if(i.SubOrders && i.SubOrders.length>0){
 									<tr *ngFor="let sub of i.SubOrders; let idx = index;">
 										<td class="label">
-												<input style="text-align:left"
-												[disabled]="true"
-												type="text"
-												class="c-input"
-												 [value]="'---' + sub.ItemName"
-											/>
+											<input style="text-align: left" [disabled]="true" type="text" class="c-input" [value]="'---' + sub.ItemName" />
 										</td>
 										<td style="padding-left: 5px !important" class="UoM col-total c-control" *ngFor="let d of i.splitDetail; let jdx = index;">
 											<input
@@ -266,21 +259,14 @@
 </ion-content>
 <ion-footer collapse="fade">
 	<ion-toolbar>
-		<div slot="start">
+		<div slot="start"></div>
 
-        </div>
-		
 		<div slot="end">
-			<ion-button *ngIf="segmentView == 's1'" [strong]="true" (click)="addSplitedOrder()">
-				{{'Add more bill' | translate}} 
-			</ion-button>
+			<ion-button fill="outline" color="warning" (click)="closeModal()"> {{'Cancel' | translate}} </ion-button>
+			<ion-button *ngIf="segmentView == 's1'" [strong]="true" (click)="addSplitedOrder()"> {{'Add more bill' | translate}} </ion-button>
 			<ion-button *ngIf="segmentView != 's1'" [strong]="true" (click)="splitSaleOrder()" [disabled]="!isCanSplit || submitAttempt || this.item.SplitedOrders.length < 2">
 				{{'Split Order' | translate}}
 			</ion-button>
-            <ion-button fill="outline" color="warning" (click)="closeModal()" >
-                {{'Cancel' | translate}}
-            </ion-button>
-        </div>
-		
+		</div>
 	</ion-toolbar>
 </ion-footer>
