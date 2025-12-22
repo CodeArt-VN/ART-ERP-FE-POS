@@ -59,7 +59,6 @@
 	<ion-fab *ngIf="pageConfig.isShowFeature && item && posService.dataSource" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<div id="pos-order-detail-page" style="position: absolute; z-index: 2"></div>
 		<form [formGroup]="formGroup" class="c-content" style="min-height: calc(100vh - 180px)">
-			
 			<!-- Dishes -->
 			<div class="box" *ngIf="item?.OrderLines?.length">
 				<ion-toolbar style="border-bottom: solid 0.55px var(--menu-right-border-color)">
@@ -144,6 +143,17 @@
 											<ion-icon slot="icon-only" name="remove"></ion-icon>
 										</ion-button>
 										<ion-button
+											*ngIf="pageConfig.canApplyFoC"
+											title="{{'Free of charge' | translate}}"
+											fill="outline"
+											color="warning"
+											class="ion-float-right qty-btn"
+											size="small"
+											(click)="FoC(line._item, line.IDUoM)"
+										>
+											{{'FOC' | translate}}
+										</ion-button>
+										<ion-button
 											title="{{'Memo...' | translate}}"
 											fill="clear"
 											color="warning"
@@ -156,6 +166,7 @@
 												[name]="((line.Remark?.length != 0) && (line.Remark != null))?'chatbubble-ellipses':'chatbubble-outline'"
 											></ion-icon>
 										</ion-button>
+
 										<span class="quantity">
 											<small>x</small>
 											<ion-text color="dark"> {{line.Quantity}} </ion-text>
@@ -357,11 +368,9 @@
 
 						<div *ngIf="item?.OrderLines?.length > 0" class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
 							<ion-button size="small" fill="outline" (click)="InvoiceRequired()">
-								<ion-label> 
-									{{'Issue invoice' | translate}} 
-									<span *ngIf="getSelectedTaxInfo()">
-										{{getSelectedTaxInfo()?.CompanyName || getSelectedTaxInfo()?.Name}}
-									</span>
+								<ion-label>
+									{{'Issue invoice' | translate}}
+									<span *ngIf="getSelectedTaxInfo()"> {{getSelectedTaxInfo()?.CompanyName || getSelectedTaxInfo()?.Name}} </span>
 								</ion-label>
 							</ion-button>
 
@@ -544,7 +553,7 @@
 							<span class="tag right" *ngIf="!i.IDSalesTaxDefinition">
 								<ion-text class="tag-content" color="danger"> {{'Check tax definition' | translate}} </ion-text>
 							</span>
-							
+
 							<div class="card" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage}" [id]="'item'+i.Id">
 								<ion-img
 									*ngIf="posService.systemConfig.POSIsShowItemImage"

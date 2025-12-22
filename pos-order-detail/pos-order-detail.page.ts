@@ -555,6 +555,27 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	canSaveOrder = false;
+
+	async FoC(item, idUoM) {
+		let line;
+		line = this.item.OrderLines.find((d) => d.IDUoM == idUoM);
+		line.UoMPrice = 0;
+		this.setOrderValue({
+			OrderLines: [
+				{
+					Id: line.Id,
+					Code: line.Code,
+					IDUoM: line.IDUoM,
+					UoMPrice: line.UoMPrice,
+				},
+			],
+		});
+
+		if (line.Status != 'New' && line.Status != 'Waiting') {
+			await this.saveChange();
+		}
+	}
+
 	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '', code = '') {
 		if (item.IsDisabled) {
 			return;
