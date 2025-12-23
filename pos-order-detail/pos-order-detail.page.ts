@@ -2052,7 +2052,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 
 			line._background = {
-				'background-image': 'url("' + environment.posImagesServer + (line._item && line._item.Image ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '")',
+				'background-image': 'url("' + environment.posImagesServer + (line._item && line._item.Image ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '"), url("' + environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png' + '")',
 			};
 
 			//Tính số lượng item chưa gửi bếp
@@ -2664,4 +2664,82 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	menuItemsPaging(event) {}
+
+	// Group and sum identical OrderLines (same IDItem + IDUoM) to make bill printing more concise
+	// Only applies to TemporaryBill and Done to avoid affecting other printing purposes
+	getGroupedOrderLinesForPrint() {
+		if (!this.item?.OrderLines?.length) return [];
+
+		// Only group when status is TemporaryBill or Done
+		// Other cases (like printing ORDER, printing to kitchen) keep original logic
+		if (this.item.Status !== 'TemporaryBill' && this.item.Status !== 'Done') {
+			return this.item.OrderLines;
+		}
+
+		const groupedMap = new Map<string, any>();
+
+		this.item.OrderLines.forEach((line) => {
+			// Only group lines with same IDItem and IDUoM
+			const key = `${line.IDItem}_${line.IDUoM}`;
+			
+			if (groupedMap.has(key)) {
+				const existing = groupedMap.get(key);
+				const oldQuantity = existing.Quantity;
+				
+				// Sum quantity
+				existing.Quantity += line.Quantity;
+				
+				// Sum pre-calculated values
+				existing.OriginalTotalDiscount += line.OriginalTotalDiscount || 0;
+				existing.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount || 0;
+				existing.OriginalTotalAfterDiscount += line.OriginalTotalAfterDiscount || 0;
+				existing.OriginalTax += line.OriginalTax || 0;
+				
+				// Recalculate UoMPrice average (weighted average)
+				if (existing.Quantity > 0) {
+					const totalBeforeDiscount = existing.OriginalTotalBeforeDiscount;
+					existing.UoMPrice = totalBeforeDiscount / existing.Quantity;
+				}
+				
+				// Merge SubOrders if exists
+				if (line.SubOrders && line.SubOrders.length > 0) {
+					if (!existing.SubOrders) {
+						existing.SubOrders = [];
+					}
+					// Merge SubOrders by IDItem + IDUoM
+					line.SubOrders.forEach((sub) => {
+						const subKey = `${sub.IDItem}_${sub.IDUoM}`;
+						const existingSub = existing.SubOrders.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
+						if (existingSub) {
+							const oldSubQuantity = existingSub.Quantity;
+							existingSub.Quantity += sub.Quantity;
+							// Recalculate UoMPrice average for SubOrder (weighted average)
+							if (existingSub.Quantity > 0 && sub.UoMPrice) {
+								const oldSubTotal = oldSubQuantity * (existingSub.UoMPrice || 0);
+								const newSubTotal = sub.Quantity * sub.UoMPrice;
+								existingSub.UoMPrice = (oldSubTotal + newSubTotal) / existingSub.Quantity;
+							}
+							// Keep _Item and _UoM if not exists
+							if (!existingSub._Item && sub._Item) {
+								existingSub._Item = sub._Item;
+							}
+							if (!existingSub._UoM && sub._UoM) {
+								existingSub._UoM = sub._UoM;
+							}
+						} else {
+							existing.SubOrders.push({ ...sub });
+						}
+					});
+				}
+			} else {
+				// Create new entry
+				groupedMap.set(key, {
+					...line,
+					SubOrders: line.SubOrders ? [...line.SubOrders] : [],
+				});
+			}
+		});
+
+		return Array.from(groupedMap.values());
+	}
 }
