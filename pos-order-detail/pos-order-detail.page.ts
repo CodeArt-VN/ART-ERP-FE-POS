@@ -557,6 +557,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	canSaveOrder = false;
 
 	async FoC(line) {
+		dog && console.log('FoC', line);
 		if (!this.pageConfig.canEdit || this.item.Status == 'TemporaryBill') {
 			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
 			return;
@@ -1076,13 +1077,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			component: POSInvoiceModalPage,
 			canDismiss: true,
 			cssClass: 'modal90vh',
-			componentProps: {
-				id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
-				_IdDefaultBusinessPartner: this.posService.systemConfig.SODefaultBusinessPartner.Id,
-				_canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
-				idTaxInfo: this.formGroup.controls.IDTaxInfo.value,
-				onUpdateContact: (address) => this.changedIDAddress(address),
-			},
+		componentProps: {
+			id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
+			defaultBusinessPartnerId: this.posService.systemConfig.SODefaultBusinessPartner.Id,
+			canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
+			currentTaxInfoId: this.formGroup.controls.IDTaxInfo.value,
+			onUpdateContact: (address) => this.changedIDAddress(address),
+		},
 		});
 		await modal.present();
 		const { data } = await modal.onWillDismiss();
