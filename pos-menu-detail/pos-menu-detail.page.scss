@@ -91,15 +91,31 @@
 		}
 
 		.col-kit {
-			min-width: 200px;
-			max-width: 300px;
+			/* allow the column to size to its contents */
+			width: auto;
+			min-width: 0; /* allow it to shrink below any inherited min-width */
+			max-width: none;
 			margin-right: 8px;
-			justify-content: flex-start;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			flex: 0 1 auto; /* allow shrinking but prevent unwanted growth */
+			white-space: nowrap; /* keep buttons/content on one line */
 
 			.c-input {
 				text-align: right;
 				font-weight: bold;
 				color: var(--ion-color-primary);
+			}
+
+			/* ensure buttons don't force a large min-width */
+			ion-button,
+			.min-btn {
+				flex: 0 0 auto;
+				white-space: nowrap;
+				min-width: 0;
+				height: auto;
+				padding: 0 8px;
 			}
 		}
 

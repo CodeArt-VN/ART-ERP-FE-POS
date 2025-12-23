@@ -555,6 +555,28 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	canSaveOrder = false;
+
+	async FoC(line) {
+		if (!this.pageConfig.canEdit || this.item.Status == 'TemporaryBill') {
+			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
+			return;
+		}
+		line.UoMPrice = 0;
+		this.setOrderValue({
+			OrderLines: [
+				{
+					Id: line.Id,
+					Code: line.Code,
+					IDUoM: line.IDUoM,
+					UoMPrice: line.UoMPrice,
+				},
+			],
+		});
+		if (line.Status != 'New') {
+			await this.saveChange();
+		}
+	}
+
 	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '', code = '') {
 		if (item.IsDisabled) {
 			return;
