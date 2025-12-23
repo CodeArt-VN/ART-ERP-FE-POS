@@ -24,7 +24,6 @@ export class POSInvoiceModalPage extends PageBase {
 	isDefaultBusinessPartner = false;
 	isCreatingCustomer = false;
 	address: any;
-	guestCustomerText = 'Guest customer';
 	TaxCodeDataSource = [];
 	showTaxInfoForm = false;
 	taxInfoList = [];
@@ -83,16 +82,12 @@ export class POSInvoiceModalPage extends PageBase {
 		});
 	}
 
-	preLoadData(event) {
-		Promise.all([this.translate.get(['Guest customer']).toPromise()]).then((value: any) => {
-			this.guestCustomerText = value[0]['Guest customer'];
-			super.preLoadData(event);
-		});
-	}
-
 	loadData(event?: any, forceReload?: boolean): void {
 		this.partnerTaxInfoProvider.read({ IDPartner: this.id }).then((data: any) => {
 			this.taxInfoList = data['data'];
+			this.taxInfoList.forEach(i => {
+				i._label = i.CompanyName || i.Name;
+			});
 			this.loadedData(event);
 		});
 	}
@@ -102,7 +97,6 @@ export class POSInvoiceModalPage extends PageBase {
 		this.loadTaxCodeDataSource(this.taxInfoList);
 		if (this.id == this.defaultBusinessPartnerId) {
 			this.isDefaultBusinessPartner = true;
-			this.formGroup.controls.selectedTaxInfoId.setValue('AddNew');
 			this.taxInfoGroup.controls.Id.setValue(0);
 			this.taxInfoGroup.controls.Id.markAsDirty();
 			this.formGroup.controls.Name.setValue(null);
@@ -125,7 +119,6 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 
 	addNewTaxInfo() {
-		this.formGroup.controls.selectedTaxInfoId.setValue('AddNew');
 		this.resetTaxInfoGroup();
 		this.showTaxInfoForm = true;
 		this.taxInfoGroup.enable();
@@ -155,6 +148,7 @@ export class POSInvoiceModalPage extends PageBase {
 		if (taxInfoList?.length) {
 			this.TaxCodeDataSource.unshift({
 				CompanyName: '----------',
+				_label: '----------',
 				disabled: true,
 			});
 		}
@@ -163,12 +157,20 @@ export class POSInvoiceModalPage extends PageBase {
 			this.TaxCodeDataSource.unshift({
 				Id: null,
 				CompanyName: 'Default tax info',
+				_label: 'Default tax info',
 			});
 		}
 		// Add option for walk-in customer (-1) - always available
 		this.TaxCodeDataSource.unshift({
 			Id: -1,
 			CompanyName: 'Walk-in customer',
+			_label: 'Walk-in customer',
+		});
+		// Set _label for all items in datasource
+		this.TaxCodeDataSource.forEach(item => {
+			if (!item._label) {
+				item._label = item.CompanyName || item.Name;
+			}
 		});
 	}
 
@@ -269,41 +271,73 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 
 	changeSelectTaxCode(selectedTaxInfo) {
+		// Skip DOM Event objects (event bubbling)
+		if (selectedTaxInfo && selectedTaxInfo.type && selectedTaxInfo.target) {
+			// This is a DOM Event, get value from formControl instead
+			selectedTaxInfo = this.formGroup.controls.selectedTaxInfoId.value;
+		}
+		
 		dog && console.log('Selected tax code: ', selectedTaxInfo);
-		if (!selectedTaxInfo || selectedTaxInfo.Id === undefined || selectedTaxInfo.Id === null) {
-			return;
+		
+		// Get value from formControl if event is not valid
+		let selectedId = null;
+		let selectedTaxInfoObj = null;
+		
+		// If selectedTaxInfo is still a DOM Event or invalid, get from formControl
+		if (!selectedTaxInfo || (typeof selectedTaxInfo === 'object' && 'type' in selectedTaxInfo && 'target' in selectedTaxInfo)) {
+			selectedId = this.formGroup.controls.selectedTaxInfoId.value;
+		} else if (typeof selectedTaxInfo === 'object' && 'Id' in selectedTaxInfo) {
+			// Object with Id property
+			selectedId = selectedTaxInfo.Id;
+			selectedTaxInfoObj = selectedTaxInfo;
+		} else {
+			// Primitive value (Id)
+			selectedId = selectedTaxInfo;
+		}
+		
+		// Find the object from datasource if we only have Id
+		if (!selectedTaxInfoObj && selectedId !== null && selectedId !== undefined && selectedId !== '' && selectedId !== -1) {
+			selectedTaxInfoObj = this.TaxCodeDataSource.find(item => item.Id === selectedId);
 		}
 
-		if (selectedTaxInfo.Id === -1) {
+		if (selectedId === -1) {
 			// Walk-in customer - do not get tax info
 			this.showTaxInfoForm = false;
 			this.taxInfoGroup.disable();
-		} else if (selectedTaxInfo.Id === null) {
+		} else if (selectedId === null) {
 			// Default tax info - get default tax info (IsDefault = 1)
 			this.showTaxInfoForm = false;
 			this.taxInfoGroup.disable();
-		} else if (selectedTaxInfo.Id === '' || selectedTaxInfo.Id === 'AddNew') {
-			// Empty or AddNew - show form to add new tax info
+		} else if (selectedId === '' || selectedId === undefined) {
+			// Empty - show form to add new tax info
 			this.showTaxInfoForm = true;
 			this.taxInfoGroup.enable();
-			if (selectedTaxInfo.Id === 'AddNew') {
-				this.taxInfoGroup.controls.Id.setValue(0);
-				this.taxInfoGroup.controls.Id.markAsDirty();
-			}
 		} else {
 			// Specific tax info - show selected tax info
 			this.showTaxInfoForm = true;
 			this.taxInfoGroup.disable();
 			this.formGroup.controls.selectedTaxInfoId.enable();
-			this.taxInfoGroup.patchValue(selectedTaxInfo);
-			if (!selectedTaxInfo.TaxCode) {
-				this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(false);
-				this.checkRuleHasTax(false, false);
-			} else {
-				this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(true);
-				this.checkRuleHasTax(true, false);
+			if (selectedTaxInfoObj) {
+				this.taxInfoGroup.patchValue(selectedTaxInfoObj);
+				// Check TaxCode after patchValue to set IsCorpTaxInfo correctly
+				const taxCode = this.taxInfoGroup.controls.TaxCode.value;
+				if (taxCode && taxCode.trim() !== '') {
+					// Has TaxCode (MST) -> IsCorpTaxInfo = true
+					this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(true);
+					this.checkRuleHasTax(true, false);
+				} else {
+					// No TaxCode -> IsCorpTaxInfo = false
+					this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(false);
+					this.checkRuleHasTax(false, false);
+				}
 			}
 		}
+		
+		// Force change detection after state changes
+		setTimeout(() => {
+			this.cdr.markForCheck();
+			this.cdr.detectChanges();
+		}, 0);
 	}
 
 	resetTaxInfoGroup() {
@@ -319,6 +353,13 @@ export class POSInvoiceModalPage extends PageBase {
 		this.showApplyButton = false;
 		this.taxInfoGroup.controls.CompanyName.patchValue('');
 		this.taxInfoGroup.controls.BillingAddress.patchValue('');
+		
+		// If TaxCode has value, set IsCorpTaxInfo = true
+		if (value && value.trim() !== '') {
+			this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(true);
+			this.checkRuleHasTax(true, false);
+		}
+		
 		if (value.length > 9) {
 			this.showSpinner = true;
 			Object.assign(this.query, { TaxCode: value });
@@ -343,6 +384,9 @@ export class POSInvoiceModalPage extends PageBase {
 					} else {
 						// API thành công, tự động điền thông tin
 						this.patchValue(result);
+						// Ensure IsCorpTaxInfo = true when TaxCode is valid
+						this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(true);
+						this.checkRuleHasTax(true, false);
 						// Disable lại các field vì đã có dữ liệu từ API
 						this.taxInfoGroup.controls.CompanyName.disable();
 						this.taxInfoGroup.controls.BillingAddress.disable();

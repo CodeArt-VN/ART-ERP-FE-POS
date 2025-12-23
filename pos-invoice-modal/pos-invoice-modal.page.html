@@ -15,23 +15,13 @@
 		<form [formGroup]="taxInfoGroup">
 			<ion-grid fixed>
 				<ion-row>
+					{{isDefaultBusinessPartner}}
 					<!-- Exist business partner -->
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12" *ngIf="!isDefaultBusinessPartner">
 						<app-form-control
-							[field]="{id:'selectedTaxInfoId', label:'Invoice required', type:'ng-select',dataSource:TaxCodeDataSource, bindLabel:'CompanyName' ,bindValue:'Id',form:formGroup , appendTo: '#ng-select'}"
+							[field]="{id:'selectedTaxInfoId', label:'Invoice required', type:'select',dataSource:TaxCodeDataSource, bindLabel:'_label' ,bindValue:'Id',form:formGroup , appendTo: '#ng-select'}"
 							(change)="changeSelectTaxCode($event)"
-						>
-							<ng-template input-control-template ng-label-tmp let-i="item">
-								<span *ngIf="i.CompanyName">{{i.CompanyName}}</span>
-								<span *ngIf="!i.CompanyName">{{i.Name}}</span>
-							</ng-template>
-							<ng-template input-control-template ng-option-tmp let-i="item" let-search="searchTerm">
-								<div *ngIf="i">
-									<span *ngIf="i.CompanyName">{{i.CompanyName}}</span>
-									<span *ngIf="!i.CompanyName">{{i.Name}}</span>
-								</div>
-							</ng-template>
-						</app-form-control>
+						></app-form-control>
 						<div *ngIf="!isDefaultBusinessPartner && canAddEInvoiceInfo" class="c-control" style="margin-top: -15px; margin-bottom: 1.25rem; text-align: right">
 							<ion-button size="small" fill="outline" (click)="addNewTaxInfo()">
 								<ion-icon slot="start" name="add-circle-outline"></ion-icon>
@@ -69,7 +59,7 @@
 					</ion-col>
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12">
 						<app-form-control
-							*ngIf="isDefaultBusinessPartner || formGroup.controls.selectedTaxInfoId.value =='AddNew'"
+							*ngIf="isDefaultBusinessPartner || showTaxInfoForm"
 							[field]="{id:'IsCorpTaxInfo', label:'Tax code', type:'radio',form:taxInfoGroup, dataSource: [{Code: true, Name: 'Has tax identification number'}, {Code: false, Name: 'No tax identification number'}] }"
 							(change)="hasTaxChange($event)"
 						></app-form-control>
