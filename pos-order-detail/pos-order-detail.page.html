@@ -699,7 +699,7 @@
 												<td class="text-right">{{'Discount' | translate}}</td>
 												<td class="text-right">{{'BILL Amount' | translate}}</td>
 											</tr>
-											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery}">
+											<ng-container *ngFor="let o of getGroupedOrderLinesForPrint()">
 												<tr class="small" [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
 													<td colspan="5" class="name">
 														<strong><span [appTranslateResource]="o._item"></span></strong>
@@ -723,7 +723,7 @@
 												@if(o.SubOrders && o.SubOrders.length >0){
 												<ng-container *ngFor="let g of o.SubOrders; let isLast = last">
 													<tr class="small subOrder" [class.isLast]="isLast">
-														<td class="name">--<span>{{g._Item.Name}}</span></td>
+														<td class="name">--<span>{{g._Item?.Name || g._Item?.Name}}</span></td>
 														<td><span *ngIf="g.UoMPrice>0">+{{g.UoMPrice | number: '1.0-0'}}</span></td>
 														<td class="quantity total">
 															<span>{{g.Quantity}}</span>
