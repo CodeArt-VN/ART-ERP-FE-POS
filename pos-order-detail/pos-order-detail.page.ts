@@ -556,9 +556,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	canSaveOrder = false;
 
-	async FoC(item, idUoM) {
-		let line;
-		line = this.item.OrderLines.find((d) => d.IDUoM == idUoM);
+	async FoC(line) {
+		if (!this.pageConfig.canEdit || this.item.Status == 'TemporaryBill') {
+			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
+			return;
+		}
 		line.UoMPrice = 0;
 		this.setOrderValue({
 			OrderLines: [
@@ -570,8 +572,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				},
 			],
 		});
-
-		if (line.Status != 'New' && line.Status != 'Waiting') {
+		if (line.Status != 'New') {
 			await this.saveChange();
 		}
 	}
