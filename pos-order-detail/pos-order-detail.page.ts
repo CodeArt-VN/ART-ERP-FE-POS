@@ -387,7 +387,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.CheckPOSNewOrderLines();
 
 		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
-
+		this.isCompleteLoaded = true;
 		setTimeout(() => {
 			this.segmentChanged('all');
 		}, 100);
@@ -938,36 +938,37 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			cssClass: 'modal-payments',
 			componentProps: {
 				item: this.item,
+				onUpdateItem: (updated) => this.updateRefundPayment(updated.RefundAmount, updated.IDTransaction),
 			},
 		});
 		await modal.present();
-		const { data, role } = await modal.onWillDismiss();
-		if (role == 'confirm') {
-			let changed: any = { OrderLines: [] };
-			if (data.SetShippedQuantity)
-				this.item.OrderLines.forEach((line) => {
-					if (line.Quantity > line.ShippedQuantity) {
-						line.ShippedQuantity = line.Quantity;
-						line.ReturnedQuantity = 0;
-						changed.OrderLines.push({
-							Id: line.Id,
-							Code: line.Code,
-							IDUoM: line.IDUoM,
-							ShippedQuantity: line.ShippedQuantity,
-							ReturnedQuantity: 0,
-						});
-					}
-				});
+		// const { data, role } = await modal.onWillDismiss();
+		// if (role == 'confirm') {
+		// 	let changed: any = { OrderLines: [] };
+		// 	if (data.SetShippedQuantity)
+		// 		this.item.OrderLines.forEach((line) => {
+		// 			if (line.Quantity > line.ShippedQuantity) {
+		// 				line.ShippedQuantity = line.Quantity;
+		// 				line.ReturnedQuantity = 0;
+		// 				changed.OrderLines.push({
+		// 					Id: line.Id,
+		// 					Code: line.Code,
+		// 					IDUoM: line.IDUoM,
+		// 					ShippedQuantity: line.ShippedQuantity,
+		// 					ReturnedQuantity: 0,
+		// 				});
+		// 			}
+		// 		});
 
-			if (data.SetDone) {
-				changed.Status = 'Done';
-			}
+		// 	if (data.SetDone) {
+		// 		changed.Status = 'Done';
+		// 	}
 
-			this.setOrderValue(changed, true);
-		}
+		// 	this.setOrderValue(changed, true);
+		// }
 	}
 
-	async goToPayment() {
+	async goToPayment(amount = null, isRefund = false, idTransaction = null) {
 		await this.setKitchenID('all');
 		await this.setItemQuery('all');
 
@@ -983,6 +984,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Timestamp: Date.now(),
 			CreatedBy: this.env.user.Email,
 			SaleOrder: this.item,
+			IsRefundTransaction: isRefund,
+			RefundAmount: amount ?? 0,
+			IDOriginalTransaction: idTransaction,
 		};
 		const modal = await this.modalController.create({
 			component: PaymentModalComponent,
@@ -1062,6 +1066,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.item = updatedItem;
 		await this.loadedData();
 		return this.item;
+	}
+
+	async updateRefundPayment(amount, idTransaction) {
+		this.goToPayment(amount, true, idTransaction);
 	}
 
 	InvoiceRequired() {
@@ -2030,8 +2038,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			line.OriginalTotalAfterTax = line.OriginalTotalAfterDiscount + line.OriginalTax;
 			this.item.OriginalTotalAfterTax += line.OriginalTotalAfterTax;
 			line.CalcOriginalTotalAdditions = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0) * (1 + line.TaxRate / 100.0);
-			//line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
-			line.AdditionsAmount = line.CalcOriginalTotalAdditions;
+			line.AdditionsAmount = line.OriginalTotalAfterDiscount * (line._serviceCharge / 100.0);
+			// line.AdditionsAmount = line.CalcOriginalTotalAdditions;
 			this.item.AdditionsAmount += line.AdditionsAmount;
 			this.item.AdditionsTax += line.CalcOriginalTotalAdditions - line.AdditionsAmount;
 			this.item.CalcOriginalTotalAdditions += line.CalcOriginalTotalAdditions;
@@ -2075,7 +2083,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 
 			line._background = {
-				'background-image': 'url("' + environment.posImagesServer + (line._item && line._item.Image ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') + '"), url("' + environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png' + '")',
+				'background-image':
+					'url("' +
+					environment.posImagesServer +
+					(line._item && line._item.Image ? line._item.Image : 'assets/pos-icons/POS-Item-demo.png') +
+					'"), url("' +
+					environment.posImagesServer +
+					'assets/pos-icons/POS-Item-demo.png' +
+					'")',
 			};
 
 			//Tính số lượng item chưa gửi bếp
@@ -2688,81 +2703,70 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	menuItemsPaging(event) {}
 
+	groupedOrderLines = [];
+	private _lastGroupedKey: string = null;
+	isCompleteLoaded = false;
 	// Group and sum identical OrderLines (same IDItem + IDUoM) to make bill printing more concise
 	// Only applies to TemporaryBill and Done to avoid affecting other printing purposes
 	getGroupedOrderLinesForPrint() {
+		if (!this.isCompleteLoaded) return;
 		if (!this.item?.OrderLines?.length) return [];
 
-		// Only group when status is TemporaryBill or Done
-		// Other cases (like printing ORDER, printing to kitchen) keep original logic
+		// For non-bill printing keep original list
 		if (this.item.Status !== 'TemporaryBill' && this.item.Status !== 'Done') {
 			return this.item.OrderLines;
 		}
 
+		// Build a lightweight key to detect meaningful changes (status + line code/qty/price)
+		const key =
+			this.item.Status + '|' + (this.item.OrderLines || []).map((l) => `${l.Code || l.Id || l.IDItem}_${l.Quantity || 0}_${Math.round((l.UoMPrice || 0) * 100)}`).join('|');
+
+		if (this._lastGroupedKey === key && this.groupedOrderLines && this.groupedOrderLines.length) {
+			return this.groupedOrderLines;
+		}
+
+		this._lastGroupedKey = key;
 		const groupedMap = new Map<string, any>();
 
-		this.item.OrderLines.forEach((line) => {
-			// Only group lines with same IDItem and IDUoM
-			const key = `${line.IDItem}_${line.IDUoM}`;
-			
-			if (groupedMap.has(key)) {
-				const existing = groupedMap.get(key);
-				const oldQuantity = existing.Quantity;
-				
-				// Sum quantity
-				existing.Quantity += line.Quantity;
-				
-				// Sum pre-calculated values
+		for (const line of this.item.OrderLines) {
+			const mapKey = `${line.IDItem}_${line.IDUoM}`;
+
+			if (groupedMap.has(mapKey)) {
+				const existing = groupedMap.get(mapKey);
+				existing.Quantity += line.Quantity || 0;
 				existing.OriginalTotalDiscount += line.OriginalTotalDiscount || 0;
 				existing.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount || 0;
 				existing.OriginalTotalAfterDiscount += line.OriginalTotalAfterDiscount || 0;
 				existing.OriginalTax += line.OriginalTax || 0;
-				
-				// Recalculate UoMPrice average (weighted average)
+
 				if (existing.Quantity > 0) {
-					const totalBeforeDiscount = existing.OriginalTotalBeforeDiscount;
-					existing.UoMPrice = totalBeforeDiscount / existing.Quantity;
+					existing.UoMPrice = existing.OriginalTotalBeforeDiscount / existing.Quantity;
 				}
-				
-				// Merge SubOrders if exists
-				if (line.SubOrders && line.SubOrders.length > 0) {
-					if (!existing.SubOrders) {
-						existing.SubOrders = [];
-					}
-					// Merge SubOrders by IDItem + IDUoM
-					line.SubOrders.forEach((sub) => {
+
+				if (line.SubOrders && line.SubOrders.length) {
+					existing.SubOrders = existing.SubOrders || [];
+					for (const sub of line.SubOrders) {
 						const subKey = `${sub.IDItem}_${sub.IDUoM}`;
 						const existingSub = existing.SubOrders.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
 						if (existingSub) {
-							const oldSubQuantity = existingSub.Quantity;
-							existingSub.Quantity += sub.Quantity;
-							// Recalculate UoMPrice average for SubOrder (weighted average)
+							existingSub.Quantity += sub.Quantity || 0;
 							if (existingSub.Quantity > 0 && sub.UoMPrice) {
-								const oldSubTotal = oldSubQuantity * (existingSub.UoMPrice || 0);
-								const newSubTotal = sub.Quantity * sub.UoMPrice;
-								existingSub.UoMPrice = (oldSubTotal + newSubTotal) / existingSub.Quantity;
+								const oldTotal = (existingSub._origQuantity || 0) * (existingSub.UoMPrice || 0);
+								const newTotal = (sub.Quantity || 0) * sub.UoMPrice;
+								existingSub.UoMPrice = (oldTotal + newTotal) / existingSub.Quantity;
 							}
-							// Keep _Item and _UoM if not exists
-							if (!existingSub._Item && sub._Item) {
-								existingSub._Item = sub._Item;
-							}
-							if (!existingSub._UoM && sub._UoM) {
-								existingSub._UoM = sub._UoM;
-							}
+							existingSub._origQuantity = existingSub.Quantity;
 						} else {
-							existing.SubOrders.push({ ...sub });
+							existing.SubOrders.push({ ...sub, _origQuantity: sub.Quantity || 0 });
 						}
-					});
+					}
 				}
 			} else {
-				// Create new entry
-				groupedMap.set(key, {
-					...line,
-					SubOrders: line.SubOrders ? [...line.SubOrders] : [],
-				});
+				groupedMap.set(mapKey, { ...line, SubOrders: line.SubOrders ? [...line.SubOrders] : [] });
 			}
-		});
+		}
 
-		return Array.from(groupedMap.values());
+		this.groupedOrderLines = Array.from(groupedMap.values());
+		return this.groupedOrderLines;
 	}
 }

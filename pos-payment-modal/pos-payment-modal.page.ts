@@ -1,13 +1,15 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, Input } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, ModalController, NavController, NavParams } from '@ionic/angular';
+import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-modal.component';
 import { PageBase } from 'src/app/page-base';
 import { CommonService } from 'src/app/services/core/common.service';
 import { EnvService } from 'src/app/services/core/env.service';
 import { lib } from 'src/app/services/static/global-functions';
 import { BANK_IncomingPaymentDetailProvider, BANK_IncomingPaymentProvider } from 'src/app/services/static/services.service';
 import { environment } from 'src/environments/environment';
+import { POSService } from '../_services/pos.service';
 
 @Component({
 	selector: 'app-pos-payment-modal',
@@ -21,12 +23,12 @@ export class POSPaymentModalPage extends PageBase {
 	statusList;
 	typeList;
 	payments;
-
+	@Input() onUpdateItem: Function;
 	constructor(
 		public pageProvider: BANK_IncomingPaymentDetailProvider,
 		public IncomingPaymentProvider: BANK_IncomingPaymentProvider,
 		public commonService: CommonService,
-
+		public posService: POSService,
 		public env: EnvService,
 		public navCtrl: NavController,
 		public route: ActivatedRoute,
@@ -149,57 +151,56 @@ export class POSPaymentModalPage extends PageBase {
 				console.log(err);
 			});
 	}
-	goToRefund(i) {
+	async goToRefund(i) {
 		if (!this.pageConfig.canRefund) {
 			this.env.showMessage('You have not been authorized to refund', 'danger');
 			return false;
 		}
-		// if(i.IncomingPayment.Status != "Success"){
-		//     this.env.showTranslateMessage('Không thể hoàn tiền trên giao dịch này', 'danger');
-		//     return false;
-		// }
 		if (parseInt(i.IncomingPayment.TotalRefund) >= parseInt(i.IncomingPayment.Amount)) {
 			this.env.showMessage('Refunds cannot be continued on this transaction', 'danger');
 			return false;
 		}
 		let RefundAmount = i.IncomingPayment.Amount - i.IncomingPayment.TotalRefund;
-		let payment = {
-			IDBranch: this.item.IDBranch,
-			IDStaff: this.env.user.StaffID,
-			IDCustomer: this.item.IDContact,
-			IDSaleOrder: this.item.Id,
-			DebtAmount: RefundAmount,
-			IsActiveInputAmount: true,
-			IsActiveTypeCash: true,
-			IsRefundTransaction: true,
-			IDOriginalTransaction: i.IDIncomingPayment,
-			IsActiveTypeZalopayApp: false,
-			IsActiveTypeATM: false,
-			IsActiveTypeCC: false,
-			Timestamp: Date.now(),
-		};
-		if (
-			i.IncomingPayment.Type != 'Cash' &&
-			i.IncomingPayment.Type != 'Card' &&
-			i.IncomingPayment.Type != 'Transfer' &&
-			i.IncomingPayment.Type != 'Debt' &&
-			i.IncomingPayment.Type != 'BOD'
-		) {
-			payment.IsActiveTypeCash = false;
-		}
-		if (i.IncomingPayment.Type == 'ATM') {
-			payment.IsActiveTypeATM = true;
-		}
-		if (i.IncomingPayment.Type == 'CC') {
-			payment.IsActiveTypeCC = true;
-		}
-		if (i.IncomingPayment.Type == 'ZalopayApp') {
-			payment.IsActiveTypeZalopayApp = true;
-		}
-		let str = window.btoa(JSON.stringify(payment));
-		let code = this.convertUrl(str);
-		let url = environment.appDomain + 'Payment?Code=' + code;
-		window.open(url, '_blank');
+		let idTransaction = i.IncomingPayment.Id;
+		// let payment = {
+		// 	IDBranch: this.item.IDBranch,
+		// 	IDStaff: this.env.user.StaffID,
+		// 	IDCustomer: this.item.IDContact,
+		// 	IDSaleOrder: this.item.Id,
+		// 	DebtAmount: RefundAmount,
+		// 	IsActiveInputAmount: true,
+		// 	IsActiveTypeCash: true,
+		// 	IsRefundTransaction: true,
+		// 	IDOriginalTransaction: i.IDIncomingPayment,
+		// 	IsActiveTypeZalopayApp: false,
+		// 	IsActiveTypeATM: false,
+		// 	IsActiveTypeCC: false,
+		// 	Timestamp: Date.now(),
+		// };
+		this.onUpdateItem({ RefundAmount: RefundAmount, IDTransaction: idTransaction });
+
+		// if (
+		// 	i.IncomingPayment.Type != 'Cash' &&
+		// 	i.IncomingPayment.Type != 'Card' &&
+		// 	i.IncomingPayment.Type != 'Transfer' &&
+		// 	i.IncomingPayment.Type != 'Debt' &&
+		// 	i.IncomingPayment.Type != 'BOD'
+		// ) {
+		// 	payment.IsActiveTypeCash = false;
+		// }
+		// if (i.IncomingPayment.Type == 'ATM') {
+		// 	payment.IsActiveTypeATM = true;
+		// }
+		// if (i.IncomingPayment.Type == 'CC') {
+		// 	payment.IsActiveTypeCC = true;
+		// }
+		// if (i.IncomingPayment.Type == 'ZalopayApp') {
+		// 	payment.IsActiveTypeZalopayApp = true;
+		// }
+		// let str = window.btoa(JSON.stringify(payment));
+		// let code = this.convertUrl(str);
+		// let url = environment.appDomain + 'Payment?Code=' + code;
+		// window.open(url, '_blank');
 	}
 	toDetail(code) {
 		let url = environment.appDomain + 'Payment?Code=' + code;
