@@ -1234,7 +1234,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	async saveOrderData() {
 		// Wait for save to complete before checking print
 		if (this.formGroup.dirty || !this.item.Id) {
-			debugger;
 			// Force save and wait for completion
 			await this.saveChange();
 			this.checkItemNotSendKitchen();
@@ -2312,6 +2311,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					fc.setValue(data[c]);
 					fc.markAsDirty();
 				}
+				// Update this.item directly for fields like Status to keep UI in sync
+				if (c === 'Status' && data[c]) {
+					this.item.Status = data[c];
+					// Update _Locked and other status-dependent properties (but don't disable form yet to allow save)
+					this.item._Locked = this.noLockStatusList.indexOf(this.item.Status) == -1;
+					this.pageConfig.canEdit = !this.item._Locked;
+					// Form disable/enable will be handled after save in savedChange() or loadOrder()
+				}
 			}
 		}
 		this.calcOrder();
@@ -2352,6 +2359,15 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			return;
 		} else {
 			this.updateLineIDs(savedItem);
+			// Update form disable/enable state based on status after save
+			this.item._Locked = this.noLockStatusList.indexOf(this.item.Status) == -1;
+			if (this.item._Locked) {
+				this.pageConfig.canEdit = false;
+				this.formGroup?.disable();
+			} else {
+				this.pageConfig.canEdit = true;
+				this.formGroup?.enable();
+			}
 		}
 		this.submitAttempt = false;
 		this.env.showMessage('Saving completed!', 'success');

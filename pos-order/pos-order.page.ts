@@ -77,6 +77,7 @@ export class POSOrderPage extends PageBase {
 			if (data.id == this.env.user.StaffID) return; // Bypass notify to self
 
 			const value = JSON.parse(data.value);
+			dog && console.log(value, this.env.selectedBranch);
 			if (value.IDBranch != this.env.selectedBranch) return;
 
 			switch (data.code) {
@@ -293,12 +294,12 @@ export class POSOrderPage extends PageBase {
 			if (this.query.Id?.length > 2 || !this.query.Id) {
 				this.query.Skip = 0;
 				this.pageConfig.isEndOfData = false;
-				this.loadData(type);
+				this.loadData('search');
 			}
 		} else {
 			this.query.Status = this.query.Status == '' ? JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']) : '';
-			this.loadData();
-			// super.refresh();
+			super.refresh();
+
 		}
 	}
 

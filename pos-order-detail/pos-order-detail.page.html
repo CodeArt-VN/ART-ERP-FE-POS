@@ -88,7 +88,12 @@
 									*ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')"
 								>
 									<div style="display: flex">
-										<div class="od-image clickable" *ngIf="posService.systemConfig.POSIsShowItemImage" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
+										<div
+											class="od-image clickable"
+											*ngIf="posService.systemConfig.POSIsShowItemImage"
+											[ngStyle]=" line._background "
+											(click)="jumpToItem(line)"
+										></div>
 										<div class="od-info" *ngIf="line._item" (click)="openComboModal(line,true)">
 											<div class="od-name">
 												<span class="od-id clickable" (click)="jumpToItem(line)">#{{line._item.Id}}</span>&nbsp;
@@ -637,16 +642,14 @@
 
 										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
 											<span class="brand">{{'ORDER' | translate}}</span>
-											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="item.Status == 'TemporaryBill'">
 											<span class="brand">{{'TEMPORARY BILL' | translate}}</span>
-											<span>({{'Bill No.' | translate}}: <strong>{{id}}</strong>)</span>
 										</ng-container>
 										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
-											<span class="brand">{{'RECEIPT' | translate}}</span>
-											<span>({{'Receipt No.' | translate}}: <strong>{{id}}</strong>)</span>
+											<span class="brand">{{'POS_RECEIPT' | translate}}</span>
 										</ng-container>
+										<span>({{'SO' | translate}}: <strong>{{id}}</strong>)</span>
 									</div>
 									<div class="table-info">
 										<table>
