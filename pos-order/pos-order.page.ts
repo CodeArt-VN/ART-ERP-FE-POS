@@ -122,7 +122,7 @@ export class POSOrderPage extends PageBase {
 				this.soStatusList = this.posService.dataSource.orderStatusList;
 				this.printerList = values[1].data || [];
 				this.terminalList = values[2].data || [];
-				if(this.tableGroupList.length>0)this.posShiftService.initShift();
+				if (this.tableGroupList.length > 0) this.posShiftService.initShift();
 
 				if (values[3]) {
 					this.POSconfigDTO = values[3];
@@ -132,6 +132,16 @@ export class POSOrderPage extends PageBase {
 			.catch((err) => {
 				this.env.showErrorMessage(err);
 				this.loadedData(event);
+			});
+	}
+
+	loadData() {
+		this.commonService
+			.connect('GET', 'SALE/Order/POS_Order', this.query)
+			.toPromise()
+			.then((result: any) => {
+				this.items = result;
+				this.loadedData();
 			});
 	}
 
@@ -241,11 +251,12 @@ export class POSOrderPage extends PageBase {
 			if (this.query.Id?.length > 2 || !this.query.Id) {
 				this.query.Skip = 0;
 				this.pageConfig.isEndOfData = false;
-				this.loadData('search');
+				this.loadData();
 			}
 		} else {
 			this.query.Status = this.query.Status == '' ? JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']) : '';
-			super.refresh();
+			this.loadData();
+			// super.refresh();
 		}
 	}
 
