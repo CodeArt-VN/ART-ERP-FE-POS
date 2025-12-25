@@ -135,14 +135,56 @@ export class POSOrderPage extends PageBase {
 			});
 	}
 
-	loadData() {
-		this.commonService
-			.connect('GET', 'SALE/Order/POS_Order', this.query)
-			.toPromise()
-			.then((result: any) => {
-				this.items = result;
-				this.loadedData();
-			});
+	loadData(event?) {
+		this.parseSort();
+
+		if (this.pageProvider && !this.pageConfig.isEndOfData) {
+			if (event == 'search') {
+				this.commonService
+					.connect('GET', 'SALE/Order/POS_Order', this.query)
+					.toPromise()
+					.then((result: any) => {
+						if (result.length == 0) {
+							this.pageConfig.isEndOfData = true;
+						}
+						this.items = result;
+						this.loadedData(null);
+					});
+			} else {
+				this.query.Skip = this.items.length;
+				this.commonService
+					.connect('GET', 'SALE/Order/POS_Order', this.query)
+					.toPromise()
+					.then((result: any) => {
+						if (result.length == 0) {
+							this.pageConfig.isEndOfData = true;
+						}
+						if (result.length > 0) {
+							this.items = this.dataManagementService.mergeItems(this.items, result);
+						}
+
+						this.loadedData(event);
+					})
+					.catch((err) => {
+						if (err.message != null) {
+							this.env.showMessage(err.message, 'danger');
+						} else {
+							this.env.showMessage('Cannot extract data', 'danger');
+						}
+
+						this.loadedData(event);
+					});
+			}
+		} else {
+			this.loadedData(event);
+		}
+		// this.commonService
+		// 	.connect('GET', 'SALE/Order/POS_Order', this.query)
+		// 	.toPromise()
+		// 	.then((result: any) => {
+		// 		this.items = result;
+		// 		this.loadedData();
+		// 	});
 	}
 
 	loadedData(event?: any): void {
@@ -251,7 +293,7 @@ export class POSOrderPage extends PageBase {
 			if (this.query.Id?.length > 2 || !this.query.Id) {
 				this.query.Skip = 0;
 				this.pageConfig.isEndOfData = false;
-				this.loadData();
+				this.loadData(type);
 			}
 		} else {
 			this.query.Status = this.query.Status == '' ? JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']) : '';
