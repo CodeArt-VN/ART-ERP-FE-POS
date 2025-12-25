@@ -302,6 +302,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
+		if(!this.item)
+		{
+			super.loadedData(event);
+			return;	
+		}
+		
 		this.VietQRCode = null;
 		this._contactDataSource.selected = [];
 		this.formGroup.valueChanges.subscribe(() => {

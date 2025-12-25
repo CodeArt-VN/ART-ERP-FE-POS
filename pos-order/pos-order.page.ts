@@ -41,6 +41,8 @@ export class POSOrderPage extends PageBase {
 	POSconfigDTO: any = {};
 	terminalList = [];
 	printerList = [];
+	lastEventRefreshTime = 0;
+	private readonly EVENT_REFRESH_THROTTLE = 5000; // 5 seconds in milliseconds
 	constructor(
 		public posService: POSService,
 		public posShiftService: POS_ShiftPService,
@@ -74,6 +76,9 @@ export class POSOrderPage extends PageBase {
 			if (!data.code?.startsWith('signalR:')) return;
 			if (data.id == this.env.user.StaffID) return; // Bypass notify to self
 
+			const value = JSON.parse(data.value);
+			if (value.IDBranch != this.env.selectedBranch) return;
+
 			switch (data.code) {
 				case 'signalR:POSOrderFromCustomer':
 				case 'signalR:POSOrderPaymentUpdate':
@@ -87,7 +92,7 @@ export class POSOrderPage extends PageBase {
 				case 'signalR:POSOrderMergedFromStaff':
 				case 'signalR:POSOrderFromStaff':
 				case 'signalR:POSPaymentSuccess':
-					this.refresh();
+					this.refreshFromEvent();
 					break;
 			}
 		});
@@ -155,8 +160,8 @@ export class POSOrderPage extends PageBase {
 				this.notifications = result.filter((n) => !n.Watched && n.IDBranch == this.env.selectedBranch);
 			}
 		});
-		this.CheckPOSNewOrderLines();
-		this.promotionService.getPromotions();
+		// this.CheckPOSNewOrderLines();
+		// this.promotionService.getPromotions();
 	}
 
 	onTerminalChange(e) {
@@ -250,6 +255,19 @@ export class POSOrderPage extends PageBase {
 			this.preLoadData('force');
 		} else {
 			super.refresh();
+		}
+	}
+
+	refreshFromEvent(): void {
+		const now = Date.now();
+		const timeSinceLastRefresh = now - this.lastEventRefreshTime;
+
+		if (timeSinceLastRefresh >= this.EVENT_REFRESH_THROTTLE) {
+			dog && console.log('POSOrderPage: refreshFromEvent - refreshing');
+			this.lastEventRefreshTime = now;
+			this.refresh();
+		} else {
+			dog && console.log(`POSOrderPage: refreshFromEvent - throttled (${timeSinceLastRefresh}ms < ${this.EVENT_REFRESH_THROTTLE}ms)`);
 		}
 	}
 
