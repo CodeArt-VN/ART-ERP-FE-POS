@@ -88,10 +88,10 @@
 									*ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')"
 								>
 									<div style="display: flex">
-										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
+										<div class="od-image clickable" *ngIf="posService.systemConfig.POSIsShowItemImage" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 										<div class="od-info" *ngIf="line._item" (click)="openComboModal(line,true)">
 											<div class="od-name">
-												<small class="od-id">#{{line._item.Id}}</small>&nbsp;
+												<span class="od-id clickable" (click)="jumpToItem(line)">#{{line._item.Id}}</span>&nbsp;
 												<span [appTranslateResource]="line._item"> </span>
 												@if(line.SubOrders?.length > 0){ @for( sub of line.SubOrders;track sub.IDItem){
 												<br />
@@ -439,7 +439,7 @@
 							fill="outline"
 							expand="block"
 							(click)="saveOrderData()"
-							[disabled]="!canSaveOrder"
+							[disabled]="!canSaveOrder || submitAttempt"
 						>
 							{{'Save' | translate}}
 						</ion-button>
@@ -458,6 +458,7 @@
 							fill="outline"
 							expand="block"
 							(click)="saveOrderData()"
+							[disabled]="submitAttempt"
 						>
 							{{'Save' | translate}}
 						</ion-button>

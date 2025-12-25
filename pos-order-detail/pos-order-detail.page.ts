@@ -89,6 +89,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	@ViewChild('contactInput') contactInput: InputControlComponent;
 	paymentSuccessTriggered = false; // check signalr payment success
+	lastEventRefreshTime = 0;
+	private readonly EVENT_REFRESH_THROTTLE = 5000; // 5 seconds in milliseconds
 	constructor(
 		public posService: POSService,
 		public pageProvider: SALE_OrderProvider,
@@ -187,11 +189,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				case 'signalR:POSOrderMergedFromStaff':
 				case 'signalR:POSSupport':
 				case 'signalR:POSCallToPay':
-					this.refresh();
+					this.refreshFromEvent();
 					break;
 				case 'signalR:POSPaymentSuccess':
 					this.paymentSuccessTriggered = true;
-					this.refresh();
+					this.refreshFromEvent();
 					break;
 
 				case 'networkStatusChange':
@@ -302,12 +304,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
-		if(!this.item)
-		{
+		if (!this.item) {
 			super.loadedData(event);
-			return;	
+			return;
 		}
-		
+
 		this.VietQRCode = null;
 		this._contactDataSource.selected = [];
 		this.formGroup.valueChanges.subscribe(() => {
@@ -541,6 +542,19 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.preLoadData(event);
 		} else {
 			super.refresh();
+		}
+	}
+
+	refreshFromEvent(): void {
+		const now = Date.now();
+		const timeSinceLastRefresh = now - this.lastEventRefreshTime;
+
+		if (timeSinceLastRefresh >= this.EVENT_REFRESH_THROTTLE) {
+			dog && console.log('POSOrderDetailPage: refreshFromEvent - refreshing');
+			this.lastEventRefreshTime = now;
+			this.refresh();
+		} else {
+			dog && console.log(`POSOrderDetailPage: refreshFromEvent - throttled (${timeSinceLastRefresh}ms < ${this.EVENT_REFRESH_THROTTLE}ms)`);
 		}
 	}
 
@@ -1091,13 +1105,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			component: POSInvoiceModalPage,
 			canDismiss: true,
 			cssClass: 'modal90vh',
-		componentProps: {
-			id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
-			defaultBusinessPartnerId: this.posService.systemConfig.SODefaultBusinessPartner.Id,
-			canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
-			currentTaxInfoId: this.formGroup.controls.IDTaxInfo.value,
-			onUpdateContact: (address) => this.changedIDAddress(address),
-		},
+			componentProps: {
+				id: this.formGroup.controls.IDContact.value ?? this.posService.systemConfig.SODefaultBusinessPartner.Id,
+				defaultBusinessPartnerId: this.posService.systemConfig.SODefaultBusinessPartner.Id,
+				canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
+				currentTaxInfoId: this.formGroup.controls.IDTaxInfo.value,
+				onUpdateContact: (address) => this.changedIDAddress(address),
+			},
 		});
 		await modal.present();
 		const { data } = await modal.onWillDismiss();
@@ -1211,12 +1225,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	checkItemNotSendKitchen() {
 		if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
-			this.env.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo').then(() => this.sendKitchen());
+			this.env
+				.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
+				.then(() => this.sendKitchen())
+				.catch(() => {});
 		}
 	}
 	async saveOrderData() {
 		// Wait for save to complete before checking print
 		if (this.formGroup.dirty || !this.item.Id) {
+			debugger;
 			// Force save and wait for completion
 			await this.saveChange();
 			this.checkItemNotSendKitchen();
@@ -1272,11 +1290,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					// User đồng ý → Tất cả items (success + failed) đều chuyển Serving
 					const allItems = [...successItems, ...failedItems];
 					const finalItems = allItems.map((item) => ({
-						Id: item.Id,
 						Code: item.Code,
-						Quantity: item.Quantity,
 						ShippedQuantity: item.Quantity,
-						IDUoM: item.IDUoM,
 						Status: 'Serving',
 					}));
 
@@ -1287,11 +1302,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 					// User không đồng ý → Chỉ update items thành công
 					const finalItems = successItems.map((item) => ({
-						Id: item.Id,
 						Code: item.Code,
-						Quantity: item.Quantity,
 						ShippedQuantity: item.Quantity,
-						IDUoM: item.IDUoM,
 						Status: 'Serving',
 					}));
 
@@ -1314,12 +1326,33 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				OrderLines: itemsToUpdate,
 			};
 			if (this.item.Status == 'New') postItem.Status = 'Scheduled';
-			await this.setOrderValue(postItem, true, false)
-				.then(() => {
+
+			// Reset submitAttempt to ensure save can proceed (may be stuck from previous operation)
+			if (this.submitAttempt) {
+				dog && console.warn('⚠️ submitAttempt was true, resetting before save');
+				this.submitAttempt = false;
+			}
+
+			// Retry logic if submitAttempt error occurs
+			const saveWithRetry = async (retryCount = 0): Promise<any> => {
+				try {
+					await this.setOrderValue(postItem, true, false);
 					dog && console.log('✅ Print results saved successfully');
-					if (this.item.Id) {
-						this.loadData();
+					dog && console.log(this.item.OrderLines, postItem);
+					return true;
+				} catch (err) {
+					if (err === 'submitAttempt' && retryCount < 2) {
+						dog && console.warn(`⚠️ submitAttempt error, retrying... (${retryCount + 1}/2)`);
+						this.submitAttempt = false;
+						await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms before retry
+						return saveWithRetry(retryCount + 1);
 					}
+					throw err;
+				}
+			};
+
+			saveWithRetry()
+				.then(() => {
 					resolve(true);
 				})
 				.catch((err) => {
@@ -1715,11 +1748,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						// Tất cả thành công → Save luôn
 						dog && console.log('✅ All items printed successfully! Saving...');
 						const finalItemsToUpdate = fullSuccessItems.map((item) => ({
-							Id: item.Id,
 							Code: item.Code,
-							Quantity: item.Quantity,
 							ShippedQuantity: item.Quantity,
-							IDUoM: item.IDUoM,
 							Status: 'Serving',
 						}));
 
@@ -2234,7 +2264,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				for (const line of data[c]) {
 					let idx = -1;
 					if (c == 'OrderLines') {
-						idx = this.item[c].findIndex((d) => d.Code == line.Code && d.IDUoM == line.IDUoM);
+						idx = this.item[c].findIndex((d) => d.Code == line.Code);
 					}
 					//Remove Order line
 					if (line.Quantity < 1) {
@@ -2257,6 +2287,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								fc.setValue(line[lc]);
 								fc.markAsDirty();
 							}
+						}
+						// Update this.item.OrderLines directly to keep status and other values in sync
+						if (idx >= 0 && idx < this.item.OrderLines.length) {
+							Object.assign(this.item.OrderLines[idx], line);
 						}
 					}
 
@@ -2308,83 +2342,59 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
-		if (savedItem) {
+		if (this.item.Id < 1) {
+			this.id = savedItem.Id;
+			let newURL = '#pos-order/' + savedItem.Id + '/' + this.idTable;
+			history.pushState({}, null, newURL);
+			this.formGroup.controls.Id.setValue(savedItem.Id);
 			this.item = savedItem;
-			if (form.controls.IDContact.value != savedItem.IDContact) this.changedIDAddress(savedItem._Customer);
-
-			if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
-				this.id = savedItem.Id;
-				let newURL = '#pos-order/' + savedItem.Id + '/' + this.idTable;
-				history.pushState({}, null, newURL);
-			}
-
-			this.updateItem(savedItem);
+			this.loadedData();
+			return;
+		} else {
+			this.updateLineIDs(savedItem);
 		}
-
-		this.loadedData();
-
 		this.submitAttempt = false;
 		this.env.showMessage('Saving completed!', 'success');
-
-		// if (savedItem.Status == 'Done') {
-		// 	this.sendPrint(savedItem.Status, true);
-		// }
-		// if (savedItem.Status == 'TemporaryBill' && this.posService.systemConfig.POSEnableTemporaryPayment && this.posService.systemConfig.POSEnablePrintTemporaryBill) {
-		// 	this.sendPrint();
-		// }
 	}
 
-	private updateItem(savedItem: any) {
+	private updateLineIDs(savedItem: any) {
 		if (savedItem) {
-			if (this.item.Id < 1) {
-				this.item.Id = savedItem.Id;
-				this.formGroup.controls.Id.setValue(savedItem.Id);
-			}
-
-			if (this.item.Status != savedItem.Status) {
-				this.item.Status = savedItem.Status;
-				this.formGroup.controls.Status.setValue(savedItem.Status);
-			}
-
 			//Update lines
-			for (let sl of savedItem.OrderLines) {
-				let idx = this.item.OrderLines.findIndex((d) => d.Code == sl.Code);
+			for (let savedLine of savedItem) {
+				let idx = this.item.OrderLines.findIndex((d) => d.Code == savedLine.Code);
 				if (idx == -1) continue;
-				const feLine = this.item.OrderLines[idx];
-				const fgLine = this.formGroup.controls.OrderLines['controls'][idx];
-				if (feLine.Id < 1 && sl.Id > 0) {
-					feLine.Id = sl.Id;
-					fgLine.controls['Id'].setValue(sl.Id);
+
+				const line = this.item.OrderLines[idx];
+				const formLine = this.formGroup.controls.OrderLines['controls'][idx];
+
+				if (line.Id < 1 && savedLine.Id > 0) {
+					line.Id = savedLine.Id;
+					formLine.controls['Id'].setValue(savedLine.Id);
 				}
-				if (feLine.Status !== sl.Status) {
-					feLine.Status = sl.Status;
-					fgLine.controls['Status'].setValue(sl.Status);
-				}
-				if (feLine.SubOrders && sl.SubOrders) {
-					for (let beSub of sl.SubOrders) {
-						const idxSub = feLine.SubOrders.findIndex((x) => x.Code === beSub.Code);
-						if (idxSub === -1) continue;
 
-						const feSub = feLine.SubOrders[idxSub];
+				// if (line.SubOrders && savedLine.SubOrders) {
+				// 	for (let beSub of savedLine.SubOrders) {
+				// 		const idxSub = line.SubOrders.findIndex((x) => x.Code === beSub.Code);
+				// 		if (idxSub === -1) continue;
 
-						// ⭐ đúng logic: update khi BE trả về Id > 0
-						if (feSub.Id < 1 && beSub.Id > 0) {
-							feSub.Id = beSub.Id;
+				// 		const feSub = line.SubOrders[idxSub];
 
-							// Nếu có FormArray cho SubOrders → update luôn
-							const subOrders = [...fgLine.controls.SubOrders.value]; // clone array
+				// 		if (feSub.Id < 1 && beSub.Id > 0) {
+				// 			feSub.Id = beSub.Id;
 
-							subOrders[idxSub] = {
-								...subOrders[idxSub],
-								Id: beSub.Id,
-							};
-							fgLine.controls.SubOrders.setValue(subOrders);
-						}
-					}
-				}
+				// 			// Nếu có FormArray cho SubOrders → update luôn
+				// 			const subOrders = [...formLine.controls.SubOrders.value]; // clone array
+
+				// 			subOrders[idxSub] = {
+				// 				...subOrders[idxSub],
+				// 				Id: beSub.Id,
+				// 			};
+				// 			formLine.controls.SubOrders.setValue(subOrders);
+				// 		}
+				// 	}
+				// }
 			}
-			this.item.DailyBillNo = savedItem.DailyBillNo;
-			this.item.Tables = savedItem.Tables;
+			this.formGroup.markAsPristine();
 		}
 	}
 
