@@ -15,7 +15,6 @@
 		<form [formGroup]="taxInfoGroup">
 			<ion-grid fixed>
 				<ion-row>
-					{{isDefaultBusinessPartner}}
 					<!-- Exist business partner -->
 					<ion-col size="12" size-sm="12" size-md="12" size-xl="12" *ngIf="!isDefaultBusinessPartner">
 						<app-form-control
