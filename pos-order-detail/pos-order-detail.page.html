@@ -283,8 +283,9 @@
 								<span *ngIf="!item.Received">{{0 | number: '1.0-0'}}</span>
 							</ion-text>
 						</label>
-						<label class="c-label total" *ngIf="item.Debt >=0"
-							>{{'Amount due' | translate}}
+						<label class="c-label total" *ngIf="item.Debt >=0" (click)="previewBill()"
+							><span>{{'Amount due' | translate}}&nbsp;<ion-icon name="open-outline"></ion-icon></span>
+							
 							<ion-text class="c-value" color="dark"> {{item.Debt | number: '1.0-0'}} </ion-text>
 						</label>
 						<label class="c-label" *ngIf="item.Debt <0"
