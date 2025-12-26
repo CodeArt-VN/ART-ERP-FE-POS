@@ -184,87 +184,104 @@ export class POSInvoiceModalPage extends PageBase {
 
 	apply(apply = false) {
 		if (apply) {
-			let selectedOption = this.formGroup.controls.selectedTaxInfoId.value;
-			if (selectedOption === -1) {
-				// Walk-in customer - do not get tax info
-				let submitItem = {
-					Id: this.id,
-					IDAddress: this.address?.Address?.Id,
-					IDTaxInfo: -1,
-					TaxCode: null,
-				};
-				this.onUpdateContact(submitItem);
-				this.modalController.dismiss(submitItem);
-			} else if (!this.isDefaultBusinessPartner && (selectedOption === null || selectedOption === '' || selectedOption === undefined)) {
-				// Default tax info - get default tax info (IsDefault = 1)
-				let submitItem = {
-					Id: this.id,
-					IDAddress: this.address?.Address?.Id,
-					IDTaxInfo: null,
-					TaxCode: null,
-				};
-				this.onUpdateContact(submitItem);
-				this.modalController.dismiss(submitItem);
-			} else if (this.isDefaultBusinessPartner) {
-				if (this.taxInfoGroup.controls.IsDefault.value) {
-					this.formGroup.controls.TaxCode.setValue(this.taxInfoGroup.controls.TaxCode.value);
-					this.formGroup.controls.TaxCode.markAsDirty();
-				}
-				this.formGroup.controls.Id.setValue(0);
-				this.formGroup.controls.Id.markAsDirty();
-				this.formGroup.addControl('IsPersonal', new FormControl({ value: true, disabled: false }));
-				this.formGroup.controls.IsPersonal.markAsDirty();
-				let WorkPhone = this.formGroup.controls.WorkPhone.value;
-				let Name = this.formGroup.controls.Name.value;
-				this.formGroup.controls.Address['controls'].Id.setValue(0);
-				this.formGroup.controls.Address['controls'].Phone1.patchValue(WorkPhone);
-				this.formGroup.controls.Address['controls'].Contact.patchValue(Name);
-				this.formGroup.controls.Address['controls'].Phone1.markAsDirty();
-				this.formGroup.controls.Address['controls'].Contact.markAsDirty();
-				this.formGroup.controls.Address['controls'].Id.markAsDirty();
+			if ((!this.formGroup.valid && this.isDefaultBusinessPartner) || (!this.taxInfoGroup.valid && !this.taxInfoGroup.disabled)) {
+				let invalidControls = this.findInvalidControlsRecursive(this.formGroup);
+				let invalidControls1 = this.findInvalidControlsRecursive(this.taxInfoGroup);
+				let joininvalidControls = invalidControls.concat(invalidControls1);
+				const translationPromises = joininvalidControls.map((control) => this.env.translateResource(control));
+				Promise.all(translationPromises).then((values: any) => {
+					this.env.showMessage('Please recheck control(s): {{value}}', 'warning', values.join(' | '));
+				});
+				return;
+			}
 
-				this.saveChange2().then((savedItem: any) => {
-					this.taxInfoGroup.controls.IDPartner.setValue(savedItem.Id);
-					this.taxInfoGroup.controls.IDPartner.markAsDirty();
-					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
-						let submitItem = {
-							Id: savedItem.Id,
-							Name: savedItem.Name,
-							IDAddress: savedItem.Address.Id,
-							IDTaxInfo: taxInfo.Id,
-							TaxCode: taxInfo.TaxCode,
-							TaxAddresses: [taxInfo],
-						};
-						this.onUpdateContact(submitItem);
-						this.modalController.dismiss(submitItem);
-					});
+			if (!this.isPhoneValidated) {
+				this.checkPhoneNumber().then((_) => {
+					this.apply(apply);
 				});
 			} else {
-				if (this.taxInfoGroup.disabled) {
+				let selectedOption = this.formGroup.controls.selectedTaxInfoId.value;
+				if (selectedOption === -1 && !this.showTaxInfoForm) {
+					// Walk-in customer - do not get tax info
 					let submitItem = {
 						Id: this.id,
 						IDAddress: this.address?.Address?.Id,
-						IDTaxInfo: this.taxInfoGroup.controls.Id.value,
-						TaxCode: this.taxInfoGroup.controls.TaxCode.value,
-						TaxAddresses: [this.taxInfoGroup.getRawValue()],
+						IDTaxInfo: -1,
+						TaxCode: null,
 					};
 					this.onUpdateContact(submitItem);
 					this.modalController.dismiss(submitItem);
+				} else if (!this.isDefaultBusinessPartner && (selectedOption === null || selectedOption === '' || selectedOption === undefined) && !this.showTaxInfoForm) {
+					// Default tax info - get default tax info (IsDefault = 1)
+					let submitItem = {
+						Id: this.id,
+						IDAddress: this.address?.Address?.Id,
+						IDTaxInfo: null,
+						TaxCode: null,
+					};
+					this.onUpdateContact(submitItem);
+					this.modalController.dismiss(submitItem);
+				} else if (this.isDefaultBusinessPartner) {
+					if (this.taxInfoGroup.controls.IsDefault.value) {
+						this.formGroup.controls.TaxCode.setValue(this.taxInfoGroup.controls.TaxCode.value);
+						this.formGroup.controls.TaxCode.markAsDirty();
+					}
+					this.formGroup.controls.Id.setValue(0);
+					this.formGroup.controls.Id.markAsDirty();
+					this.formGroup.addControl('IsPersonal', new FormControl({ value: true, disabled: false }));
+					this.formGroup.controls.IsPersonal.markAsDirty();
+					let WorkPhone = this.formGroup.controls.WorkPhone.value;
+					let Name = this.formGroup.controls.Name.value;
+					this.formGroup.controls.Address['controls'].Id.setValue(0);
+					this.formGroup.controls.Address['controls'].Phone1.patchValue(WorkPhone);
+					this.formGroup.controls.Address['controls'].Contact.patchValue(Name);
+					this.formGroup.controls.Address['controls'].Phone1.markAsDirty();
+					this.formGroup.controls.Address['controls'].Contact.markAsDirty();
+					this.formGroup.controls.Address['controls'].Id.markAsDirty();
+
+					this.saveChange2().then((savedItem: any) => {
+						this.taxInfoGroup.controls.IDPartner.setValue(savedItem.Id);
+						this.taxInfoGroup.controls.IDPartner.markAsDirty();
+						this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
+							let submitItem = {
+								Id: savedItem.Id,
+								Name: savedItem.Name,
+								IDAddress: savedItem.Address.Id,
+								IDTaxInfo: taxInfo.Id,
+								TaxCode: taxInfo.TaxCode,
+								TaxAddresses: [taxInfo],
+							};
+							this.onUpdateContact(submitItem);
+							this.modalController.dismiss(submitItem);
+						});
+					});
 				} else {
-					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
+					if (this.taxInfoGroup.disabled) {
 						let submitItem = {
 							Id: this.id,
 							IDAddress: this.address?.Address?.Id,
-							IDTaxInfo: taxInfo.Id,
-							TaxCode: taxInfo.TaxCode,
-							TaxAddresses: [taxInfo],
+							IDTaxInfo: this.taxInfoGroup.controls.Id.value,
+							TaxCode: this.taxInfoGroup.controls.TaxCode.value,
+							TaxAddresses: [this.taxInfoGroup.getRawValue()],
 						};
 						this.onUpdateContact(submitItem);
 						this.modalController.dismiss(submitItem);
-					});
-				}
+					} else {
+						this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
+							let submitItem = {
+								Id: this.id,
+								IDAddress: this.address?.Address?.Id,
+								IDTaxInfo: taxInfo.Id,
+								TaxCode: taxInfo.TaxCode,
+								TaxAddresses: [taxInfo],
+							};
+							this.onUpdateContact(submitItem);
+							this.modalController.dismiss(submitItem);
+						});
+					}
 
-				// this.modalController.dismiss(undefined);
+					// this.modalController.dismiss(undefined);
+				}
 			}
 		} else {
 			this.modalController.dismiss(undefined);
@@ -446,6 +463,10 @@ export class POSInvoiceModalPage extends PageBase {
 			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
 			this.taxInfoGroup.controls.IdentityCardNumber.clearValidators();
 			this.taxInfoGroup.controls.IdentityCardNumber.updateValueAndValidity();
+			this.taxInfoGroup.controls.CompanyName.setValidators([Validators.required]);
+			this.taxInfoGroup.controls.BillingAddress.setValidators([Validators.required]);
+			this.taxInfoGroup.controls.CompanyName.updateValueAndValidity();
+			this.taxInfoGroup.controls.BillingAddress.updateValueAndValidity();
 
 			this.taxInfoGroup.controls.CompanyName.disable();
 			this.taxInfoGroup.controls.BillingAddress.disable();
@@ -462,44 +483,49 @@ export class POSInvoiceModalPage extends PageBase {
 	}
 
 	checkPhoneNumber() {
-		if (this.formGroup.controls.WorkPhone.valid) {
-			this.pageProvider
-				.search({
-					WorkPhone_eq: this.formGroup.controls.WorkPhone.value,
-					skipMCP: true,
-				})
-				.toPromise()
-				.then((result: any) => {
-					if (result.length == 0 || result.some((e) => e.Id == this.id)) {
-						this.formGroup.controls.WorkPhone.setErrors(null);
-						this.isPhoneValidated = true;
-						this.isPhoneNumberValid = true;
-					} else {
-						this.isPhoneValidated = true;
-						this.isPhoneNumberValid = false;
-						dog && console.log(result);
-						let contact = result[0];
-						this.env
-							.showPrompt('Would you like to select this customer?', {
-								code: 'WORKPHONE_ALREADY_IN_USE',
-								Name: contact.Name,
-								WorkPhone: contact.WorkPhone,
-							})
-							.then((_) => {
-								this.id = contact.Id;
-								this.address = contact;
-								this.isPhoneNumberValid = true;
-								this.onUpdateContact(contact);
-								this.refresh();
-							})
-							.catch((e) => {
-								this.formGroup.controls.WorkPhone.setValue(null);
-							});
+		return new Promise((resolve, reject) => {
+			if (this.formGroup.controls.WorkPhone.valid) {
+				this.pageProvider
+					.search({
+						WorkPhone_eq: this.formGroup.controls.WorkPhone.value,
+						skipMCP: true,
+					})
+					.toPromise()
+					.then((result: any) => {
+						if (result.length == 0 || result.some((e) => e.Id == this.id)) {
+							this.formGroup.controls.WorkPhone.setErrors(null);
+							this.isPhoneValidated = true;
+							this.isPhoneNumberValid = true;
+							resolve(true);
+						} else {
+							this.isPhoneValidated = true;
+							this.isPhoneNumberValid = false;
+							dog && console.log(result);
+							let contact = result[0];
+							this.env
+								.showPrompt('Would you like to select this customer?', {
+									code: 'WORKPHONE_ALREADY_IN_USE',
+									Name: contact.Name,
+									WorkPhone: contact.WorkPhone,
+								})
+								.then((_) => {
+									this.id = contact.Id;
+									this.address = contact;
+									this.isPhoneNumberValid = true;
+									this.onUpdateContact(contact);
+									this.refresh();
+									resolve(true);
+								})
+								.catch((e) => {
+									this.formGroup.controls.WorkPhone.setValue(null);
+									reject(false);
+								});
 
-						// this.env.showMessage(message.Message, 'danger', message, 5000, true, message.SubHeader, message.Header);
-					}
-				});
-		}
+							// this.env.showMessage(message.Message, 'danger', message, 5000, true, message.SubHeader, message.Header);
+						}
+					});
+			}
+		});
 	}
 }
 

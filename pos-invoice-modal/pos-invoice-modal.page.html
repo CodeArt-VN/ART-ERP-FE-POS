@@ -105,7 +105,7 @@
 	<ion-toolbar>
 		<div slot="end">
 			<ion-button (click)="apply()" fill="outline" color="warning">{{'Cancel' | translate}}</ion-button>
-			<ion-button [disabled]="!canAddEInvoiceInfo || showSpinner || !isPhoneNumberValid || !isPhoneValidated" (click)="apply(true)" [strong]="true" color="success">
+			<ion-button [disabled]="!canAddEInvoiceInfo || showSpinner" (click)="apply(true)" [strong]="true" color="success">
 				{{'Apply' | translate}}
 			</ion-button>
 		</div>
