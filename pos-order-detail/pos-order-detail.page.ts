@@ -57,6 +57,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	idTable: any; //Default table
 	paymentList = [];
 	subPromotion: any;
+	private _filteredItemsCache: Map<string, any[]> = new Map();
+	private _lastCacheKey: string = '';
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];
 	noLockLineStatusList = ['New', 'Waiting'];
 	checkDoneLineStatusList = ['Done', 'Canceled', 'Returned'];
@@ -395,9 +397,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 		this.isCompleteLoaded = true;
-		setTimeout(() => {
-			this.segmentChanged('all');
-		}, 100);
+		// setTimeout(() => {
+		// 	this.segmentChanged('all');
+		// }, 100);
 	}
 
 	async getStorageNotifications() {
@@ -937,6 +939,49 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	segmentChanged(ev: any) {
 		this.segmentView = ev;
+		this._filteredItemsCache.clear(); // Clear cache when segment changes
+	}
+
+	trackByItemId(index: number, item: any): any {
+		return item?.Id || index;
+	}
+
+	getFilteredItemsWithLimit(items: any[], groupId?: any): any[] {
+		if (!items?.length) return [];
+		
+		// Create cache key based on group, keyword, and segment
+		const cacheKey = `${groupId || 'all'}_${this.segmentView}_${this.query?.Keyword || ''}`;
+		
+		// Return cached result if available
+		if (this._filteredItemsCache.has(cacheKey)) {
+			return this._filteredItemsCache.get(cacheKey);
+		}
+		
+		// Filter items
+		const filtered = items.filter((i) => {
+			if (!this.query?.Keyword || this.query.Keyword === '' || this.query.Keyword === 'all') {
+				return true;
+			}
+			const keyword = this.query.Keyword.toLowerCase();
+			const name = (i.Name || '').toLowerCase();
+			const foreignName = (i.ForeignName || '').toLowerCase();
+			const searchText = name + ' ' + foreignName;
+			// Simple accent removal
+			const normalizedText = searchText.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+			const normalizedKeyword = keyword.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+			return normalizedText.includes(normalizedKeyword);
+		});
+
+		// Limit to 50 items when searching (only when keyword exists)
+		let result = filtered;
+		if (this.query?.Keyword && this.query.Keyword !== '' && this.query.Keyword !== 'all' && filtered.length > 50) {
+			result = filtered.slice(0, 50);
+		}
+
+		// Cache the result
+		this._filteredItemsCache.set(cacheKey, result);
+		
+		return result;
 	}
 
 	search(ev) {
@@ -946,6 +991,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 		if (val.length > 2 || val == '') {
 			this.query.Keyword = val;
+			this._filteredItemsCache.clear(); // Clear cache when keyword changes
 		}
 	}
 
