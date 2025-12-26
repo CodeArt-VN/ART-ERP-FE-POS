@@ -22,6 +22,7 @@ import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { POSNotifyService } from '../_services/pos-notify.service';
 import { POSService } from '../_services/pos.service';
 import { POS_ShiftPService } from '../_services/pos-shift-service';
+import { interval, startWith, Subject, Subscription, takeUntil } from 'rxjs';
 
 @Component({
 	selector: 'app-pos-order',
@@ -30,6 +31,8 @@ import { POS_ShiftPService } from '../_services/pos-shift-service';
 	standalone: false,
 })
 export class POSOrderPage extends PageBase {
+	private destroy$ = new Subject<void>();
+	private readonly PROMOTIONS_CHECK_INTERVAL = 5*60*1000;
 	tableGroupList = [];
 	soStatusList = [];
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered']; //NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCanceled
@@ -70,6 +73,12 @@ export class POSOrderPage extends PageBase {
 		this.pageConfig.ShowExport = false;
 		this.pageConfig.ShowArchive = false;
 	}
+	ngOnDestroy(): void {
+		this.destroy$.next();
+		this.destroy$.complete();
+	}
+
+	// Dừng interval khi rời trang
 
 	ngOnInit() {
 		this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
@@ -98,6 +107,11 @@ export class POSOrderPage extends PageBase {
 			}
 		});
 		this.posShiftService.pageConfig = this.pageConfig;
+		interval(this.PROMOTIONS_CHECK_INTERVAL)
+			.pipe(takeUntil(this.destroy$))
+			.subscribe(() => {
+				this.promotionService.getPromotions();
+			});
 		super.ngOnInit();
 	}
 
@@ -107,11 +121,10 @@ export class POSOrderPage extends PageBase {
 			this.sort.Id = 'Id';
 			this.sortToggle('Id', true);
 		}
-
 		this.query.Type = 'POSOrder';
 		this.query.Status = JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']);
 		this.query.IDBranch = this.env.selectedBranch;
-
+		this.promotionService.getPromotions();
 		Promise.all([
 			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
 			this.sysPrinterProvider.read({ IDBranch: this.env.selectedBranch }),
@@ -299,7 +312,6 @@ export class POSOrderPage extends PageBase {
 		} else {
 			this.query.Status = this.query.Status == '' ? JSON.stringify(['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill']) : '';
 			super.refresh();
-
 		}
 	}
 
