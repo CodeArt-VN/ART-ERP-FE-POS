@@ -359,6 +359,22 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		if (!this.item?.Id) {
 			Object.assign(this.item, this.formGroup.getRawValue());
+			if(this.item.OrderLines.length) {
+				this.item.OrderLines.forEach((i) => {
+						const menuPrice = this.getMenuEffectivePrice(
+						this.posService.dataSource.menuList,
+						i.IDItem,
+						i.IDUoM
+					);
+
+					if (menuPrice == null || i.UoMPrice == null) return;
+
+					if (menuPrice !== i.UoMPrice) {
+						i._isFoC = true;
+						i._focPrevPrice = menuPrice;
+					}
+				});
+			}
 			this.setOrderValue(this.item);
 			this.formGroup.get('NumberOfGuests').markAsDirty();
 		} else {
@@ -2210,6 +2226,21 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
 	}
 
+	private getMenuEffectivePrice(menuList, itemId, uomId): number | null {
+		for (const m of menuList) {
+			const item = m.Items.find(i => i.Id === itemId && i.SalesUoM === uomId);
+			if (!item) continue;
+
+			const uom = item.UoMs?.find(u => u.Id === uomId);
+			if (!uom) continue;
+
+			const priceList = uom.PriceList?.find(p => p.Type === 'SalePriceList');
+			if (!priceList) continue;
+			return priceList.NewPrice ?? priceList.Price ?? null;
+		}
+		return null;
+	}
+
 	//patch value to form
 	private patchOrderValue() {
 		this.formGroup?.patchValue(this.item);
@@ -2221,6 +2252,18 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (this.item.OrderLines?.length) {
 			for (let i of this.item.OrderLines) {
 				this.addOrderLine(i);
+				const menuPrice = this.getMenuEffectivePrice(
+					this.posService.dataSource.menuList,
+					i.IDItem,
+					i.IDUoM
+				);
+
+				if (menuPrice == null || i.UoMPrice == null) return;
+
+				if (menuPrice !== i.UoMPrice) {
+					i._isFoC = true;
+					i._focPrevPrice = menuPrice;
+				}
 			}
 		}
 	}
