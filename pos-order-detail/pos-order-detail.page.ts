@@ -175,7 +175,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
 			if (!data.code?.startsWith('signalR:')) return;
 			if (data.id == this.env.user.StaffID) return;
-
 			const value = JSON.parse(data.value);
 			if (value.IDSaleOrder != this.item?.Id) return;
 
@@ -584,7 +583,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
 			return;
 		}
-		line.UoMPrice = 0;
+		if (line._isFoC) {
+			line.UoMPrice = line._focPrevPrice ?? line.UoMPrice;
+			line._isFoC = false;
+		} else {
+			line._focPrevPrice = line.UoMPrice;
+			line.UoMPrice = 0;
+			line._isFoC = true;
+		}
 		this.setOrderValue({
 			OrderLines: [
 				{
@@ -948,15 +954,15 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	getFilteredItemsWithLimit(items: any[], groupId?: any): any[] {
 		if (!items?.length) return [];
-		
+
 		// Create cache key based on group, keyword, and segment
 		const cacheKey = `${groupId || 'all'}_${this.segmentView}_${this.query?.Keyword || ''}`;
-		
+
 		// Return cached result if available
 		if (this._filteredItemsCache.has(cacheKey)) {
 			return this._filteredItemsCache.get(cacheKey);
 		}
-		
+
 		// Filter items
 		const filtered = items.filter((i) => {
 			if (!this.query?.Keyword || this.query.Keyword === '' || this.query.Keyword === 'all') {
@@ -980,7 +986,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		// Cache the result
 		this._filteredItemsCache.set(cacheKey, result);
-		
+
 		return result;
 	}
 
@@ -1156,6 +1162,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				defaultBusinessPartnerId: this.posService.systemConfig.SODefaultBusinessPartner.Id,
 				canAddEInvoiceInfo: this.pageConfig.canAddEInvoiceInfo,
 				currentTaxInfoId: this.formGroup.controls.IDTaxInfo.value,
+				address: this._contactDataSource.selected.find((d) => d.Id == this.formGroup.controls.IDContact.value),
 				onUpdateContact: (address) => this.changedIDAddress(address),
 			},
 		});
@@ -1170,8 +1177,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.controls.IDTaxInfo.markAsDirty();
 			this.formGroup.controls.TaxCode.setValue(data.TaxCode);
 			this.formGroup.controls.TaxCode.markAsDirty();
-
 			// this.changedIDAddress({ Id: data.Id, IDAddress: data.Address?.Id });
+			if (data.IDTaxInfo && data.TaxAddresses) {
+				this.item.IDTaxInfo = data.IDTaxInfo;
+				this.item._Customer.TaxAddresses = data.TaxAddresses;
+			}
 			this.saveChange();
 		}
 	}
@@ -2486,6 +2496,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this._contactDataSource.initSearch();
 		}
 	}
+
 	changedIDAddress(address) {
 		if (address) {
 			this.Staff = null;
