@@ -79,6 +79,7 @@ export class POSInvoiceModalPage extends PageBase {
 				Contact: [''],
 			}),
 			selectedTaxInfoId: [''],
+			TaxCode: [''],
 		});
 	}
 
