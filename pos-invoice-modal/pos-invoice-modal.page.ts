@@ -85,7 +85,7 @@ export class POSInvoiceModalPage extends PageBase {
 	loadData(event?: any, forceReload?: boolean): void {
 		this.partnerTaxInfoProvider.read({ IDPartner: this.id }).then((data: any) => {
 			this.taxInfoList = data['data'];
-			this.taxInfoList.forEach(i => {
+			this.taxInfoList.forEach((i) => {
 				i._label = i.CompanyName || i.Name;
 			});
 			this.loadedData(event);
@@ -99,6 +99,7 @@ export class POSInvoiceModalPage extends PageBase {
 			this.isDefaultBusinessPartner = true;
 			this.taxInfoGroup.controls.Id.setValue(0);
 			this.taxInfoGroup.controls.Id.markAsDirty();
+			this.taxInfoGroup.enable();
 			this.formGroup.controls.Name.setValue(null);
 			this.formGroup.controls.WorkPhone.setValue(null);
 			this.formGroup.controls.Email.setValue(null);
@@ -167,7 +168,7 @@ export class POSInvoiceModalPage extends PageBase {
 			_label: 'Walk-in customer',
 		});
 		// Set _label for all items in datasource
-		this.TaxCodeDataSource.forEach(item => {
+		this.TaxCodeDataSource.forEach((item) => {
 			if (!item._label) {
 				item._label = item.CompanyName || item.Name;
 			}
@@ -193,7 +194,7 @@ export class POSInvoiceModalPage extends PageBase {
 				};
 				this.onUpdateContact(submitItem);
 				this.modalController.dismiss(submitItem);
-			} else if (selectedOption === null || selectedOption === '' || selectedOption === undefined) {
+			} else if (!this.isDefaultBusinessPartner && (selectedOption === null || selectedOption === '' || selectedOption === undefined)) {
 				// Default tax info - get default tax info (IsDefault = 1)
 				let submitItem = {
 					Id: this.id,
@@ -227,9 +228,11 @@ export class POSInvoiceModalPage extends PageBase {
 					this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
 						let submitItem = {
 							Id: savedItem.Id,
+							Name: savedItem.Name,
 							IDAddress: savedItem.Address.Id,
 							IDTaxInfo: taxInfo.Id,
 							TaxCode: taxInfo.TaxCode,
+							TaxAddresses: [taxInfo],
 						};
 						this.onUpdateContact(submitItem);
 						this.modalController.dismiss(submitItem);
@@ -242,6 +245,7 @@ export class POSInvoiceModalPage extends PageBase {
 						IDAddress: this.address?.Address?.Id,
 						IDTaxInfo: this.taxInfoGroup.controls.Id.value,
 						TaxCode: this.taxInfoGroup.controls.TaxCode.value,
+						TaxAddresses: [this.taxInfoGroup.getRawValue()],
 					};
 					this.onUpdateContact(submitItem);
 					this.modalController.dismiss(submitItem);
@@ -252,6 +256,7 @@ export class POSInvoiceModalPage extends PageBase {
 							IDAddress: this.address?.Address?.Id,
 							IDTaxInfo: taxInfo.Id,
 							TaxCode: taxInfo.TaxCode,
+							TaxAddresses: [taxInfo],
 						};
 						this.onUpdateContact(submitItem);
 						this.modalController.dismiss(submitItem);
@@ -276,13 +281,13 @@ export class POSInvoiceModalPage extends PageBase {
 			// This is a DOM Event, get value from formControl instead
 			selectedTaxInfo = this.formGroup.controls.selectedTaxInfoId.value;
 		}
-		
+
 		dog && console.log('Selected tax code: ', selectedTaxInfo);
-		
+
 		// Get value from formControl if event is not valid
 		let selectedId = null;
 		let selectedTaxInfoObj = null;
-		
+
 		// If selectedTaxInfo is still a DOM Event or invalid, get from formControl
 		if (!selectedTaxInfo || (typeof selectedTaxInfo === 'object' && 'type' in selectedTaxInfo && 'target' in selectedTaxInfo)) {
 			selectedId = this.formGroup.controls.selectedTaxInfoId.value;
@@ -294,10 +299,10 @@ export class POSInvoiceModalPage extends PageBase {
 			// Primitive value (Id)
 			selectedId = selectedTaxInfo;
 		}
-		
+
 		// Find the object from datasource if we only have Id
 		if (!selectedTaxInfoObj && selectedId !== null && selectedId !== undefined && selectedId !== '' && selectedId !== -1) {
-			selectedTaxInfoObj = this.TaxCodeDataSource.find(item => item.Id === selectedId);
+			selectedTaxInfoObj = this.TaxCodeDataSource.find((item) => item.Id === selectedId);
 		}
 
 		if (selectedId === -1) {
@@ -332,7 +337,7 @@ export class POSInvoiceModalPage extends PageBase {
 				}
 			}
 		}
-		
+
 		// Force change detection after state changes
 		setTimeout(() => {
 			this.cdr.markForCheck();
@@ -353,13 +358,13 @@ export class POSInvoiceModalPage extends PageBase {
 		this.showApplyButton = false;
 		this.taxInfoGroup.controls.CompanyName.patchValue('');
 		this.taxInfoGroup.controls.BillingAddress.patchValue('');
-		
+
 		// If TaxCode has value, set IsCorpTaxInfo = true
 		if (value && value.trim() !== '') {
 			this.taxInfoGroup.controls.IsCorpTaxInfo.setValue(true);
 			this.checkRuleHasTax(true, false);
 		}
-		
+
 		if (value.length > 9) {
 			this.showSpinner = true;
 			Object.assign(this.query, { TaxCode: value });
