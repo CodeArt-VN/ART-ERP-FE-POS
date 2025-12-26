@@ -258,6 +258,7 @@ export interface POSConfig {
 	POSBillQRPaymentMethod: string;
 	POSIsReadTheAmount: boolean;
 	POSPrintingFontSize: number;
+	POSIsShowMenuInMultiline: boolean;
 	// QR Code Payment
 	BKIncomingDefaultBankName?: any;
 	BKIncomingDefaultBankAccount?: string;

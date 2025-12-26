@@ -503,7 +503,7 @@
 	<app-page-message [itemsLength]="1" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 
 	<!-- Menu Group -->
-	<div class="no-print menu-holder" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage}" *ngIf="posService.dataSource && pageConfig.showSpinner==false">
+	<div class="no-print menu-holder" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage, multiline: posService.systemConfig?.POSIsShowMenuInMultiline}" *ngIf="posService.dataSource && pageConfig.showSpinner==false">
 		<div class="menu-group-list">
 			<div
 				class="menu-group"
