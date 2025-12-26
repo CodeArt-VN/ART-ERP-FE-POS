@@ -584,7 +584,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env.showMessage('The order is locked, you cannot edit or add items!', 'warning');
 			return;
 		}
-		line.UoMPrice = 0;
+		if (line._isFoC) {
+			line.UoMPrice = line._focPrevPrice ?? line.UoMPrice;
+			line._isFoC = false;
+		} else {
+			line._focPrevPrice = line.UoMPrice;
+			line.UoMPrice = 0;
+			line._isFoC = true;
+		}
 		this.setOrderValue({
 			OrderLines: [
 				{

@@ -150,7 +150,7 @@
 										<ion-button
 											*ngIf="pageConfig.canApplyFoC"
 											title="{{'Free of charge' | translate}}"
-											fill="outline"
+											[fill]="line._isFoC ? 'solid' : 'outline'"
 											color="danger"
 											class="ion-float-right qty-btn"
 											size="small"
