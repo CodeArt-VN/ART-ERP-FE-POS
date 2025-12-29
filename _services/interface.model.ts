@@ -259,6 +259,9 @@ export interface POSConfig {
 	POSIsReadTheAmount: boolean;
 	POSPrintingFontSize: number;
 	POSIsShowMenuInMultiline: boolean;
+	POSVirtualKeyboardQuantity: boolean;
+	POSAllowDecimalQuantity: boolean;
+
 	// QR Code Payment
 	BKIncomingDefaultBankName?: any;
 	BKIncomingDefaultBankAccount?: string;

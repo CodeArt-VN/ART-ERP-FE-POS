@@ -173,8 +173,25 @@
 										</ion-button>
 
 										<span class="quantity">
-											<small>x</small>
+											<small class="qty-x">x</small>
+
+											@if(segmentFilterDishes == 'New'){ @if(posService.systemConfig.POSVirtualKeyboardQuantity){
 											<ion-text (click)="quantityChange(line,idx)" color="dark"> {{line.Quantity}} </ion-text>
+											}@else{
+											<input
+												class="qty-input-compact"
+												type="number"
+												[step]="posService.systemConfig.POSAllowDecimalQuantity ? 'any' : '1'"
+												[inputmode]="posService.systemConfig.POSAllowDecimalQuantity ? 'decimal' : 'numeric'"
+												[value]="line.Quantity"
+												(keydown)="onQuantityKeyDown($event,line,idx)"
+												(input)="onQuantityInputChange($event, line, idx)"
+											/>
+											} }@else{
+											<ion-text (click)="posService.systemConfig.POSVirtualKeyboardQuantity && quantityChange(line,idx)" color="dark">
+												{{line.Quantity}}
+											</ion-text>
+											}
 										</span>
 									</div>
 
@@ -285,7 +302,7 @@
 						</label>
 						<label class="c-label total" *ngIf="item.Debt >=0" (click)="previewBill()"
 							><span>{{'Amount due' | translate}}&nbsp;<ion-icon name="open-outline"></ion-icon></span>
-							
+
 							<ion-text class="c-value" color="dark"> {{item.Debt | number: '1.0-0'}} </ion-text>
 						</label>
 						<label class="c-label" *ngIf="item.Debt <0"
@@ -504,7 +521,11 @@
 	<app-page-message [itemsLength]="1" [showSpinner]="pageConfig.showSpinner"></app-page-message>
 
 	<!-- Menu Group -->
-	<div class="no-print menu-holder" [ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage, multiline: posService.systemConfig?.POSIsShowMenuInMultiline}" *ngIf="posService.dataSource && pageConfig.showSpinner==false">
+	<div
+		class="no-print menu-holder"
+		[ngClass]="{noImage: !posService.systemConfig.POSIsShowItemImage, multiline: posService.systemConfig?.POSIsShowMenuInMultiline}"
+		*ngIf="posService.dataSource && pageConfig.showSpinner==false"
+	>
 		<div class="menu-group-list">
 			<div
 				class="menu-group"
@@ -553,7 +574,11 @@
 							</ion-list-header>
 						</ion-col>
 
-						<ion-col class="shadow table-item" [ngClass]="{'in-serve': i.BookedQuantity }" *ngFor="let i of getFilteredItemsWithLimit(g.Items, g.Id); trackBy: trackByItemId">
+						<ion-col
+							class="shadow table-item"
+							[ngClass]="{'in-serve': i.BookedQuantity }"
+							*ngFor="let i of getFilteredItemsWithLimit(g.Items, g.Id); trackBy: trackByItemId"
+						>
 							<span class="tag right" *ngIf="i.IsDisabled">
 								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
 							</span>

@@ -314,16 +314,37 @@
 					.od-quantity {
 						line-height: 36px;
 
-						.quantity {
-							font-size: calc(10 / 16 * 2rem);
+							.quantity {
+								font-size: calc(10 / 16 * 2rem);
 
-							.uom {
-								font-size: calc(10 / 16 * 1.2rem);
-								color: var(--ion-color-medium);
-								vertical-align: bottom;
-								line-height: 35px;
+								.uom {
+									font-size: calc(10 / 16 * 1.2rem);
+									color: var(--ion-color-medium);
+									vertical-align: bottom;
+									line-height: 35px;
+								}
+
+								/* compact quantity layout: input sits left of the 'x' mark */
+								display: inline-flex;
+								align-items: center;
+								gap: 6px;
+
+								input.qty-input-compact {
+									width: 64px;
+									height: 36px;
+									padding: 4px 8px;
+									text-align: right;
+									font-size: 1.1rem;
+									border: 1px solid rgba(0,0,0,0.08);
+									border-radius: 4px;
+									background: transparent;
+								}
+
+								small.qty-x {
+									font-size: 0.9rem;
+									color: var(--ion-color-medium);
+								}
 							}
-						}
 
 						.gift {
 							float: right;

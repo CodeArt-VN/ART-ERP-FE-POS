@@ -241,6 +241,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				value: (current ?? '').toString(),
 				isValid: true,
 				message: '',
+				autoEmit: false,
+				POSAllowDecimalQuantity: this.posService.systemConfig.POSAllowDecimalQuantity,
 				// onChange: async (payload) => {
 				// 	try {
 				// 		const val = parseFloat(payload.value);
@@ -267,6 +269,35 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		}
 	}
+
+	onQuantityKeyDown(event: KeyboardEvent, line, idx) {
+		if (!this.posService.systemConfig.POSAllowDecimalQuantity) {
+			if (event.key === '.' || event.key === ',') {
+				event.preventDefault();
+			}
+		}
+
+	}
+
+	onQuantityInputChange(event: any, line, idx: number) {
+		try {
+			let raw = null;
+			if (event && event.target) raw = event.target.value;
+			else if (event && event.detail) raw = event.detail.value;
+			if (raw == null || raw === '') return;
+			let str = String(raw).replace(',', '.');
+			let val = parseFloat(str);
+			if (!this.posService.systemConfig.POSAllowDecimalQuantity) {
+				val = Math.floor(val);
+			}
+			if (!isNaN(val) && val > 0) {
+				this.addToCart(line._item, line.IDUoM, val, idx, line.Status, line.Code, true);
+			}
+		} catch (err) {
+			console.warn('onQuantityInputChange error', err);
+		}
+	}
+
 	private checkNetworkChange(data) {
 		if (data.status.connected) {
 			if (this.item.Id) {
