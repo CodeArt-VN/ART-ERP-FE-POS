@@ -31,6 +31,7 @@ import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
 import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
 import { POSCancelModalPage } from '../pos-cancel-modal/pos-cancel-modal.page';
+import { NumberInputModalComponent } from 'src/app/modals/number-input-modal/number-input-modal.component';
 import QRCode from 'qrcode';
 import { printData, PrintingService } from 'src/app/services/util/printing.service';
 import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
@@ -232,6 +233,40 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
+	async quantityChange(line, idx) {
+		const current = (line?.Quantity ?? '').toString();
+		const modal = await this.modalController.create({
+			component: NumberInputModalComponent,
+			componentProps: {
+				value: (current ?? '').toString(),
+				isValid: true,
+				message: '',
+				// onChange: async (payload) => {
+				// 	try {
+				// 		const val = parseFloat(payload.value);
+				// 		if (!isNaN(val) && val > 0) {
+				// 			this.addToCart(line._item, line.IDUoM, val, idx, line.Status, line.Code,true);
+				// 		}
+				// 	} catch (err) {
+				// 		console.warn('onChange handler error', err);
+				// 	}
+				// },
+			},
+			cssClass: 'modal-number-input',
+		});
+		await modal.present();
+		const data: any = await modal.onWillDismiss();
+		if (data && data.data.value != null) {
+			try {
+				const val = parseFloat(data.data.value);
+				if (!isNaN(val) && val > 0) {
+					this.addToCart(line._item, line.IDUoM, val, idx, line.Status, line.Code, true);
+				}
+			} catch (err) {
+				console.warn('onChange handler error', err);
+			}
+		}
+	}
 	private checkNetworkChange(data) {
 		if (data.status.connected) {
 			if (this.item.Id) {
@@ -607,7 +642,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '', code = '') {
+	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '', code = '', isNumberInput = false) {
 		if (item.IsDisabled) {
 			return;
 		}
@@ -647,7 +682,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
 
 		let line;
-		if (quantity == 1) {
+		if (quantity != -1) {
 			line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 			if (code) line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New' && d.Code == code); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		} else {
@@ -667,7 +702,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				IDUoM: idUoM,
 				UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
 				UoMName: uom.Name,
-				Quantity: 1,
+				Quantity: quantity,
 				IDBaseUoM: idUoM,
 				UoMSwap: 1,
 				UoMSwapAlter: 1,
@@ -704,8 +739,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
 				}
-			} else if (line.Quantity + quantity > 0) {
+			} else if ((!isNumberInput && line.Quantity + quantity > 0) || (isNumberInput && quantity > 0)) {
 				line.Quantity += quantity;
+				if (isNumberInput) line.Quantity = quantity;
 				let subOrders = [];
 				if (line.SubOrders && line.SubOrders.length > 0) {
 					line.SubOrders.forEach((so) => {

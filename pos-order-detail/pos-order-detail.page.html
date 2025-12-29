@@ -174,7 +174,7 @@
 
 										<span class="quantity">
 											<small>x</small>
-											<ion-text color="dark"> {{line.Quantity}} </ion-text>
+											<ion-text (click)="quantityChange(line,idx)" color="dark"> {{line.Quantity}} </ion-text>
 										</span>
 									</div>
 
