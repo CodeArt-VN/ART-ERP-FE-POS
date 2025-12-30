@@ -133,7 +133,7 @@
 								</ion-text>
 							</span> -->
 							<span class="tag left" *ngIf="t._Orders?.length == 1">
-								<ion-text class="tag-content" [color]="t._Orders[0]._Status.Color"> {{t._Orders[0].OrderDate | date: 'HH:mm'}} </ion-text>
+								<ion-text class="tag-content" [color]="t._Orders[0]._Status?.Color"> {{t._Orders[0].OrderDate | date: 'HH:mm'}} </ion-text>
 							</span>
 
 							<span class="tag right clickable more-btn" *ngIf="t._Orders?.length == 1" [id]="'order-trigger-'+t.Id">
@@ -192,7 +192,7 @@
 									<!-- #{{t._Orders[0].Id}}  -->
 									<b>{{t._Orders[0].CalcTotalOriginal | number }}</b>
 
-									<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name"> <br />{{t._Orders[0]._Status.Name}} </ion-text>
+									<ion-text [color]="t._Orders[0]._Status?.Color" [title]="t._Orders[0]._Status?.Name"> <br />{{t._Orders[0]._Status?.Name}} </ion-text>
 								</span>
 							</a>
 
@@ -229,8 +229,8 @@
 														>
 															<h3>#{{od.Id}}</h3>
 															<p>
-																<ion-text [color]="t._Orders[0]._Status.Color" [title]="t._Orders[0]._Status.Name">
-																	{{od.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}} - {{od._Status.Name}}
+																<ion-text [color]="t._Orders[0]._Status?.Color" [title]="t._Orders[0]._Status?.Name">
+																	{{od.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}} - {{od._Status?.Name}}
 																</ion-text>
 															</p>
 														</a>
@@ -312,12 +312,12 @@
 
 						<div class="col-code cell" *ngIf="i._Status">
 							<span>
-								<ion-text [color]="i._Status.Color" [title]="i._Status.Name"> {{i._Status.Name}} </ion-text>
+								<ion-text [color]="i._Status?.Color" [title]="i._Status?.Name"> {{i._Status?.Name}} </ion-text>
 							</span>
 						</div>
 						<div class="col-date cell">{{i.OrderDate | date: 'HH:mm dd/MM'}}</div>
 						<div class="col-number cell">
-							<ion-text [color]="i._Status.Color"> {{i.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}} </ion-text>
+							<ion-text [color]="i._Status?.Color"> {{i.CalcTotalOriginal | currency: 'VND':'':'1.0-0':''}} </ion-text>
 						</div>
 						<div class="col-button cell hide-small" *ngIf="!i._Locked && pageConfig.canChangeTable">
 							<ion-button (click)="$event.stopPropagation(); changeTable(i)" size="small" fill="outline" color="warning"> {{'Change table' | translate}} </ion-button>
