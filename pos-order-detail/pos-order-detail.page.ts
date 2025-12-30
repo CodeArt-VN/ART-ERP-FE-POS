@@ -258,7 +258,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		});
 		await modal.present();
 		const data: any = await modal.onWillDismiss();
-		if (data && data.data.value != null) {
+		if (data && data.data && data.data.value != null) {
 			try {
 				const val = parseFloat(data.data.value);
 				if (!isNaN(val) && val > 0) {
@@ -276,7 +276,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				event.preventDefault();
 			}
 		}
-
 	}
 
 	onQuantityInputChange(event: any, line, idx: number) {
