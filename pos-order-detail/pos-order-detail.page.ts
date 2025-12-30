@@ -2541,6 +2541,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	private updateLineIDs(savedItem: any) {
+		let _isDifference = false;
 		if (savedItem) {
 			//Update lines
 			for (let savedLine of savedItem) {
@@ -2553,6 +2554,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				if (line.Id < 1 && savedLine.Id > 0) {
 					line.Id = savedLine.Id;
 					formLine.controls['Id'].setValue(savedLine.Id);
+				}
+
+				if (line.OriginalDiscountByOrder !== undefined && savedLine.OriginalDiscountByOrder !== undefined && line.OriginalDiscountByOrder !== savedLine.OriginalDiscountByOrder) {
+					line.OriginalDiscountByOrder = savedLine.OriginalDiscountByOrder;
+					_isDifference = true;
 				}
 
 				// if (line.SubOrders && savedLine.SubOrders) {
@@ -2577,7 +2583,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				// 	}
 				// }
 			}
+
 			this.formGroup.markAsPristine();
+			if (_isDifference) this.calcOrder();
 		}
 	}
 
@@ -2908,6 +2916,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	isCompleteLoaded = false;
 	// Group and sum identical OrderLines (same IDItem + IDUoM) to make bill printing more concise
 	// Only applies to TemporaryBill and Done to avoid affecting other printing purposes
+
 	getGroupedOrderLinesForPrint() {
 		if (!this.isCompleteLoaded) return;
 		if (!this.item?.OrderLines?.length) return [];
