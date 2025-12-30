@@ -173,22 +173,23 @@
 										</ion-button>
 
 										<span class="quantity">
+											@if(segmentFilterDishes == 'New'){ @if(POSQuantityConfigDTO.POSVirtualKeyboardQuantity){
 											<small class="qty-x">x</small>
 
-											@if(segmentFilterDishes == 'New'){ @if(posService.systemConfig.POSVirtualKeyboardQuantity){
 											<ion-text (click)="quantityChange(line,idx)" color="dark"> {{line.Quantity}} </ion-text>
 											}@else{
 											<input
 												class="qty-input-compact"
 												type="number"
-												[step]="posService.systemConfig.POSAllowDecimalQuantity ? 'any' : '1'"
-												[inputmode]="posService.systemConfig.POSAllowDecimalQuantity ? 'decimal' : 'numeric'"
+												[step]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'any' : '1'"
+												[inputmode]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'decimal' : 'numeric'"
 												[value]="line.Quantity"
 												(keydown)="onQuantityKeyDown($event,line,idx)"
 												(input)="onQuantityInputChange($event, line, idx)"
 											/>
 											} }@else{
-											<ion-text (click)="posService.systemConfig.POSVirtualKeyboardQuantity && quantityChange(line,idx)" color="dark">
+											<small class="qty-x">x</small>
+											<ion-text (click)="POSQuantityConfigDTO.POSVirtualKeyboardQuantity && quantityChange(line,idx)" color="dark">
 												{{line.Quantity}}
 											</ion-text>
 											}

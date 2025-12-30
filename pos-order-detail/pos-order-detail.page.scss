@@ -312,6 +312,8 @@
 					}
 
 					.od-quantity {
+						display: flex;
+						flex-direction: row-reverse;
 						line-height: 36px;
 
 							.quantity {
@@ -338,6 +340,7 @@
 									border: 1px solid rgba(0,0,0,0.08);
 									border-radius: 4px;
 									background: transparent;
+
 								}
 
 								small.qty-x {
