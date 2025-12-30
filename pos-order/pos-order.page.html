@@ -325,9 +325,6 @@
 					</div>
 				</section>
 			</div>
-			<ion-infinite-scroll color="primary" threshold="50%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
-				<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
-			</ion-infinite-scroll>
 		</div>
 	</ng-container>
 
@@ -391,6 +388,14 @@
 						<ion-item>
 							<ion-label>{{'Bill QR payment method' | translate}}</ion-label>
 							<ion-note slot="end">{{posService.systemConfig.POSBillQRPaymentMethod}}</ion-note>
+						</ion-item>
+						<ion-item>
+							<ion-label>{{'Virtual keyboard quantity' | translate}}</ion-label>
+							<ion-toggle slot="end" (ionChange)="toggleChange($event,'POSVirtualKeyboardQuantity')" [checked]="posService.systemConfig.POSVirtualKeyboardQuantity"></ion-toggle>
+						</ion-item>
+						<ion-item>
+							<ion-label>{{'Enable decimal quantity' | translate}}</ion-label>
+							<ion-toggle slot="end" (ionChange)="toggleChange($event,'POSAllowDecimalQuantity')" [checked]="posService.systemConfig.POSAllowDecimalQuantity"></ion-toggle>
 						</ion-item>
 					</ion-list>
 				</div>

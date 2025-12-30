@@ -40,12 +40,15 @@ export class POSEnviromentDataService {
 		POSBillQRPaymentMethod: 'VietQR',
 		POSPrintingFontSize: 13,
 		POSIsShowMenuInMultiline: false,
+		POSVirtualKeyboardQuantity: false,
+		POSAllowDecimalQuantity: false,
+
 		BKIncomingDefaultBankName: '',
 		BKIncomingDefaultBankAccount: '',
 		BKIncomingQRPrefix: '',
 		BKIncomingQRSuffix: '',
-		ZPIsActive:false,
-		EDCCVCB_IsActive : false
+		ZPIsActive: false,
+		EDCCVCB_IsActive: false,
 	};
 
 	constructor(
@@ -131,7 +134,7 @@ export class POSEnviromentDataService {
 				this.env.getStatus('POSOrderDetail'),
 				this.env.getType('PaymentType'),
 				this.getDeal(),
-				this.getSystemConfig(IDBranch,forceReload),
+				this.getSystemConfig(IDBranch, forceReload),
 				this.branchProvider.getAnItem(IDBranch),
 			])
 				.then((results: any) => {

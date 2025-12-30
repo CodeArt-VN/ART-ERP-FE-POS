@@ -23,6 +23,7 @@ import { POSNotifyService } from '../_services/pos-notify.service';
 import { POSService } from '../_services/pos.service';
 import { POS_ShiftPService } from '../_services/pos-shift-service';
 import { interval, startWith, Subject, Subscription, takeUntil } from 'rxjs';
+import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
 
 @Component({
 	selector: 'app-pos-order',
@@ -32,7 +33,7 @@ import { interval, startWith, Subject, Subscription, takeUntil } from 'rxjs';
 })
 export class POSOrderPage extends PageBase {
 	private destroy$ = new Subject<void>();
-	private readonly PROMOTIONS_CHECK_INTERVAL = 5*60*1000;
+	private readonly PROMOTIONS_CHECK_INTERVAL = 5 * 60 * 1000;
 	tableGroupList = [];
 	soStatusList = [];
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered']; //NewConfirmedScheduledPickingDeliveredSplittedMergedDebtDoneCanceled
@@ -52,6 +53,7 @@ export class POSOrderPage extends PageBase {
 		public posTerminalProvider: POS_TerminalProvider,
 		public sysPrinterProvider: SYS_PrinterProvider,
 		public pageProvider: SALE_OrderProvider,
+		public systemConfigService: SYS_ConfigService,
 
 		public modalController: ModalController,
 		public popoverCtrl: PopoverController,
@@ -240,6 +242,20 @@ export class POSOrderPage extends PageBase {
 		this.env.setStorage('POSTerminalConfig', this.POSconfigDTO, { enable: true, timeToLive: 365 * 24 * 60 });
 	}
 
+	toggleChange(e, field) {
+		this.systemConfigService.read({ IDBranch: this.env.selectedBranch, Code: field }).then((config: any) => {
+			console.log(config);
+			if (config.count > 0) {
+				let postDTO = config.data[0];
+				postDTO.Value = e.detail.checked.toString().toLowerCase();
+				this.systemConfigService.save(postDTO);
+			} else {
+				let postDTO = { IDBranch: this.env.selectedBranch, Code: field, Value: e.detail.checked.toString().toLowerCase() };
+				this.systemConfigService.save(postDTO);
+			}
+		});
+	}
+
 	private CheckPOSNewOrderLines() {
 		this.pageProvider.commonService
 			.connect('GET', 'SALE/Order/CheckPOSNewOrderLines/', this.query)
@@ -320,7 +336,8 @@ export class POSOrderPage extends PageBase {
 		if (event === true) {
 			this.preLoadData('force');
 		} else {
-			super.refresh();
+			this.preLoadData('force');
+			// super.refresh();
 		}
 	}
 
