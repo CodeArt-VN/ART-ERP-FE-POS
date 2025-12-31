@@ -391,11 +391,11 @@
 						</ion-item>
 						<ion-item>
 							<ion-label>{{'Virtual keyboard quantity' | translate}}</ion-label>
-							<ion-toggle slot="end" (ionChange)="toggleChange($event,'POSVirtualKeyboardQuantity')" [checked]="posService.systemConfig.POSVirtualKeyboardQuantity"></ion-toggle>
+							<ion-toggle slot="end" (ionChange)="toggleChange($event,'POSVirtualKeyboardQuantity')" [checked]="POSQuantityDTO.POSVirtualKeyboardQuantity"></ion-toggle>
 						</ion-item>
 						<ion-item>
 							<ion-label>{{'Enable decimal quantity' | translate}}</ion-label>
-							<ion-toggle slot="end" (ionChange)="toggleChange($event,'POSAllowDecimalQuantity')" [checked]="posService.systemConfig.POSAllowDecimalQuantity"></ion-toggle>
+							<ion-toggle slot="end" (ionChange)="toggleChange($event,'POSAllowDecimalQuantity')" [checked]="POSQuantityDTO.POSAllowDecimalQuantity"></ion-toggle>
 						</ion-item>
 					</ion-list>
 				</div>

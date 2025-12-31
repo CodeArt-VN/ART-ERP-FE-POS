@@ -242,7 +242,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				isValid: true,
 				message: '',
 				autoEmit: false,
-				POSAllowDecimalQuantity: this.posService.systemConfig.POSAllowDecimalQuantity,
+				POSAllowDecimalQuantity: this.POSQuantityConfigDTO.POSAllowDecimalQuantity,
 				// onChange: async (payload) => {
 				// 	try {
 				// 		const val = parseFloat(payload.value);
@@ -258,7 +258,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		});
 		await modal.present();
 		const data: any = await modal.onWillDismiss();
-		if (data && data.data.value != null) {
+		if (data && data.data && data.data.value != null) {
 			try {
 				const val = parseFloat(data.data.value);
 				if (!isNaN(val) && val > 0) {
@@ -271,12 +271,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	onQuantityKeyDown(event: KeyboardEvent, line, idx) {
-		if (!this.posService.systemConfig.POSAllowDecimalQuantity) {
+		if (!this.POSQuantityConfigDTO.POSAllowDecimalQuantity) {
 			if (event.key === '.' || event.key === ',') {
 				event.preventDefault();
 			}
 		}
-
 	}
 
 	onQuantityInputChange(event: any, line, idx: number) {
@@ -287,7 +286,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			if (raw == null || raw === '') return;
 			let str = String(raw).replace(',', '.');
 			let val = parseFloat(str);
-			if (!this.posService.systemConfig.POSAllowDecimalQuantity) {
+			if (!this.POSQuantityConfigDTO.POSAllowDecimalQuantity) {
 				val = Math.floor(val);
 			}
 			if (!isNaN(val) && val > 0) {
@@ -318,7 +317,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		}
 	}
-
+	POSQuantityConfigDTO: any = {};
 	preLoadData(event?: any): void {
 		const forceReload = event === 'force';
 		this._contactDataSource.initSearch = () => {
@@ -354,16 +353,24 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			);
 		};
 
-		this.posService
-			.getEnviromentDataSource(this.env.selectedBranch, forceReload)
-			.then(() => {
+		Promise.all([this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload), this.env.getStorage('POSQuantityConfig')])
+			.then((values) => {
 				dog && console.log('POS environment data loaded', this.posService.dataSource, this.posService.systemConfig);
+				if (values[1]) {
+					this.POSQuantityConfigDTO = values[1];
+				} else {
+					this.POSQuantityConfigDTO = {
+						POSAllowDecimalQuantity: this.posService.systemConfig.POSAllowDecimalQuantity || false,
+						POSVirtualKeyboardQuantity: this.posService.systemConfig.POSVirtualKeyboardQuantity || false,
+					};
+				}
 				super.preLoadData(event);
 			})
 			.catch((err) => {
 				this.env.showErrorMessage(err);
 				this.loadedData(event);
 			});
+
 	}
 
 	onContactKeyDown(obj) {

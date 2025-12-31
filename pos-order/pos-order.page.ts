@@ -43,6 +43,7 @@ export class POSOrderPage extends PageBase {
 	notifications = [];
 	isOpenConfigPOS = false;
 	POSconfigDTO: any = {};
+	POSQuantityDTO: any = {};
 	terminalList = [];
 	printerList = [];
 	lastEventRefreshTime = 0;
@@ -132,6 +133,7 @@ export class POSOrderPage extends PageBase {
 			this.sysPrinterProvider.read({ IDBranch: this.env.selectedBranch }),
 			this.posTerminalProvider.read({ IDBranch: this.env.selectedBranch }),
 			this.env.getStorage('POSTerminalConfig'),
+			this.env.getStorage('POSQuantityConfig'),
 		])
 			.then((values: any) => {
 				this.tableGroupList = this.posService.dataSource.tableGroups;
@@ -142,6 +144,15 @@ export class POSOrderPage extends PageBase {
 
 				if (values[3]) {
 					this.POSconfigDTO = values[3];
+				}
+
+				if (values[4]) {
+					this.POSQuantityDTO = values[4];
+				} else {
+					this.POSQuantityDTO = {
+						POSAllowDecimalQuantity: this.posService.systemConfig.POSAllowDecimalQuantity || false,
+						POSVirtualKeyboardQuantity: this.posService.systemConfig.POSVirtualKeyboardQuantity || false,
+					};
 				}
 				super.preLoadData(event);
 			})
@@ -243,17 +254,27 @@ export class POSOrderPage extends PageBase {
 	}
 
 	toggleChange(e, field) {
-		this.systemConfigService.read({ IDBranch: this.env.selectedBranch, Code: field }).then((config: any) => {
-			console.log(config);
-			if (config.count > 0) {
-				let postDTO = config.data[0];
-				postDTO.Value = e.detail.checked.toString().toLowerCase();
-				this.systemConfigService.save(postDTO);
-			} else {
-				let postDTO = { IDBranch: this.env.selectedBranch, Code: field, Value: e.detail.checked.toString().toLowerCase() };
-				this.systemConfigService.save(postDTO);
-			}
-		});
+		// this.systemConfigService.read({ IDBranch: this.env.selectedBranch, Code: field }).then((config: any) => {
+		// 	console.log(config);
+		// 	if (config.count > 0) {
+		// 		let postDTO = config.data[0];
+		// 		postDTO.Value = e.detail.checked.toString().toLowerCase();
+		// 		this.systemConfigService.save(postDTO).then((savedItem : any) => {
+		// 			console.log('savedItem', savedItem);
+		// 			console.log("SYSConfig: " , this.posService.systemConfig);
+
+		// 		});
+		// 	} else {
+		// 		let postDTO = { IDBranch: this.env.selectedBranch, Code: field, Value: e.detail.checked.toString().toLowerCase() };
+		// 		this.systemConfigService.save(postDTO).then((savedItem : any) => {
+		// 			console.log('savedItem', savedItem);
+		// 			console.log("SYSConfig: " , this.posService.systemConfig);
+
+		// 		});
+		// 	}
+		// });
+		this.POSQuantityDTO[field] = e.detail.checked || 0;
+		this.env.setStorage('POSQuantityConfig', this.POSQuantityDTO, { enable: true, timeToLive: 365 * 24 * 60 });
 	}
 
 	private CheckPOSNewOrderLines() {
@@ -336,8 +357,7 @@ export class POSOrderPage extends PageBase {
 		if (event === true) {
 			this.preLoadData('force');
 		} else {
-			this.preLoadData('force');
-			// super.refresh();
+			super.refresh();
 		}
 	}
 
