@@ -370,7 +370,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.env.showErrorMessage(err);
 				this.loadedData(event);
 			});
-
 	}
 
 	onContactKeyDown(obj) {
@@ -432,13 +431,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		if (!this.item?.Id) {
 			Object.assign(this.item, this.formGroup.getRawValue());
-			if(this.item.OrderLines.length) {
+			if (this.item.OrderLines.length) {
 				this.item.OrderLines.forEach((i) => {
-						const menuPrice = this.getMenuEffectivePrice(
-						this.posService.dataSource.menuList,
-						i.IDItem,
-						i.IDUoM
-					);
+					const menuPrice = this.getMenuEffectivePrice(this.posService.dataSource.menuList, i.IDItem, i.IDUoM);
 
 					if (menuPrice == null || i.UoMPrice == null) return;
 
@@ -2302,13 +2297,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	private getMenuEffectivePrice(menuList, itemId, uomId): number | null {
 		for (const m of menuList) {
-			const item = m.Items.find(i => i.Id === itemId && i.SalesUoM === uomId);
+			const item = m.Items.find((i) => i.Id === itemId && i.SalesUoM === uomId);
 			if (!item) continue;
 
-			const uom = item.UoMs?.find(u => u.Id === uomId);
+			const uom = item.UoMs?.find((u) => u.Id === uomId);
 			if (!uom) continue;
 
-			const priceList = uom.PriceList?.find(p => p.Type === 'SalePriceList');
+			const priceList = uom.PriceList?.find((p) => p.Type === 'SalePriceList');
 			if (!priceList) continue;
 			return priceList.NewPrice ?? priceList.Price ?? null;
 		}
@@ -2326,13 +2321,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (this.item.OrderLines?.length) {
 			for (let i of this.item.OrderLines) {
 				this.addOrderLine(i);
-				const menuPrice = this.getMenuEffectivePrice(
-					this.posService.dataSource.menuList,
-					i.IDItem,
-					i.IDUoM
-				);
+				const menuPrice = this.getMenuEffectivePrice(this.posService.dataSource.menuList, i.IDItem, i.IDUoM);
 
-				if (menuPrice == null || i.UoMPrice == null) return;
+				if (menuPrice == null || i.UoMPrice == null) continue;
 
 				if (menuPrice !== i.UoMPrice) {
 					i._isFoC = true;
@@ -2563,7 +2554,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					formLine.controls['Id'].setValue(savedLine.Id);
 				}
 
-				if (line.OriginalDiscountByOrder !== undefined && savedLine.OriginalDiscountByOrder !== undefined && line.OriginalDiscountByOrder !== savedLine.OriginalDiscountByOrder) {
+				if (
+					line.OriginalDiscountByOrder !== undefined &&
+					savedLine.OriginalDiscountByOrder !== undefined &&
+					line.OriginalDiscountByOrder !== savedLine.OriginalDiscountByOrder
+				) {
 					line.OriginalDiscountByOrder = savedLine.OriginalDiscountByOrder;
 					_isDifference = true;
 				}
