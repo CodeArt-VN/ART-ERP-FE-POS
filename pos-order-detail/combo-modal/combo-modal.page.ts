@@ -35,7 +35,7 @@ export class ComboModalPage implements OnInit {
 			this.selectedItems[g.Id] = {};
 			// set default Quantity cho item = 1 nếu muốn
 			g.Items?.forEach((i) => (i.Quantity = i.Quantity || 1));
-			this.item?.SubOrders?.forEach((sub) => {
+			this.item?.SubItems?.forEach((sub) => {
 				if (g.Items.some((i) => i.IDUoM === sub.IDUoM && i.IDItem === sub.IDItem) && !this.selectedItems[g.Id][sub.IDUoM]) {
 					this.selectedItems[g.Id][sub.IDUoM] = sub.Quantity / this.item.Quantity;
 				}

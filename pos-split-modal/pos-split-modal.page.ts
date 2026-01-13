@@ -159,12 +159,12 @@ export class POSSplitModalPage extends PageBase {
 			this.orderDetailProvider.read({ IDOrder: this.selectedOrder.Id }).then((result: any) => {
 				this.items = result.data.filter((d) => !d.IDParent);
 				this.items.forEach((i) => {
-					i.SubOrders = [];
+					i.SubItems = [];
 					result.data
 						.filter((d) => d.IDParent == i.Id)
 						.forEach((j) => {
 							j.OriginalQuantity = j.Quantity / i.Quantity;
-							i.SubOrders.push(j);
+							i.SubItems.push(j);
 						});
 				});
 				this.item.SplitedOrders[0].OrderLines = JSON.parse(JSON.stringify(this.items));
@@ -398,7 +398,7 @@ export class POSSplitModalPage extends PageBase {
 		};
 		newSplitOrder.OrderLines.forEach((i) => {
 			i.Code = lib.generateUID(this.env.user.StaffID);
-			i.SubOrders.forEach((sub) => {
+			i.SubItems.forEach((sub) => {
 				sub.Code = lib.generateUID(this.env.user.StaffID);
 			});
 		});
@@ -590,7 +590,7 @@ export class POSSplitModalPage extends PageBase {
 				postItem.SplitedOrders.forEach((so) => {
 					so.OrderLines.forEach((ol) => {
 						if (!so.isFirst) ol.Id = 0;
-						ol.SubOrders.forEach((sub) => {
+						ol.SubItems.forEach((sub) => {
 							sub.Quantity = ol.Quantity * sub.OriginalQuantity;
 							if (!so.isFirst) sub.Id = 0;
 						});

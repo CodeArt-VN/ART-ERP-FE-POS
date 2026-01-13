@@ -5,7 +5,7 @@
 			<span *ngFor="let t of printData.selectedTables">&nbsp;{{t.Name}} </span>
 		</ion-button>
 
-		<ion-searchbar class="search-box" (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
+		<ion-searchbar class="search-box" (ionFocus)="segmentChanged('all')" (ionInput)="search($event)" placeholder="{{'Search menu' | translate}}"></ion-searchbar>
 
 		<ion-button
 			class="cart"
@@ -88,17 +88,12 @@
 									*ngIf="(segmentFilterDishes == 'New' && line.Status == 'New') || (segmentFilterDishes != 'New' && line.Status != 'New')"
 								>
 									<div style="display: flex">
-										<div
-											class="od-image clickable"
-											*ngIf="posService.systemConfig.POSIsShowItemImage"
-											[ngStyle]=" line._background "
-											(click)="jumpToItem(line)"
-										></div>
+										<div class="od-image clickable" [ngStyle]=" line._background " (click)="jumpToItem(line)"></div>
 										<div class="od-info" *ngIf="line._item" (click)="openComboModal(line,true)">
 											<div class="od-name">
-												<span class="od-id clickable" (click)="jumpToItem(line)">#{{line._item.Id}}</span>&nbsp;
+												<small class="od-id">#{{line._item.Id}}</small>&nbsp;
 												<span [appTranslateResource]="line._item"> </span>
-												@if(line.SubOrders?.length > 0){ @for( sub of line.SubOrders;track sub.IDItem){
+												@if(line.SubItems?.length > 0){ @for( sub of line.SubItems;track sub.IDItem){
 												<br />
 												&nbsp;<span class="bold">{{sub.Quantity}} {{sub._UoM.Name}}</span> &nbsp;<span [appTranslateResource]="sub._Item"></span>
 												} }
@@ -463,7 +458,7 @@
 							fill="outline"
 							expand="block"
 							(click)="saveOrderData()"
-							[disabled]="!canSaveOrder || submitAttempt"
+							[disabled]="!canSaveOrder"
 						>
 							{{'Save' | translate}}
 						</ion-button>
@@ -482,7 +477,6 @@
 							fill="outline"
 							expand="block"
 							(click)="saveOrderData()"
-							[disabled]="submitAttempt"
 						>
 							{{'Save' | translate}}
 						</ion-button>
@@ -549,7 +543,7 @@
 				[style]="{order:(i==0 && g.Id==0) ? -1:''}"
 				[ngClass]="{selected: segmentView==g.Id}"
 				*ngFor="let g of posService.dataSource.menuList;let i = index"
-				(click)="segmentChanged(g.Id)"
+				(click)="segmentChanged(g.Id); query.Keyword =''"
 			>
 				<ion-img
 					*ngIf="posService.systemConfig.POSIsShowItemImage"
@@ -669,14 +663,16 @@
 
 										<ng-container *ngIf="pageConfig.canEdit && item.Status != 'TemporaryBill'">
 											<span class="brand">{{'ORDER' | translate}}</span>
+											<span>({{'Bill No.' | translate}}: {{id}})</span>
 										</ng-container>
 										<ng-container *ngIf="item.Status == 'TemporaryBill'">
 											<span class="brand">{{'TEMPORARY BILL' | translate}}</span>
+											<span>({{'Bill No.' | translate}}: <strong>{{id}}</strong>)</span>
 										</ng-container>
 										<ng-container *ngIf="!pageConfig.canEdit && item.Status == 'Done'">
-											<span class="brand">{{'POS_RECEIPT' | translate}}</span>
+											<span class="brand">{{'RECEIPT' | translate}}</span>
+											<span>({{'Receipt No.' | translate}}: <strong>{{id}}</strong>)</span>
 										</ng-container>
-										<span>({{'SO' | translate}}: <strong>{{id}}</strong>)</span>
 									</div>
 									<div class="table-info">
 										<table>
@@ -731,12 +727,12 @@
 												<td class="text-right">{{'BILL Amount' | translate}}</td>
 											</tr>
 											<ng-container *ngFor="let o of getGroupedOrderLinesForPrint()">
-												<tr class="small" [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
+												<tr class="small" [ngClass]="{'subOrder':o.SubItems && o.SubItems.length >0 }">
 													<td colspan="5" class="name">
 														<strong><span [appTranslateResource]="o._item"></span></strong>
 													</td>
 												</tr>
-												<tr class="small" [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
+												<tr class="small" [ngClass]="{'subOrder':o.SubItems && o.SubItems.length >0 }">
 													<td>&#8203;</td>
 													<td class="od-price total">
 														<span>{{o.UoMPrice | number: '1.0-0'}}</span>
@@ -751,8 +747,8 @@
 														<span>{{o.OriginalTotalBeforeDiscount | number: '1.0-0'}}</span>
 													</td>
 												</tr>
-												@if(o.SubOrders && o.SubOrders.length >0){
-												<ng-container *ngFor="let g of o.SubOrders; let isLast = last">
+												@if(o.SubItems && o.SubItems.length >0){
+												<ng-container *ngFor="let g of o.SubItems; let isLast = last">
 													<tr class="small subOrder" [class.isLast]="isLast">
 														<td class="name">--<span>{{g._Item?.Name || g._Item?.Name}}</span></td>
 														<td><span *ngIf="g.UoMPrice>0">+{{g.UoMPrice | number: '1.0-0'}}</span></td>
@@ -777,7 +773,7 @@
 											</tr>
 											<ng-container *ngFor="let o of item.OrderLines | filter:{'_IDKitchens':kitchenQuery} ; let idx = index ">
 												<ng-container *ngIf="o._undeliveredQuantity > 0">
-													<tr [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
+													<tr [ngClass]="{'subOrder':o.SubItems && o.SubItems.length >0 }">
 														<td>
 															{{idx + 1}}.
 															<strong><span [appTranslateResource]="o._item"></span></strong>
@@ -786,11 +782,11 @@
 															<span class="bold quantity">{{o._undeliveredQuantity}}</span>
 														</td>
 													</tr>
-													<tr *ngIf="o.Remark" [ngClass]="{'subOrder':o.SubOrders && o.SubOrders.length >0 }">
+													<tr *ngIf="o.Remark" [ngClass]="{'subOrder':o.SubItems && o.SubItems.length >0 }">
 														<td colspan="2">Note: {{o.Remark}}</td>
 													</tr>
-													@if(o.SubOrders && o.SubOrders.length >0){
-													<ng-container *ngFor="let g of o.SubOrders; let isLast = last">
+													@if(o.SubItems && o.SubItems.length >0){
+													<ng-container *ngFor="let g of o.SubItems; let isLast = last">
 														<tr class="small subOrder" [class.isLast]="isLast">
 															<td class="name">--<span>{{g._Item.Name}}</span></td>
 															<td class="quantity total">
@@ -837,7 +833,7 @@
 										<div class="table-info-top">
 											<table>
 												<tr>
-													<td class="title">{{'Discounted amount' | translate}}</td>
+													<td class="title">{{'Total after discount' | translate}}</td>
 													<td class="text-right bold">
 														<span>{{item.OriginalTotalAfterDiscount | number: '1.0-0'}}</span>
 													</td>
