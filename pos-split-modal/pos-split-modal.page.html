@@ -232,8 +232,8 @@
 											/>
 										</td>
 									</tr>
-									@if(i.SubOrders && i.SubOrders.length>0){
-									<tr *ngFor="let sub of i.SubOrders; let idx = index;">
+									@if(i.SubItems && i.SubItems.length>0){
+									<tr *ngFor="let sub of i.SubItems; let idx = index;">
 										<td class="label">
 											<input style="text-align: left" [disabled]="true" type="text" class="c-input" [value]="'---' + sub.ItemName" />
 										</td>

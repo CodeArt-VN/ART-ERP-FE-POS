@@ -123,7 +123,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public cdr: ChangeDetectorRef,
 		public loadingController: LoadingController,
 		public commonService: CommonService,
-		public promotionService: PromotionService
+		public promotionService: PromotionService,
 	) {
 		super();
 		this.pageConfig.ShowRefresh = false;
@@ -763,7 +763,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				IDPromotion: null,
 				Groups: item.Groups,
 				OriginalDiscountFromSalesman: 0,
-				SubOrders: [],
+				SubItems: [],
 				CreatedDate: new Date(),
 				_item: item,
 			};
@@ -791,16 +791,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			} else if ((!isNumberInput && line.Quantity + quantity > 0) || (isNumberInput && quantity > 0)) {
 				line.Quantity += quantity;
 				if (isNumberInput) line.Quantity = quantity;
-				let subOrders = [];
-				if (line.SubOrders && line.SubOrders.length > 0) {
-					line.SubOrders.forEach((so) => {
+				let subItems = [];
+				if (line.SubItems && line.SubItems.length > 0) {
+					line.SubItems.forEach((so) => {
 						let orginalQty = so.Quantity / (line.Quantity - quantity);
 						so.Quantity = orginalQty * line.Quantity;
 					});
-					subOrders = line.SubOrders;
+					subItems = line.SubItems;
 					if (line.Id) {
-						subOrders = [
-							...line.SubOrders?.map((so) => {
+						subItems = [
+							...line.SubItems?.map((so) => {
 								return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
 							}),
 						];
@@ -813,7 +813,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							Code: line.Code,
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
-							SubOrders: subOrders,
+							SubItems: subItems,
 						},
 					],
 					Status: 'New',
@@ -824,16 +824,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 						.then((_) => {
 							line.Quantity += quantity;
-							let subOrders = [];
-							if (line.SubOrders && line.SubOrders.length > 0) {
-								line.SubOrders.forEach((so) => {
+							let subItems = [];
+							if (line.SubItems && line.SubItems.length > 0) {
+								line.SubItems.forEach((so) => {
 									let orginalQty = so.Quantity / (line.Quantity - quantity);
 									so.Quantity = orginalQty * line.Quantity;
 								});
-								subOrders = line.SubOrders;
+								subItems = line.SubItems;
 								if (line.Id) {
-									subOrders = [
-										...line.SubOrders?.map((so) => {
+									subItems = [
+										...line.SubItems?.map((so) => {
 											return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
 										}),
 									];
@@ -846,7 +846,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 										Code: line.Code,
 										IDUoM: line.IDUoM,
 										Quantity: line.Quantity,
-										SubOrders: subOrders,
+										SubItems: subItems,
 									},
 								],
 							});
@@ -858,16 +858,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 							.then((_) => {
 								line.Quantity += quantity;
-								let subOrders = [];
-								if (line.SubOrders && line.SubOrders.length > 0) {
-									line.SubOrders.forEach((so) => {
+								let subItems = [];
+								if (line.SubItems && line.SubItems.length > 0) {
+									line.SubItems.forEach((so) => {
 										let orginalQty = so.Quantity / (line.Quantity - quantity);
 										so.Quantity = orginalQty * line.Quantity;
 									});
-									subOrders = line.SubOrders;
+									subItems = line.SubItems;
 									if (line.Id) {
-										subOrders = [
-											...line.SubOrders?.map((so) => {
+										subItems = [
+											...line.SubItems?.map((so) => {
 												return { Code: so.Code, Quantity: so.Quantity, Id: so.Id };
 											}),
 										];
@@ -880,7 +880,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 											Code: line.Code,
 											IDUoM: line.IDUoM,
 											Quantity: line.Quantity,
-											SubOrders: subOrders,
+											SubItems: subItems,
 										},
 									],
 								});
@@ -926,8 +926,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
 				let UoMPrice = price.NewPrice ? price.NewPrice : price.Price;
 				line.UoMPrice = UoMPrice;
-				let oldSubOrder = line.SubOrders;
-				line.SubOrders = [];
+				let oldSubOrder = line.SubItems;
+				line.SubItems = [];
 				line._item.Groups.forEach((subOrder) => {
 					Object.keys(data).forEach((key) => {
 						if (subOrder.Id == key) {
@@ -981,7 +981,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 				this.formGroup.get('DeletedLines').setValue(deletedLines);
 				this.formGroup.get('DeletedLines').markAsDirty();
-				line.SubOrders = oldSubOrder;
+				line.SubItems = oldSubOrder;
 				if (markAsDirty) {
 					this.setOrderValue({ OrderLines: [line] });
 				}
@@ -2374,7 +2374,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				value: line.CreatedDate,
 				disabled: true,
 			}),
-			SubOrders: [line?.SubOrders || []],
+			SubItems: [line?.SubItems || []],
 			// OriginalTotalBeforeDiscount
 			// OriginalPromotion
 			// OriginalDiscount1
@@ -2563,24 +2563,24 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					_isDifference = true;
 				}
 
-				// if (line.SubOrders && savedLine.SubOrders) {
-				// 	for (let beSub of savedLine.SubOrders) {
-				// 		const idxSub = line.SubOrders.findIndex((x) => x.Code === beSub.Code);
+				// if (line.SubItems && savedLine.SubItems) {
+				// 	for (let beSub of savedLine.SubItems) {
+				// 		const idxSub = line.SubItems.findIndex((x) => x.Code === beSub.Code);
 				// 		if (idxSub === -1) continue;
 
-				// 		const feSub = line.SubOrders[idxSub];
+				// 		const feSub = line.SubItems[idxSub];
 
 				// 		if (feSub.Id < 1 && beSub.Id > 0) {
 				// 			feSub.Id = beSub.Id;
 
-				// 			// Nếu có FormArray cho SubOrders → update luôn
-				// 			const subOrders = [...formLine.controls.SubOrders.value]; // clone array
+				// 			// Nếu có FormArray cho SubItems → update luôn
+				// 			const subItems = [...formLine.controls.SubItems.value]; // clone array
 
-				// 			subOrders[idxSub] = {
-				// 				...subOrders[idxSub],
+				// 			subItems[idxSub] = {
+				// 				...subItems[idxSub],
 				// 				Id: beSub.Id,
 				// 			};
-				// 			formLine.controls.SubOrders.setValue(subOrders);
+				// 			formLine.controls.SubItems.setValue(subItems);
 				// 		}
 				// 	}
 				// }
@@ -2954,11 +2954,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					existing.UoMPrice = existing.OriginalTotalBeforeDiscount / existing.Quantity;
 				}
 
-				if (line.SubOrders && line.SubOrders.length) {
-					existing.SubOrders = existing.SubOrders || [];
-					for (const sub of line.SubOrders) {
+				if (line.SubItems && line.SubItems.length) {
+					existing.SubItems = existing.SubItems || [];
+					for (const sub of line.SubItems) {
 						const subKey = `${sub.IDItem}_${sub.IDUoM}`;
-						const existingSub = existing.SubOrders.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
+						const existingSub = existing.SubItems.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
 						if (existingSub) {
 							existingSub.Quantity += sub.Quantity || 0;
 							if (existingSub.Quantity > 0 && sub.UoMPrice) {
@@ -2968,12 +2968,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							}
 							existingSub._origQuantity = existingSub.Quantity;
 						} else {
-							existing.SubOrders.push({ ...sub, _origQuantity: sub.Quantity || 0 });
+							existing.SubItems.push({ ...sub, _origQuantity: sub.Quantity || 0 });
 						}
 					}
 				}
 			} else {
-				groupedMap.set(mapKey, { ...line, SubOrders: line.SubOrders ? [...line.SubOrders] : [] });
+				groupedMap.set(mapKey, { ...line, SubItems: line.SubItems ? [...line.SubItems] : [] });
 			}
 		}
 
