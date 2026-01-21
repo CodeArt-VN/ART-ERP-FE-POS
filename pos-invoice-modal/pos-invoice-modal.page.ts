@@ -448,6 +448,7 @@ export class POSInvoiceModalPage extends PageBase {
 
 			if (isEnable) {
 				this.taxInfoGroup.controls.BillingAddress.enable();
+				this.taxInfoGroup.controls.CompanyName.enable();
 			}
 			this.taxInfoGroup.controls.TaxCode.updateValueAndValidity();
 			this.taxInfoGroup.controls.CompanyName.updateValueAndValidity();
@@ -512,6 +513,7 @@ export class POSInvoiceModalPage extends PageBase {
 									this.id = contact.Id;
 									this.address = contact;
 									this.isPhoneNumberValid = true;
+									this.isDefaultBusinessPartner = false; // New code
 									this.onUpdateContact(contact);
 									this.refresh();
 									resolve(true);
