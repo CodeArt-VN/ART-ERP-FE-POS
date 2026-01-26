@@ -784,7 +784,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
 
 		let line;
-		if (quantity != -1) {
+		if (quantity > 0) {
 			line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New'); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 			if (code) line = this.item.OrderLines.find((d) => d.IDUoM == idUoM && d.Status == 'New' && d.Code == code); //Chỉ update số lượng của các line tình trạng mới (chưa gửi bếp)
 		} else {
