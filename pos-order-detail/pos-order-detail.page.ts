@@ -70,6 +70,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	OrderDeductionTypeList = [];
 	promotionAppliedPrograms = [];
 	defaultPrinter = [];
+	private autoApplyPending = false;
+	private autoApplyInProgress = false;
 	printData = {
 		undeliveredItems: [], //To track undelivered items to the kitchen
 		printDate: null,
@@ -316,6 +318,57 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					});
 			}
 		}
+	}
+
+	private scheduleAutoApply(force = false) {
+		this.autoApplyPending = true;
+		this.runAutoApply(force);
+	}
+
+	private runAutoApply(force = false) {
+		if (this.autoApplyInProgress) {
+			this.autoApplyPending = true;
+			return;
+		}
+
+		if (!this.item?.Id) {
+			this.autoApplyPending = true;
+			return;
+		}
+
+		if (!force && this.formGroup?.dirty) {
+			this.autoApplyPending = true;
+			return;
+		}
+
+		const autoVoucherCodes =
+			(this.promotionService?.promotionList || [])
+				.filter((p) => p?.IsAutoApply && !p?.IsDisabled && !p?.IsDeleted && p?.VoucherCode)
+				.map((p) => p.VoucherCode) || [];
+
+		if (autoVoucherCodes.length === 0) {
+			this.autoApplyPending = false;
+			return;
+		}
+
+		this.autoApplyPending = false;
+		this.autoApplyInProgress = true;
+		this.promotionService
+			.autoApplyVoucher(this.item, autoVoucherCodes)
+			.then((updated: any) => {
+				if (updated) {
+					this.item = updated;
+					this.patchOrderValue();
+					this.loadOrder();
+					this.cdr.detectChanges();
+				}
+			})
+			.finally(() => {
+				this.autoApplyInProgress = false;
+				if (this.autoApplyPending) {
+					this.runAutoApply();
+				}
+			});
 	}
 	POSQuantityConfigDTO: any = {};
 	preLoadData(event?: any): void {
@@ -2522,6 +2575,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.controls.Id.setValue(savedItem.Id);
 			this.item = savedItem;
 			this.loadedData();
+			this.runAutoApply(true);
 			return;
 		} else {
 			this.updateLineIDs(savedItem);
@@ -2536,6 +2590,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		}
 		this.env.showMessage('Saving completed!', 'success');
+		this.runAutoApply(true);
 	}
 
 	private updateLineIDs(savedItem: any) {
@@ -2634,6 +2689,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 			this._contactDataSource.selected = [...this._contactDataSource.selected];
 			this._contactDataSource.initSearch();
+			this.scheduleAutoApply();
 		}
 	}
 
@@ -2793,6 +2849,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	deleteVoucher(p) {
+		if (p?.IsAutoApply) {
+			return;
+		}
 		this.promotionService
 			.deleteVoucher(this.item, [p.VoucherCode])
 			.then(() => {
