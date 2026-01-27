@@ -3081,9 +3081,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		const groupedMap = new Map<string, any>();
 
 		for (const line of this.item.OrderLines) {
-			const mapKey = `${line.IDItem}_${line.IDUoM}`;
-
-			if (groupedMap.has(mapKey)) {
+			let mapKey = `${line.IDItem}_${line.IDUoM}`;
+			if (groupedMap.has(mapKey) && line.SubItems?.length > 0) {
+				mapKey += `_${line.SubItems.map((s) => `${s.IDItem}_${s.IDUoM}`).join('_')}`;
+				groupedMap.set(mapKey, { ...line, SubItems: line.SubItems ? [...line.SubItems] : [] });
+			} else if (groupedMap.has(mapKey)) {
 				const existing = groupedMap.get(mapKey);
 				existing.Quantity += line.Quantity || 0;
 				existing.OriginalTotalDiscount += line.OriginalTotalDiscount || 0;
@@ -3095,24 +3097,24 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					existing.UoMPrice = existing.OriginalTotalBeforeDiscount / existing.Quantity;
 				}
 
-				if (line.SubItems && line.SubItems.length) {
-					existing.SubItems = existing.SubItems || [];
-					for (const sub of line.SubItems) {
-						const subKey = `${sub.IDItem}_${sub.IDUoM}`;
-						const existingSub = existing.SubItems.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
-						if (existingSub) {
-							existingSub.Quantity += sub.Quantity || 0;
-							if (existingSub.Quantity > 0 && sub.UoMPrice) {
-								const oldTotal = (existingSub._origQuantity || 0) * (existingSub.UoMPrice || 0);
-								const newTotal = (sub.Quantity || 0) * sub.UoMPrice;
-								existingSub.UoMPrice = (oldTotal + newTotal) / existingSub.Quantity;
-							}
-							existingSub._origQuantity = existingSub.Quantity;
-						} else {
-							existing.SubItems.push({ ...sub, _origQuantity: sub.Quantity || 0 });
-						}
-					}
-				}
+				// if (line.SubItems && line.SubItems.length) {
+				// 	existing.SubItems = existing.SubItems || [];
+				// 	for (const sub of line.SubItems) {
+				// 		const subKey = `${sub.IDItem}_${sub.IDUoM}`;
+				// 		const existingSub = existing.SubItems.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
+				// 		if (existingSub) {
+				// 			existingSub.Quantity += sub.Quantity || 0;
+				// 			if (existingSub.Quantity > 0 && sub.UoMPrice) {
+				// 				const oldTotal = (existingSub._origQuantity || 0) * (existingSub.UoMPrice || 0);
+				// 				const newTotal = (sub.Quantity || 0) * sub.UoMPrice;
+				// 				existingSub.UoMPrice = (oldTotal + newTotal) / existingSub.Quantity;
+				// 			}
+				// 			existingSub._origQuantity = existingSub.Quantity;
+				// 		} else {
+				// 			existing.SubItems.push({ ...sub, _origQuantity: sub.Quantity || 0 });
+				// 		}
+				// 	}
+				// }
 			} else {
 				groupedMap.set(mapKey, { ...line, SubItems: line.SubItems ? [...line.SubItems] : [] });
 			}
