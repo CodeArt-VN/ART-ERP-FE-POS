@@ -1,4 +1,4 @@
-// .feature{
+﻿// .feature{
 //     background: linear-gradient(180deg, var(--main-background-top), var(--main-background-bottom));
 // }
 // ion-content {
@@ -874,8 +874,7 @@
 		}
 	}
 }
-
-.so-rows {
+so-rows {
 	padding-left: calc(100% - 320px);
 }
 
@@ -958,3 +957,7 @@ ion-fab[horizontal='start'] .custom-fab {
 	--height: 25px;
 	text-transform: none;
 }
+
+
+
+

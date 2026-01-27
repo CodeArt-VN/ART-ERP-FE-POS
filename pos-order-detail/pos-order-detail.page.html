@@ -638,11 +638,6 @@
 	</div>
 
 	<!-- Bill Printing -->
-	<style>
-		.page-footer-space {
-			margin-top: 10px;
-		}
-	</style>
 	<div id="bill" #bill class="bill" *ngIf="item?.OrderLines?.length">
 		<div class="receipt giao-nhan">
 			<section class="sheet rpt p1">
@@ -724,7 +719,7 @@
 											</tr>
 										</table>
 									</div>
-									<div class="items" *ngIf="kitchenQuery=='all'">
+									<div class="items items-bill" *ngIf="kitchenQuery=='all'">
 										<table>
 											<tr class="bold">
 												<td>{{'Name' | translate}}</td>
@@ -772,7 +767,7 @@
 											</ng-container>
 										</table>
 									</div>
-									<div class="items" *ngIf="kitchenQuery!='all'">
+									<div class="items items-kitchen" *ngIf="kitchenQuery!='all'">
 										<table>
 											<tr class="bold">
 												<td>{{'Item' | translate}}</td>
@@ -975,7 +970,7 @@
 								<tr>
 									<td>
 										<div>
-											<div class="items">
+											<div class="items items-kitchen">
 												<table>
 													<tr>
 														<td class="title" colspan="2" style="font-size: 16px">
