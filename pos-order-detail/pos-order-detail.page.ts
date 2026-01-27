@@ -514,6 +514,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					}
 				}
 			});
+			this.runAutoApply(true);
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
 			}
@@ -2680,6 +2681,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				IDContact: address.Id,
 				IDAddress: address.IDAddress,
 			});
+			this.item.IDContact = address.Id;
 			this.item._Customer = address;
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
