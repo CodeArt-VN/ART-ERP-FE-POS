@@ -227,7 +227,14 @@
 						<div class="box-title">{{'Promotion / Voucher' | translate}}</div>
 						<div class="check-out" style="min-height: 20px">
 							<div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
-								<ion-button fill="clear" color="danger" class="ion-float-right ion-no-padding del-btn" size="small" (click)="deleteVoucher(p)">
+								<ion-button
+									*ngIf="!p.IsAutoApply"
+									fill="clear"
+									color="danger"
+									class="ion-float-right ion-no-padding del-btn"
+									size="small"
+									(click)="deleteVoucher(p)"
+								>
 									<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 								</ion-button>
 								<div class="coupon-left">
