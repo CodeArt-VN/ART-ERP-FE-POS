@@ -40,6 +40,9 @@ export class ComboModalPage implements OnInit {
 					this.selectedItems[g.Id][sub.IDUoM] = sub.Quantity / this.item.Quantity;
 				}
 			});
+			if (g.AllowMultiple === false && g.IsRequired && Object.keys(this.selectedItems[g.Id]).length === 0) {
+				this.selectedItems[g.Id][g.Items[0].IDUoM] = g.Items[0].Quantity || 1;
+			}
 		}
 	}
 
@@ -123,7 +126,7 @@ export class ComboModalPage implements OnInit {
 
 			// Item max qty
 			if (item.MaxQuantity && qty > item.MaxQuantity) {
-				g.Message = `${item.Name} exceeds max quantity (${item.MaxQuantity}).`
+				g.Message = `${item.Name} exceeds max quantity (${item.MaxQuantity}).`;
 				return false;
 			}
 
