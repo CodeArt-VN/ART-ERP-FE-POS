@@ -638,11 +638,6 @@
 	</div>
 
 	<!-- Bill Printing -->
-	<style>
-		.page-footer-space {
-			margin-top: 10px;
-		}
-	</style>
 	<div id="bill" #bill class="bill" *ngIf="item?.OrderLines?.length">
 		<div class="receipt giao-nhan">
 			<section class="sheet rpt p1">
@@ -724,7 +719,7 @@
 											</tr>
 										</table>
 									</div>
-									<div class="items" *ngIf="kitchenQuery=='all'">
+									<div class="items items-bill" *ngIf="kitchenQuery=='all'">
 										<table>
 											<tr class="bold">
 												<td>{{'Name' | translate}}</td>
@@ -756,23 +751,33 @@
 												</tr>
 												@if(o.SubItems && o.SubItems.length >0){
 												<ng-container *ngFor="let g of o.SubItems; let isLast = last">
+													<tr class="small subOrder" >
+														<td colspan="5" class="name">
+															○&nbsp;<span>{{ g._Item?.Name || g._Item?.Name }}</span>
+														</td>
+													</tr>
 													<tr class="small subOrder" [class.isLast]="isLast">
-														<td class="name">--<span>{{g._Item?.Name || g._Item?.Name}}</span></td>
-														<td><span *ngIf="g.UoMPrice>0">+{{g.UoMPrice | number: '1.0-0'}}</span></td>
+														<td>&#8203;</td>
+														<td class="od-price total">
+															<span *ngIf="g.UoMPrice>0">+{{g.UoMPrice | number: '1.0-0'}}</span>
+														</td>
 														<td class="quantity total">
 															<span>{{g.Quantity}}</span>
 														</td>
-														<td class="total"></td>
 														<td class="total">
-															<span>+{{g.Quantity * g.UoMPrice | number: '1.0-0'}}</span>
+															
 														</td>
+														<td class="total">
+															<span>+{{ g.Quantity * g.UoMPrice | number:'1.0-0' }}</span>
+														</td>
+														
 													</tr>
 												</ng-container>
 												}
 											</ng-container>
 										</table>
 									</div>
-									<div class="items" *ngIf="kitchenQuery!='all'">
+									<div class="items items-kitchen" *ngIf="kitchenQuery!='all'">
 										<table>
 											<tr class="bold">
 												<td>{{'Item' | translate}}</td>
@@ -975,7 +980,7 @@
 								<tr>
 									<td>
 										<div>
-											<div class="items">
+											<div class="items items-kitchen">
 												<table>
 													<tr>
 														<td class="title" colspan="2" style="font-size: 16px">

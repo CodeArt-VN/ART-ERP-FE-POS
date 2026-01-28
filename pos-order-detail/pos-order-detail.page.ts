@@ -125,7 +125,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public cdr: ChangeDetectorRef,
 		public loadingController: LoadingController,
 		public commonService: CommonService,
-		public promotionService: PromotionService,
+		public promotionService: PromotionService
 	) {
 		super();
 		this.pageConfig.ShowRefresh = false;
@@ -342,9 +342,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 
 		const autoVoucherCodes =
-			(this.promotionService?.promotionList || [])
-				.filter((p) => p?.IsAutoApply && !p?.IsDisabled && !p?.IsDeleted && p?.VoucherCode)
-				.map((p) => p.VoucherCode) || [];
+			(this.promotionService?.promotionList || []).filter((p) => p?.IsAutoApply && !p?.IsDisabled && !p?.IsDeleted && p?.VoucherCode).map((p) => p.VoucherCode) || [];
 
 		if (autoVoucherCodes.length === 0) {
 			this.autoApplyPending = false;
@@ -1215,9 +1213,50 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				billElement: this.billRef,
 				calcFunction: this.recalculateOrder,
 				onUpdateItem: (updated) => this.updateItemFromPayment(updated),
-				cssStyle:
-					`body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}` +
-					`.bold{font-weight: bold}.bill,.sheet{color: #000;font-size: 1em}.sheet table tr{page-break-inside: avoid}.bill{display: block;overflow: hidden !important}.bill .sheet{box-shadow: none !important}.bill .header,.bill .message,.text-center{text-align: center}.bill .header span{display: inline-block;width: 100%}.bill .header .logo img{max-width: 8.33em;max-height: 4.17em}.bill .header .brand,.bill .items .quantity{font-weight: 700}.bill .header .address{font-size: 80%;font-style: italic}.bill .table-info,.bill .table-info-top{border-top: solid;margin: 5px 0;padding: 5px 8px;border-width: 1px 0}.bill .items{margin: 5px 0;padding-left: 8px;padding-right: 8px}.bill .items tr td{border-bottom: 1px dashed #ccc;padding-bottom: 5px}.bill .items .name{font-size: 1em;width: 100%;padding-top: 5px;padding-bottom: 2px !important;border: none !important}.bill .items tr.subOrder td{border-bottom: none !important}.bill .items tr.subOrder.isLast td{border-bottom: 1px dashed #ccc !important;padding-bottom: 5px}.bill .items tr:last-child td{border: none !important}.bill .items tr.subOrder.isLast:last-child td{border: none !important}.bill .items .total,.text-right{text-align: right}.bill .message{padding-left: 8px;padding-right: 8px}.page-footer-space{margin-top: 10px}.table-info-top td{padding-top: 5px}.sheet{margin: 0;overflow: hidden;position: relative;box-sizing: border-box;page-break-after: always;font-family: "Times New Roman", Times, serif;font-size: 0.72em;background: #fff}.sheet .page-footer,.sheet .page-footer-space{height: 10mm}.sheet table{page-break-inside: auto;width: 100%;border-collapse: collapse;font-size:1em}.sheet table tr{page-break-after: auto}`,
+				cssStyle: `
+			html,body{margin:0;padding:0}
+			*,*::before,*::after{box-sizing:border-box}
+			body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}
+			.bold{font-weight:bold}
+			.bill,.sheet{color:#000;font-size:1em;max-width:100%}
+			.bill{display:block;overflow:hidden !important}
+			.bill .sheet{box-shadow:none !important;margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:"Times New Roman", Times, serif;font-size:0.72em;background:#fff}
+			.bill .sheet .page-footer,.bill .sheet .page-footer-space{height:10mm}
+			.bill .sheet table{page-break-inside:auto;width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
+			.bill .sheet table tr{page-break-inside:avoid;page-break-after:auto}
+			.bill td,.bill th{overflow-wrap:anywhere;word-break:break-word}
+			.bill .header,.bill .message,.bill .text-center{text-align:center}
+			.bill .header span{display:inline-block;width:100%}
+			.bill .header .logo img{max-width:8.33em;max-height:4.17em}
+			.bill .header .brand,.bill .items .quantity{font-weight:700}
+			.bill .header .address{font-size:80%;font-style:italic}
+			.bill .table-info,.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px 8px;border-width:1px 0}
+			.bill .items{margin:5px 0;padding-left:8px;padding-right:8px}
+			.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}
+			.bill .items .name{font-size:1em;width:100%;padding-top:5px;padding-bottom:2px !important;border:none !important}
+			.bill .items tr.subOrder td{border-bottom:none !important}
+			.bill .items tr.subOrder.isLast td{border-bottom:1px dashed #ccc !important;padding-bottom:5px}
+			.bill .items tr:last-child td{border:none !important}
+			.bill .items tr.subOrder.isLast:last-child td{border:none !important}
+			.bill .items .total,.bill .text-right{text-align:right}
+			.bill .message{padding-left:8px;padding-right:8px}
+			.page-footer-space{margin-top:10px}
+			.bill .table-info-top td{padding-top:5px}
+			.bill .items{--col-name:18%;--col-price:20%;--col-qty:12%;--col-discount:20%;--col-total:30%}
+			.bill .items.items-kitchen{--col-name:70%;--col-price:30%}
+			.bill .items table tr{display:flex;flex-wrap:wrap;width:100%}
+			.bill .items table tr>td{flex:0 1 auto}
+			.bill .items table tr>td:first-child{min-width:var(--col-name)}
+			.bill .items table tr>td:nth-child(2){min-width:var(--col-price)}
+			.bill .items table tr>td:nth-child(3){min-width:var(--col-qty)}
+			.bill .items table tr>td:nth-child(4){min-width:var(--col-discount)}
+			.bill .items table tr>td:nth-child(5){min-width:var(--col-total);flex:1 1 auto}
+			.bill .items.items-kitchen table tr>td:nth-child(2){flex:1 1 auto}
+			.bill .items td.name[colspan]{min-width:100%;max-width:100%}
+			.bill .items table tr.small>td:nth-child(n+2){white-space:nowrap;word-break:normal;overflow-wrap:normal}
+			.bill .items .total span,.bill .items .od-price span,.bill .items .quantity span{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+			.bill .text-right span{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+			`,
 			},
 		});
 		await modal.present();
@@ -1984,9 +2023,50 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				//orientation: 'landscape',
 				duplex: 'duplex',
 				//  autoStyle:content
-				cssStyle:
-					`body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}` +
-					`.bold{font-weight: bold}.bill,.sheet{color: #000;font-size: 1em}.sheet table tr{page-break-inside: avoid}.bill{display: block;overflow: hidden !important}.bill .sheet{box-shadow: none !important}.bill .header,.bill .message,.text-center{text-align: center}.bill .header span{display: inline-block;width: 100%}.bill .header .logo img{max-width: 8.33em;max-height: 4.17em}.bill .header .brand,.bill .items .quantity{font-weight: 700}.bill .header .address{font-size: 80%;font-style: italic}.bill .table-info,.bill .table-info-top{border-top: solid;margin: 5px 0;padding: 5px 8px;border-width: 1px 0}.bill .items{margin: 5px 0;padding-left: 8px;padding-right: 8px}.bill .items tr td{border-bottom: 1px dashed #ccc;padding-bottom: 5px}.bill .items .name{font-size: 1em;width: 100%;padding-top: 5px;padding-bottom: 2px !important;border: none !important}.bill .items tr.subOrder td{border-bottom: none !important}.bill .items tr.subOrder.isLast td{border-bottom: 1px dashed #ccc !important;padding-bottom: 5px}.bill .items tr:last-child td{border: none !important}.bill .items tr.subOrder.isLast:last-child td{border: none !important}.bill .items .total,.text-right{text-align: right}.bill .message{padding-left: 8px;padding-right: 8px}.page-footer-space{margin-top: 10px}.table-info-top td{padding-top: 5px}.sheet{margin: 0;overflow: hidden;position: relative;box-sizing: border-box;page-break-after: always;font-family: "Times New Roman", Times, serif;font-size: 0.72em;background: #fff}.sheet .page-footer,.sheet .page-footer-space{height: 10mm}.sheet table{page-break-inside: auto;width: 100%;border-collapse: collapse;font-size:1em}.sheet table tr{page-break-after: auto}`,
+				cssStyle: `
+			html,body{margin:0;padding:0}
+			*,*::before,*::after{box-sizing:border-box}
+			body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}
+			.bold{font-weight:bold}
+			.bill,.sheet{color:#000;font-size:1em;max-width:100%}
+			.bill{display:block;overflow:hidden !important}
+			.bill .sheet{box-shadow:none !important;margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:"Times New Roman", Times, serif;font-size:0.72em;background:#fff}
+			.bill .sheet .page-footer,.bill .sheet .page-footer-space{height:10mm}
+			.bill .sheet table{page-break-inside:auto;width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
+			.bill .sheet table tr{page-break-inside:avoid;page-break-after:auto}
+			.bill td,.bill th{overflow-wrap:anywhere;word-break:break-word}
+			.bill .header,.bill .message,.bill .text-center{text-align:center}
+			.bill .header span{display:inline-block;width:100%}
+			.bill .header .logo img{max-width:8.33em;max-height:4.17em}
+			.bill .header .brand,.bill .items .quantity{font-weight:700}
+			.bill .header .address{font-size:80%;font-style:italic}
+			.bill .table-info,.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px 8px;border-width:1px 0}
+			.bill .items{margin:5px 0;padding-left:8px;padding-right:8px}
+			.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}
+			.bill .items .name{font-size:1em;width:100%;padding-top:5px;padding-bottom:2px !important;border:none !important}
+			.bill .items tr.subOrder td{border-bottom:none !important}
+			.bill .items tr.subOrder.isLast td{border-bottom:1px dashed #ccc !important;padding-bottom:5px}
+			.bill .items tr:last-child td{border:none !important}
+			.bill .items tr.subOrder.isLast:last-child td{border:none !important}
+			.bill .items .total,.bill .text-right{text-align:right}
+			.bill .message{padding-left:8px;padding-right:8px}
+			.page-footer-space{margin-top:10px}
+			.bill .table-info-top td{padding-top:5px}
+			.bill .items{--col-name:18%;--col-price:20%;--col-qty:12%;--col-discount:20%;--col-total:30%}
+			.bill .items.items-kitchen{--col-name:70%;--col-price:30%}
+			.bill .items table tr{display:flex;flex-wrap:wrap;width:100%}
+			.bill .items table tr>td{flex:0 1 auto}
+			.bill .items table tr>td:first-child{min-width:var(--col-name)}
+			.bill .items table tr>td:nth-child(2){min-width:var(--col-price)}
+			.bill .items table tr>td:nth-child(3){min-width:var(--col-qty)}
+			.bill .items table tr>td:nth-child(4){min-width:var(--col-discount)}
+			.bill .items table tr>td:nth-child(5){min-width:var(--col-total);flex:1 1 auto}
+			.bill .items.items-kitchen table tr>td:nth-child(2){flex:1 1 auto}
+			.bill .items td.name[colspan]{min-width:100%;max-width:100%}
+			.bill .items table tr.small>td:nth-child(n+2){white-space:nowrap;word-break:normal;overflow-wrap:normal}
+			.bill .items .total span,.bill .items .od-price span,.bill .items .quantity span{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+			.bill .text-right span{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+		`,
 			};
 		});
 		let data: printData = {
@@ -3001,9 +3081,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		const groupedMap = new Map<string, any>();
 
 		for (const line of this.item.OrderLines) {
-			const mapKey = `${line.IDItem}_${line.IDUoM}`;
-
-			if (groupedMap.has(mapKey)) {
+			let mapKey = `${line.IDItem}_${line.IDUoM}`;
+			if (groupedMap.has(mapKey) && line.SubItems?.length > 0) {
+				mapKey += `_${line.SubItems.map((s) => `${s.IDItem}_${s.IDUoM}`).join('_')}`;
+				groupedMap.set(mapKey, { ...line, SubItems: line.SubItems ? [...line.SubItems] : [] });
+			} else if (groupedMap.has(mapKey)) {
 				const existing = groupedMap.get(mapKey);
 				existing.Quantity += line.Quantity || 0;
 				existing.OriginalTotalDiscount += line.OriginalTotalDiscount || 0;
@@ -3015,24 +3097,24 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					existing.UoMPrice = existing.OriginalTotalBeforeDiscount / existing.Quantity;
 				}
 
-				if (line.SubItems && line.SubItems.length) {
-					existing.SubItems = existing.SubItems || [];
-					for (const sub of line.SubItems) {
-						const subKey = `${sub.IDItem}_${sub.IDUoM}`;
-						const existingSub = existing.SubItems.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
-						if (existingSub) {
-							existingSub.Quantity += sub.Quantity || 0;
-							if (existingSub.Quantity > 0 && sub.UoMPrice) {
-								const oldTotal = (existingSub._origQuantity || 0) * (existingSub.UoMPrice || 0);
-								const newTotal = (sub.Quantity || 0) * sub.UoMPrice;
-								existingSub.UoMPrice = (oldTotal + newTotal) / existingSub.Quantity;
-							}
-							existingSub._origQuantity = existingSub.Quantity;
-						} else {
-							existing.SubItems.push({ ...sub, _origQuantity: sub.Quantity || 0 });
-						}
-					}
-				}
+				// if (line.SubItems && line.SubItems.length) {
+				// 	existing.SubItems = existing.SubItems || [];
+				// 	for (const sub of line.SubItems) {
+				// 		const subKey = `${sub.IDItem}_${sub.IDUoM}`;
+				// 		const existingSub = existing.SubItems.find((s) => `${s.IDItem}_${s.IDUoM}` === subKey);
+				// 		if (existingSub) {
+				// 			existingSub.Quantity += sub.Quantity || 0;
+				// 			if (existingSub.Quantity > 0 && sub.UoMPrice) {
+				// 				const oldTotal = (existingSub._origQuantity || 0) * (existingSub.UoMPrice || 0);
+				// 				const newTotal = (sub.Quantity || 0) * sub.UoMPrice;
+				// 				existingSub.UoMPrice = (oldTotal + newTotal) / existingSub.Quantity;
+				// 			}
+				// 			existingSub._origQuantity = existingSub.Quantity;
+				// 		} else {
+				// 			existing.SubItems.push({ ...sub, _origQuantity: sub.Quantity || 0 });
+				// 		}
+				// 	}
+				// }
 			} else {
 				groupedMap.set(mapKey, { ...line, SubItems: line.SubItems ? [...line.SubItems] : [] });
 			}
@@ -3047,9 +3129,50 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		await this.setItemQuery('all');
 
 		const billHtml = this.billRef.nativeElement.outerHTML;
-		const cssStyle =
-			`body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}` +
-			`.bold{font-weight: bold}.bill,.sheet{color: #000;font-size: 1em}.sheet table tr{page-break-inside: avoid}.bill{display: block;overflow: hidden !important}.bill .sheet{box-shadow: none !important}.bill .header,.bill .message,.text-center{text-align: center}.bill .header span{display: inline-block;width: 100%}.bill .header .logo img{max-width: 8.33em;max-height: 4.17em}.bill .header .brand,.bill .items .quantity{font-weight: 700}.bill .header .address{font-size: 80%;font-style: italic}.bill .table-info,.bill .table-info-top{border-top: solid;margin: 5px 0;padding: 5px 8px;border-width: 1px 0}.bill .items{margin: 5px 0;padding-left: 8px;padding-right: 8px}.bill .items tr td{border-bottom: 1px dashed #ccc;padding-bottom: 5px}.bill .items .name{font-size: 1em;width: 100%;padding-top: 5px;padding-bottom: 2px !important;border: none !important}.bill .items tr.subOrder td{border-bottom: none !important}.bill .items tr.subOrder.isLast td{border-bottom: 1px dashed #ccc !important;padding-bottom: 5px}.bill .items tr:last-child td{border: none !important}.bill .items tr.subOrder.isLast:last-child td{border: none !important}.bill .items .total,.text-right{text-align: right}.bill .message{padding-left: 8px;padding-right: 8px}.page-footer-space{margin-top: 10px}.table-info-top td{padding-top: 5px}.sheet{margin: 0;overflow: hidden;position: relative;box-sizing: border-box;page-break-after: always;font-family: "Times New Roman", Times, serif;font-size: 0.72em;background: #fff}.sheet .page-footer,.sheet .page-footer-space{height: 10mm}.sheet table{page-break-inside: auto;width: 100%;border-collapse: collapse;font-size:1em}.sheet table tr{page-break-after: auto}`;
+		const cssStyle = `
+			html,body{margin:0;padding:0}
+			*,*::before,*::after{box-sizing:border-box}
+			body{font-size:${this.posService.systemConfig.POSPrintingFontSize}px}
+			.bold{font-weight:bold}
+			.bill,.sheet{color:#000;font-size:1em;max-width:100%}
+			.bill{display:block;overflow:hidden !important}
+			.bill .sheet{box-shadow:none !important;margin:0;overflow:hidden;position:relative;box-sizing:border-box;page-break-after:always;font-family:"Times New Roman", Times, serif;font-size:0.72em;background:#fff}
+			.bill .sheet .page-footer,.bill .sheet .page-footer-space{height:10mm}
+			.bill .sheet table{page-break-inside:auto;width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
+			.bill .sheet table tr{page-break-inside:avoid;page-break-after:auto}
+			.bill td,.bill th{overflow-wrap:anywhere;word-break:break-word}
+			.bill .header,.bill .message,.bill .text-center{text-align:center}
+			.bill .header span{display:inline-block;width:100%}
+			.bill .header .logo img{max-width:8.33em;max-height:4.17em}
+			.bill .header .brand,.bill .items .quantity{font-weight:700}
+			.bill .header .address{font-size:80%;font-style:italic}
+			.bill .table-info,.bill .table-info-top{border-top:solid;margin:5px 0;padding:5px 8px;border-width:1px 0}
+			.bill .items{margin:5px 0;padding-left:8px;padding-right:8px}
+			.bill .items tr td{border-bottom:1px dashed #ccc;padding-bottom:5px}
+			.bill .items .name{font-size:1em;width:100%;padding-top:5px;padding-bottom:2px !important;border:none !important}
+			.bill .items tr.subOrder td{border-bottom:none !important}
+			.bill .items tr.subOrder.isLast td{border-bottom:1px dashed #ccc !important;padding-bottom:5px}
+			.bill .items tr:last-child td{border:none !important}
+			.bill .items tr.subOrder.isLast:last-child td{border:none !important}
+			.bill .items .total,.bill .text-right{text-align:right}
+			.bill .message{padding-left:8px;padding-right:8px}
+			.page-footer-space{margin-top:10px}
+			.bill .table-info-top td{padding-top:5px}
+			.bill .items{--col-name:18%;--col-price:20%;--col-qty:12%;--col-discount:20%;--col-total:30%}
+			.bill .items.items-kitchen{--col-name:70%;--col-price:30%}
+			.bill .items table tr{display:flex;flex-wrap:wrap;width:100%}
+			.bill .items table tr>td{flex:0 1 auto}
+			.bill .items table tr>td:first-child{min-width:var(--col-name)}
+			.bill .items table tr>td:nth-child(2){min-width:var(--col-price)}
+			.bill .items table tr>td:nth-child(3){min-width:var(--col-qty)}
+			.bill .items table tr>td:nth-child(4){min-width:var(--col-discount)}
+			.bill .items table tr>td:nth-child(5){min-width:var(--col-total);flex:1 1 auto}
+			.bill .items.items-kitchen table tr>td:nth-child(2){flex:1 1 auto}
+			.bill .items td.name[colspan]{min-width:100%;max-width:100%}
+			.bill .items table tr.small>td:nth-child(n+2){white-space:nowrap;word-break:normal;overflow-wrap:normal}
+			.bill .items .total span,.bill .items .od-price span,.bill .items .quantity span{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+			.bill .text-right span{white-space:nowrap;word-break:normal;overflow-wrap:normal}
+		`;
 		const modal = await this.modalController.create({
 			component: BillPreviewComponent,
 			componentProps: {
