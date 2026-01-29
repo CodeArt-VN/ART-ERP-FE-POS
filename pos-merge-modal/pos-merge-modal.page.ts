@@ -108,7 +108,7 @@ export class POSMergeModalPage extends PageBase {
 							Take: 20,
 							Skip: 0,
 							SkipMCP: true,
-							Term: term ? term : 'BP:' + this.item.IDContact,
+							Keyword: term ? term : this.item.IDContact,
 						})
 						.pipe(
 							catchError(() => of([])), // empty list on error
