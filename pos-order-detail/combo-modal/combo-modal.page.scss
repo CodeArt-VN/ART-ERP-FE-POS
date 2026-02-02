@@ -24,13 +24,13 @@
 
 
 /* BOX GROUP */
-.group-box {
-  // background: #ffffff;
-  border-radius: 8px;
-  padding: 6px 10px;
-  margin-bottom: 16px;
-  border: 1px solid #dadada;
-}
+// .group-box {
+//   // background: #ffffff;
+//   border-radius: 8px;
+//   padding: 6px 10px;
+//   margin-bottom: 16px;
+//   border: 1px solid #dadada;
+// }
 
 .invalid-group {
   border-color: var(--ion-color-danger) !important;
@@ -140,6 +140,7 @@ ion-button[disabled] ion-icon {
 
 .group-box {
 	border: 1px solid var(--ion-color-medium);
+  box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
 	padding: 10px;
 	border-radius: 6px;
 	margin-bottom: 12px;
