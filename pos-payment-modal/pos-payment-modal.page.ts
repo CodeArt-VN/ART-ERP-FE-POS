@@ -207,13 +207,19 @@ export class POSPaymentModalPage extends PageBase {
 		window.open(url, '_blank');
 	}
 	pushPayment(data) {
+		const value = typeof data?.value === 'string' ? JSON.parse(data.value) : data?.value;
+		const incomingPaymentId = value?.Id;
+		if (!incomingPaymentId) {
+			this.refresh();
+			return;
+		}
 		let query: any = {
-			IDIncomingPayment: data.value.Id,
+			IDIncomingPayment: incomingPaymentId,
 			IDSaleOrder: this.item.Id,
 		};
 		this.pageProvider.read(query).then((result: any) => {
 			if (result['count'] > 0 && result['data'][0].IDSaleOrder == this.item.Id) {
-				let index = this.items.findIndex((i) => i.IncomingPayment.Id == data.Id);
+				let index = this.items.findIndex((i) => i.IncomingPayment.Id == incomingPaymentId);
 				console.log(index);
 				if (index == -1) {
 					result['data'].forEach((e) => {
