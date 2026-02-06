@@ -631,11 +631,11 @@
 	margin-bottom: 50px;
 }
 
-.show-bill {
+:host ::ng-deep .show-bill {
 	display: block !important;
 }
 
-.bill {
+:host ::ng-deep .bill {
 	display: none;
 	color: #000;
 	overflow: hidden !important;
@@ -754,12 +754,12 @@
 	}
 }
 
-.sheet {
+:host ::ng-deep .sheet {
 	font-family: 'Times New Roman' !important;
 }
 
 @media print {
-	.bill {
+	:host ::ng-deep .bill {
 		color: #000;
 		display: block !important;
 		overflow: hidden !important;
@@ -904,7 +904,7 @@ so-rows {
 	// --background-focused: linear-gradient(190deg, rgb(11, 31, 60) 50%, rgb(43, 88, 147) 100%);
 }
 
-.table-info-top {
+:host ::ng-deep .table-info-top {
 	td {
 		padding-top: 5px;
 	}
