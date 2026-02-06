@@ -18,6 +18,7 @@ export class BillTemplateComponent {
 	@Input() vietQrCode: string;
 	@Input() isCompleteLoaded = false;
 	@Input() promotionAppliedPrograms: any[] = [];
+	@Input() billConfig: any;
 
 	@ViewChild('bill', { static: false }) billRef: ElementRef;
 
@@ -94,7 +95,7 @@ export class BillTemplateComponent {
 			.bill .invoice-for{margin-top:6px;font-size:12px}
 			.bill .customer-name{font-size:16px;font-weight:700;margin-top:2px}
 			.bill .customer-company{font-size:12px}
-			.bill .qr-box{background:#d9d9d9;padding:8px;text-align:center}
+			.bill .qr-box{padding:8px;text-align:center}
 			.bill .qr-text{font-size:11px;line-height:1.2;margin-bottom:6px}
 			.bill .qr-image img{max-width:100px;max-height:100px}
 			.bill .qr-placeholder{height:100px;display:flex;align-items:center;justify-content:center;font-weight:700}
@@ -198,7 +199,6 @@ export class BillTemplateComponent {
 		return this.groupedOrderLines;
 	}
 }
-
 
 
 

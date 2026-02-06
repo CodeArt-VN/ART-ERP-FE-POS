@@ -16,18 +16,24 @@
 								<div class="invoice-container">
 									<div class="invoice-header">
 										<div class="header-left">
-											<div class="store-name">{{ printData.currentBranch?.ShortName || printData.currentBranch?.Name }}</div>
+											<div class="store-name">{{ billConfig?.BillHeaderTitle | translate }}</div>
+											<div class="store-address">{{ billConfig?.BillHeaderLine1 | translate }}</div>
+											<div class="store-phone">{{ billConfig?.BillHeaderLine2 | translate }}</div>
+
+											<!-- <div class="store-name">{{ printData.currentBranch?.ShortName || printData.currentBranch?.Name }}</div>
 											<div class="store-address">{{ printData.currentBranch?.Address || '' }}</div>
-											<div class="store-phone">{{ printData.currentBranch?.Phone || '' }}</div>
+											<div class="store-phone">{{ printData.currentBranch?.Phone || '' }}</div> -->
 
 											<div class="invoice-title">
-												<ng-container *ngIf="item.Status == 'TemporaryBill'">Temporary Bill</ng-container>
-												<ng-container *ngIf="item.Status != 'TemporaryBill' && !(item.Status == 'Done' && !pageConfig.canEdit)">Invoice</ng-container>
-												<ng-container *ngIf="item.Status == 'Done' && !pageConfig.canEdit">Receipt</ng-container>
+												<ng-container *ngIf="item.Status == 'TemporaryBill'">{{ 'Temporary bill' | translate }}</ng-container>
+												<ng-container *ngIf="item.Status != 'TemporaryBill' && !(item.Status == 'Done' && !pageConfig.canEdit)">{{
+													'Invoice' | translate
+												}}</ng-container>
+												<ng-container *ngIf="item.Status == 'Done' && !pageConfig.canEdit">{{ 'Receipt' | translate }}</ng-container>
 											</div>
 
 											<div class="invoice-meta">
-												<span class="meta-label">Bàn</span>
+												<span class="meta-label">{{ 'Table' | translate }}:</span>
 												<span class="meta-value" *ngFor="let t of printData.selectedTables; let j = index"
 													>{{ t.Name }}<span *ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
 												</span>
@@ -35,24 +41,20 @@
 												<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm dd/MM/yyyy' }}</span>
 											</div>
 
-											<div class="invoice-for">Invoice for / Khách hàng:</div>
+											<div class="invoice-for">{{ 'Customer' | translate }}</div>
 											<div class="customer-name">{{ item._Customer?.Name }}</div>
 											<div class="customer-company" *ngIf="item._Customer?.CompanyName">{{ item._Customer?.CompanyName }}</div>
 											<!-- TODO: Bổ sung thông tin khách hàng khác nếu cần -->
 										</div>
-										<!-- <div class="header-right">
+										<div class="header-right">
 											<div class="qr-box">
-												<div class="qr-text">QR<br />Thanh toán và<br />tra cứu đơn hàng</div>
-												<div class="qr-image" *ngIf="vietQrCode; else qrPlaceholder">
-													<img [src]="vietQrCode" />
+												<div class="qr-image">
+													<img [src]="'https://app.inholdings.vn/Uploads/POS/Items/5301_NƯỚC ÉP TÁO TRÀ XANH.jpg'" />
 												</div>
-												<ng-template #qrPlaceholder>
-													<div class="qr-placeholder">QR</div>
-												</ng-template>
 											</div>
 											<div class="invoice-code">SO: {{ billId }}</div>
 											<div class="invoice-bill">Bill: {{ item?.DailyBillNo || billId }}</div>
-										</div> -->
+										</div>
 									</div>
 
 									<div class="divider"></div>
@@ -118,7 +120,7 @@
 									<!-- LIST_PAYMENTS -->
 									<ng-container *ngIf="paymentList?.length">
 										<div class="divider"></div>
-										<div class="payments-block" >
+										<div class="payments-block">
 											<div class="section-title">{{ 'BILL_LIST_PAYMENTS' | translate }}</div>
 											<table class="payments-table">
 												<tbody>
@@ -139,7 +141,6 @@
 										</div>
 									</ng-container>
 
-
 									<div class="divider"></div>
 
 									<table class="summary-table">
@@ -149,7 +150,7 @@
 												<td class="label">{{ 'BILL_TOTAL_BEFORE_DISCOUNT' | translate }}</td>
 												<td class="value">{{ item.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
 											</tr>
-											<tr>
+											<tr *ngIf="item.OriginalTotalDiscount > 0">
 												<!-- Tổng chiết khấu -->
 												<td class="label">{{ 'BILL_TOTAL_DISCOUNT' | translate }}</td>
 												<td class="value">{{ item.OriginalTotalDiscount | number: '1.0-0' }}</td>
@@ -174,12 +175,12 @@
 												<td class="label">{{ 'BILL_GRAND_TOTAL' | translate }}</td>
 												<td class="value">{{ item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0' }}</td>
 											</tr>
-											<tr>
+											<tr *ngIf="item.Received > 0">
 												<!-- Đã thanh toán -->
 												<td class="label">{{ 'BILL_RECEIVED' | translate }}</td>
 												<td class="value">{{ item.Received | number: '1.0-0' }}</td>
 											</tr>
-											<tr class="summary-grand">
+											<tr class="summary-grand" *ngIf="item.Debt > 0">
 												<!-- Tổng tiền khách phải trả -->
 												<td class="label">{{ 'BILL_DEBT' | translate }}</td>
 												<td class="value">{{ item.Debt | number: '1.0-0' }}</td>
@@ -205,11 +206,11 @@
 											{{ cashierName }}
 										</div>
 										<div>
-											Quý khách có thể in bản sao HĐĐT tại
+											{{ billConfig?.BillFooterLine1 | translate }}
 											<!-- TODO: Thêm link tra cứu HĐĐT -->
 										</div>
 										<div>
-											Lưu ý: HĐ VAT chỉ xuất trong ngày; SĐT góp ý:
+											{{ billConfig?.BillFooterLine2 | translate }}
 											<!-- TODO: SĐT gợi ý -->
 										</div>
 										<!-- Thank you for your patronage! -->
