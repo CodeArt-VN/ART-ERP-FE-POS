@@ -236,6 +236,26 @@
 							</ng-container>
 
 							<ng-template #kitchenView>
+								<div class="invoice-meta">
+									<div class="meta-row">
+										<span class="meta-label">{{ 'SO' | translate }}:</span>
+										<span class="meta-value">{{ billId }}</span>
+									</div>
+									<div class="meta-row">
+										<span class="meta-label">{{ 'Table' | translate }}:</span>
+										<span class="meta-value" *ngFor="let t of printData.selectedTables; let j = index"
+											>{{ t.Name }}<span *ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
+										</span>
+										<span class="meta-sep">-</span>
+										<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm dd/MM/yyyy' }}</span>
+									</div>
+									<div class="meta-row">
+										<span class="meta-label">{{ 'Send to' | translate }}:</span>
+										<span class="meta-value" *ngFor="let k of kitchens | filter: { Id: kitchenQuery }; let j = index"
+											>{{ k.Name }}<span *ngIf="kitchens.length > 0 && j < kitchens.length - 1">,&nbsp;</span>
+										</span>
+									</div>
+								</div>
 								<div class="items items-kitchen">
 									<table>
 										<tr class="bold">
