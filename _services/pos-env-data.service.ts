@@ -49,6 +49,13 @@ export class POSEnviromentDataService {
 		BKIncomingQRSuffix: '',
 		ZPIsActive: false,
 		EDCCVCB_IsActive: false,
+
+		BillHeaderTitle: '',
+		BillHeaderLine1: '',
+		BillHeaderLine2: '',
+		BillFooterLine1: '',
+		BillFooterLine2: '',
+		BillLogo: '',
 	};
 
 	constructor(

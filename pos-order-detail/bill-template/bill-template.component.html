@@ -1,0 +1,299 @@
+﻿<div id="bill" #bill class="bill" *ngIf="item?.OrderLines?.length">
+	<div class="receipt giao-nhan">
+		<section class="sheet rpt p1">
+			<table>
+				<thead>
+					<tr>
+						<td>
+							<div class="page-header-space"></div>
+						</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>
+							<ng-container *ngIf="kitchenQuery == 'all'; else kitchenView">
+								<div class="invoice-container">
+									<div class="invoice-header">
+										<div class="header-left">
+											<div class="store-name">{{ billConfig?.BillHeaderTitle | translate }}</div>
+											<div class="store-address">{{ billConfig?.BillHeaderLine1 | translate }}</div>
+											<div class="store-phone">{{ billConfig?.BillHeaderLine2 | translate }}</div>
+
+											<!-- <div class="store-name">{{ printData.currentBranch?.ShortName || printData.currentBranch?.Name }}</div>
+											<div class="store-address">{{ printData.currentBranch?.Address || '' }}</div>
+											<div class="store-phone">{{ printData.currentBranch?.Phone || '' }}</div> -->
+
+											<div class="invoice-title">
+												<ng-container *ngIf="item.Status == 'TemporaryBill'">{{ 'Temporary bill' | translate }}</ng-container>
+												<ng-container *ngIf="item.Status != 'TemporaryBill' && !(item.Status == 'Done' && !pageConfig.canEdit)">{{
+													'Invoice' | translate
+												}}</ng-container>
+												<ng-container *ngIf="item.Status == 'Done' && !pageConfig.canEdit">{{ 'Receipt' | translate }}</ng-container>
+											</div>
+
+											<div class="invoice-meta">
+												<span class="meta-label">{{ 'Table' | translate }}:</span>
+												<span class="meta-value" *ngFor="let t of printData.selectedTables; let j = index"
+													>{{ t.Name }}<span *ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
+												</span>
+												<span class="meta-sep">-</span>
+												<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm dd/MM/yyyy' }}</span>
+											</div>
+
+											<div class="invoice-for">{{ 'Customer' | translate }}</div>
+											<div class="customer-name">{{ item._Customer?.Name }}</div>
+											<div class="customer-company" *ngIf="item._Customer?.CompanyName">{{ item._Customer?.CompanyName }}</div>
+											<!-- TODO: Bổ sung thông tin khách hàng khác nếu cần -->
+										</div>
+										<div class="header-right">
+											<div class="qr-box">
+												<div class="qr-image">
+													<img [src]="billConfig?.BillLogo" />
+												</div>
+											</div>
+											<div class="invoice-code">SO: {{ billId }}</div>
+											<div class="invoice-bill">Bill: {{ item?.DailyBillNo || billId }}</div>
+										</div>
+									</div>
+
+									<div class="divider"></div>
+
+									<div class="items-block">
+										<table class="items-table">
+											<thead>
+												<tr>
+													<th class="col-name">{{ 'BILL_ITEMS_HEADER' | translate }}</th>
+													<th class="col-qty">{{ 'BILL_QTY_HEADER' | translate }}</th>
+													<th class="col-price">{{ 'BILL_PRICE_HEADER' | translate }}</th>
+													<th class="col-total">{{ 'BILL_TOTAL_HEADER' | translate }}</th>
+												</tr>
+											</thead>
+											<tbody>
+												<ng-container *ngFor="let o of getGroupedOrderLinesForPrint(); let i = index">
+													<tr class="item-row-name">
+														<td class="col-name" colspan="4">
+															<div class="item-name">
+																<span class="item-index">{{ i + 1 }}.</span>
+																<span class="item-text"><span [appTranslateResource]="o._item"></span></span>
+															</div>
+															<div class="item-sub" *ngIf="o.SubItems?.length">
+																<ng-container *ngFor="let g of o.SubItems">
+																	<div class="sub-row">- {{ g._Item?.Name }}</div>
+																</ng-container>
+															</div>
+														</td>
+													</tr>
+													<tr class="item-row-values">
+														<td class="col-name col-empty"></td>
+														<td class="col-qty text-right">{{ o.Quantity }}</td>
+														<td class="col-price text-right">{{ o.UoMPrice | number: '1.0-0' }}</td>
+														<td class="col-total text-right">{{ o.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
+													</tr>
+												</ng-container>
+											</tbody>
+										</table>
+									</div>
+
+									<!-- LIST_DISCOUNT -->
+									<ng-container *ngIf="promotionAppliedPrograms?.length">
+										<div class="divider"></div>
+
+										<div class="discount-block">
+											<div class="section-title">{{ 'BILL_LIST_DISCOUNT' | translate }}</div>
+											<table class="discount-table">
+												<tbody>
+													<ng-container *ngIf="promotionAppliedPrograms?.length; else noDiscounts">
+														<tr *ngFor="let p of promotionAppliedPrograms; let i = index">
+															<td class="col-name">{{ i + 1 }}. {{ p.Name || p.ProgramName || p.VoucherCode }}</td>
+															<td class="col-amount text-right">{{ p.ReduceByPercent || p.Value | number: '1.0-0' }}</td>
+														</tr>
+													</ng-container>
+												</tbody>
+											</table>
+											<ng-template #noDiscounts>
+												<!-- TODO: Bổ sung danh sách CT KM/CK nếu có -->
+											</ng-template>
+										</div>
+									</ng-container>
+
+									<!-- LIST_PAYMENTS -->
+									<ng-container *ngIf="paymentList?.length">
+										<div class="divider"></div>
+										<div class="payments-block">
+											<div class="section-title">{{ 'BILL_LIST_PAYMENTS' | translate }}</div>
+											<table class="payments-table">
+												<tbody>
+													<ng-container *ngIf="paymentList?.length; else noPayments">
+														<tr *ngFor="let p of paymentList; let i = index">
+															<td class="col-name">
+																{{ i + 1 }}. {{ p.IncomingPayment?.TypeText || p.IncomingPayment?.Type || '---'
+																}}<span *ngIf="p.IncomingPayment?.SubType"> ({{ p.IncomingPayment.SubType }})</span>
+															</td>
+															<td class="col-amount text-right">{{ p.Amount | number: '1.0-0' }}</td>
+														</tr>
+													</ng-container>
+												</tbody>
+											</table>
+											<ng-template #noPayments>
+												<!-- TODO: Bổ sung danh sách thanh toán nếu có -->
+											</ng-template>
+										</div>
+									</ng-container>
+
+									<div class="divider"></div>
+
+									<table class="summary-table">
+										<tbody>
+											<tr>
+												<!-- Tổng tiền hàng -->
+												<td class="label">{{ 'BILL_TOTAL_BEFORE_DISCOUNT' | translate }}</td>
+												<td class="value">{{ item.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
+											</tr>
+											<tr *ngIf="item.OriginalTotalDiscount > 0">
+												<!-- Tổng chiết khấu -->
+												<td class="label">{{ 'BILL_TOTAL_DISCOUNT' | translate }}</td>
+												<td class="value">{{ item.OriginalTotalDiscount | number: '1.0-0' }}</td>
+											</tr>
+											<tr *ngIf="item.ShippingAmount && item.ShippingAmount > 0">
+												<!-- Phí vận chuyển -->
+												<td class="label">{{ 'BILL_SHIPPING_AMOUNT' | translate }}</td>
+												<td class="value">{{ item.ShippingAmount || 0 | number: '1.0-0' }}</td>
+												<!-- TODO: item.ShippingAmount chưa có trong data -->
+											</tr>
+											<tr>
+												<!-- Phụ thu -->
+												<td class="label">{{ 'BILL_SERVICE_CHARGE' | translate }} {{ item.AdditionsAmountPercent || 0 }}%</td>
+												<td class="value">{{ item.AdditionsAmount | number: '1.0-0' }}</td>
+											</tr>
+											<tr *ngFor="let vat of item.VATSummary">
+												<td class="label">VAT {{ vat.Rate }}%</td>
+												<td class="value">{{ vat.Tax + vat.AdditionsTax | number: '1.0-0' }}</td>
+											</tr>
+											<tr class="summary-total">
+												<!-- Tổng cộng -->
+												<td class="label">{{ 'BILL_GRAND_TOTAL' | translate }}</td>
+												<td class="value">{{ item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0' }}</td>
+											</tr>
+											<tr *ngIf="item.Received > 0">
+												<!-- Đã thanh toán -->
+												<td class="label">{{ 'BILL_RECEIVED' | translate }}</td>
+												<td class="value">{{ item.Received | number: '1.0-0' }}</td>
+											</tr>
+											<tr class="summary-grand" *ngIf="item.Debt > 0">
+												<!-- Tổng tiền khách phải trả -->
+												<td class="label">{{ 'BILL_DEBT' | translate }}</td>
+												<td class="value">{{ item.Debt | number: '1.0-0' }}</td>
+												<!-- TODO: Xử lý trường hợp tiền thừa (Debt < 0) -->
+											</tr>
+										</tbody>
+									</table>
+									<div class="divider"></div>
+
+									<div *ngIf="vietQrCode" class="payment-qr">
+										<!-- Quét mã thanh toán -->
+										<div class="payment-qr-title">{{ 'BILL_PAYMENT_QR_TITLE' | translate }}</div>
+										<!-- (Ví điện tử / app ngân hàng) -->
+										<div class="payment-qr-sub">{{ 'BILL_PAYMENT_QR_SUBTITLE' | translate }}</div>
+										<img [src]="vietQrCode" />
+									</div>
+
+									<div class="divider"></div>
+
+									<div class="footer-notes">
+										<div>
+											{{ 'BILL_PRINTDATE' | translate }}: {{ printData.printDate | date: 'HH:mm dd/MM/yyyy' }} - {{ 'BILL_CASHIER' | translate }}:
+											{{ cashierName }}
+										</div>
+										<div>
+											{{ billConfig?.BillFooterLine1 | translate }}
+											<!-- TODO: Thêm link tra cứu HĐĐT -->
+										</div>
+										<div>
+											{{ billConfig?.BillFooterLine2 | translate }}
+											<!-- TODO: SĐT gợi ý -->
+										</div>
+										<!-- Thank you for your patronage! -->
+										<div>{{ 'BILL_THANK_YOU' | translate }}</div>
+									</div>
+
+									<div class="divider"></div>
+
+									<div class="ad-section">
+										<div class="ad-left">Các quảng cáo, thông tin khác<!-- TODO: Nội dung quảng cáo --></div>
+										<div class="ad-right">QR quảng cáo<!-- TODO: QR quảng cáo --></div>
+									</div>
+
+									<div class="ad-grid">
+										<div class="ad-grid-left">Hình ảnh<!-- TODO: Hình ảnh quảng cáo --></div>
+										<div class="ad-grid-center">
+											<div class="ad-grid-title">Tiêu đề thông tin / quảng cáo</div>
+											<div class="ad-grid-body">Nội dung<!-- TODO: Nội dung quảng cáo --></div>
+										</div>
+										<div class="ad-grid-right">QR quảng cáo<!-- TODO: QR quảng cáo --></div>
+									</div>
+								</div>
+							</ng-container>
+
+							<ng-template #kitchenView>
+								<div class="items items-kitchen">
+									<table>
+										<tr class="bold">
+											<td>{{ 'Item' | translate }}</td>
+											<td class="total">{{ 'POS_Quantity_Header' | translate }}</td>
+										</tr>
+										<ng-container *ngFor="let o of item.OrderLines | filter: { _IDKitchens: kitchenQuery }; let idx = index">
+											<ng-container *ngIf="o._undeliveredQuantity > 0">
+												<tr [ngClass]="{ subOrder: o.SubItems && o.SubItems.length > 0 }">
+													<td>
+														{{ idx + 1 }}.
+														<strong><span [appTranslateResource]="o._item"></span></strong>
+													</td>
+													<td class="total">
+														<span class="bold quantity">{{ o._undeliveredQuantity }}</span>
+													</td>
+												</tr>
+												<tr *ngIf="o.Remark" [ngClass]="{ subOrder: o.SubItems && o.SubItems.length > 0 }">
+													<td colspan="2">Note: {{ o.Remark }}</td>
+												</tr>
+												@if (o.SubItems && o.SubItems.length > 0) {
+													<ng-container *ngFor="let g of o.SubItems; let isLast = last">
+														<tr class="small subOrder" [class.isLast]="isLast">
+															<td class="name">
+																--<span>{{ g._Item.Name }}</span>
+															</td>
+															<td class="quantity total">
+																<span>{{ g.Quantity }}</span>
+															</td>
+														</tr>
+													</ng-container>
+												}
+											</ng-container>
+										</ng-container>
+									</table>
+								</div>
+								<div style="border-bottom: none" class="table-info">
+									<table>
+										<tr>
+											<td class="title">{{ 'Printing date' | translate }}</td>
+											<td class="text-right">
+												<span>{{ printData.printDate | date: 'HH:mm dd/MM/yyyy' }}</span>
+											</td>
+										</tr>
+									</table>
+								</div>
+							</ng-template>
+						</td>
+					</tr>
+				</tbody>
+				<tfoot>
+					<tr>
+						<td>
+							<div class="page-footer-space"></div>
+						</td>
+					</tr>
+				</tfoot>
+			</table>
+		</section>
+	</div>
+</div>

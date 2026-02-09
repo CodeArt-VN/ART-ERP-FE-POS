@@ -269,4 +269,10 @@ export interface POSConfig {
 	BKIncomingQRSuffix?: string;
 	ZPIsActive: boolean;
 	EDCCVCB_IsActive: boolean;
+	BillHeaderTitle: string;
+	BillHeaderLine1: string;
+	BillHeaderLine2: string;
+	BillFooterLine1: string;
+	BillFooterLine2: string;
+	BillLogo: string;
 }
