@@ -106,7 +106,7 @@
 													<ng-container *ngIf="promotionAppliedPrograms?.length; else noDiscounts">
 														<tr *ngFor="let p of promotionAppliedPrograms; let i = index">
 															<td class="col-name">{{ i + 1 }}. {{ p.Name || p.ProgramName || p.VoucherCode }}</td>
-															<td class="col-amount text-right">{{ p.ReduceByPercent || p.Value | number: '1.0-0' }}</td>
+															<td class="col-amount text-right">{{ p.Amount | number: '1.0-0' }}</td>
 														</tr>
 													</ng-container>
 												</tbody>
@@ -126,9 +126,18 @@
 												<tbody>
 													<ng-container *ngIf="paymentList?.length; else noPayments">
 														<tr *ngFor="let p of paymentList; let i = index">
-															<td class="col-name">
+															<td class="col-name" *ngIf="p.IncomingPayment?.IsRefundTransaction">
+																{{ i + 1 }}. {{ 'Refund' | translate }} | {{ p.IncomingPayment?.TypeText || p.IncomingPayment?.Type || '---' }}
+																<small *ngIf="p.IncomingPayment?.Remark && p.IncomingPayment?.Remark != ''">{{
+																	' | ' + p.IncomingPayment?.Remark
+																}}</small>
+															</td>
+															<td class="col-name"  *ngIf="!p.IncomingPayment?.IsRefundTransaction">
 																{{ i + 1 }}. {{ p.IncomingPayment?.TypeText || p.IncomingPayment?.Type || '---'
 																}}<span *ngIf="p.IncomingPayment?.SubType"> ({{ p.IncomingPayment.SubType }})</span>
+																<small *ngIf="p.IncomingPayment?.Remark && p.IncomingPayment?.Remark != ''">{{
+																	' | ' + p.IncomingPayment?.Remark
+																}}</small>
 															</td>
 															<td class="col-amount text-right">{{ p.Amount | number: '1.0-0' }}</td>
 														</tr>
@@ -246,8 +255,11 @@
 										<span class="meta-value" *ngFor="let t of printData.selectedTables; let j = index"
 											>{{ t.Name }}<span *ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
 										</span>
-										<span class="meta-sep">-</span>
+									</div>
+									<div class="meta-row">
+										<span class="meta-label">{{ 'Printing date' | translate }}:</span>
 										<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm dd/MM/yyyy' }}</span>
+
 									</div>
 									<div class="meta-row">
 										<span class="meta-label">{{ 'Send to' | translate }}:</span>
