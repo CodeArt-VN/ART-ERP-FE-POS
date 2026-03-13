@@ -1,4 +1,4 @@
-<ion-header collapse="fade">
+<ion-header [translucent]="true" collapse="fade">
 	<ion-toolbar>
 		<ion-title>{{'Billing address' | translate}}</ion-title>
 		<ion-buttons slot="primary">
@@ -8,7 +8,7 @@
 		</ion-buttons>
 	</ion-toolbar>
 </ion-header>
-<ion-content appScrollbarTheme>
+<ion-content appScrollbarTheme [fullscreen]="true">
 	<div id="ng-select" style="position: absolute; z-index: 30005"></div>
 
 	<div class="ion-padding">

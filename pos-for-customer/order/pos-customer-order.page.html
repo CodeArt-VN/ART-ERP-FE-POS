@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header [translucent]="true">
 	<ion-toolbar class="toolbar-no">
 		<ion-buttons slot="start" *ngIf="pageConfig.isShowFeature" [ngClass]="{'ion-hide-sm-up': pageConfig.isShowFeature}">
 			<ion-button (click)="pageConfig.isShowFeature = !pageConfig.isShowFeature;">
@@ -38,7 +38,7 @@
 	</ion-toolbar>
 </ion-header>
 
-<ion-content appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
+<ion-content [fullscreen]="true" appScrollbarTheme appPrintFix class="table-list print-size-72" [ngClass]="{withFeature: pageConfig.isShowFeature}">
 	<ion-fab slot="fixed" vertical="bottom" horizontal="end">
 		<ion-fab-button class="linear-blue-btn">
 			<ion-icon name="megaphone-outline"></ion-icon>

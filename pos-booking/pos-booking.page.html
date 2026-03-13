@@ -1,10 +1,10 @@
-<ion-header>
+<ion-header [translucent]="true">
 	<app-toolbar [page]="this">
 		<span startTitle>{{numberOfDinnerPax + 'P - '+ numberOfReal+'Đ - '+numberOfKid+'T - '+numberOfForeigner+'N'}}</span>
 	</app-toolbar>
 </ion-header>
 
-<ion-content appScrollbarTheme class="header-table" scroll-x="true">
+<ion-content [fullscreen]="true" appScrollbarTheme class="header-table" scroll-x="true">
 	<app-data-table
 		class="box-shadow responsive padding-number-right"
 		[rows]="items"

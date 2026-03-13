@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header [translucent]="true">
 	<app-toolbar [page]="this" [ShowAdd]="false" [ShowSearch]="false" [ShowImport]="false" [ShowExport]="false" [ShowArchive]="false">
 		<ion-button (click)="isOpenConfigPOS = true">
 			<ion-icon slot="icon-only" name="cog-outline"></ion-icon>
@@ -43,7 +43,7 @@
 	</div>
 </ion-header>
 
-<ion-content appScrollbarTheme>
+<ion-content [fullscreen]="true" appScrollbarTheme>
 	<!-- Notifications list FAB -->
 	<ion-fab slot="fixed" vertical="bottom" horizontal="end" [activated]="true">
 		<ion-fab-button class="linear-blue-btn">
@@ -332,7 +332,7 @@
 	<!-- (willDismiss)="onVRPWillDismiss($event)" -->
 	<ion-modal [isOpen]="isOpenConfigPOS" (willDismiss)="isOpenConfigPOS = false">
 		<ng-template>
-			<ion-header collapse="fade">
+			<ion-header [translucent]="true" collapse="fade">
 				<ion-toolbar>
 					<ion-title>{{'POS config' | translate}}</ion-title>
 					<ion-buttons slot="end">
@@ -342,7 +342,7 @@
 					</ion-buttons>
 				</ion-toolbar>
 			</ion-header>
-			<ion-content appScrollbarTheme>
+			<ion-content [fullscreen]="true" appScrollbarTheme>
 				<div style="min-height: 0%">
 					<ion-list [inset]="true">
 						<ion-item>

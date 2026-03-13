@@ -1,4 +1,4 @@
-<ion-header collapse="fade">
+<ion-header [translucent]="true" collapse="fade">
 	<ion-toolbar>
 		<ion-title>{{'Cancellation reason' | translate}}</ion-title>
 		<ion-buttons slot="primary">
@@ -8,7 +8,7 @@
 		</ion-buttons>
 	</ion-toolbar>
 </ion-header>
-<ion-content appScrollbarTheme>
+<ion-content appScrollbarTheme [fullscreen]="true">
 	<div class="ion-padding">
 		<ion-text color="warning">
 			<ion-icon color="danger" name="alert-circle-outline" class="cancel-message-icon"></ion-icon>

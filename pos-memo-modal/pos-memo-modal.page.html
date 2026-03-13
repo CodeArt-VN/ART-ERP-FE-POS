@@ -1,4 +1,4 @@
-<ion-header collapse="fade">
+<ion-header [translucent]="true" collapse="fade">
 	<ion-toolbar class="no-padding">
 		<ion-buttons slot="start" class="ion-hide-sm-down_">
 			<ion-button color="dark"> Ghi chú </ion-button>
@@ -14,7 +14,7 @@
 	</ion-toolbar>
 </ion-header>
 
-<ion-content appScrollbarTheme>
+<ion-content appScrollbarTheme [fullscreen]="true">
 	<ion-fab class="feature no-print" vertical="top" horizontal="start" slot="fixed">
 		<ion-list>
 			<ion-item [color]="selectedGroupType == 'All'? 'primary': '' " button detail="true" lines="full" class="clickable" (click)="loadGroupType('All')">

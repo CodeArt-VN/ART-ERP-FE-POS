@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header [translucent]="true">
 	<app-toolbar [page]="this">
 		<ion-button
 			class="clickable"
@@ -28,7 +28,7 @@
 		</ion-popover>
 	</app-toolbar>
 </ion-header>
-<ion-content appScrollbarTheme>
+<ion-content [fullscreen]="true" appScrollbarTheme>
 	<app-page-message message="{{'No data to show...' | translate}}" [itemsLength]="tableGroupList?.length" [showSpinner]="pageConfig.showSpinner">
 		<hr />
 		<div class="c-control" style="min-width: 260px" *ngIf="tableGroupList.length === 0">

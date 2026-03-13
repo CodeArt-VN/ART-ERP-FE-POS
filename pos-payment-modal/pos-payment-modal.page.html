@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header [translucent]="true">
 	<ion-toolbar>
 		<ion-title>{{'Đơn hàng #' | translate}}{{item.Id}}</ion-title>
 		<ion-buttons slot="primary">
@@ -11,7 +11,7 @@
 		</ion-buttons>
 	</ion-toolbar>
 </ion-header>
-<ion-content appScrollbarTheme class="ion-padding">
+<ion-content appScrollbarTheme class="ion-padding" [fullscreen]="true">
 	<div id="pos-payment-page" style="position: absolute"></div>
 	<div>
 		<ion-grid fixed style="max-width: 670px">

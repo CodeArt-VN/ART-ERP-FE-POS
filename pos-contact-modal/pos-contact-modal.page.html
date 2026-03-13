@@ -1,4 +1,4 @@
-<ion-header collapse="fade">
+<ion-header [translucent]="true" collapse="fade">
 	<ion-toolbar>
 		<ion-title>{{'Add new customer' | translate}}</ion-title>
 		<ion-buttons slot="primary">
@@ -11,7 +11,7 @@
 		</ion-buttons>
 	</ion-toolbar>
 </ion-header>
-<ion-content appScrollbarTheme >
+<ion-content appScrollbarTheme [fullscreen]="true">
 	<form [formGroup]="formGroup">
 		<ion-grid fixed>
 			<ion-row>

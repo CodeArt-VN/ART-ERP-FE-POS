@@ -1,4 +1,4 @@
-<ion-header>
+<ion-header [translucent]="true">
 	<app-toolbar [page]="this"></app-toolbar>
 	<ion-toolbar class="no-padding" color="primary" [ngClass]="{withFeature: pageConfig.isShowFeature}">
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
@@ -53,7 +53,7 @@
 	</section> -->
 </ion-header>
 
-<ion-content appScrollbarTheme [ngClass]="{withFeature: pageConfig.isShowFeature}" style="z-index: 11">
+<ion-content [fullscreen]="true" appScrollbarTheme [ngClass]="{withFeature: pageConfig.isShowFeature}" style="z-index: 11">
 	<ion-fab *ngIf="pageConfig.isShowFeature" style="top: -45px" class="feature no-print" vertical="top" horizontal="end" slot="fixed">
 		<ion-toolbar class="no-padding">
 			<ion-searchbar
