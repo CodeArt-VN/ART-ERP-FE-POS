@@ -24,6 +24,7 @@ import { POSService } from '../_services/pos.service';
 import { POS_ShiftPService } from '../_services/pos-shift-service';
 import { interval, startWith, Subject, Subscription, takeUntil } from 'rxjs';
 import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
+import { PaymentService } from 'src/app/modals/payment-modal/paymentService';
 
 @Component({
 	selector: 'app-pos-order',
@@ -66,7 +67,7 @@ export class POSOrderPage extends PageBase {
 		public location: Location,
 		public commonService: CommonService,
 		public promotionService: PromotionService,
-		private notifyService: POSNotifyService
+		public paymentService:PaymentService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -135,13 +136,13 @@ export class POSOrderPage extends PageBase {
 			this.posTerminalProvider.read({ IDBranch: this.env.selectedBranch }),
 			this.env.getStorage('POSTerminalConfig'),
 			this.env.getStorage('POSQuantityConfig'),
-			this.getEDCCConnection(),
+			this.paymentService.getEDCCConnection(),
 		])
 			.then((values: any) => {
 				this.tableGroupList = this.posService.dataSource.tableGroups;
 				this.soStatusList = this.posService.dataSource.orderStatusList;
 				this.printerList = values[1].data || [];
-				this.terminalList = values[2].data || [];
+				this.terminalList = values[2].data || [];                                           
 				this.VCBTerminals = values[5] || [];
 
 				if (this.tableGroupList.length > 0) this.posShiftService.initShift();
@@ -665,19 +666,4 @@ export class POSOrderPage extends PageBase {
 			});
 	}
 
-	getEDCCConnection() {
-		return new Promise((resolve, reject) => {
-			this.pageProvider.commonService
-				.connect('GET', 'BANK/IncomingPayment/GetEDCCConnection', {})
-				.toPromise()
-				.then((rs) => {
-					console.log(rs);
-					resolve(rs);
-				})
-				.catch((err) => {
-					this.env.showMessage(err.error?.ExceptionMessage, 'danger');
-					reject(null);
-				});
-		});
-	}
 }
