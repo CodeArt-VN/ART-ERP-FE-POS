@@ -24,6 +24,7 @@ import { POSService } from '../_services/pos.service';
 import { POS_ShiftPService } from '../_services/pos-shift-service';
 import { interval, startWith, Subject, Subscription, takeUntil } from 'rxjs';
 import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
+import { PaymentService } from 'src/app/modals/payment-modal/paymentService';
 
 @Component({
 	selector: 'app-pos-order',
@@ -46,6 +47,7 @@ export class POSOrderPage extends PageBase {
 	POSQuantityDTO: any = {};
 	terminalList = [];
 	printerList = [];
+	VCBTerminals = [];
 	lastEventRefreshTime = 0;
 	private readonly EVENT_REFRESH_THROTTLE = 5000; // 5 seconds in milliseconds
 	constructor(
@@ -65,7 +67,7 @@ export class POSOrderPage extends PageBase {
 		public location: Location,
 		public commonService: CommonService,
 		public promotionService: PromotionService,
-		private notifyService: POSNotifyService
+		public paymentService:PaymentService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -134,18 +136,19 @@ export class POSOrderPage extends PageBase {
 			this.posTerminalProvider.read({ IDBranch: this.env.selectedBranch }),
 			this.env.getStorage('POSTerminalConfig'),
 			this.env.getStorage('POSQuantityConfig'),
+			this.paymentService.getEDCCConnection(),
 		])
 			.then((values: any) => {
 				this.tableGroupList = this.posService.dataSource.tableGroups;
 				this.soStatusList = this.posService.dataSource.orderStatusList;
 				this.printerList = values[1].data || [];
-				this.terminalList = values[2].data || [];
-				if (this.tableGroupList.length > 0) this.posShiftService.initShift();
+				this.terminalList = values[2].data || [];                                           
+				this.VCBTerminals = values[5] || [];
 
+				if (this.tableGroupList.length > 0) this.posShiftService.initShift();
 				if (values[3]) {
 					this.POSconfigDTO = values[3];
 				}
-
 				if (values[4]) {
 					this.POSQuantityDTO = values[4];
 				} else {
@@ -253,6 +256,11 @@ export class POSOrderPage extends PageBase {
 		this.env.setStorage('POSTerminalConfig', this.POSconfigDTO, { enable: true, timeToLive: 365 * 24 * 60 });
 	}
 
+	onTRefIDChange(e) {
+		this.POSconfigDTO.TRefID = this.POSconfigDTO.TRefID || 0;
+		this.env.setStorage('POSTerminalConfig', this.POSconfigDTO, { enable: true, timeToLive: 365 * 24 * 60 });
+	}
+
 	toggleChange(e, field) {
 		// this.systemConfigService.read({ IDBranch: this.env.selectedBranch, Code: field }).then((config: any) => {
 		// 	console.log(config);
@@ -357,7 +365,9 @@ export class POSOrderPage extends PageBase {
 		if (event === true) {
 			this.preLoadData('force');
 		} else {
-			super.refresh();
+			this.preLoadData('force');
+
+			// super.refresh();
 		}
 	}
 
@@ -655,4 +665,5 @@ export class POSOrderPage extends PageBase {
 					});
 			});
 	}
+
 }
