@@ -46,6 +46,7 @@ export class POSOrderPage extends PageBase {
 	POSQuantityDTO: any = {};
 	terminalList = [];
 	printerList = [];
+	VCBTerminals = [];
 	lastEventRefreshTime = 0;
 	private readonly EVENT_REFRESH_THROTTLE = 5000; // 5 seconds in milliseconds
 	constructor(
@@ -134,18 +135,19 @@ export class POSOrderPage extends PageBase {
 			this.posTerminalProvider.read({ IDBranch: this.env.selectedBranch }),
 			this.env.getStorage('POSTerminalConfig'),
 			this.env.getStorage('POSQuantityConfig'),
+			this.getEDCCConnection(),
 		])
 			.then((values: any) => {
 				this.tableGroupList = this.posService.dataSource.tableGroups;
 				this.soStatusList = this.posService.dataSource.orderStatusList;
 				this.printerList = values[1].data || [];
 				this.terminalList = values[2].data || [];
-				if (this.tableGroupList.length > 0) this.posShiftService.initShift();
+				this.VCBTerminals = values[5] || [];
 
+				if (this.tableGroupList.length > 0) this.posShiftService.initShift();
 				if (values[3]) {
 					this.POSconfigDTO = values[3];
 				}
-
 				if (values[4]) {
 					this.POSQuantityDTO = values[4];
 				} else {
@@ -253,6 +255,11 @@ export class POSOrderPage extends PageBase {
 		this.env.setStorage('POSTerminalConfig', this.POSconfigDTO, { enable: true, timeToLive: 365 * 24 * 60 });
 	}
 
+	onTRefIDChange(e) {
+		this.POSconfigDTO.TRefID = this.POSconfigDTO.TRefID || 0;
+		this.env.setStorage('POSTerminalConfig', this.POSconfigDTO, { enable: true, timeToLive: 365 * 24 * 60 });
+	}
+
 	toggleChange(e, field) {
 		// this.systemConfigService.read({ IDBranch: this.env.selectedBranch, Code: field }).then((config: any) => {
 		// 	console.log(config);
@@ -357,7 +364,9 @@ export class POSOrderPage extends PageBase {
 		if (event === true) {
 			this.preLoadData('force');
 		} else {
-			super.refresh();
+			this.preLoadData('force');
+
+			// super.refresh();
 		}
 	}
 
@@ -654,5 +663,21 @@ export class POSOrderPage extends PageBase {
 						this.refresh();
 					});
 			});
+	}
+
+	getEDCCConnection() {
+		return new Promise((resolve, reject) => {
+			this.pageProvider.commonService
+				.connect('GET', 'BANK/IncomingPayment/GetEDCCConnection', {})
+				.toPromise()
+				.then((rs) => {
+					console.log(rs);
+					resolve(rs);
+				})
+				.catch((err) => {
+					this.env.showMessage(err.error?.ExceptionMessage, 'danger');
+					reject(null);
+				});
+		});
 	}
 }

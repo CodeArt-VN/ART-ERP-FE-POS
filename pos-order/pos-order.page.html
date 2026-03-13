@@ -370,6 +370,19 @@
 								<ion-select-option *ngFor="let t of printerList" [value]="t.Id">{{t.Name}}</ion-select-option>
 							</ion-select>
 						</ion-item>
+
+						<ion-item>
+							<ion-icon color="danger" slot="start" name="print-outline"></ion-icon>
+							<ion-select
+								placeholder="{{'Select VCB Terminal' | translate}}"
+								[(ngModel)]="POSconfigDTO.TRefID"
+								(ionChange)="onTRefIDChange($event)"
+								interface="popover"
+							>
+								<div slot="label">{{'Serial terminal' | translate}}</div>
+								<ion-select-option *ngFor="let t of VCBTerminals" [value]="t.REF_ID">{{t.SERIAL.slice(-8)}}</ion-select-option>
+							</ion-select>
+						</ion-item>
 					</ion-list>
 
 					<ion-list [inset]="true">
