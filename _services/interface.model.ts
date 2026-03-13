@@ -36,6 +36,7 @@ export interface POSDataSource {
 
 export interface Menu extends POS_Menu {
 	Items?: MenuDetail[]; // Danh sách items trong menu
+	menuImage?: string;
 }
 
 export interface MenuDetail extends POS_MenuDetail {

@@ -177,7 +177,7 @@
 												class="qty-input-compact"
 												type="number"
 												[step]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'any' : '1'"
-												[inputmode]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'decimal' : 'numeric'"
+												[attr.inputmode]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'decimal' : 'numeric'"
 												[value]="line.Quantity"
 												(keydown)="onQuantityKeyDown($event,line,idx)"
 												(input)="onQuantityInputChange($event, line, idx)"
@@ -548,7 +548,7 @@
 			<div
 				class="menu-group"
 				[style]="{order:(i==0 && g.Id==0) ? -1:''}"
-				[ngClass]="{selected: segmentView==g.Id}"
+				[ngClass]="{selected: ('' + segmentView) === ('' + g.Id)}"
 				*ngFor="let g of posService.dataSource.menuList;let i = index"
 				(click)="segmentChanged(g.Id); query.Keyword =''"
 			>
@@ -557,7 +557,7 @@
 					#img
 					[src]="g.menuImage"
 					(ionError)="img.src = noImage"
-					[ngClass]="{selected: segmentView==g.Id}"
+					[ngClass]="{selected: ('' + segmentView) === ('' + g.Id)}"
 				></ion-img>
 				<ion-label>{{g.Name}}</ion-label>
 			</div>

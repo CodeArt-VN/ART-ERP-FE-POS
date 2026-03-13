@@ -391,6 +391,7 @@ export interface ShiftData {
 	ApprovedOrder?: number;
 
 	TotalDeduction?: number;
+	ServiceCharge?: number;
 	TotalVAT?: number;
 	OriginalTotalAfterDiscount?: number;
 	TotalAfterTax?: number;
