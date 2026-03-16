@@ -149,7 +149,7 @@ export class POSMenuDetailPage extends PageBase {
 		this.formGroup.controls.Lines.patchValue(groups.value);
 	}
 
-	addItemLine(line) {
+	addItemLine(line, markAsDirty = null) {
 		// let data = this.item.Lines.find((d) => d.IDItem == line.Id);
 		let groups = <FormArray>this.formGroup.controls.Lines;
 		let group = this.formBuilder.group({
@@ -378,4 +378,7 @@ export class POSMenuDetailPage extends PageBase {
 		}
 		i.get('IsChecked').markAsPristine();
 	}
+
+	//TODO: Remove empty functions
+	isAllSelected = false;
 }

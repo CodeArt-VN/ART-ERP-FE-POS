@@ -74,16 +74,18 @@ export class POSShiftDetailPage extends PageBase {
 			ClosingReason: [''],
 			Remark: [''],
 		});
-		this.formGroup.valueChanges.subscribe((values) => {
-			const expected = parseFloat(this.formGroup.get('ExpectedCash').value) || 0;
-			const closing = parseFloat(values.ClosingCash) || 0;
-			const difference = closing - expected; // hoặc expected - closing tuỳ bạn muốn hiển thị dấu âm/dương
+		this.subscriptions.push(
+			this.formGroup.valueChanges.subscribe((values) => {
+				const expected = parseFloat(this.formGroup.get('ExpectedCash').value) || 0;
+				const closing = parseFloat(values.ClosingCash) || 0;
+				const difference = closing - expected; // hoặc expected - closing tuỳ bạn muốn hiển thị dấu âm/dương
 
-			this.formGroup.patchValue(
-				{ CashDifference: difference },
-				{ emitEvent: false } // tránh loop vô hạn
-			);
-		});
+				this.formGroup.patchValue(
+					{ CashDifference: difference },
+					{ emitEvent: false } // tránh loop vô hạn
+				);
+			})
+		);
 	}
 	preLoadData() {
 		this.getDefaultPrinter();
@@ -389,6 +391,7 @@ export interface ShiftData {
 	ApprovedOrder?: number;
 
 	TotalDeduction?: number;
+	ServiceCharge?: number;
 	TotalVAT?: number;
 	OriginalTotalAfterDiscount?: number;
 	TotalAfterTax?: number;

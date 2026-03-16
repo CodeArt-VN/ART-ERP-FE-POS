@@ -457,13 +457,13 @@
 	<div class="no-print menu-holder">
 		<div class="menu-group-list">
 			<!-- <div class="menu-group" (click)="segmentChanged('all')">
-				<ion-img #img [src]="AllSegmentImage" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView=='all'}"></ion-img>
+				<ion-img #img [src]="AllSegmentImage" (ionError)="$event.target.src = 'assets/pos-icons/POS-Item-demo.png'" [ngClass]="{selected: segmentView=='all'}"></ion-img>
 				<ion-label>{{'All' | translate}}</ion-label>
 			</div> -->
 			<div class="menu-group" *ngFor="let g of menuList" (click)="segmentChanged(g.Id)">
 				<ion-img
 					[src]="g.Image ? ImagesServer + g.Image: 'assets/pos-icons/POS-Item-demo.png'"
-					(ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"
+					(ionError)="$event.target.src = 'assets/pos-icons/POS-Item-demo.png'"
 					[ngClass]="{selected: segmentView==g.Id}"
 				></ion-img>
 				<ion-label>{{g.Name}}</ion-label>
@@ -488,7 +488,7 @@
 								<ion-text class="tag-content" color="danger"> {{'Out of stock' | translate}} </ion-text>
 							</span>
 							<div class="card" [id]="'item'+i.Id">
-								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="img.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
+								<ion-img class="item-image clickable" [title]="i.Name" #img [src]="i.imgPath" (ionError)="$event.target.src = 'assets/pos-icons/POS-Item-demo.png'"></ion-img>
 								<span class="table-name clickable">
 									<span [appTranslateResource]="i"></span>
 								</span>

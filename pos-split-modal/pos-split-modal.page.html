@@ -187,7 +187,7 @@
 											<input [disabled]="true" class="c-input" [ngModel]="o" (ngModelChange)="item.SplitedOrders[jdx].TableName = $event" />
 										</td>
 									</tr>
-									@for( i of items;track i.Id ){
+									@for( i of items;track i.Id; let idx = $index ){
 									<tr>
 										<td class="label">
 											<ng-select
