@@ -400,11 +400,11 @@
 					</ion-list>
 				</div>
 			</ion-content>
-			<ion-footer collapse="fade">
+			<ion-footer [translucent]="true" collapse="fade">
 				<ion-toolbar>
-					<ion-buttons slot="end">
+					<div slot="end">
 						<ion-button (click)="isOpenConfigPOS = false" fill="outline" color="warning">{{'Close' | translate}}</ion-button>
-					</ion-buttons>
+					</div>
 				</ion-toolbar>
 			</ion-footer>
 		</ng-template>
