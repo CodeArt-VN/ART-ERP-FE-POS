@@ -824,6 +824,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				let rs = await this.openComboModal(line);
 				if (!rs) return;
 			}
+			else if (item.BOMs?.length > 0) {
+				let rs = await this.getItemSetMenuFixed(line);
+				if (!rs) return;
+			}
 			this.item.OrderLines.push(line);
 
 			this.addOrderLine(line);
@@ -836,7 +840,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.then((_) => {
 							this.openCancellationReason(line, quantity);
 						})
-						.catch((_) => {});
+						.catch((_) => { });
 				} else {
 					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
@@ -904,7 +908,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								],
 							});
 						})
-						.catch((_) => {});
+						.catch((_) => { });
 				} else {
 					if (this.pageConfig.canDeleteItems) {
 						this.env
@@ -938,7 +942,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									],
 								});
 							})
-							.catch((_) => {});
+							.catch((_) => { });
 					} else {
 						this.env.showMessage('This account does not have permission to delete products!', 'warning');
 					}
@@ -1043,6 +1047,17 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 		return null;
 	}
+
+	async getItemSetMenuFixed(line) {
+		let item = line._item;
+		let uom = item.UoMs.find((d) => d.Id == line.IDUoM);
+		let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
+		let UoMPrice = price.NewPrice ? price.NewPrice : price.Price;
+		line.UoMPrice = UoMPrice;
+		line.SubItems = item.BOMs;
+		return line;
+	}
+
 	async openQuickMemo(line) {
 		if (this.submitAttempt) return;
 		if (line.Status != 'New') return;
@@ -1378,7 +1393,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => {});
+					.catch((_) => { });
 			} else {
 				let cancelData: any = {
 					Code: data.Code,
@@ -1414,7 +1429,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => {});
+					.catch((_) => { });
 			}
 		}
 	}
@@ -1424,7 +1439,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env
 				.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
 				.then(() => this.sendKitchen())
-				.catch(() => {});
+				.catch(() => { });
 		}
 	}
 	async saveOrderData() {
@@ -2124,7 +2139,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					.then(() => {
 						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
 					})
-					.catch(() => {});
+					.catch(() => { });
 			});
 	}
 
@@ -2390,7 +2405,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		line.StatusColor = lib.getAttrib(line.Status, this.posService.dataSource.orderDetailStatusList, 'Color', '--', 'Code');
 	}
 
-	patchOrderLines() {}
+	patchOrderLines() { }
 
 	private addOrderLine(line) {
 		let groups = <FormArray>this.formGroup.controls.OrderLines;
@@ -2836,7 +2851,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					changed.Status = 'Done';
 					this.setOrderValue(changed, true);
 				})
-				.catch((_) => {});
+				.catch((_) => { });
 		} else {
 			this.item.OrderLines.forEach((line) => {
 				if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -2967,12 +2982,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				.then(() => {
 					setTimeout(() => this.scanQRCode(), 0);
 				})
-				.catch(() => {});
+				.catch(() => { });
 			return;
 		}
 	}
 
-	menuItemsPaging(event) {}
+	menuItemsPaging(event) { }
 
 	isCompleteLoaded = false;
 	async previewBill() {
