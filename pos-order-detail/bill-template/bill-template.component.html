@@ -17,7 +17,8 @@
 									<div class="invoice-header">
 										<div class="header-left">
 											<div class="store-name">{{ billConfig?.BillHeaderTitle | translate }}</div>
-											<div class="store-address">{{ billConfig?.BillHeaderLine1 | translate }}</div>
+											<div class="store-address">{{ billConfig?.BillHeaderLine1 | translate }}
+											</div>
 											<div class="store-phone">{{ billConfig?.BillHeaderLine2 | translate }}</div>
 
 											<!-- <div class="store-name">{{ printData.currentBranch?.ShortName || printData.currentBranch?.Name }}</div>
@@ -25,25 +26,32 @@
 											<div class="store-phone">{{ printData.currentBranch?.Phone || '' }}</div> -->
 
 											<div class="invoice-title">
-												<ng-container *ngIf="item.Status == 'TemporaryBill'">{{ 'Temporary bill' | translate }}</ng-container>
-												<ng-container *ngIf="item.Status != 'TemporaryBill' && !(item.Status == 'Done' && !pageConfig.canEdit)">{{
+												<ng-container *ngIf="item.Status == 'TemporaryBill'">{{ 'Temporary bill'
+													| translate }}</ng-container>
+												<ng-container
+													*ngIf="item.Status != 'TemporaryBill' && !(item.Status == 'Done' && !pageConfig.canEdit)">{{
 													'Invoice' | translate
-												}}</ng-container>
-												<ng-container *ngIf="item.Status == 'Done' && !pageConfig.canEdit">{{ 'Receipt' | translate }}</ng-container>
+													}}</ng-container>
+												<ng-container *ngIf="item.Status == 'Done' && !pageConfig.canEdit">{{
+													'Receipt' | translate }}</ng-container>
 											</div>
 
 											<div class="invoice-meta">
 												<span class="meta-label">{{ 'Table' | translate }}:</span>
-												<span class="meta-value" *ngFor="let t of printData.selectedTables; let j = index"
-													>{{ t.Name }}<span *ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
+												<span class="meta-value"
+													*ngFor="let t of printData.selectedTables; let j = index">{{ t.Name
+													}}<span
+														*ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
 												</span>
 												<span class="meta-sep">-</span>
-												<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm dd/MM/yyyy' }}</span>
+												<span class="meta-time">{{ item.OrderDate || printData.printDate | date:
+													'HH:mm dd/MM/yyyy' }}</span>
 											</div>
 
 											<div class="invoice-for">{{ 'Customer' | translate }}</div>
 											<div class="customer-name">{{ item._Customer?.Name }}</div>
-											<div class="customer-company" *ngIf="item._Customer?.CompanyName">{{ item._Customer?.CompanyName }}</div>
+											<div class="customer-company" *ngIf="item._Customer?.CompanyName">{{
+												item._Customer?.CompanyName }}</div>
 											<!-- TODO: Bổ sung thông tin khách hàng khác nếu cần -->
 										</div>
 										<div class="header-right">
@@ -70,12 +78,14 @@
 												</tr>
 											</thead>
 											<tbody>
-												<ng-container *ngFor="let o of getGroupedOrderLinesForPrint(); let i = index">
+												<ng-container
+													*ngFor="let o of getGroupedOrderLinesForPrint(); let i = index">
 													<tr class="item-row-name">
 														<td class="col-name" colspan="4">
 															<div class="item-name">
 																<span class="item-index">{{ i + 1 }}.</span>
-																<span class="item-text"><span [appTranslateResource]="o._item"></span></span>
+																<span class="item-text"><span
+																		[appTranslateResource]="o._item"></span></span>
 															</div>
 															<div class="item-sub" *ngIf="o.SubItems?.length">
 																<ng-container *ngFor="let g of o.SubItems">
@@ -87,8 +97,10 @@
 													<tr class="item-row-values">
 														<td class="col-name col-empty"></td>
 														<td class="col-qty text-right">{{ o.Quantity }}</td>
-														<td class="col-price text-right">{{ o.UoMPrice | number: '1.0-0' }}</td>
-														<td class="col-total text-right">{{ o.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
+														<td class="col-price text-right">{{ o.UoMPrice | number: '1.0-0'
+															}}</td>
+														<td class="col-total text-right">{{
+															o.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
 													</tr>
 												</ng-container>
 											</tbody>
@@ -103,10 +115,13 @@
 											<div class="section-title">{{ 'BILL_LIST_DISCOUNT' | translate }}</div>
 											<table class="discount-table">
 												<tbody>
-													<ng-container *ngIf="promotionAppliedPrograms?.length; else noDiscounts">
+													<ng-container
+														*ngIf="promotionAppliedPrograms?.length; else noDiscounts">
 														<tr *ngFor="let p of promotionAppliedPrograms; let i = index">
-															<td class="col-name">{{ i + 1 }}. {{ p.Name || p.ProgramName || p.VoucherCode }}</td>
-															<td class="col-amount text-right">{{ p.Amount | number: '1.0-0' }}</td>
+															<td class="col-name">{{ i + 1 }}. {{ p.Name || p.ProgramName
+																|| p.VoucherCode }}</td>
+															<td class="col-amount text-right">{{ p.Amount | number:
+																'1.0-0' }}</td>
 														</tr>
 													</ng-container>
 												</tbody>
@@ -126,20 +141,29 @@
 												<tbody>
 													<ng-container *ngIf="paymentList?.length; else noPayments">
 														<tr *ngFor="let p of paymentList; let i = index">
-															<td class="col-name" *ngIf="p.IncomingPayment?.IsRefundTransaction">
-																{{ i + 1 }}. {{ 'Refund' | translate }} | {{ p.IncomingPayment?.TypeText || p.IncomingPayment?.Type || '---' }}
-																<small *ngIf="p.IncomingPayment?.Remark && p.IncomingPayment?.Remark != ''">{{
+															<td class="col-name"
+																*ngIf="p.IncomingPayment?.IsRefundTransaction">
+																{{ i + 1 }}. {{ 'Refund' | translate }} | {{
+																p.IncomingPayment?.TypeText || p.IncomingPayment?.Type
+																|| '---' }}
+																<small
+																	*ngIf="p.IncomingPayment?.Remark && p.IncomingPayment?.Remark != ''">{{
 																	' | ' + p.IncomingPayment?.Remark
-																}}</small>
+																	}}</small>
 															</td>
-															<td class="col-name"  *ngIf="!p.IncomingPayment?.IsRefundTransaction">
-																{{ i + 1 }}. {{ p.IncomingPayment?.TypeText || p.IncomingPayment?.Type || '---'
-																}}<span *ngIf="p.IncomingPayment?.SubType"> ({{ p.IncomingPayment.SubType }})</span>
-																<small *ngIf="p.IncomingPayment?.Remark && p.IncomingPayment?.Remark != ''">{{
+															<td class="col-name"
+																*ngIf="!p.IncomingPayment?.IsRefundTransaction">
+																{{ i + 1 }}. {{ p.IncomingPayment?.TypeText ||
+																p.IncomingPayment?.Type || '---'
+																}}<span *ngIf="p.IncomingPayment?.SubType"> ({{
+																	p.IncomingPayment.SubType }})</span>
+																<small
+																	*ngIf="p.IncomingPayment?.Remark && p.IncomingPayment?.Remark != ''">{{
 																	' | ' + p.IncomingPayment?.Remark
-																}}</small>
+																	}}</small>
 															</td>
-															<td class="col-amount text-right">{{ p.Amount | number: '1.0-0' }}</td>
+															<td class="col-amount text-right">{{ p.Amount | number:
+																'1.0-0' }}</td>
 														</tr>
 													</ng-container>
 												</tbody>
@@ -157,12 +181,14 @@
 											<tr>
 												<!-- Tổng tiền hàng -->
 												<td class="label">{{ 'BILL_TOTAL_BEFORE_DISCOUNT' | translate }}</td>
-												<td class="value">{{ item.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
+												<td class="value">{{ item.OriginalTotalBeforeDiscount | number: '1.0-0'
+													}}</td>
 											</tr>
 											<tr *ngIf="item.OriginalTotalDiscount > 0">
 												<!-- Tổng chiết khấu -->
 												<td class="label">{{ 'BILL_TOTAL_DISCOUNT' | translate }}</td>
-												<td class="value">{{ item.OriginalTotalDiscount | number: '1.0-0' }}</td>
+												<td class="value">{{ item.OriginalTotalDiscount | number: '1.0-0' }}
+												</td>
 											</tr>
 											<tr *ngIf="item.ShippingAmount && item.ShippingAmount > 0">
 												<!-- Phí vận chuyển -->
@@ -172,17 +198,20 @@
 											</tr>
 											<tr>
 												<!-- Phụ thu -->
-												<td class="label">{{ 'BILL_SERVICE_CHARGE' | translate }} {{ item.AdditionsAmountPercent || 0 }}%</td>
+												<td class="label">{{ 'BILL_SERVICE_CHARGE' | translate }} {{
+													item.AdditionsAmountPercent || 0 }}%</td>
 												<td class="value">{{ item.AdditionsAmount | number: '1.0-0' }}</td>
 											</tr>
 											<tr *ngFor="let vat of item.VATSummary">
 												<td class="label">VAT {{ vat.Rate }}%</td>
-												<td class="value">{{ vat.Tax + vat.AdditionsTax | number: '1.0-0' }}</td>
+												<td class="value">{{ vat.Tax + vat.AdditionsTax | number: '1.0-0' }}
+												</td>
 											</tr>
 											<tr class="summary-total">
 												<!-- Tổng cộng -->
 												<td class="label">{{ 'BILL_GRAND_TOTAL' | translate }}</td>
-												<td class="value">{{ item.CalcTotalOriginal - item.OriginalDiscountFromSalesman | number: '1.0-0' }}</td>
+												<td class="value">{{ item.CalcTotalOriginal -
+													item.OriginalDiscountFromSalesman | number: '1.0-0' }}</td>
 											</tr>
 											<tr *ngIf="item.Received > 0">
 												<!-- Đã thanh toán -->
@@ -211,7 +240,8 @@
 
 									<div class="footer-notes">
 										<div>
-											{{ 'BILL_PRINTDATE' | translate }}: {{ printData.printDate | date: 'HH:mm dd/MM/yyyy' }} - {{ 'BILL_CASHIER' | translate }}:
+											{{ 'BILL_PRINTDATE' | translate }}: {{ printData.printDate | date: 'HH:mm
+											dd/MM/yyyy' }} - {{ 'BILL_CASHIER' | translate }}:
 											{{ cashierName }}
 										</div>
 										<div>
@@ -225,11 +255,12 @@
 										<!-- Thank you for your patronage! -->
 										<div>{{ 'BILL_THANK_YOU' | translate }}</div>
 									</div>
-
+									@if(false){
 									<div class="divider"></div>
 
 									<div class="ad-section">
-										<div class="ad-left">Các quảng cáo, thông tin khác<!-- TODO: Nội dung quảng cáo --></div>
+										<div class="ad-left">Các quảng cáo, thông tin
+											khác<!-- TODO: Nội dung quảng cáo --></div>
 										<div class="ad-right">QR quảng cáo<!-- TODO: QR quảng cáo --></div>
 									</div>
 
@@ -241,6 +272,8 @@
 										</div>
 										<div class="ad-grid-right">QR quảng cáo<!-- TODO: QR quảng cáo --></div>
 									</div>
+									}
+
 								</div>
 							</ng-container>
 
@@ -252,19 +285,23 @@
 									</div>
 									<div class="meta-row">
 										<span class="meta-label">{{ 'Table' | translate }}:</span>
-										<span class="meta-value" *ngFor="let t of printData.selectedTables; let j = index"
-											>{{ t.Name }}<span *ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
+										<span class="meta-value"
+											*ngFor="let t of printData.selectedTables; let j = index">{{ t.Name }}<span
+												*ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
 										</span>
 									</div>
 									<div class="meta-row">
 										<span class="meta-label">{{ 'Printing date' | translate }}:</span>
-										<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm dd/MM/yyyy' }}</span>
+										<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm
+											dd/MM/yyyy' }}</span>
 
 									</div>
 									<div class="meta-row">
 										<span class="meta-label">{{ 'Send to' | translate }}:</span>
-										<span class="meta-value" *ngFor="let k of kitchens | filter: { Id: kitchenQuery }; let j = index"
-											>{{ k.Name }}<span *ngIf="kitchens.length > 0 && j < kitchens.length - 1">,&nbsp;</span>
+										<span class="meta-value"
+											*ngFor="let k of kitchens | filter: { Id: kitchenQuery }; let j = index">{{
+											k.Name }}<span
+												*ngIf="kitchens.length > 0 && j < kitchens.length - 1">,&nbsp;</span>
 										</span>
 									</div>
 								</div>
@@ -274,7 +311,8 @@
 											<td>{{ 'Item' | translate }}</td>
 											<td class="total">{{ 'POS_Quantity_Header' | translate }}</td>
 										</tr>
-										<ng-container *ngFor="let o of item.OrderLines | filter: { _IDKitchens: kitchenQuery }; let idx = index">
+										<ng-container
+											*ngFor="let o of item.OrderLines | filter: { _IDKitchens: kitchenQuery }; let idx = index">
 											<ng-container *ngIf="o._undeliveredQuantity > 0">
 												<tr [ngClass]="{ subOrder: o.SubItems && o.SubItems.length > 0 }">
 													<td>
@@ -285,20 +323,21 @@
 														<span class="bold quantity">{{ o._undeliveredQuantity }}</span>
 													</td>
 												</tr>
-												<tr *ngIf="o.Remark" [ngClass]="{ subOrder: o.SubItems && o.SubItems.length > 0 }">
+												<tr *ngIf="o.Remark"
+													[ngClass]="{ subOrder: o.SubItems && o.SubItems.length > 0 }">
 													<td colspan="2">Note: {{ o.Remark }}</td>
 												</tr>
 												@if (o.SubItems && o.SubItems.length > 0) {
-													<ng-container *ngFor="let g of o.SubItems; let isLast = last">
-														<tr class="small subOrder" [class.isLast]="isLast">
-															<td class="name">
-																--<span>{{ g._Item.Name }}</span>
-															</td>
-															<td class="quantity total">
-																<span>{{ g.Quantity }}</span>
-															</td>
-														</tr>
-													</ng-container>
+												<ng-container *ngFor="let g of o.SubItems; let isLast = last">
+													<tr class="small subOrder" [class.isLast]="isLast">
+														<td class="name">
+															--<span>{{ g._Item.Name }}</span>
+														</td>
+														<td class="quantity total">
+															<span>{{ g.Quantity }}</span>
+														</td>
+													</tr>
+												</ng-container>
 												}
 											</ng-container>
 										</ng-container>
@@ -329,3 +368,95 @@
 		</section>
 	</div>
 </div>
+
+<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
+	<ng-container *ngFor="let o of item.OrderLines | filter: { _IDKitchens: kitchenQuery }; let idx = index">
+		<div [id]="'bill-item-each-'+o.Id" class="bill" style="overflow: auto; width: 72mm">
+			<div class="receipt giao-nhan" style="overflow: auto">
+				<section class="sheet rpt p1">
+					<table>
+						<thead>
+							<tr>
+								<td>
+									<!-- <div class="page-header-space"></div> -->
+								</td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>
+									<div>
+										<div class="items items-kitchen">
+											<table>
+												<tr>
+													<td colspan="2" style="font-size: 16px; border: none !important">
+														<ion-text class="bold">{{'Table' | translate}}: </ion-text>
+														<ng-container *ngFor="let t of printData?.selectedTables">
+															<ion-text class="bold"
+																style="font-size: 20px">{{t.Name}}</ion-text>
+														</ng-container>
+													</td>
+												</tr>
+											</table>
+											<table>
+												<tr class="bold">
+													<td>{{'Item' | translate}}</td>
+													<td class="total">{{'Qty' | translate}}</td>
+												</tr>
+												<ng-container>
+													<tr>
+														<td class="bold" style="border: none !important">
+															{{idx + 1}}.
+															<span [appTranslateResource]="o._item"></span>
+														</td>
+														<td class="quantity total" style="border: none !important">
+															<span
+																class="bold quantity">{{o._undeliveredQuantity}}</span>
+														</td>
+													</tr>
+													@if (o.SubItems && o.SubItems.length > 0) {
+													<ng-container *ngFor="let g of o.SubItems; let isLast = last">
+														<tr class="small subOrder" [class.isLast]="isLast">
+															<td class="name">
+																+<span>{{ g._Item.Name }}</span>
+															</td>
+															<td class="quantity total" style="border: none !important">
+																<span>{{ g.Quantity }}</span>
+															</td>
+														</tr>
+													</ng-container>
+													}
+													<tr *ngIf="o.Remark">
+														<td colspan="2">Note: {{o.Remark}}</td>
+													</tr>
+												</ng-container>
+											</table>
+										</div>
+										<div style="border-bottom: none" class="table-info" *ngIf="kitchenQuery!='all'">
+											<table>
+												<tr>
+													<td class="title">{{'PrintDate' | translate}}</td>
+													<td class="text-right">
+														<span>{{printData.printDate | date: 'HH:mm
+															dd/MM/yyyy'}}</span>
+													</td>
+												</tr>
+											</table>
+										</div>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td>
+									<div class="page-footer-space"></div>
+								</td>
+							</tr>
+						</tfoot>
+					</table>
+				</section>
+			</div>
+		</div>
+	</ng-container>
+</ng-container>
