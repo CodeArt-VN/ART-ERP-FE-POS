@@ -824,6 +824,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				let rs = await this.openComboModal(line);
 				if (!rs) return;
 			}
+			else if(item.BOMs?.length > 0){
+				await this.getItemSetMenuFixed(line);
+			}
 			this.item.OrderLines.push(line);
 
 			this.addOrderLine(line);
@@ -1042,6 +1045,15 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			} else return null;
 		}
 		return null;
+	}
+
+	async getItemSetMenuFixed(line) {
+		let item = line._item;
+		let uom = item.UoMs.find((d) => d.Id == line.IDUoM);
+		let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
+		let UoMPrice = price.NewPrice ? price.NewPrice : price.Price;
+		line.UoMPrice = UoMPrice;
+		line.SubItems = item.BOMs;
 	}
 	async openQuickMemo(line) {
 		if (this.submitAttempt) return;
