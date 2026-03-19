@@ -100,7 +100,7 @@
 	</div>
 </ion-content>
 
-<ion-footer collapse="fade">
+<ion-footer [translucent]="true" collapse="fade">
 	<ion-toolbar>
 		<div slot="end">
 			<ion-button (click)="apply()" fill="outline" color="warning">{{'Cancel' | translate}}</ion-button>

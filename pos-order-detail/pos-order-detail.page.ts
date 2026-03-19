@@ -83,6 +83,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	Staff;
 	notifications = [];
 
+	_defaultREFID = 0;
+
 	_contactDataSource = this.buildSelectDataSource((term) => {
 		return this.contactProvider.search({
 			Take: 20,
@@ -405,7 +407,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			);
 		};
 
-		Promise.all([this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload), this.env.getStorage('POSQuantityConfig')])
+		Promise.all([
+			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
+			this.env.getStorage('POSQuantityConfig'),
+			this.env.getStorage('POSTerminalConfig'),
+		])
 			.then((values) => {
 				dog && console.log('POS environment data loaded', this.posService.dataSource, this.posService.systemConfig);
 				if (values[1]) {
@@ -415,6 +421,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						POSAllowDecimalQuantity: this.posService.systemConfig.POSAllowDecimalQuantity || false,
 						POSVirtualKeyboardQuantity: this.posService.systemConfig.POSVirtualKeyboardQuantity || false,
 					};
+				}
+				if (values[2]) {
+					this._defaultREFID = values[2].TRefID || 0;
 				}
 				super.preLoadData(event);
 			})
@@ -1218,6 +1227,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			cssClass: 'modal90vh',
 			componentProps: {
 				item: payment,
+				_defaultREFID: this._defaultREFID,
 				paymentList: this.paymentList,
 				paymentStatusList: this.posService.dataSource.paymentStatusList,
 				canEditVoucher: this.item.Status != 'Done',
