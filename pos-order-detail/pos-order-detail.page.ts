@@ -82,7 +82,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	Discount;
 	Staff;
 	notifications = [];
-
 	_defaultREFID = 0;
 
 	_contactDataSource = this.buildSelectDataSource((term) => {
@@ -448,7 +447,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this._contactDataSource.selected = [];
 		this.formGroup.valueChanges.subscribe(() => {
 			const controls = this.formGroup.controls;
-			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+			this.canSaveOrder = Object.values(controls).some((control) => control.dirty && control.valid) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
 		});
 		// Generate UID if Code is empty
 		if (!this.item?.Code) {
@@ -1450,6 +1449,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 	async saveOrderData() {
+		this.formGroup.valueChanges.subscribe(() => {
+			const controls = this.formGroup.controls;
+			this.canSaveOrder = Object.values(controls).some((control) => control.dirty && control.valid) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+		});
+
 		// Wait for save to complete before checking print
 		if (this.formGroup.dirty || !this.item.Id) {
 			// Force save and wait for completion

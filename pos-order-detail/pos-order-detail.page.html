@@ -429,12 +429,13 @@
 					</ion-col>
 					<ion-col *ngIf="item.Status == 'TemporaryBill'">
 						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();"
-							[disabled]="submitAttempt || !item.Id"> Hủy tạm tính </ion-button>
+							*ngIf="(this.formGroup.controls.OrderLines.dirty || (this.formGroup.dirty && this.item.Id))"
+							[disabled]="submitAttempt || !item.Id" || canSaveOrder> Hủy tạm tính </ion-button>
 					</ion-col>
 					<ion-col
 						*ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && posService.systemConfig.POSEnableTemporaryPayment">
 						<ion-button color="medium" fill="outline" expand="block" (click)="lockOrder();"
-							[disabled]="submitAttempt || !item.Id"> Tạm tính tiền </ion-button>
+							[disabled]="submitAttempt || !item.Id || canSaveOrder"> Tạm tính tiền </ion-button>
 					</ion-col>
 					<ion-col
 						*ngIf="item.Status == 'TemporaryBill' || item.Status == 'Done' || !posService.systemConfig.POSEnableTemporaryPayment">
@@ -446,7 +447,7 @@
 						</ion-button>
 						<ion-button *ngIf="!canSaveOrder || !posService.systemConfig.POSEnableTemporaryPayment"
 							color="medium" fill="outline" expand="block" (click)="sendPrint();"
-							[disabled]="submitAttempt || !item.Id">
+							[disabled]="submitAttempt || !item.Id || canSaveOrder">
 							{{'Print bill'| translate}}
 						</ion-button>
 					</ion-col>
@@ -456,7 +457,7 @@
 					style="flex-wrap: nowrap">
 					<ion-col size="12">
 						<ion-button *ngIf="item.Debt > 0 " expand="block" (click)="goToPayment()"
-							[disabled]="submitAttempt || !item.Id">
+							[disabled]="submitAttempt || !item.Id|| canSaveOrder">
 							<ion-text>{{'Payment' | translate}} {{item.Debt | number: '1.0-0'}}</ion-text>
 						</ion-button>
 					</ion-col>
@@ -466,7 +467,7 @@
 					style="flex-wrap: nowrap">
 					<ion-col>
 						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()"
-							[disabled]="submitAttempt || !item.Id">
+							[disabled]="submitAttempt || !item.Id || canSaveOrder">
 							<ion-text>{{'Settle bill' | translate}}</ion-text>
 						</ion-button>
 					</ion-col>
@@ -571,7 +572,7 @@
 		[isCompleteLoaded]="isCompleteLoaded" [promotionAppliedPrograms]="promotionAppliedPrograms"
 		[billConfig]="posService.systemConfig"></app-bill-template>
 	<!-- Kitchen Dishes Printing -->
-	
+
 
 	<div class="ion-padding"></div>
 </ion-content>
