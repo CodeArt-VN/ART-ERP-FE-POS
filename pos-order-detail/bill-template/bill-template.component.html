@@ -99,13 +99,14 @@
 														<td class="col-qty text-right">{{ o.Quantity }}</td>
 														<span *ngFor="let u of o._item?.UoMs">
 															<span *ngFor="let p of u.PriceList">
-																<td class="col-price text-right" *ngIf="o.UoMPrice === p.Price">{{
+																<td class="col-price text-right"
+																	*ngIf="o.UoMPrice === p.Price">{{
 																	o.UoMPrice | number: '1.0-0'
 																	}}</td>
-																<td class="col-price text-right" *ngIf="o.UoMPrice !== p.Price">{{
+																<td class="col-price text-right"
+																	*ngIf="o.UoMPrice !== p.Price">{{
 																	o.UoMPrice | number: '1.0-0'
-																	}}<small class="old-price">
-																		{{p.Price | number:
+																	}} <small class="old-price">{{p.Price | number:
 																		'1.0-0'}}</small></td>
 															</span>
 														</span>
@@ -120,13 +121,20 @@
 									</div>
 
 									<!-- LIST_DISCOUNT -->
-									<ng-container *ngIf="promotionAppliedPrograms?.length">
+									<ng-container *ngIf="promotionAppliedPrograms?.length || DiscountDeal > 0">
 										<div class="divider"></div>
 
 										<div class="discount-block">
 											<div class="section-title">{{ 'BILL_LIST_DISCOUNT' | translate }}</div>
 											<table class="discount-table">
 												<tbody>
+													<tr *ngIf="DiscountDeal > 0">
+														<td class="col-name">{{ 'Chiết khấu Deal giảm' | translate }}
+														</td>
+														<td class="col-amount text-right">{{ DiscountDeal | number:
+															'1.0-0'
+															}}</td>
+													</tr>
 													<ng-container
 														*ngIf="promotionAppliedPrograms?.length; else noDiscounts">
 														<tr *ngFor="let p of promotionAppliedPrograms; let i = index">
@@ -190,12 +198,6 @@
 
 									<table class="summary-table">
 										<tbody>
-											<tr>
-												<!-- Tổng tiền hàng -->
-												<td class="label">{{ 'Chiết khấu Deal giảm' | translate }}</td>
-												<td class="value">{{ DiscountDeal | number: '1.0-0'
-													}}</td>
-											</tr>
 											<tr>
 												<!-- Tổng tiền hàng -->
 												<td class="label">{{ 'BILL_TOTAL_BEFORE_DISCOUNT' | translate }}</td>
