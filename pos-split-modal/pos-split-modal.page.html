@@ -178,7 +178,8 @@
 							<div style="min-width: 100%; max-width: 100%">
 								<table style="max-width: 100%; min-width: 100%">
 									<tr>
-										<td style="min-width: 480px !important; max-width: 480px !important"></td>
+										<td class="item-name"></td>
+										<td class="item-price"></td>
 										<td
 											style="padding-left: 5px !important"
 											class="UoM col-total c-control"
@@ -190,31 +191,10 @@
 									@for( i of items;track i.Id; let idx = $index ){
 									<tr>
 										<td class="label">
-											<ng-select
-												[disabled]="true"
-												[id]="'drl'+idx"
-												class="c-input"
-												appendTo="#pos-split-page"
-												[(ngModel)]="i.IDItem"
-												[labelForId]="'IDItem'+idx"
-												[items]="itemList$ | async"
-												[typeahead]="itemListInput$"
-												[virtualScroll]="true"
-												bindLabel="Name"
-												bindValue="Id"
-												placeholder="{{'Search for name or product code' | translate}}"
-											>
-												<ng-template ng-option-tmp let-i="item" let-search="searchTerm">
-													<div *ngIf="i">
-														<div>
-															<span>{{i.Name}}</span>
-														</div>
-														<small
-															>#<b><span class="important">{{i.Id}} - {{i.Code}}</span></b></small
-														>
-													</div>
-												</ng-template>
-											</ng-select>
+											<span class="c-label item-name-label">{{ i.ItemName }}</span>
+										</td>
+										<td class="label">
+											<span class="c-label item-name-label">{{ i.UoMPrice }}</span>
 										</td>
 										<td style="padding-left: 5px !important" class="UoM col-total c-control" *ngFor="let o of i.splitDetail; let jdx = index;">
 											<input
@@ -248,6 +228,18 @@
 										</td>
 									</tr>
 									} }
+									<!-- <tr>
+										<td class="label"><label class="c-label summary-label">Tổng số lượng</label></td>
+										<td *ngFor="let o of items[0]?.splitDetail; let jdx = index;" class="UoM col-total c-control">
+											<label class="c-label summary-value">{{ getTotalQuantityByCol(jdx) }}</label>
+										</td>
+									</tr>
+									<tr>
+										<td class="label"><label class="c-label summary-label">Số dư còn lại</label></td>
+										<td *ngFor="let o of items[0]?.splitDetail; let jdx = index;" class="UoM col-total c-control">
+											<label class="c-label summary-value">{{ getRemainQuantityByCol(jdx) }}</label>
+										</td>
+									</tr> -->
 								</table>
 							</div>
 						</div>
