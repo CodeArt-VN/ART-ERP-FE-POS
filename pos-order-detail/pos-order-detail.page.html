@@ -429,8 +429,7 @@
 					</ion-col>
 					<ion-col *ngIf="item.Status == 'TemporaryBill'">
 						<ion-button color="danger" fill="outline" expand="block" (click)="unlockOrder();"
-							*ngIf="(this.formGroup.controls.OrderLines.dirty || (this.formGroup.dirty && this.item.Id))"
-							[disabled]="submitAttempt || !item.Id" || canSaveOrder> Hủy tạm tính </ion-button>
+							[disabled]="submitAttempt || !item.Id"> Hủy tạm tính </ion-button>
 					</ion-col>
 					<ion-col
 						*ngIf="item.Status != 'TemporaryBill' && item.Status != 'Done' && posService.systemConfig.POSEnableTemporaryPayment">

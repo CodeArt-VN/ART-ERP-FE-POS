@@ -1,4 +1,5 @@
 ﻿import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { forEachChild } from 'typescript';
 
 @Component({
 	selector: 'app-bill-template',
@@ -21,7 +22,7 @@ export class BillTemplateComponent {
 	@Input() billConfig: any;
 
 	@ViewChild('bill', { static: false }) billRef: ElementRef;
-
+	DiscountDeal = 0;
 	groupedOrderLines = [];
 	private _lastGroupedKey: string = null;
 
@@ -39,7 +40,7 @@ export class BillTemplateComponent {
 
 	static buildPreviewCss(fontSize: number): string {
 		const safeFontSize = Number.isFinite(fontSize) && fontSize > 0 ? fontSize : 12;
-		
+
 		return `
 			html,body{margin:0;padding:0}
 			*,*::before,*::after{box-sizing:border-box}
@@ -168,6 +169,7 @@ export class BillTemplateComponent {
 			.bill .ad-grid-title{font-weight:700}
 			.bill .ad-grid-body{margin-top:4px;font-size:0.7em}
 			.bill .ad-grid-right{flex:0 0 100px;background:#d9d9d9;display:flex;align-items:center;justify-content:center}
+			.old-price {text-decoration: line-through;color: var(--ion-color-dark);}
 		`;
 	}
 
@@ -178,11 +180,20 @@ export class BillTemplateComponent {
 	// Group and sum identical OrderLines (same IDItem + IDUoM) to make bill printing more concise
 	// Only applies to TemporaryBill and Done to avoid affecting other printing purposes
 	getGroupedOrderLinesForPrint() {
+		this.DiscountDeal = 0;
 		if (!this.isCompleteLoaded) return;
 		if (!this.item?.OrderLines?.length) return [];
 
 		// For non-bill printing keep original list
 		if (this.item.Status !== 'TemporaryBill' && this.item.Status !== 'Done') {
+			this.item.OrderLines.forEach(o => {
+				o._item?.UoMs.forEach(u => {
+					u.PriceList.forEach(p => {
+						const discountDeal = p.Price - o.UoMPrice;
+						this.DiscountDeal += discountDeal * o.Quantity;
+					});
+				});
+			});
 			return this.item.OrderLines;
 		}
 
@@ -191,6 +202,14 @@ export class BillTemplateComponent {
 			this.item.Status + '|' + (this.item.OrderLines || []).map((l) => `${l.Code || l.Id || l.IDItem}_${l.Quantity || 0}_${Math.round((l.UoMPrice || 0) * 100)}`).join('|');
 
 		if (this._lastGroupedKey === key && this.groupedOrderLines && this.groupedOrderLines.length) {
+			this.groupedOrderLines.forEach(o => {
+				o._item?.UoMs.forEach(u => {
+					u?.PriceList.forEach(p => {
+						const discountDeal = p.Price - o.UoMPrice;
+						this.DiscountDeal += discountDeal * o.Quantity;
+					});
+				});
+			});
 			return this.groupedOrderLines;
 		}
 
@@ -219,6 +238,14 @@ export class BillTemplateComponent {
 		}
 
 		this.groupedOrderLines = Array.from(groupedMap.values());
+		this.groupedOrderLines.forEach(o => {
+			o._item?.UoMs.forEach(u => {
+				u.PriceList.forEach(p => {
+					const discountDeal = p.Price - o.UoMPrice;
+					this.DiscountDeal += discountDeal * o.Quantity;
+				});
+			});
+		});
 		return this.groupedOrderLines;
 	}
 }
