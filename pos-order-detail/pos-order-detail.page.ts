@@ -1451,7 +1451,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	async saveOrderData() {
 		this.formGroup.valueChanges.subscribe(() => {
 			const controls = this.formGroup.controls;
-			this.canSaveOrder = Object.values(controls).some((control) => control.dirty && control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+			this.canSaveOrder = Object.values(controls).some((control) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
 		});
 
 		// Wait for save to complete before checking print

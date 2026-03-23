@@ -189,8 +189,10 @@ export class BillTemplateComponent {
 			this.item.OrderLines.forEach(o => {
 				o._item?.UoMs.forEach(u => {
 					u.PriceList.forEach(p => {
-						const discountDeal = p.Price - o.UoMPrice;
-						this.DiscountDeal += discountDeal * o.Quantity;
+						if (p.NewPrice) {
+							const discountDeal = p.Price - o.UoMPrice;
+							this.DiscountDeal += discountDeal * o.Quantity;
+						}
 					});
 				});
 			});
@@ -205,8 +207,10 @@ export class BillTemplateComponent {
 			this.groupedOrderLines.forEach(o => {
 				o._item?.UoMs.forEach(u => {
 					u?.PriceList.forEach(p => {
-						const discountDeal = p.Price - o.UoMPrice;
-						this.DiscountDeal += discountDeal * o.Quantity;
+						if (p.NewPrice) {
+							const discountDeal = p.Price - o.UoMPrice;
+							this.DiscountDeal += discountDeal * o.Quantity;
+						}
 					});
 				});
 			});
@@ -241,8 +245,10 @@ export class BillTemplateComponent {
 		this.groupedOrderLines.forEach(o => {
 			o._item?.UoMs.forEach(u => {
 				u.PriceList.forEach(p => {
-					const discountDeal = p.Price - o.UoMPrice;
-					this.DiscountDeal += discountDeal * o.Quantity;
+					if (p.NewPrice) {
+						const discountDeal = p.Price - o.UoMPrice;
+						this.DiscountDeal += discountDeal * o.Quantity;
+					}
 				});
 			});
 		});
