@@ -1,5 +1,13 @@
 ﻿import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { ex } from '@fullcalendar/core/internal-common';
+import { _ } from '@ngx-translate/core';
 import { forEachChild } from 'typescript';
+
+type DealPrintSummary = {
+	Name: string;
+	Quantity: number;
+	DealDiscount: number;
+};
 
 @Component({
 	selector: 'app-bill-template',
@@ -24,6 +32,7 @@ export class BillTemplateComponent {
 	@ViewChild('bill', { static: false }) billRef: ElementRef;
 	DiscountDeal = 0;
 	groupedOrderLines = [];
+	dealMap = new Map<string, DealPrintSummary>();
 	private _lastGroupedKey: string = null;
 
 	get billElement(): ElementRef {
@@ -177,85 +186,142 @@ export class BillTemplateComponent {
 		return BillTemplateComponent.buildPreviewCss(fontSize);
 	}
 
-	// Group and sum identical OrderLines (same IDItem + IDUoM) to make bill printing more concise
-	// Only applies to TemporaryBill and Done to avoid affecting other printing purposes
-	getGroupedOrderLinesForPrint() {
+	private shouldGroupOrderLinesForPrint(): boolean {
+		return this.item?.Status === 'TemporaryBill' || this.item?.Status === 'Done';
+	}
+
+	private toNumber(value: any): number {
+		const parsedValue = parseFloat(value);
+		return Number.isFinite(parsedValue) ? parsedValue : 0;
+	}
+
+	private buildSubItemsSignature(subItems: any[] = []): string {
+		return subItems.map((subItem) => `${subItem?.IDItem || subItem?.Id || ''}_${subItem?.IDUoM || ''}_${this.toNumber(subItem?.Quantity)}`).join(',');
+	}
+
+	private buildPrintCacheKey(lines: any[]): string {
+		return [
+			this.item?.Status || '',
+			...lines.map((line) =>
+				[
+					line?.Code || line?.Id || `${line?.IDItem}_${line?.IDUoM}`,
+					line?.IDItem || '',
+					line?.IDUoM || '',
+					this.toNumber(line?.Quantity),
+					Math.round(this.toNumber(line?.UoMPrice) * 100),
+					Math.round(this.toNumber(line?.OriginalDiscount1) * 100),
+					this.buildSubItemsSignature(line?.SubItems),
+				].join('_')
+			),
+		].join('|');
+	}
+
+	private buildGroupedLineKey(line: any): string {
+		if (line?.SubItems?.length) {
+			return line?.Code || line?.Id || `${line?.IDItem}_${line?.IDUoM}_${this.buildSubItemsSignature(line.SubItems)}`;
+		}
+
+		return `${line?.IDItem}_${line?.IDUoM}`;
+	}
+
+	private clonePrintLine(line: any): any {
+		return {
+			...line,
+			SubItems: line?.SubItems ? line.SubItems.map((subItem) => ({ ...subItem })) : [],
+		};
+	}
+
+	private rebuildDealSummary(lines: any[]): void {
 		this.DiscountDeal = 0;
-		if (!this.isCompleteLoaded) return;
-		if (!this.item?.OrderLines?.length) return [];
+		this.dealMap = new Map<string, DealPrintSummary>();
 
-		// For non-bill printing keep original list
-		if (this.item.Status !== 'TemporaryBill' && this.item.Status !== 'Done') {
-			this.item.OrderLines.forEach(o => {
-				o._item?.UoMs.forEach(u => {
-					u.PriceList.forEach(p => {
-						if (p.NewPrice) {
-							const discountDeal = p.Price - o.UoMPrice;
-							this.DiscountDeal += discountDeal * o.Quantity;
-						}
-					});
-				});
-			});
-			return this.item.OrderLines;
-		}
+		for (const line of lines || []) {
+			const quantity = this.toNumber(line?.Quantity);
+			const dealDiscount = this.toNumber(line?.OriginalDiscount1);
 
-		// Build a lightweight key to detect meaningful changes (status + line code/qty/price)
-		const key =
-			this.item.Status + '|' + (this.item.OrderLines || []).map((l) => `${l.Code || l.Id || l.IDItem}_${l.Quantity || 0}_${Math.round((l.UoMPrice || 0) * 100)}`).join('|');
+			if (quantity <= 0 || dealDiscount <= 0) continue;
 
-		if (this._lastGroupedKey === key && this.groupedOrderLines && this.groupedOrderLines.length) {
-			this.groupedOrderLines.forEach(o => {
-				o._item?.UoMs.forEach(u => {
-					u?.PriceList.forEach(p => {
-						if (p.NewPrice) {
-							const discountDeal = p.Price - o.UoMPrice;
-							this.DiscountDeal += discountDeal * o.Quantity;
-						}
-					});
-				});
-			});
-			return this.groupedOrderLines;
-		}
+			const dealKey = `${line?.IDItem}_${line?.IDUoM}`;
+			const existingDeal = this.dealMap.get(dealKey);
 
-		this._lastGroupedKey = key;
-		const groupedMap = new Map<string, any>();
-
-		for (const line of this.item.OrderLines) {
-			let mapKey = `${line.IDItem}_${line.IDUoM}`;
-			if (groupedMap.has(mapKey) && line.SubItems?.length > 0) {
-				mapKey += `_${line.SubItems.map((s) => `${s.IDItem}_${s.IDUoM}`).join('_')}`;
-				groupedMap.set(mapKey, { ...line, SubItems: line.SubItems ? [...line.SubItems] : [] });
-			} else if (groupedMap.has(mapKey)) {
-				const existing = groupedMap.get(mapKey);
-				existing.Quantity += line.Quantity || 0;
-				existing.OriginalTotalDiscount += line.OriginalTotalDiscount || 0;
-				existing.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount || 0;
-				existing.OriginalTotalAfterDiscount += line.OriginalTotalAfterDiscount || 0;
-				existing.OriginalTax += line.OriginalTax || 0;
-
-				if (existing.Quantity > 0) {
-					existing.UoMPrice = existing.OriginalTotalBeforeDiscount / existing.Quantity;
-				}
+			if (existingDeal) {
+				existingDeal.Quantity += quantity;
+				existingDeal.DealDiscount += dealDiscount;
 			} else {
-				groupedMap.set(mapKey, { ...line, SubItems: line.SubItems ? [...line.SubItems] : [] });
+				this.dealMap.set(dealKey, {
+					Name: line?._item?.Name || line?.Name || '',
+					Quantity: quantity,
+					DealDiscount: dealDiscount,
+				});
+			}
+
+			this.DiscountDeal += dealDiscount;
+		}
+	}
+
+	private groupOrderLinesForPrint(lines: any[]): any[] {
+		const groupedMap = new Map<string, any>();
+		const sumFields = [
+			'Quantity',
+			'OriginalDiscount1',
+			'OriginalTotalDiscount',
+			'OriginalTotalBeforeDiscount',
+			'OriginalTotalAfterDiscount',
+			'OriginalTax',
+			'OriginalTotalAfterTax',
+			'AdditionsAmount',
+			'CalcOriginalTotalAdditions',
+			'CalcTotalOriginal',
+			'OriginalDiscountFromSalesman',
+		];
+
+		for (const line of lines || []) {
+			const mapKey = this.buildGroupedLineKey(line);
+
+			if (!groupedMap.has(mapKey)) {
+				groupedMap.set(mapKey, this.clonePrintLine(line));
+				continue;
+			}
+
+			const existing = groupedMap.get(mapKey);
+			sumFields.forEach((field) => {
+				existing[field] = this.toNumber(existing[field]) + this.toNumber(line?.[field]);
+			});
+
+			if (this.toNumber(existing.Quantity) > 0) {
+				existing.UoMPrice = this.toNumber(existing.OriginalTotalBeforeDiscount) / this.toNumber(existing.Quantity);
 			}
 		}
 
-		this.groupedOrderLines = Array.from(groupedMap.values());
-		this.groupedOrderLines.forEach(o => {
-			o._item?.UoMs.forEach(u => {
-				u.PriceList.forEach(p => {
-					if (p.NewPrice) {
-						const discountDeal = p.Price - o.UoMPrice;
-						this.DiscountDeal += discountDeal * o.Quantity;
-					}
-				});
-			});
-		});
+		return Array.from(groupedMap.values());
+	}
+
+	// Group and sum identical OrderLines (same IDItem + IDUoM) to make bill printing more concise
+	// Only applies to TemporaryBill and Done to avoid affecting other printing purposes
+	getGroupedOrderLinesForPrint() {
+		if (!this.isCompleteLoaded) return [];
+		if (!this.item?.OrderLines?.length) {
+			this.DiscountDeal = 0;
+			this.dealMap = new Map<string, DealPrintSummary>();
+			this.groupedOrderLines = [];
+			this._lastGroupedKey = null;
+			return [];
+		}
+
+		const key = this.buildPrintCacheKey(this.item.OrderLines);
+		if (this._lastGroupedKey === key) {
+			return this.shouldGroupOrderLinesForPrint() ? this.groupedOrderLines : this.item.OrderLines;
+		}
+
+		this._lastGroupedKey = key;
+		this.rebuildDealSummary(this.item.OrderLines);
+
+		if (!this.shouldGroupOrderLinesForPrint()) {
+			this.groupedOrderLines = [];
+			return this.item.OrderLines;
+		}
+
+		this.groupedOrderLines = this.groupOrderLinesForPrint(this.item.OrderLines);
 		return this.groupedOrderLines;
 	}
 }
-
-
-
-

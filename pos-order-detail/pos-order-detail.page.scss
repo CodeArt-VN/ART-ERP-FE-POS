@@ -310,6 +310,10 @@
 						margin: 5px 0;
 						font-weight: bold;
 					}
+					.old-price {
+						text-decoration: line-through;
+						color: var(--ion-color-dark);
+					}
 
 					.od-quantity {
 						display: flex;

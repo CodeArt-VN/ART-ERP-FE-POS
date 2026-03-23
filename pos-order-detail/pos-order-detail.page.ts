@@ -447,7 +447,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this._contactDataSource.selected = [];
 		this.formGroup.valueChanges.subscribe(() => {
 			const controls = this.formGroup.controls;
-			this.canSaveOrder = Object.values(controls).some((control) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+			this.canSaveOrder =
+				Object.values(controls).some((control) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
 		});
 		// Generate UID if Code is empty
 		if (!this.item?.Code) {
@@ -810,7 +811,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				IDTax: item.IDSalesTaxDefinition,
 				TaxRate: item.SaleVAT,
 				IDUoM: idUoM,
-				UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
+				UoMPrice: price.Price,
 				UoMName: uom.Name,
 				Quantity: quantity,
 				IDBaseUoM: idUoM,
@@ -827,14 +828,19 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				SubItems: [],
 				CreatedDate: new Date(),
 				_item: item,
+				NewPrice: price.NewPrice ?? 0,
 			};
 			if (item.Groups?.length > 0) {
 				let rs = await this.openComboModal(line);
 				if (!rs) return;
-			}
-			else if(item.BOMs?.length > 0){
+			} else if (item.BOMs?.length > 0) {
 				await this.getItemSetMenuFixed(line);
 			}
+
+			if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+				line.OriginalDiscount1 = line.UoMPrice - line.NewPrice;
+			}
+
 			this.item.OrderLines.push(line);
 
 			this.addOrderLine(line);
@@ -855,6 +861,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			} else if ((!isNumberInput && line.Quantity + quantity > 0) || (isNumberInput && quantity > 0)) {
 				line.Quantity += quantity;
 				if (isNumberInput) line.Quantity = quantity;
+				if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+					line.OriginalDiscount1 = (line.UoMPrice - line.NewPrice) * line.Quantity;
+				}
 				let subItems = [];
 				if (line.SubItems && line.SubItems.length > 0) {
 					line.SubItems.forEach((so) => {
@@ -878,6 +887,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
 							SubItems: subItems,
+							OriginalDiscount1: line.OriginalDiscount1,
 						},
 					],
 					Status: 'New',
@@ -888,6 +898,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 						.then((_) => {
 							line.Quantity += quantity;
+							if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+								line.OriginalDiscount1 = (line.UoMPrice - line.NewPrice) * line.Quantity;
+							}
 							let subItems = [];
 							if (line.SubItems && line.SubItems.length > 0) {
 								line.SubItems.forEach((so) => {
@@ -911,6 +924,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 										IDUoM: line.IDUoM,
 										Quantity: line.Quantity,
 										SubItems: subItems,
+										OriginalDiscount1: line.OriginalDiscount1,
+
 									},
 								],
 							});
@@ -922,6 +937,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 							.then((_) => {
 								line.Quantity += quantity;
+								if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+									line.OriginalDiscount1 = (line.UoMPrice - line.NewPrice) * line.Quantity;
+								}
 								let subItems = [];
 								if (line.SubItems && line.SubItems.length > 0) {
 									line.SubItems.forEach((so) => {
@@ -945,6 +963,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 											IDUoM: line.IDUoM,
 											Quantity: line.Quantity,
 											SubItems: subItems,
+											OriginalDiscount1: line.OriginalDiscount1,
+
 										},
 									],
 								});
@@ -1063,6 +1083,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		line.UoMPrice = UoMPrice;
 		line.SubItems = item.BOMs;
 	}
+
 	async openQuickMemo(line) {
 		if (this.submitAttempt) return;
 		if (line.Status != 'New') return;
@@ -1451,7 +1472,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	async saveOrderData() {
 		this.formGroup.valueChanges.subscribe(() => {
 			const controls = this.formGroup.controls;
-			this.canSaveOrder = Object.values(controls).some((control) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+			this.canSaveOrder =
+				Object.values(controls).some((control) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
 		});
 
 		// Wait for save to complete before checking print
@@ -2398,12 +2420,15 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.formGroup.controls.OrderLines = new FormArray([]);
 		if (this.item.OrderLines?.length) {
 			for (let i of this.item.OrderLines) {
+				if(i.OriginalDiscount1 > 0 || i.OriginalDiscount2 > 0 || i.OriginalDiscountByOrder > 0) {
+					i.NewPrice = i.UoMPrice - (i.OriginalDiscount1 + i.OriginalDiscount2 + i.OriginalDiscountByOrder) / i.Quantity;
+				}
 				this.addOrderLine(i);
 				const menuPrice = this.getMenuEffectivePrice(this.posService.dataSource.menuList, i.IDItem, i.IDUoM);
 
 				if (menuPrice == null || i.UoMPrice == null) continue;
 
-				if (menuPrice !== i.UoMPrice) {
+				if (menuPrice !== i.UoMPrice && menuPrice == 0) {
 					i._isFoC = true;
 					i._focPrevPrice = menuPrice;
 				}
@@ -2453,9 +2478,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				disabled: true,
 			}),
 			SubItems: [line?.SubItems || []],
+			OriginalDiscount1: [line.OriginalDiscount1],
+
 			// OriginalTotalBeforeDiscount
 			// OriginalPromotion
-			// OriginalDiscount1
 			// OriginalDiscount2
 			// OriginalDiscountByItem
 			// OriginalDiscountByGroup
