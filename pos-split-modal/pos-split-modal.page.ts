@@ -637,5 +637,13 @@ export class POSSplitModalPage extends PageBase {
 
 		splitDetails.forEach((line) => this.calcOrderLine(line));
 	}
-
+	
+	getTotalAmountForSplit(jdx: number): number {
+		if (!this.items) return 0;
+		return this.items.reduce((sum, item) => {
+			const qty = item.splitDetail?.[jdx]?.Quantity || 0;
+			const price = item.UoMPrice || 0;
+			return sum + qty * price;
+		}, 0);
+	}
 }

@@ -228,18 +228,16 @@
 										</td>
 									</tr>
 									} }
-									<!-- <tr>
-										<td class="label"><label class="c-label summary-label">Tổng số lượng</label></td>
+									<tr>
+										<td class="label">
+											<label class="c-label summary-label col-total">{{'Total' | translate}}</label>
+										</td>
+										<td class="label"></td>
 										<td *ngFor="let o of items[0]?.splitDetail; let jdx = index;" class="UoM col-total c-control">
-											<label class="c-label summary-value">{{ getTotalQuantityByCol(jdx) }}</label>
+											<label class="c-label summary-value ">{{ getTotalAmountForSplit(jdx) | number:'1.0-0' }}</label>
 										</td>
 									</tr>
-									<tr>
-										<td class="label"><label class="c-label summary-label">Số dư còn lại</label></td>
-										<td *ngFor="let o of items[0]?.splitDetail; let jdx = index;" class="UoM col-total c-control">
-											<label class="c-label summary-value">{{ getRemainQuantityByCol(jdx) }}</label>
-										</td>
-									</tr> -->
+									
 								</table>
 							</div>
 						</div>
