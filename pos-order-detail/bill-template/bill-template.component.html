@@ -117,8 +117,8 @@
 														<td class="col-amount text-right">{{ DiscountDeal | number: '1.0-0' }}</td>
 													</tr>
 													<tr *ngFor="let d of dealMap | keyvalue">
-														<td class="col-name">
-															{{ d.value.Name }}
+														<td class="col-name name-deal">
+															+ {{ d.value.Name }}
 															<small *ngIf="d.value.Quantity">x{{ d.value.Quantity }}</small>
 														</td>
 														<td class="col-amount text-right">

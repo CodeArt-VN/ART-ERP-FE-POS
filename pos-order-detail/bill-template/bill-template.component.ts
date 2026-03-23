@@ -179,6 +179,7 @@ export class BillTemplateComponent {
 			.bill .ad-grid-body{margin-top:4px;font-size:0.7em}
 			.bill .ad-grid-right{flex:0 0 100px;background:#d9d9d9;display:flex;align-items:center;justify-content:center}
 			.old-price {text-decoration: line-through;color: var(--ion-color-dark);}
+			.name-deal {text-indent: 15px;}
 		`;
 	}
 
