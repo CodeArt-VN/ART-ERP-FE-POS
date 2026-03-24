@@ -87,16 +87,12 @@
 													<tr class="item-row-values">
 														<td class="col-name col-empty"></td>
 														<td class="col-qty text-right">{{ o.Quantity }}</td>
-														<span *ngFor="let u of o._item?.UoMs">
-															<span *ngFor="let p of u.PriceList">
-																<td class="col-price text-right" *ngIf="o.UoMPrice === p.Price">{{ o.UoMPrice | number: '1.0-0' }}</td>
-																<td class="col-price text-right" *ngIf="o.UoMPrice !== p.Price">
-																	{{ o.UoMPrice | number: '1.0-0' }} <small class="old-price">{{ p.Price | number: '1.0-0' }}</small>
-																</td>
-															</span>
-														</span>
-														<!-- <td class="col-price text-right">{{ o.UoMPrice | number: '1.0-0'
-															}}</td> -->
+														<ng-container *ngIf="getLinePriceInfo(o) as priceInfo">
+															<td class="col-price text-right">
+																{{ priceInfo.currentPrice | number: '1.0-0' }}
+																<small *ngIf="priceInfo.oldPrice !== null" class="old-price">{{ priceInfo.oldPrice | number: '1.0-0' }}</small>
+															</td>
+														</ng-container>
 														<td class="col-total text-right">{{ o.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
 													</tr>
 												</ng-container>
@@ -237,8 +233,7 @@
 											{{
 												printData.printDate
 													| date
-														: 'HH:mm
-											dd/MM/yyyy'
+														: 'HH:mm dd/MM/yyyy'
 											}}
 											- {{ 'BILL_CASHIER' | translate }}:
 											{{ cashierName }}
@@ -291,8 +286,7 @@
 										<span class="meta-time">{{
 											item.OrderDate || printData.printDate
 												| date
-													: 'HH:mm
-											dd/MM/yyyy'
+													: 'HH:mm dd/MM/yyyy'
 										}}</span>
 									</div>
 									<div class="meta-row">
@@ -433,8 +427,7 @@
 														<span>{{
 															printData.printDate
 																| date
-																	: 'HH:mm
-															dd/MM/yyyy'
+																	: 'HH:mm dd/MM/yyyy'
 														}}</span>
 													</td>
 												</tr>

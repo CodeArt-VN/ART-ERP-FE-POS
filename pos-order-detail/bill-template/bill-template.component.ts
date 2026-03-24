@@ -1,12 +1,13 @@
 ﻿import { Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { ex } from '@fullcalendar/core/internal-common';
-import { _ } from '@ngx-translate/core';
-import { forEachChild } from 'typescript';
-
 type DealPrintSummary = {
 	Name: string;
 	Quantity: number;
 	DealDiscount: number;
+};
+
+type BillLinePriceInfo = {
+	currentPrice: number;
+	oldPrice: number | null;
 };
 
 @Component({
@@ -229,6 +230,38 @@ export class BillTemplateComponent {
 		return {
 			...line,
 			SubItems: line?.SubItems ? line.SubItems.map((subItem) => ({ ...subItem })) : [],
+		};
+	}
+
+	private getSalePriceForLine(line: any): any | null {
+		const uom = line?._item?.UoMs?.find((candidate) => candidate?.Id === line?.IDUoM);
+		return uom?.PriceList?.find((price) => price?.Type === 'SalePriceList') || null;
+	}
+
+	getLinePriceInfo(line: any): BillLinePriceInfo {
+		const basePrice = this.toNumber(line?.UoMPrice);
+		const sale = this.getSalePriceForLine(line);
+
+		if (!sale) {
+			return { currentPrice: basePrice, oldPrice: null };
+		}
+
+		const price = Number.isFinite(Number(sale?.Price)) ? Number(sale.Price) : basePrice;
+
+		const newPrice = Number.isFinite(Number(sale?.NewPrice)) ? Number(sale.NewPrice) : null;
+
+		// Có giá giảm
+		if (newPrice != null && newPrice < price) {
+			return {
+				currentPrice: newPrice,
+				oldPrice: price,
+			};
+		}
+
+		// Không giảm
+		return {
+			currentPrice: price,
+			oldPrice: null,
 		};
 	}
 
