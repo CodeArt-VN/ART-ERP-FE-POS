@@ -233,38 +233,6 @@ export class BillTemplateComponent {
 		};
 	}
 
-	private getSalePriceForLine(line: any): any | null {
-		const uom = line?._item?.UoMs?.find((candidate) => candidate?.Id === line?.IDUoM);
-		return uom?.PriceList?.find((price) => price?.Type === 'SalePriceList') || null;
-	}
-
-	getLinePriceInfo(line: any): BillLinePriceInfo {
-		const basePrice = this.toNumber(line?.UoMPrice);
-		const sale = this.getSalePriceForLine(line);
-
-		if (!sale) {
-			return { currentPrice: basePrice, oldPrice: null };
-		}
-
-		const price = Number.isFinite(Number(sale?.Price)) ? Number(sale.Price) : basePrice;
-
-		const newPrice = Number.isFinite(Number(sale?.NewPrice)) ? Number(sale.NewPrice) : null;
-
-		// Có giá giảm
-		if (newPrice != null && newPrice < price) {
-			return {
-				currentPrice: newPrice,
-				oldPrice: price,
-			};
-		}
-
-		// Không giảm
-		return {
-			currentPrice: price,
-			oldPrice: null,
-		};
-	}
-
 	private rebuildDealSummary(lines: any[]): void {
 		this.DiscountDeal = 0;
 		this.dealMap = new Map<string, DealPrintSummary>();
