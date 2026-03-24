@@ -89,8 +89,7 @@
 														<td class="col-qty text-right">{{ o.Quantity }}</td>
 														<ng-container *ngIf="getLinePriceInfo(o) as priceInfo">
 															<td class="col-price text-right">
-																{{ priceInfo.currentPrice | number: '1.0-0' }}
-																<small *ngIf="priceInfo.oldPrice !== null" class="old-price">{{ priceInfo.oldPrice | number: '1.0-0' }}</small>
+																{{ priceInfo.oldPrice | number: '1.0-0' }}
 															</td>
 														</ng-container>
 														<td class="col-total text-right">{{ o.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
