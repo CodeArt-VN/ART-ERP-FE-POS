@@ -67,7 +67,7 @@ export class POSOrderPage extends PageBase {
 		public location: Location,
 		public commonService: CommonService,
 		public promotionService: PromotionService,
-		public paymentService:PaymentService
+		public paymentService: PaymentService
 	) {
 		super();
 		this.pageConfig.isShowFeature = true;
@@ -136,13 +136,13 @@ export class POSOrderPage extends PageBase {
 			this.posTerminalProvider.read({ IDBranch: this.env.selectedBranch }),
 			this.env.getStorage('POSTerminalConfig'),
 			this.env.getStorage('POSQuantityConfig'),
-			this.paymentService.getEDCCConnection(),
+			this.paymentService.getEDCCConnection().catch(() => {  this.env.showMessage('Failed to connect to EDCC');  return null; }),
 		])
 			.then((values: any) => {
 				this.tableGroupList = this.posService.dataSource.tableGroups;
 				this.soStatusList = this.posService.dataSource.orderStatusList;
 				this.printerList = values[1].data || [];
-				this.terminalList = values[2].data || [];                                           
+				this.terminalList = values[2].data || [];
 				this.VCBTerminals = values[5] || [];
 
 				if (this.tableGroupList.length > 0) this.posShiftService.initShift();
@@ -665,5 +665,4 @@ export class POSOrderPage extends PageBase {
 					});
 			});
 	}
-
 }

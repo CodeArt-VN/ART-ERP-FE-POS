@@ -50,6 +50,15 @@
 		b {
 			color: var(--ion-color-primary);
 		}
+		.item-name {
+			min-width: 380px !important; 
+			max-width: 380px !important
+		}
+		.item-price {
+			min-width: 120px !important; 
+			max-width: 120px !important;
+			text-align: right;
+		}
 	}
 	.col-uom {
 		max-width: 90px;
@@ -143,4 +152,14 @@
 		padding-left: 13px !important;
 		color: var(--ion-color-medium);
 	}
+}
+
+.summary-value {
+	text-align: right;
+	color: var(--ion-color-primary);
+	padding: 10px 16px 0 0;
+}
+.summary-label {
+	font-weight: bold;
+	color: var(--ion-color-primary);
 }

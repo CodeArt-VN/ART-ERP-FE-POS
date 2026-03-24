@@ -31,6 +31,7 @@ export class POSSplitModalPage extends PageBase {
 	initOrderedContacts = [];
 	tables = [];
 	currentTable;
+	quantityEditSequence = 0;
 
 	constructor(
 		public pageProvider: SALE_OrderProvider,
@@ -397,13 +398,18 @@ export class POSSplitModalPage extends PageBase {
 			OrderLines: JSON.parse(JSON.stringify(this.items)),
 		};
 		newSplitOrder.OrderLines.forEach((i) => {
+			i.Quantity = 0;
+			i.ShippedQuantity = 0;
+			i.OriginalDiscount1 = 0;
+			i.OriginalDiscount2 = 0;
+			i.OriginalDiscountFromSalesman = 0;
 			i.Code = lib.generateUID(this.env.user.StaffID);
 			i.SubItems.forEach((sub) => {
 				sub.Code = lib.generateUID(this.env.user.StaffID);
 			});
+			this.calcOrderLine(i);
 		});
 		this.item.SplitedOrders.push(newSplitOrder);
-
 		this.calcOrders();
 		this.checkValid();
 	}
@@ -424,71 +430,58 @@ export class POSSplitModalPage extends PageBase {
 				const o = this.item.SplitedOrders[j];
 				i.splitDetail.push(o.OrderLines.find((d) => d.Id == i.Id));
 			}
-		});
-
-		this.items.forEach((i) => {
-			let order = i.splitDetail[0];
-			let props = ['Quantity', 'ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
-			props.forEach((prop) => {
-				this.checkOriginal(i, order, prop);
-			});
+			this.remainderForItem(i);
 		});
 	}
 
 	changedCalc(originalRow, editingRow, prop) {
-		let maxValue = originalRow[prop];
-		let cValue = editingRow[prop];
-		if (cValue > maxValue) {
-			editingRow[prop] = maxValue;
-			cValue = maxValue;
-		}
-		if (editingRow['Quantity'] == originalRow['Quantity']) {
-			let props = ['Quantity', 'ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
-			props.forEach((prop) => {
-				editingRow[prop] = originalRow[prop];
-			});
+		if (prop !== 'Quantity') {
+			return;
 		}
 
-		this.calcOrderLine(editingRow);
+		const maxValue = parseInt(originalRow[prop]) || 0;
+		const splitDetails = originalRow.splitDetail || [];
+		const editingIdx = splitDetails.indexOf(editingRow);
+		const previousValue = parseInt(editingRow._previousQuantity) || 0;
+		const nextValue = Math.max(0, Math.min(parseInt(editingRow[prop]) || 0, maxValue));// clamp value
+		const delta = nextValue - previousValue; // change difference
 
-		this.items.forEach((i) => {
-			let order = i.splitDetail[0];
-			let props = ['Quantity', 'ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
-			props.forEach((prop) => {
-				this.checkOriginal(i, order, prop);
-			});
-		});
+		editingRow[prop] = nextValue;
+
+		if (delta > 0) {
+			let needed = delta;
+			const priorities = this.getTransferPriority(splitDetails, editingIdx);
+			for (const sourceRow of priorities) {
+				if (needed <= 0) {
+					break;
+				}
+				const sourceValue = parseInt(sourceRow[prop]) || 0; // source quantity
+				const deducted = Math.min(sourceValue, needed); // amount to take
+				sourceRow[prop] = sourceValue - deducted; // reduce source
+				needed -= deducted;
+			}
+			if (needed > 0) {
+				editingRow[prop] = nextValue - needed;  // rollback excess
+			}
+		}
+
+		if (delta < 0) {
+			const returned = Math.abs(delta);
+			const firstRow = splitDetails[0];
+
+			if (firstRow === editingRow) {
+				if (splitDetails.length > 1) {
+					const nextRow = splitDetails[1];  // next row
+					nextRow[prop] = (parseInt(nextRow[prop]) || 0) + returned; // give next row
+				}
+			} else {
+				firstRow[prop] = (parseInt(firstRow[prop]) || 0) + returned;  // return to remainder
+			}
+		}
+
+		this.remainderForItem(originalRow); // recalc remainder
+		editingRow._previousQuantity = parseInt(editingRow[prop]) || 0;  // update previous
 		this.checkValid();
-	}
-
-	checkOriginal(originalRow, editingRow, prop) {
-		let maxValue = originalRow[prop];
-		let cValue = editingRow[prop];
-		if (cValue > maxValue) {
-			editingRow[prop] = maxValue;
-			cValue = maxValue;
-		}
-
-		this.calcOrderLine(editingRow);
-
-		let remain = maxValue - cValue;
-
-		let ortherOrder = originalRow.splitDetail.filter((d) => d != editingRow);
-
-		for (let i = 0; i < ortherOrder.length; i++) {
-			const orderLine = ortherOrder[i];
-
-			if (i == ortherOrder.length - 1) {
-				orderLine[prop] = remain;
-			}
-
-			if (remain - orderLine[prop] <= 0) {
-				orderLine[prop] = remain;
-			}
-
-			remain = remain - orderLine[prop];
-			this.calcOrderLine(orderLine);
-		}
 	}
 
 	isCanSplit = false;
@@ -512,7 +505,7 @@ export class POSSplitModalPage extends PageBase {
 				const l = o.OrderLines[j];
 				totalQty += l.Quantity;
 			}
-			if (totalQty == 0) {
+			if (totalQty == 0 && !o.isFirst) {
 				this.isCanSplit = false;
 				break;
 			}
@@ -621,5 +614,84 @@ export class POSSplitModalPage extends PageBase {
 
 	closeModalView() {
 		this.modalController.dismiss();
+	}
+
+	remainderForItem(originalItem) {
+		if (!originalItem?.splitDetail?.length) {
+			return;
+		}
+
+		const splitDetails = originalItem.splitDetail; // all rows
+		const remainderRow = splitDetails[0]; // remainder holder
+		const originalQty = parseInt(originalItem.Quantity) || 0;  // total quantity
+		const editableRows = splitDetails.slice(1); // user rows
+		const allocatedQty = editableRows.reduce((sum, row) => sum + (parseInt(row.Quantity) || 0), 0);  // sum allocated
+
+		remainderRow.Quantity = Math.max(0, originalQty - allocatedQty);  // remaining quantity
+		this.linePropsByQuantity(originalItem, splitDetails);  // recalc props
+	}
+
+	linePropsByQuantity(originalItem, splitDetails) {
+		const quantityTotal = parseInt(originalItem.Quantity) || 0;
+		const props = ['ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
+
+		for (const prop of props) {
+			const totalProp = parseInt(originalItem[prop]) || 0; // total prop value
+			let allocated = 0;
+
+			for (let idx = 0; idx < splitDetails.length; idx++) {
+				const line = splitDetails[idx];  // current line
+				if (idx === 0) {
+					line[prop] = Math.max(0, totalProp - allocated); // remainder gets rest
+				} else if (quantityTotal > 0 && totalProp > 0) {
+					line[prop] = Math.round((totalProp * (parseInt(line.Quantity) || 0)) / quantityTotal);  // proportional split
+					allocated += line[prop]; // accumulate allocated
+				} else {
+					line[prop] = 0; // fallback 
+				}
+			}
+		}
+
+		splitDetails.forEach((line) => this.calcOrderLine(line));
+	}
+	
+	getTotalAmountForSplit(jdx: number): number {
+		if (!this.items) return 0;
+		return this.items.reduce((sum, item) => {
+			const qty = item.splitDetail?.[jdx]?.Quantity || 0;
+			const price = item.UoMPrice || 0;
+			return sum + qty * price;
+		}, 0);
+	}
+
+	capturePreviousQuantity(row) {
+		row._previousQuantity = parseInt(row?.Quantity) || 0; // store old quantity
+	}
+
+	getTransferPriority(splitDetails, editingIdx: number) {
+		const priorities = splitDetails.map((row, idx) => ({ row, idx })).filter((x) => x.idx !== editingIdx); // exclude editing row
+		return priorities
+			.sort((a, b) => {
+				if (editingIdx !== 0) {
+					if (a.idx === 0) return -1;  // prioritize remainder
+					if (b.idx === 0) return 1;  // deprioritize others
+				}
+
+				const seqA = parseInt(a.row?._quantityEditSeq) || 0;
+				const seqB = parseInt(b.row?._quantityEditSeq) || 0;
+				if (seqA !== seqB) {
+					if (seqA === 0) return 1;  // never edited last
+					if (seqB === 0) return -1;  // edited first
+					return seqA - seqB; // earlier first
+				}
+
+				return a.idx - b.idx;
+			})
+			.map((x) => x.row);
+	}
+
+	markQuantityEdited(row) {
+		this.quantityEditSequence++;
+		row._quantityEditSeq = this.quantityEditSequence; // mark edit order
 	}
 }
