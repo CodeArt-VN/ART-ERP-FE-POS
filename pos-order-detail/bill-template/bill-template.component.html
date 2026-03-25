@@ -97,8 +97,9 @@
 													<tr class="item-row-values">
 														<td class="col-name col-empty"></td>
 														<td class="col-qty text-right">{{ o.Quantity }}</td>
-														<td class="col-price text-right">{{ o.UoMPrice | number: '1.0-0'
-															}}</td>
+														<td class="col-price text-right">
+															{{ o.UoMPrice | number: '1.0-0' }}
+														</td>
 														<td class="col-total text-right">{{
 															o.OriginalTotalBeforeDiscount | number: '1.0-0' }}</td>
 													</tr>
@@ -108,13 +109,28 @@
 									</div>
 
 									<!-- LIST_DISCOUNT -->
-									<ng-container *ngIf="promotionAppliedPrograms?.length">
+									<ng-container *ngIf="promotionAppliedPrograms?.length || DiscountDeal > 0">
 										<div class="divider"></div>
 
 										<div class="discount-block">
 											<div class="section-title">{{ 'BILL_LIST_DISCOUNT' | translate }}</div>
 											<table class="discount-table">
 												<tbody>
+													<tr *ngIf="DiscountDeal > 0">
+														<td class="col-name">{{ 'DISCOUNT_PER_ITEM' | translate }}</td>
+														<td class="col-amount text-right">{{ DiscountDeal | number:
+															'1.0-0' }}</td>
+													</tr>
+													<tr *ngFor="let d of dealMap | keyvalue">
+														<td class="col-name name-deal">
+															+ {{ d.value.Name }}
+															<small *ngIf="d.value.Quantity">x{{ d.value.Quantity
+																}}</small>
+														</td>
+														<td class="col-amount text-right">
+															{{ d.value.DealDiscount | number: '1.0-0' }}
+														</td>
+													</tr>
 													<ng-container
 														*ngIf="promotionAppliedPrograms?.length; else noDiscounts">
 														<tr *ngFor="let p of promotionAppliedPrograms; let i = index">
@@ -240,8 +256,13 @@
 
 									<div class="footer-notes">
 										<div>
-											{{ 'BILL_PRINTDATE' | translate }}: {{ printData.printDate | date: 'HH:mm
-											dd/MM/yyyy' }} - {{ 'BILL_CASHIER' | translate }}:
+											{{ 'BILL_PRINTDATE' | translate }}:
+											{{
+											printData.printDate
+											| date
+											: 'HH:mm dd/MM/yyyy'
+											}}
+											- {{ 'BILL_CASHIER' | translate }}:
 											{{ cashierName }}
 										</div>
 										<div>
@@ -255,7 +276,7 @@
 										<!-- Thank you for your patronage! -->
 										<div>{{ 'BILL_THANK_YOU' | translate }}</div>
 									</div>
-									@if(false){
+									@if (false) {
 									<div class="divider"></div>
 
 									<div class="ad-section">
@@ -273,7 +294,6 @@
 										<div class="ad-grid-right">QR quảng cáo<!-- TODO: QR quảng cáo --></div>
 									</div>
 									}
-
 								</div>
 							</ng-container>
 
@@ -292,9 +312,11 @@
 									</div>
 									<div class="meta-row">
 										<span class="meta-label">{{ 'Printing date' | translate }}:</span>
-										<span class="meta-time">{{ item.OrderDate || printData.printDate | date: 'HH:mm
-											dd/MM/yyyy' }}</span>
-
+										<span class="meta-time">{{
+											item.OrderDate || printData.printDate
+											| date
+											: 'HH:mm dd/MM/yyyy'
+											}}</span>
 									</div>
 									<div class="meta-row">
 										<span class="meta-label">{{ 'Send to' | translate }}:</span>
@@ -369,9 +391,9 @@
 	</div>
 </div>
 
-<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery!='all'">
+<ng-container *ngIf="item?.OrderLines?.length && kitchenQuery != 'all'">
 	<ng-container *ngFor="let o of item.OrderLines | filter: { _IDKitchens: kitchenQuery }; let idx = index">
-		<div [id]="'bill-item-each-'+o.Id" class="bill" style="overflow: auto; width: 72mm">
+		<div [id]="'bill-item-each-' + o.Id" class="bill" style="overflow: auto; width: 72mm">
 			<div class="receipt giao-nhan" style="overflow: auto">
 				<section class="sheet rpt p1">
 					<table>
@@ -390,28 +412,28 @@
 											<table>
 												<tr>
 													<td colspan="2" style="font-size: 16px; border: none !important">
-														<ion-text class="bold">{{'Table' | translate}}: </ion-text>
+														<ion-text class="bold">{{ 'Table' | translate }}: </ion-text>
 														<ng-container *ngFor="let t of printData?.selectedTables">
-															<ion-text class="bold"
-																style="font-size: 20px">{{t.Name}}</ion-text>
+															<ion-text class="bold" style="font-size: 20px">{{ t.Name
+																}}</ion-text>
 														</ng-container>
 													</td>
 												</tr>
 											</table>
 											<table>
 												<tr class="bold">
-													<td>{{'Item' | translate}}</td>
-													<td class="total">{{'Qty' | translate}}</td>
+													<td>{{ 'Item' | translate }}</td>
+													<td class="total">{{ 'Qty' | translate }}</td>
 												</tr>
 												<ng-container>
 													<tr>
 														<td class="bold" style="border: none !important">
-															{{idx + 1}}.
+															{{ idx + 1 }}.
 															<span [appTranslateResource]="o._item"></span>
 														</td>
 														<td class="quantity total" style="border: none !important">
-															<span
-																class="bold quantity">{{o._undeliveredQuantity}}</span>
+															<span class="bold quantity">{{ o._undeliveredQuantity
+																}}</span>
 														</td>
 													</tr>
 													@if (o.SubItems && o.SubItems.length > 0) {
@@ -427,18 +449,22 @@
 													</ng-container>
 													}
 													<tr *ngIf="o.Remark">
-														<td colspan="2">Note: {{o.Remark}}</td>
+														<td colspan="2">Note: {{ o.Remark }}</td>
 													</tr>
 												</ng-container>
 											</table>
 										</div>
-										<div style="border-bottom: none" class="table-info" *ngIf="kitchenQuery!='all'">
+										<div style="border-bottom: none" class="table-info"
+											*ngIf="kitchenQuery != 'all'">
 											<table>
 												<tr>
-													<td class="title">{{'PrintDate' | translate}}</td>
+													<td class="title">{{ 'PrintDate' | translate }}</td>
 													<td class="text-right">
-														<span>{{printData.printDate | date: 'HH:mm
-															dd/MM/yyyy'}}</span>
+														<span>{{
+															printData.printDate
+															| date
+															: 'HH:mm dd/MM/yyyy'
+															}}</span>
 													</td>
 												</tr>
 											</table>

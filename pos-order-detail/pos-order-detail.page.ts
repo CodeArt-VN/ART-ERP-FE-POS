@@ -20,7 +20,7 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { concat, of } from 'rxjs';
+import { concat, of, Subscription } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap, mergeMap } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
@@ -60,6 +60,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	idTable: any; //Default table
 	paymentList = [];
 	subPromotion: any;
+	private formValueChangesSubscription?: Subscription;
 	private _filteredItemsCache: Map<string, any[]> = new Map();
 	private _lastCacheKey: string = '';
 	noLockStatusList = ['New', 'Confirmed', 'Scheduled', 'Picking', 'Delivered', 'TemporaryBill'];
@@ -82,7 +83,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	Discount;
 	Staff;
 	notifications = [];
-
 	_defaultREFID = 0;
 
 	_contactDataSource = this.buildSelectDataSource((term) => {
@@ -179,6 +179,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	ngOnInit() {
+		this.initializeCanSaveOrderTracking();
 		this.pageConfig.subscribePOSOrderDetail = this.env.getEvents().subscribe((data) => {
 			if (!data.code?.startsWith('signalR:')) return;
 			if (data.id == this.env.user.StaffID) return;
@@ -217,6 +218,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	ngOnDestroy() {
+		this.formValueChangesSubscription?.unsubscribe();
 		this.pageConfig?.subscribePOSOrderDetail?.unsubscribe();
 		this.subPromotion.unsubscribe();
 		this.promotionService.clearMemory(this.id);
@@ -438,6 +440,28 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this._contactDataSource.input$.next(obj.term);
 	}
 
+	private initializeCanSaveOrderTracking() {
+		if (this.formValueChangesSubscription) return;
+
+		this.formValueChangesSubscription = this.formGroup.valueChanges.subscribe(() => {
+			this.updateCanSaveOrder();
+		});
+	}
+
+	private updateCanSaveOrder() {
+		const controls = this.formGroup.controls;
+		this.canSaveOrder =
+			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+	}
+
+	private updateFoCState(line) {
+		const menuPrice = this.getMenuEffectivePrice(this.posService.dataSource.menuList, line?.IDItem, line?.IDUoM);
+		const linePrice = Number(line?.UoMPrice);
+
+		line._focPrevPrice = menuPrice;
+		line._isFoC = menuPrice != null && Number.isFinite(linePrice) && linePrice === 0 && menuPrice !== linePrice;
+	}
+
 	async loadedData(event?: any, ignoredFromGroup?: boolean) {
 		if (!this.item) {
 			super.loadedData(event);
@@ -446,10 +470,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		this.VietQRCode = null;
 		this._contactDataSource.selected = [];
-		this.formGroup.valueChanges.subscribe(() => {
-			const controls = this.formGroup.controls;
-			this.canSaveOrder = Object.values(controls).some((control) => control.dirty) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
-		});
 		// Generate UID if Code is empty
 		if (!this.item?.Code) {
 			this.item.Code = lib.generateUID(this.env.user.StaffID);
@@ -494,14 +514,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			Object.assign(this.item, this.formGroup.getRawValue());
 			if (this.item.OrderLines.length) {
 				this.item.OrderLines.forEach((i) => {
-					const menuPrice = this.getMenuEffectivePrice(this.posService.dataSource.menuList, i.IDItem, i.IDUoM);
-
-					if (menuPrice == null || i.UoMPrice == null) return;
-
-					if (menuPrice !== i.UoMPrice) {
-						i._isFoC = true;
-						i._focPrevPrice = menuPrice;
-					}
+					this.updateFoCState(i);
 				});
 			}
 			this.setOrderValue(this.item);
@@ -543,6 +556,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		// this.canSaveOrder = this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting').length > 0;
 		this.isCompleteLoaded = true;
+		this.updateCanSaveOrder();
 		// setTimeout(() => {
 		// 	this.segmentChanged('all');
 		// }, 100);
@@ -811,7 +825,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				IDTax: item.IDSalesTaxDefinition,
 				TaxRate: item.SaleVAT,
 				IDUoM: idUoM,
-				UoMPrice: price.NewPrice ? price.NewPrice : price.Price,
+				UoMPrice: price.Price,
 				UoMName: uom.Name,
 				Quantity: quantity,
 				IDBaseUoM: idUoM,
@@ -828,11 +842,19 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				SubItems: [],
 				CreatedDate: new Date(),
 				_item: item,
+				NewPrice: price.NewPrice ?? 0,
 			};
 			if (item.Groups?.length > 0) {
 				let rs = await this.openComboModal(line);
 				if (!rs) return;
+			} else if (item.BOMs?.length > 0) {
+				await this.getItemSetMenuFixed(line);
 			}
+
+			if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+				line.OriginalDiscount1 = line.UoMPrice - line.NewPrice;
+			}
+
 			this.item.OrderLines.push(line);
 
 			this.addOrderLine(line);
@@ -853,6 +875,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			} else if ((!isNumberInput && line.Quantity + quantity > 0) || (isNumberInput && quantity > 0)) {
 				line.Quantity += quantity;
 				if (isNumberInput) line.Quantity = quantity;
+				if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+					line.OriginalDiscount1 = (line.UoMPrice - line.NewPrice) * line.Quantity;
+				}
 				let subItems = [];
 				if (line.SubItems && line.SubItems.length > 0) {
 					line.SubItems.forEach((so) => {
@@ -876,6 +901,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
 							SubItems: subItems,
+							OriginalDiscount1: line.OriginalDiscount1,
 						},
 					],
 					Status: 'New',
@@ -886,6 +912,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 						.then((_) => {
 							line.Quantity += quantity;
+							if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+								line.OriginalDiscount1 = (line.UoMPrice - line.NewPrice) * line.Quantity;
+							}
 							let subItems = [];
 							if (line.SubItems && line.SubItems.length > 0) {
 								line.SubItems.forEach((so) => {
@@ -909,6 +938,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 										IDUoM: line.IDUoM,
 										Quantity: line.Quantity,
 										SubItems: subItems,
+										OriginalDiscount1: line.OriginalDiscount1,
 									},
 								],
 							});
@@ -920,6 +950,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
 							.then((_) => {
 								line.Quantity += quantity;
+								if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
+									line.OriginalDiscount1 = (line.UoMPrice - line.NewPrice) * line.Quantity;
+								}
 								let subItems = [];
 								if (line.SubItems && line.SubItems.length > 0) {
 									line.SubItems.forEach((so) => {
@@ -943,6 +976,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 											IDUoM: line.IDUoM,
 											Quantity: line.Quantity,
 											SubItems: subItems,
+											OriginalDiscount1: line.OriginalDiscount1,
 										},
 									],
 								});
@@ -1052,6 +1086,16 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 		return null;
 	}
+
+	async getItemSetMenuFixed(line) {
+		let item = line._item;
+		let uom = item.UoMs.find((d) => d.Id == line.IDUoM);
+		let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
+		let UoMPrice = price.NewPrice ? price.NewPrice : price.Price;
+		line.UoMPrice = UoMPrice;
+		line.SubItems = lib.cloneObject(item.BOMs);
+	}
+
 	async openQuickMemo(line) {
 		if (this.submitAttempt) return;
 		if (line.Status != 'New') return;
@@ -2379,18 +2423,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	private patchOrderLinesValue() {
-		this.formGroup.controls.OrderLines = new FormArray([]);
+		this.formGroup.setControl('OrderLines', new FormArray([]));
 		if (this.item.OrderLines?.length) {
 			for (let i of this.item.OrderLines) {
-				this.addOrderLine(i);
-				const menuPrice = this.getMenuEffectivePrice(this.posService.dataSource.menuList, i.IDItem, i.IDUoM);
-
-				if (menuPrice == null || i.UoMPrice == null) continue;
-
-				if (menuPrice !== i.UoMPrice) {
-					i._isFoC = true;
-					i._focPrevPrice = menuPrice;
+				if (i.OriginalDiscount1 > 0 || i.OriginalDiscount2 > 0 || i.OriginalDiscountByOrder > 0) {
+					i.NewPrice = i.UoMPrice - (i.OriginalDiscount1 + i.OriginalDiscount2 + i.OriginalDiscountByOrder) / i.Quantity;
 				}
+				this.addOrderLine(i);
+				this.updateFoCState(i);
 			}
 		}
 	}
@@ -2437,9 +2477,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				disabled: true,
 			}),
 			SubItems: [line?.SubItems || []],
+			OriginalDiscount1: [line.OriginalDiscount1],
+
 			// OriginalTotalBeforeDiscount
 			// OriginalPromotion
-			// OriginalDiscount1
 			// OriginalDiscount2
 			// OriginalDiscountByItem
 			// OriginalDiscountByGroup
@@ -2651,6 +2692,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 
 			this.formGroup.markAsPristine();
+			this.updateCanSaveOrder();
 			if (_isDifference) this.calcOrder();
 		}
 	}
