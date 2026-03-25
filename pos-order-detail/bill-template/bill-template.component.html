@@ -33,7 +33,7 @@
 													'Invoice' | translate
 													}}</ng-container>
 												<ng-container *ngIf="item.Status == 'Done' && !pageConfig.canEdit">{{
-													'Receipt' | translate }}</ng-container>
+													'BILL_RECEIPT' | translate }}</ng-container>
 											</div>
 
 											<div class="invoice-meta">
@@ -43,7 +43,10 @@
 													}}<span
 														*ngIf="printData.selectedTables.length > 0 && j < printData.selectedTables.length - 1">;</span>
 												</span>
-												<span class="meta-sep">-</span>
+											</div>
+
+											<div class="invoice-meta">
+												<span class="meta-label">{{ 'OrderDate' | translate }}:</span>
 												<span class="meta-time">{{ item.OrderDate || printData.printDate | date:
 													'HH:mm dd/MM/yyyy' }}</span>
 											</div>
