@@ -40,6 +40,12 @@ export class BillTemplateComponent {
 		return this.billRef;
 	}
 
+	get successPaymentList(): any[] {
+		return (this.paymentList || []).filter(
+			(payment) => payment?.IncomingPayment?.Status === 'Success'
+		);
+	}
+
 	getBillNativeElement(): HTMLElement | null {
 		return this.billRef?.nativeElement || null;
 	}

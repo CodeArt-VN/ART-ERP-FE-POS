@@ -152,14 +152,14 @@
 									</ng-container>
 
 									<!-- LIST_PAYMENTS -->
-									<ng-container *ngIf="paymentList?.length">
+									<ng-container *ngIf="successPaymentList?.length">
 										<div class="divider"></div>
 										<div class="payments-block">
 											<div class="section-title">{{ 'BILL_LIST_PAYMENTS' | translate }}</div>
 											<table class="payments-table">
 												<tbody>
-													<ng-container *ngIf="paymentList?.length; else noPayments">
-														<tr *ngFor="let p of paymentList; let i = index">
+													<ng-container *ngIf="successPaymentList?.length; else noPayments">
+														<tr *ngFor="let p of successPaymentList; let i = index">
 															<td class="col-name"
 																*ngIf="p.IncomingPayment?.IsRefundTransaction">
 																{{ i + 1 }}. {{ 'Refund' | translate }} | {{
@@ -247,7 +247,7 @@
 									</table>
 									<div class="divider"></div>
 
-									<div *ngIf="vietQrCode" class="payment-qr">
+									<div *ngIf="vietQrCode && item?.Status =='TemporaryBill'" class="payment-qr">
 										<!-- Quét mã thanh toán -->
 										<div class="payment-qr-title">{{ 'BILL_PAYMENT_QR_TITLE' | translate }}</div>
 										<!-- (Ví điện tử / app ngân hàng) -->
@@ -255,7 +255,7 @@
 										<img [src]="vietQrCode" />
 									</div>
 
-									<div class="divider"></div>
+									<div *ngIf="vietQrCode && item?.Status =='TemporaryBill'" class="divider"></div>
 
 									<div class="footer-notes">
 										<div>
