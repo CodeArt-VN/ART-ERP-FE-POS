@@ -1094,6 +1094,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		let UoMPrice = price.NewPrice ? price.NewPrice : price.Price;
 		line.UoMPrice = UoMPrice;
 		line.SubItems = lib.cloneObject(item.BOMs);
+		line.SubItems.forEach((so) => {
+			so.Code = lib.generateUID(this.env.user.StaffID);
+		});
 	}
 
 	async openQuickMemo(line) {
