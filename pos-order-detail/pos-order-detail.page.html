@@ -350,7 +350,7 @@
 									><ion-text color="danger">{{'Refund' | translate}}</ion-text>
 									|
 								</span>
-								{{p.IncomingPayment.TypeText}}
+								{{p.IncomingPayment.TypeText | translate}}
 								<small *ngIf="p.IncomingPayment.SubType">| {{p.IncomingPayment.SubType}}</small>
 								<small>
 									| {{p.IncomingPayment?.CreatedDate | date: 'HH:mm dd/MM'}}

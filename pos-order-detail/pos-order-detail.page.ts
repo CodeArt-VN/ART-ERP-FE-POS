@@ -20,7 +20,7 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { concat, of, Subscription } from 'rxjs';
+import { async, concat, of, Subscription } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap, mergeMap } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
@@ -43,6 +43,7 @@ import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-moda
 import { ComboModalPage } from './combo-modal/combo-modal.page';
 import { BillPreviewComponent } from 'src/app/modals/bill-preview-modal/bill-preview-modal';
 import { BillTemplateComponent } from './bill-template/bill-template.component';
+import { NfcQrcodeScannerModalComponent } from 'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -2983,6 +2984,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async scanQRCode() {
+		return this.scanQRCodeFromModal();
 		let code = await this.scanner.scan();
 		if (code.indexOf('VCARD;') != -1) {
 			var tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
@@ -3027,6 +3029,107 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
+	private async scanQRCodeFromModal() {
+		const { data, role } = await this.modalController
+			.create({
+				component: NfcQrcodeScannerModalComponent,
+				cssClass: 'modal90vh',
+				componentProps: {
+					title: 'Read qr code',
+					label: 'Please scan QR code to read',
+				},
+			})
+			.then(async (modal) => {
+				await modal.present();
+				return modal.onWillDismiss();
+			});
+
+		if (role !== 'confirm' || !data) return;
+
+		const code = this.getScannerRawValue(data);
+		if (!code) {
+			await this.retryInvalidPosQrCode();
+			return;
+		}
+
+		const parsedQr = this.parseStaffVCardQr(code);
+		if (!parsedQr) {
+			await this.retryInvalidPosQrCode();
+			return;
+		}
+
+		if (this.isExpiredStaffQr(parsedQr.QRGenTime)) {
+			const shouldRetry = await this.confirmRetryPosQrCode(`Code has expired, please get a new staff code! QR code generated at: ${parsedQr.QRGenTime}`);
+			if (shouldRetry) {
+				setTimeout(() => this.scanQRCode(), 0);
+			}
+			return;
+		}
+
+		this.contactProvider.read({ Code: parsedQr.StaffCode, Take: 20 }).then((resp) => {
+			let address = resp['data'][0];
+			address.IDAddress = address['Addresses'][0]['Id'];
+			address.Address = address['Addresses'][0];
+
+			this.env.showMessage('QuÃ©t thÃ nh cÃ´ng! Há» vÃ  TÃªn: {{value}}', null, address['Name']);
+			this._contactDataSource.selected.push(address);
+			this.changedIDAddress(address);
+			this._contactDataSource.initSearch();
+			this.cdr.detectChanges();
+			this.saveChange();
+		});
+	}
+
+	private getScannerRawValue(data: any): string {
+		if (typeof data?.rawValue === 'string') return data.rawValue;
+		if (typeof data?.value === 'string') return data.value;
+		return '';
+	}
+
+	private parseStaffVCardQr(code: string): { StaffCode: string; QRGenTime: string } | null {
+		if (!code || code.indexOf('VCARD;') != 0) return null;
+
+		const tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
+		const staffCode = tempString.split(';')[0];
+		const qrGenTime = tempString.split(';')[1];
+
+		if (!staffCode || !qrGenTime) return null;
+
+		return {
+			StaffCode: staffCode,
+			QRGenTime: qrGenTime,
+		};
+	}
+
+	private isExpiredStaffQr(qrGenTime: string): boolean {
+		let toDay = new Date();
+		let fromTime = new Date(toDay);
+		let toTime = new Date(toDay);
+		fromTime.setMinutes(toDay.getMinutes() - 1);
+		toTime.setMinutes(toDay.getMinutes() + 1);
+
+		let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+		let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+
+		return !(currentTimeFrom <= qrGenTime && qrGenTime <= currentTimeTo);
+	}
+
+	private async retryInvalidPosQrCode(): Promise<void> {
+		const shouldRetry = await this.confirmRetryPosQrCode('Please scan valid QR code');
+		if (shouldRetry) {
+			setTimeout(() => this.scanQRCode(), 0);
+		}
+	}
+
+	private async confirmRetryPosQrCode(message: string, title: string = 'Invalid QR code'): Promise<boolean> {
+		try {
+			await this.env.showPrompt(message, title, null, 'Retry', 'Cancel');
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
 	menuItemsPaging(event) {}
 
 	isCompleteLoaded = false;
@@ -3049,4 +3152,5 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		});
 		await modal.present();
 	}
+
 }
