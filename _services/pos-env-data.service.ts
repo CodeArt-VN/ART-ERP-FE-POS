@@ -77,14 +77,14 @@ export class POSEnviromentDataService {
 		dog && console.log('⚙️ POSEnviromentDataService: Getting system config', { IDBranch });
 
 		if (forceReload) {
-			return this.fetchConfig(IDBranch);
+			return this.fetchConfig(IDBranch, true);
 		} else {
 			return new Promise((resolve, reject) => {
 				this.env.getStorage('POSConfig').then((savedConfig: POSConfig) => {
 					if (savedConfig) {
 						resolve(savedConfig);
 					} else {
-						this.fetchConfig(IDBranch).then((config: POSConfig) => {
+						this.fetchConfig(IDBranch, false).then((config: POSConfig) => {
 							resolve(config);
 						});
 					}
@@ -93,11 +93,11 @@ export class POSEnviromentDataService {
 		}
 	}
 
-	private fetchConfig(IDBranch: number): Promise<POSConfig> {
+	private fetchConfig(IDBranch: number, forceSysConfigReload = false): Promise<POSConfig> {
 		return new Promise((resolve, reject) => {
 			const keys = Object.keys(this.defaultPOSConfig);
 			this.sysConfigService
-				.getConfig(IDBranch, keys, this.defaultPOSConfig)
+				.getConfig(IDBranch, keys, this.defaultPOSConfig, forceSysConfigReload)
 				.then((config: POSConfig) => {
 					this.env.setStorage('POSConfig', config);
 					resolve(config);
