@@ -3067,14 +3067,24 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private async handleScannedNfcPayload(data: any): Promise<boolean> {
 		if (data?.mode !== 'NFC') return false;
 
-		const nfcValue = data?.value;
-		const idbp = nfcValue?.IDBP ?? nfcValue?.IdBP ?? nfcValue?.idbp ?? nfcValue?.idBP;
+		let nfcValue = data?.value;
+		if (typeof nfcValue === 'string') {
+			try {
+				nfcValue = JSON.parse(nfcValue);
+			} catch {
+				nfcValue = null;
+			}
+		}
+		const tagInfo = data?.tagInfo?.uid;
+
+
+		const idbp = nfcValue?.IDBP;
 		if (!idbp) {
 			await this.retryInvalidPosQrCode('Invalid NFC content');
 			return true;
 		}
 
-		this.addContactByScannedId(idbp);
+		this.addContactByScannedId(tagInfo || idbp);
 		return true;
 	}
 
@@ -3210,5 +3220,4 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		});
 		await modal.present();
 	}
-
 }
