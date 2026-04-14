@@ -1,0 +1,607 @@
+<ion-header translucent="">
+    <app-toolbar [page]="this">
+        <ion-text color="primary" startTitle style="margin-left: 8px; font-size: 20px;">{{KitchenName}}</ion-text>
+        <ion-row [ngClass]="{'focus-toolbar': _selectingZone === '9' && _useKeyboard}">
+            <ion-text *ngIf="_selectingZone === '0' && _useKeyboard" class="keyboard-shortcut-notes">[9]</ion-text>
+            <ion-row *ngIf="_selectingZone === '9' && _useKeyboard">
+                <ion-text class="keyboard-shortcut-notes">[0]</ion-text>
+                <ion-button title="{{ 'Back' | translate }}">
+                    <ion-icon name="arrow-undo-outline"></ion-icon>
+                </ion-button>
+            </ion-row>
+            <ion-row>
+                <ion-text *ngIf="_selectingZone === '9' && _useKeyboard" class="keyboard-shortcut-notes">[1]</ion-text>
+                <ion-button title="{{ 'Expand' | translate }}" (click)="toggleFullscreen()">
+                    <ion-icon name="expand-outline"></ion-icon>
+                </ion-button>
+            </ion-row>
+            <ion-row>
+                <ion-text *ngIf="_selectingZone === '9' && _useKeyboard" class="keyboard-shortcut-notes">[2]</ion-text>
+                <ion-button title="{{ 'Show/Hide Details' | translate }}" (click)="hideOrderDetails()">
+                    <ion-icon name="grid-outline"></ion-icon>
+                </ion-button>
+            </ion-row>
+            <ion-row>
+                <ion-text *ngIf="_selectingZone === '9' && _useKeyboard" class="keyboard-shortcut-notes">[3]</ion-text>
+                <ion-button title="{{ 'Show Canceled Column' | translate }}" (click)="hideCanceledColumn()">
+                    <ion-icon name="eye-outline" [ngClass]="{'icon-cross': !_hideCanceledColumn}"></ion-icon>
+                </ion-button>
+            </ion-row>
+            <ion-row>
+                <ion-text *ngIf="_selectingZone === '9' && _useKeyboard" class="keyboard-shortcut-notes">[4]</ion-text>
+                <ion-button title="{{ 'Use Keyboard' | translate }}" (click)="useKeyboard()">
+                    <ion-icon name="keypad-outline" [ngClass]="{'icon-cross': !_useKeyboard}"></ion-icon>
+                </ion-button>
+            </ion-row>
+        </ion-row>
+    </app-toolbar>
+</ion-header>
+
+<ion-content class="pos-work-order" fullscreen>
+    <ion-grid>
+        <ion-row class="board-container">
+            <!-- /* Waiting Zone * / -->
+            <ion-col *ngIf="zones[0] as zone" class="zone-card">
+                <div *ngIf="zone.show" [ngClass]="{'focus': _selectingZone === zone.id && !_selectOrder}">
+                    <div>
+                        <div class="color-line-waiting">
+                        </div>
+                        <div class="zone-header">
+                            <ion-row>
+                                <ion-text *ngIf="_selectingZone === '0' && _useKeyboard" class="keyboard-shortcut-notes"
+                                    style="margin-right: 8px;">[1]</ion-text>
+                                <ion-row *ngIf="_selectingZone === zone.id && !_selectOrder && _useKeyboard">
+                                    <ion-text class="keyboard-shortcut-notes" style="margin-right: 8px;">[0]</ion-text>
+                                    <button style="margin-right: 8px;" title="{{ 'Back' | translate }}">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </ion-row>
+                                <div class="zone-title">{{ zone.title }}</div>
+                            </ion-row>
+                            <div class="zone-count">{{ zone.orders.length }} đơn</div>
+                        </div>
+                    </div>
+
+                    <div class="zone-body" *ngIf="zone.orders.length > 0">
+                        <div [ngClass]="{'work-card': !order.select || !_useKeyboard,
+                        'focus-work-card': order.select}" *ngFor="let order of zone.orders">
+                            <div *ngIf="_useKeyboard">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <div class="keyboard-shortcut-notes"
+                                        *ngIf="_selectingZone === zone.id && !_selectOrder">
+                                        [{{ order.key }}]</div>
+                                    <ion-row
+                                        *ngIf="_selectingZone === zone.id && _selectOrder && order.select && _useKeyboard">
+                                        <ion-text class="keyboard-shortcut-notes"
+                                            style="margin-right: 8px;">[0]</ion-text>
+                                        <button>
+                                            <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                        </button>
+                                    </ion-row>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="7">
+                                            <ion-button expand="block">
+                                                <ion-text *ngIf="!_selectItem" class="keyboard-shortcut-notes"
+                                                    style="margin-right: 4px;">[1]</ion-text>
+                                                TIẾP NHẬN MÓN</ion-button>
+                                        </ion-col>
+                                        <ion-col size="5">
+                                            <ion-button color="danger" expand="block">
+                                                <ion-text *ngIf="!_selectItem" class="keyboard-shortcut-notes"
+                                                    style="margin-right: 4px;">[2]</ion-text>
+                                                HỦY MÓN</ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button expand="block">
+                                                <ion-text *ngIf="!_selectItem && _useKeyboard"
+                                                    class="keyboard-shortcut-notes" style="margin-right: 4px;">
+                                                    [3]</ion-text>
+                                                TIẾP NHẬN HẾT ĐƠN
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-text style="margin-right: 8px;" *ngIf="_selectItem && item.key !== '0'"
+                                            class="keyboard-shortcut-notes">[{{
+                                            item.key }}]</ion-text>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '1' && _toZoneId == '2'"
+                                            color="primary" name="restaurant-outline"></ion-icon>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '1' && _toZoneId == '5'"
+                                            color="danger" name="flame-outline"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div *ngIf="!_useKeyboard" (click)="selectOrder(order, zone.id)">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <button *ngIf="order.select" (click)="backOrder($event)">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="7">
+                                            <ion-button expand="block" (click)="changeStatusItemInOrder(zone.id, '2')">
+                                                TIẾP NHẬN MÓN</ion-button>
+                                        </ion-col>
+                                        <ion-col size="5">
+                                            <ion-button color="danger" expand="block"
+                                                (click)="changeStatusItemInOrder(zone.id, '5')">
+                                                HỦY MÓN</ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button expand="block" (click)="changeStatusOrder(zone.id, '2')">
+                                                TIẾP NHẬN HẾT ĐƠN
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items"
+                                        (click)="changeStatusItems(item.IDItem)">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '1' && _toZoneId == '2'"
+                                            color="primary" name="restaurant-outline"></ion-icon>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '1' && _toZoneId == '5'"
+                                            color="danger" name="flame-outline"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zone-empty" *ngIf="zone.orders.length === 0">
+                        Không có đơn nào!
+                    </div>
+                </div>
+            </ion-col>
+            <!-- /* Inprogress Zone * / -->
+            <ion-col *ngIf="zones[1] as zone" class="zone-card">
+                <div *ngIf="zone.show" [ngClass]="{'focus': _selectingZone === zone.id && !_selectOrder}">
+                    <div>
+                        <div class="color-line-inprogress">
+                        </div>
+                        <div class="zone-header">
+                            <ion-row>
+                                <ion-text *ngIf="_selectingZone === '0' && _useKeyboard" class="keyboard-shortcut-notes"
+                                    style="margin-right: 8px;">[2]</ion-text>
+                                <ion-row *ngIf="_selectingZone === zone.id && !_selectOrder && _useKeyboard">
+                                    <ion-text class="keyboard-shortcut-notes" style="margin-right: 8px;">[0]</ion-text>
+                                    <button style="margin-right: 8px;" title="{{ 'Back' | translate }}">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </ion-row>
+                                <div class="zone-title">{{ zone.title }}</div>
+                            </ion-row>
+                            <div class="zone-count">{{ zone.orders.length }} đơn</div>
+                        </div>
+                    </div>
+
+                    <div class="zone-body" *ngIf="zone.orders.length > 0">
+                        <div [ngClass]="{'work-card': !order.select,
+                        'focus-work-card': order.select}" *ngFor="let order of zone.orders">
+                            <div *ngIf="_useKeyboard">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <div class="keyboard-shortcut-notes"
+                                        *ngIf="_selectingZone === zone.id && !_selectOrder">
+                                        [{{ order.key }}]</div>
+                                    <ion-row
+                                        *ngIf="_selectingZone === zone.id && _selectOrder && order.select && _useKeyboard">
+                                        <ion-text class="keyboard-shortcut-notes"
+                                            style="margin-right: 8px;">[0]</ion-text>
+                                        <button>
+                                            <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                        </button>
+                                    </ion-row>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button color="warning" expand="block"
+                                                (click)="changeStatusItemInOrder(zone.id, '3')">
+                                                <ion-text *ngIf="!_selectItem && _useKeyboard"
+                                                    class="keyboard-shortcut-notes" style="margin-right: 4px;">
+                                                    [1]</ion-text>
+                                                TRẢ MÓN
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-text style="margin-right: 8px;" *ngIf="_selectItem && item.key !== '0'"
+                                            class="keyboard-shortcut-notes">[{{
+                                            item.key }}]</ion-text>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '2' && _toZoneId == '3'"
+                                            color="warning" name="fast-food-outline"></ion-icon>
+
+                                        <div id="print-area-{{ order.id }}" class="print-area">
+                                            <h2>Phiếu trả món</h2>
+                                            <div>
+                                                <strong>Mã đơn:</strong> {{ order?.id || 'N/A' }}
+                                            </div>
+                                            <div>
+                                                <strong>Bàn:</strong> {{ order?.table || 'N/A' }}
+                                            </div>
+                                            <hr />
+                                            <div>{{ item.qty }} x {{ item.name }}</div>
+                                            <hr />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div *ngIf="!_useKeyboard" (click)="selectOrder(order, zone.id)">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <button *ngIf="order.select" (click)="backOrder($event)">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button color="warning" expand="block"
+                                                (click)="changeStatusItemInOrder(zone.id, '3')">
+                                                TRẢ MÓN
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items"
+                                        (click)="changeStatusItems(item.IDItem)">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '2' && _toZoneId == '3'"
+                                            color="warning" name="fast-food-outline"></ion-icon>
+
+                                        <div id="print-area-{{ order.id }}" class="print-area">
+                                            <h2>Phiếu trả món</h2>
+                                            <div>
+                                                <strong>Mã đơn:</strong> {{ order?.id || 'N/A' }}
+                                            </div>
+                                            <div>
+                                                <strong>Bàn:</strong> {{ order?.table || 'N/A' }}
+                                            </div>
+                                            <hr />
+                                            <div>{{ item.qty }} x {{ item.name }}</div>
+                                            <hr />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zone-empty" *ngIf="zone.orders.length === 0">
+                        Không có đơn nào!
+                    </div>
+                </div>
+            </ion-col>
+            <!-- /* Ready Zone * / -->
+            <ion-col *ngIf="zones[2] as zone" class="zone-card">
+                <div *ngIf="zone.show" [ngClass]="{'focus': _selectingZone === zone.id && !_selectOrder}">
+                    <div>
+                        <div class="color-line-ready">
+                        </div>
+                        <div class="zone-header">
+                            <ion-row>
+                                <ion-text *ngIf="_selectingZone === '0' && _useKeyboard" class="keyboard-shortcut-notes"
+                                    style="margin-right: 8px;">[3]</ion-text>
+                                <ion-row *ngIf="_selectingZone === zone.id && !_selectOrder && _useKeyboard">
+                                    <ion-text class="keyboard-shortcut-notes" style="margin-right: 8px;">[0]</ion-text>
+                                    <button style="margin-right: 8px;" title="{{ 'Back' | translate }}">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </ion-row>
+                                <div class="zone-title">{{ zone.title }}</div>
+                            </ion-row>
+                            <div class="zone-count">{{ zone.orders.length }} đơn</div>
+                        </div>
+                    </div>
+
+                    <div class="zone-body" *ngIf="zone.orders.length > 0">
+                        <div [ngClass]="{'work-card': !order.select,
+                        'focus-work-card': order.select}" *ngFor="let order of zone.orders">
+                            <div *ngIf="_useKeyboard">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <div class="keyboard-shortcut-notes"
+                                        *ngIf="_selectingZone === zone.id && !_selectOrder">
+                                        [{{ order.key }}]</div>
+                                    <ion-row
+                                        *ngIf="_selectingZone === zone.id && _selectOrder && order.select && _useKeyboard">
+                                        <ion-text class="keyboard-shortcut-notes"
+                                            style="margin-right: 8px;">[0]</ion-text>
+                                        <button>
+                                            <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                        </button>
+                                    </ion-row>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button color="success" expand="block">
+                                                <ion-text *ngIf="!_selectItem && _useKeyboard"
+                                                    class="keyboard-shortcut-notes" style="margin-right: 4px;">
+                                                    [1]</ion-text>
+                                                NHẬN MÓN
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-text style="margin-right: 8px;" *ngIf="_selectItem && item.key !== '0'"
+                                            class="keyboard-shortcut-notes">[{{
+                                            item.key }}]</ion-text>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '3' && _toZoneId == '4'"
+                                            color="success" name="checkbox-outline"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div *ngIf="!_useKeyboard" (click)="selectOrder(order, zone.id)">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <button *ngIf="order.select" (click)="backOrder($event)">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button color="success" expand="block"
+                                                (click)="changeStatusItemInOrder(zone.id, '4')">
+                                                NHẬN MÓN
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items"
+                                        (click)="changeStatusItems(item.IDItem)">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '3' && _toZoneId == '4'"
+                                            color="success" name="checkbox-outline"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zone-empty" *ngIf="zone.orders.length === 0">
+                        Không có đơn nào!
+                    </div>
+                </div>
+            </ion-col>
+            <!-- /* Serving Zone * / -->
+            <ion-col *ngIf="zones[3] as zone" class="zone-card">
+                <div *ngIf="zone.show">
+                    <div>
+                        <div class="color-line-serving">
+                        </div>
+                        <div class="zone-header">
+                            <ion-row>
+                                <div class="zone-title">{{ zone.title }}</div>
+                            </ion-row>
+                            <div class="zone-count">{{ zone.orders.length }} đơn</div>
+                        </div>
+                    </div>
+
+                    <div class="zone-body" *ngIf="zone.orders.length > 0">
+                        <div class="work-card" *ngFor="let order of zone.orders">
+                            <div>
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <ion-row
+                                        *ngIf="_selectingZone === zone.id && _selectOrder && order.select && _useKeyboard">
+                                    </ion-row>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zone-empty" *ngIf="zone.orders.length === 0">
+                        Không có đơn nào!
+                    </div>
+                </div>
+            </ion-col>
+            <!-- /* Return Zone * / -->
+            <ion-col *ngIf="zones[4] as zone" class="zone-card">
+                <div *ngIf="zone.show" [ngClass]="{'focus': _selectingZone === zone.id && !_selectOrder}">
+                    <div>
+                        <div class="color-line-return">
+                        </div>
+                        <div class="zone-header">
+                            <ion-row>
+                                <ion-text *ngIf="_selectingZone === '0' && _useKeyboard" class="keyboard-shortcut-notes"
+                                    style="margin-right: 8px;">[3]</ion-text>
+                                <ion-row *ngIf="_selectingZone === zone.id && !_selectOrder && _useKeyboard">
+                                    <ion-text class="keyboard-shortcut-notes" style="margin-right: 8px;">[0]</ion-text>
+                                    <button style="margin-right: 8px;" title="{{ 'Back' | translate }}">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </ion-row>
+                                <div class="zone-title">{{ zone.title }}</div>
+                            </ion-row>
+                            <div class="zone-count">{{ zone.orders.length }} đơn</div>
+                        </div>
+                    </div>
+
+                    <div class="zone-body" *ngIf="zone.orders.length > 0">
+                        <div [ngClass]="{'work-card': !order.select,
+                        'focus-work-card': order.select}" *ngFor="let order of zone.orders">
+                            <div *ngIf="_useKeyboard">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <div class="keyboard-shortcut-notes"
+                                        *ngIf="_selectingZone === zone.id && !_selectOrder">
+                                        [{{ order.key }}]</div>
+                                    <ion-row
+                                        *ngIf="_selectingZone === zone.id && _selectOrder && order.select && _useKeyboard">
+                                        <ion-text class="keyboard-shortcut-notes"
+                                            style="margin-right: 8px;">[0]</ion-text>
+                                        <button>
+                                            <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                        </button>
+                                    </ion-row>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button color="medium" expand="block">
+                                                YÊU CẦU LẠI
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-text *ngIf="_selectItem && item.key !== '0'"
+                                            class="keyboard-shortcut-notes">[{{
+                                            item.key }}]</ion-text>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '5' && _toZoneId == '1'"
+                                            color="medium" name="arrow-up-circle-outline"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div *ngIf="!_useKeyboard" (click)="selectOrder(order, zone.id)">
+                                <div class="work-card-top">
+                                    <div class="work-code">#{{ order.id }} {{ order.table }}</div>
+                                    <button *ngIf="order.select" (click)="backOrder($event)">
+                                        <ion-icon color="primary" name="arrow-undo-outline"></ion-icon>
+                                    </button>
+                                </div>
+                                <div class="work-card-meta">
+                                    <div class="work-time">{{ order.time | date:'HH:mm' }}</div>
+                                    <div [ngClass]="{'work-timer': getDiffMinutes(order.time) >= 0,
+                                'work-timer-late5': getDiffMinutes(order.time) > 5,
+                                'work-timer-late10': getDiffMinutes(order.time) > 10}">
+                                        {{ getTimeDiff(order.time) }}
+                                    </div>
+                                </div>
+                                <ion-grid *ngIf="order.select">
+                                    <ion-row>
+                                        <ion-col size="12">
+                                            <ion-button color="medium" expand="block"
+                                                (click)="changeStatusItemInOrder(zone.id, '1')">
+                                                YÊU CẦU LẠI
+                                            </ion-button>
+                                        </ion-col>
+                                    </ion-row>
+                                </ion-grid>
+                                <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item" *ngFor="let item of order.items"
+                                        (click)="changeStatusItems(item.IDItem)">
+                                        <span class="item-qty">{{ item.qty }}x</span>
+                                        <span [class.done]="item.done" class="item-name">{{ item.name }}</span>
+                                        <ion-icon *ngIf="order.select && _fromZoneId == '5' && _toZoneId == '1'"
+                                            color="medium" name="arrow-up-circle-outline"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zone-empty" *ngIf="zone.orders.length === 0">
+                        Không có đơn nào!
+                    </div>
+                </div>
+            </ion-col>
+        </ion-row>
+    </ion-grid>
+</ion-content>

@@ -37,6 +37,7 @@ import { printData, PrintingService } from 'src/app/services/util/printing.servi
 import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
 import { POSService } from '../_services/pos.service';
 import { InputControlComponent } from 'src/app/components/controls/input-control.component';
+import { EVENT_TYPE } from 'src/app/services/static/event-type';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
 import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-modal.component';
@@ -727,11 +728,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	countDishes(segment) {
 		if (segment == 'New')
-			return this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting')
+			return this.item.OrderLines.filter((d) => d.Status == 'New')
 				.map((x) => x.Quantity)
 				.reduce((a, b) => +a + +b, 0);
 
-		return this.item.OrderLines.filter((d) => !(d.Status == 'New' || d.Status == 'Waiting'))
+		return this.item.OrderLines.filter((d) => !(d.Status == 'New'))
 			.map((x) => x.Quantity)
 			.reduce((a, b) => +a + +b, 0);
 	}
@@ -867,7 +868,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.then((_) => {
 							this.openCancellationReason(line, quantity);
 						})
-						.catch((_) => {});
+						.catch((_) => { });
 				} else {
 					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
@@ -943,7 +944,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								],
 							});
 						})
-						.catch((_) => {});
+						.catch((_) => { });
 				} else {
 					if (this.pageConfig.canDeleteItems) {
 						this.env
@@ -981,7 +982,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									],
 								});
 							})
-							.catch((_) => {});
+							.catch((_) => { });
 					} else {
 						this.env.showMessage('This account does not have permission to delete products!', 'warning');
 					}
@@ -1435,7 +1436,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => {});
+					.catch((_) => { });
 			} else {
 				let cancelData: any = {
 					Code: data.Code,
@@ -1471,7 +1472,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => {});
+					.catch((_) => { });
 			}
 		}
 	}
@@ -1481,7 +1482,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.env
 				.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
 				.then(() => this.sendKitchen())
-				.catch(() => {});
+				.catch(() => { });
 		}
 	}
 	async saveOrderData() {
@@ -1544,7 +1545,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					const finalItems = allItems.map((item) => ({
 						Code: item.Code,
 						ShippedQuantity: item.Quantity,
-						Status: 'Serving',
+						Status: 'Waiting',
 					}));
 
 					resolve(finalItems);
@@ -1556,7 +1557,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					const finalItems = successItems.map((item) => ({
 						Code: item.Code,
 						ShippedQuantity: item.Quantity,
-						Status: 'Serving',
+						Status: 'Waiting',
 					}));
 
 					resolve(finalItems);
@@ -2002,7 +2003,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						const finalItemsToUpdate = fullSuccessItems.map((item) => ({
 							Code: item.Code,
 							ShippedQuantity: item.Quantity,
-							Status: 'Serving',
+							Status: 'Waiting',
 						}));
 
 						this.savePrintResults(finalItemsToUpdate)
@@ -2181,7 +2182,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					.then(() => {
 						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
 					})
-					.catch(() => {});
+					.catch(() => { });
 			});
 	}
 
@@ -2386,7 +2387,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				line.Status = 'New';
 			}
 			// else {
-			//     line.Status = 'Serving';
+			//     line.Status = 'Waiting';
 			// }
 			this.updateOrderLineStatus(line);
 
@@ -2443,7 +2444,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		line.StatusColor = lib.getAttrib(line.Status, this.posService.dataSource.orderDetailStatusList, 'Color', '--', 'Code');
 	}
 
-	patchOrderLines() {}
+	patchOrderLines() { }
 
 	private addOrderLine(line) {
 		let groups = <FormArray>this.formGroup.controls.OrderLines;
@@ -2891,7 +2892,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					changed.Status = 'Done';
 					this.setOrderValue(changed, true);
 				})
-				.catch((_) => {});
+				.catch((_) => { });
 		} else {
 			this.item.OrderLines.forEach((line) => {
 				if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -2948,7 +2949,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							Code: e.Code,
 							ShippedQuantity: e.Quantity,
 							IDUoM: e.IDUoM,
-							Status: 'Serving',
+							Status: 'Waiting',
 						});
 					}
 				});
@@ -3022,12 +3023,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				.then(() => {
 					setTimeout(() => this.scanQRCode(), 0);
 				})
-				.catch(() => {});
+				.catch(() => { });
 			return;
 		}
 	}
 
-	menuItemsPaging(event) {}
+	menuItemsPaging(event) { }
 
 	isCompleteLoaded = false;
 	async previewBill() {

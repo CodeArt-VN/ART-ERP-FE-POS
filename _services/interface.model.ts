@@ -277,3 +277,31 @@ export interface POSConfig {
 	BillFooterLine2: string;
 	BillLogo: string;
 }
+
+export interface POSWorkOrderItem {
+	IDItem: string;
+	Id: string;
+	code: string;
+	key: string;
+	name: string;
+	qty: number;
+	done?: boolean;
+}
+
+export interface POSWorkOrder {
+	id: string;
+	key: string;
+	table: string;
+	status: string;
+	select: boolean;
+	time: Date;
+	items: POSWorkOrderItem[];
+}
+
+export interface POSWorkOrderZone {
+	id: string;
+	name: string;
+	title: string;
+	show: boolean;
+	orders: POSWorkOrder[];
+}
