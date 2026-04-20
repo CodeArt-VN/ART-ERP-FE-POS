@@ -265,16 +265,42 @@
                                                 color="warning" name="fast-food-outline"></ion-icon>
 
                                             <div id="print-area-{{ order.id }}" class="print-area">
-                                                <h2>Phiếu trả món</h2>
-                                                <div>
-                                                    <strong>Mã đơn:</strong> {{ order?.id || 'N/A' }}
-                                                </div>
-                                                <div>
-                                                    <strong>Bàn:</strong> {{ order?.table || 'N/A' }}
-                                                </div>
-                                                <hr />
-                                                <div>{{ item.qty }} x {{ item.name }}</div>
-                                                <hr />
+                                                <table>
+                                                    <thead>
+                                                        <tr>
+                                                            <td style="font-size: 16px">
+                                                                <ion-text class="bold">{{ 'Table' | translate }}:
+                                                                </ion-text>
+                                                                <ion-text class="bold" style="font-size: 20px">{{
+                                                                    order.table
+                                                                    }}</ion-text>
+                                                            </td>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr style="border-bottom: 1px solid #000;">
+                                                            <td style="border-bottom: 1px solid #000;" class="bold" class="bold">{{ 'Item' |
+                                                                translate
+                                                                }}</td>
+                                                            <td style="border-bottom: 1px solid #000;" class="bold text-right">{{ 'Qty' |
+                                                                translate }}</td>
+                                                        </tr>
+                                                        <tr style="border-bottom: 1px solid #000;">
+                                                            <td style="border-bottom: 1px solid #000;" class="bold">
+                                                                <span>{{item.qty}}</span>
+                                                            </td>
+                                                            <td style="border-bottom: 1px solid #000;" class="bold text-right">
+                                                                <span>{{ item.name}}</span>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="title">{{ 'PrintDate' | translate }}</td>
+                                                            <td class="text-right">
+                                                                <span>{{ currentNow | date:'dd/MM/yyyy HH:mm' }}</span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
