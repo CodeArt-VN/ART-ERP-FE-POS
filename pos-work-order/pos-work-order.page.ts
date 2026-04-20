@@ -23,5 +23,10 @@ export class POSWorkOrderPage extends PageBase {
 		public location: Location
 	) {
 		super();
+		this.pageConfig.ShowAdd = false;
+		this.pageConfig.ShowSearch = false;
+		this.pageConfig.ShowImport = false;
+		this.pageConfig.ShowExport = false;
+		this.pageConfig.ShowArchive = false;
 	}
 }

@@ -41,29 +41,8 @@
 		gap: 8px;
 	}
 
-	.color-line-waiting {
+	.line {
 		height: 8px;
-		background: rgb(160, 160, 160);
-	}
-
-	.color-line-inprogress {
-		height: 8px;
-		background: rgb(119, 183, 255);
-	}
-
-	.color-line-ready {
-		height: 8px;
-		background: rgb(255, 216, 101);
-	}
-
-	.color-line-serving {
-		height: 8px;
-		background: rgb(93, 255, 130);
-	}
-
-	.color-line-return {
-		height: 8px;
-		background: rgb(255, 104, 119);
 	}
 
 	.zone-card {
@@ -254,11 +233,15 @@
 	}
 
 	.print-area {
-		display: none !important;
+		// display: none !important;
 		width: 80mm;
 		padding: 10px;
 		background: #fff;
 		color: #000;
 		font-size: 12px;
+	}
+
+	.text-right {
+		text-align: right;
 	}
 }

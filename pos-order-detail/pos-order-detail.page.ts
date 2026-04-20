@@ -6,6 +6,7 @@ import { EnvService } from 'src/app/services/core/env.service';
 import {
 	CRM_ContactProvider,
 	HRM_StaffProvider,
+	POS_LogWorkOrderProvider,
 	// POS_KitchenProvider, // Replaced by posService.dataSource.kitchens
 	// POS_MenuProvider, // Replaced by posService.dataSource.menuList
 	// POS_TableGroupProvider, // Replaced by posService.dataSource.tableList
@@ -96,7 +97,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	});
 
 	isEnter = false;
-
+	sendKitchenStatus = '';
 	@ViewChild('contactInput') contactInput: InputControlComponent;
 	paymentSuccessTriggered = false; // check signalr payment success
 	lastEventRefreshTime = 0;
@@ -118,6 +119,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public printerTerminalProvider: POS_TerminalProvider,
 		public printingService: PrintingService,
 		public scanner: BarcodeScannerService,
+		public LogWorkOrderProvider: POS_LogWorkOrderProvider,
 
 		public env: EnvService,
 		public navCtrl: NavController,
@@ -452,7 +454,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private updateCanSaveOrder() {
 		const controls = this.formGroup.controls;
 		this.canSaveOrder =
-			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == this.sendKitchenStatus);
 	}
 
 	private updateFoCState(line) {
@@ -561,6 +563,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		// setTimeout(() => {
 		// 	this.segmentChanged('all');
 		// }, 100);
+
+		if (this.posService.systemConfig.POSEnableWorkOrder) {
+			this.sendKitchenStatus = 'Waiting';
+		}
+		else {
+			this.sendKitchenStatus = 'Serving';
+		}
 	}
 
 	async getStorageNotifications() {
@@ -842,6 +851,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				OriginalDiscountFromSalesman: 0,
 				SubItems: [],
 				CreatedDate: new Date(),
+				ModifiedDate: new Date(),
 				_item: item,
 				NewPrice: price.NewPrice ?? 0,
 			};
@@ -1478,13 +1488,24 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	checkItemNotSendKitchen() {
-		if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
-			this.env
-				.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
-				.then(() => this.sendKitchen())
-				.catch(() => { });
+		if (this.posService.systemConfig.POSEnableWorkOrder) {
+			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
+				this.env
+					.showPrompt('Bạn có muốn đơn gửi bar/bếp ?', null, 'Thông báo')
+					.then(() => this.sendKitchenWithoutPrint())
+					.catch(() => { });
+			}
+		}
+		else {
+			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
+				this.env
+					.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
+					.then(() => this.sendKitchen())
+					.catch(() => { });
+			}
 		}
 	}
+
 	async saveOrderData() {
 		// Wait for save to complete before checking print
 		if (this.formGroup.dirty || !this.item.Id) {
@@ -1545,7 +1566,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					const finalItems = allItems.map((item) => ({
 						Code: item.Code,
 						ShippedQuantity: item.Quantity,
-						Status: 'Waiting',
+						Status: this.sendKitchenStatus,
 					}));
 
 					resolve(finalItems);
@@ -1557,7 +1578,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					const finalItems = successItems.map((item) => ({
 						Code: item.Code,
 						ShippedQuantity: item.Quantity,
-						Status: 'Waiting',
+						Status: this.sendKitchenStatus,
 					}));
 
 					resolve(finalItems);
@@ -2003,7 +2024,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						const finalItemsToUpdate = fullSuccessItems.map((item) => ({
 							Code: item.Code,
 							ShippedQuantity: item.Quantity,
-							Status: 'Waiting',
+							Status: this.sendKitchenStatus,
 						}));
 
 						this.savePrintResults(finalItemsToUpdate)
@@ -2052,6 +2073,79 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		};
 		return data;
 	}
+
+	async sendKitchenWithoutPrint() {
+		return new Promise(async (resolve, reject) => {
+			// Update printData with current date
+			this.printData.printDate = new Date();
+			this.printData.undeliveredItems = [];
+
+			this.item.OrderLines.forEach((e) => {
+				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
+				if (e.Remark) {
+					e.Remark = e.Remark.toString();
+				}
+				if (e._undeliveredQuantity > 0) {
+					this.printData.undeliveredItems.push(e);
+				}
+			});
+
+			if (this.printData.undeliveredItems.length == 0) {
+				if (this.posService.systemConfig.IsAutoSave) this.env.showMessage('No new product needs to be sent!', 'success');
+				resolve(true);
+				return;
+			}
+
+			// Validate items before processing
+			let itemsWithoutMenu = this.printData.undeliveredItems.filter((i) => !i._item);
+			let itemsWithoutKitchen = this.printData.undeliveredItems.filter((i) => i._item && (!i._IDKitchens || i._IDKitchens.length === 0));
+
+			// Show error for items without menu
+			if (itemsWithoutMenu.length > 0) {
+				let itemIds = itemsWithoutMenu.map((i) => i.IDItem + ';').join('<br>');
+				this.env.showAlert(
+					{
+						code: 'POS_ITEM_NOT_IN_MENU',
+						value: itemIds,
+					},
+					null,
+					'POS_PRINT_ERROR'
+				);
+				resolve(false);
+				return;
+			}
+
+			// Show error for items without kitchen
+			if (itemsWithoutKitchen.length > 0) {
+				let itemNames = itemsWithoutKitchen.map((i) => i._item?.Name + ';').join('<br>');
+				this.env.showAlert(
+					{
+						code: 'POS_ITEM_NO_KITCHEN_ASSIGNMENT',
+						value: itemNames,
+					},
+					null,
+					'POS_PRINT_ERROR'
+				);
+				resolve(false);
+				return;
+			}
+
+			// Since no print, just mark all as sent
+			const finalItemsToUpdate = this.printData.undeliveredItems.map((item) => ({
+				Code: item.Code,
+				ShippedQuantity: item.Quantity,
+				Status: this.sendKitchenStatus,
+			}));
+
+			this.savePrintResults(finalItemsToUpdate)
+				.then(() => {
+					this.env.showMessage('Sent to kitchen successfully!', 'success');
+					resolve(true);
+				})
+				.catch((err) => reject(err));
+		});
+	}
+
 	printContent(data: printData[]) {
 		return new Promise((resolve, reject) => {
 			this.printingService
@@ -2480,6 +2574,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				value: line.CreatedDate,
 				disabled: true,
 			}),
+			ModifiedDate: new FormControl({
+				value: line.CreatedDate,
+				disabled: true,
+			}),
 			SubItems: [line?.SubItems || []],
 			OriginalDiscount1: [line.OriginalDiscount1],
 
@@ -2617,7 +2715,55 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	alwaysReturnProps = ['Id', 'IDBranch', 'Code'];
 	async saveChange() {
 		let submitItem = this.getDirtyValues(this.formGroup);
+		this.saveLogWorkOrder(submitItem);
 		return this.saveChange2();
+	}
+
+	private saveLogWorkOrder(item) {
+		if (!item.OrderLines || item.Status == 'New') {
+			return Promise.resolve();
+		}
+
+		let lines = Object.values(item.OrderLines);
+		if (!lines.length) {
+			return Promise.resolve();
+		}
+
+		const orderId = this.item?.Id;
+		if (!orderId) {
+			return Promise.resolve();
+		}
+
+		const logs: any[] = [];
+		const SavedTime = lib.dateFormat(new Date(), 'yyyy-mm-ddThh:MM:ss');
+		lines.forEach((l: any) => {
+			if (l.Status == 'New') {
+				return;
+			}
+
+			const line = this.item.OrderLines.find((o) => o.Id == l.Id);
+
+			logs.push({
+				IDBranch: this.env.selectedBranch,
+				IDOrder: orderId,
+				IDOrderLine: line.Id,
+				Id: 0,
+				Code: lib.generateUID(this.env.user.StaffID),
+				Name: line.Name || line.ItemName,
+				Status: line.Status,
+				SavedTime: SavedTime,
+			});
+		});
+
+		if (logs.length) {
+			return this.LogWorkOrderProvider.save(logs, this.pageConfig.isForceCreate)
+				.then()
+				.catch((err) => {
+					this.env.showMessage('Cannot save, please try again', 'danger');
+				});
+		} else {
+			return Promise.resolve();
+		}
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
@@ -2949,7 +3095,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							Code: e.Code,
 							ShippedQuantity: e.Quantity,
 							IDUoM: e.IDUoM,
-							Status: 'Waiting',
+							Status: this.sendKitchenStatus,
 						});
 					}
 				});
