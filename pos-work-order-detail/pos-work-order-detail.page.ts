@@ -1,6 +1,6 @@
 import { Component, DoCheck, HostListener } from '@angular/core';
 import { PageBase } from 'src/app/page-base';
-import { POS_KitchenProvider, SALE_OrderDetailProvider, SALE_OrderProvider } from 'src/app/services/static/services.service';
+import { POS_KitchenProvider, SALE_OrderDetailProvider, SALE_OrderProvider, SYS_ConfigProvider } from 'src/app/services/static/services.service';
 import { EnvService } from 'src/app/services/core/env.service';
 import { NavController, LoadingController, AlertController, ModalController, PopoverController } from '@ionic/angular';
 import { ActivatedRoute } from '@angular/router';
@@ -12,6 +12,7 @@ import { forEachChild } from 'typescript';
 import { printData, PrintingService } from 'src/app/services/util/printing.service';
 import { Subscription } from 'rxjs';
 import { POSService } from '../_services/pos.service';
+import { SYS_ConfigService } from 'src/app/services/custom/system-config.service';
 
 @Component({
 	selector: 'app-pos-work-order-detail',
@@ -20,13 +21,16 @@ import { POSService } from '../_services/pos.service';
 	standalone: false,
 })
 export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
-	_selectingZone = '0';
+	_selectZone = '0';
 	_selectOrder = false;
 	_selectItem = false;
 	_toZoneId = '0';
 	_fromZoneId = '0';
 	_useKeyboard = false;
 	_showReturnedColumn = true;
+	selectingItem = false;
+	actionMethod = '0';
+	printZone = '0';
 	currentNow = Date.now();
 	eventSubscription: Subscription;
 	Kitchens = [];
@@ -34,9 +38,14 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	KitchenName: string;
 	zones: POSWorkOrderZone[] = [];
 	orderDetailStatusList = [];
+	listItemsChange = [];
+	isOpenConfigPOS = false;
+	optionMethod: any = [];
+	optionPrintStatus: any = [];
+	workorderConfig: any = [];
 
 	constructor(
-		public posKitchen: POS_KitchenProvider,
+		public posKitchenProvider: POS_KitchenProvider,
 		public commonService: CommonService,
 		public orderDetailProvider: SALE_OrderDetailProvider,
 		public env: EnvService,
@@ -48,6 +57,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		public formBuilder: FormBuilder,
 		public printingService: PrintingService,
 		public posService: POSService,
+		public sys_ConfigProvider: SYS_ConfigProvider,
 	) {
 		super();
 		this.pageConfig.ShowRefresh = false;
@@ -56,19 +66,31 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	preLoadData(event?: any): void {
-		this.posKitchen.read().then((resp: any) => {
-			this.Kitchens = resp['data'];
-			this.KitchenNow = this.Kitchens.find((s) => s.Id === Number(this.id));
-			this.KitchenName = this.KitchenNow?.Name || '';
-		});
+		const forceReload = event === 'force';
 		Promise.all([
+			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
 			this.env.getStatus('POSOrderDetail'),
-		]).then((values) => {
-			if (values[0]) {
-				this.orderDetailStatusList = values[0];
-			}
-			super.preLoadData(event);
-		});
+			this.env.getType('WorkOrderMethod', true),
+			this.env.getType('WorkOrderPrintStatus', true),
+			this.sys_ConfigProvider.read(this.env.selectedBranch),
+			this.posKitchenProvider.read(),
+		])
+			.then((values: any) => {
+				console.log('POS environment data loaded', values);
+				this.orderDetailStatusList = values[1];
+				this.optionMethod = values[2];
+				this.optionPrintStatus = values[3];
+				this.workorderConfig = values[4].data;
+				this.Kitchens = values[5].data;
+				this.KitchenNow = this.Kitchens.find((s) => s.Id === Number(this.id));
+				this.KitchenName = this.KitchenNow?.Name || '';
+			})
+			.catch((err) => {
+				console.log(err);
+				this.env.showErrorMessage(err);
+
+				this.loadedData(event);
+			});
 
 		super.preLoadData(event);
 	}
@@ -116,7 +138,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 
 	refreshFromEvent() {
 		if (!this.orderList || this.orderList.length === 0) {
-			this.loadData(null, true);
+			this.loadData(null);
 			return;
 		}
 
@@ -150,23 +172,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	orderList = [];
-	loadData(event?: null, forceReload?: boolean): void {
-		forceReload = event === 'force';
-		Promise.all([
-			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
-			this.env.getStorage('POSQuantityConfig'),
-			this.env.getStorage('POSTerminalConfig'),
-		])
-			.then((values) => {
-				console.log('POS environment data loaded', this.posService.dataSource, this.posService.systemConfig);
-			})
-			.catch((err) => {
-				console.log(err);
-				this.env.showErrorMessage(err);
-
-				this.loadedData(event);
-			});
-
+	loadData(event?: null): void {
 		this.commonService.connect('GET', 'POS/WorkOrder/GetService/' + this.id, null).toPromise().then(
 			(data: any) => {
 				console.log(data);
@@ -174,13 +180,11 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				this.loadedData(event);
 			}
 		);
-
-
 	}
 
 	loadedData(event?: any): void {
 		this.zones = this.getZones();
-		this.loadPermission();
+		this.loadConfig();
 		this.zones.forEach((zone) => (zone.orders = this.getOrders(this.orderList).filter((order) => order.status === zone.name)));
 		super.loadedData(event);
 	}
@@ -204,7 +208,9 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			.filter((zone): zone is POSWorkOrderZone => zone !== null);
 	}
 
-	loadPermission() {
+	loadConfig() {
+		this.actionMethod = this.posService.systemConfig.POSWorkOrderMethod;
+		this.printZone = this.posService.systemConfig.POSWorkOrderPrintStatus;
 		this._useKeyboard = this.pageConfig.canUseKeyboard;
 	}
 
@@ -213,15 +219,24 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		if (!this._useKeyboard || this.currentAlert) return;
 
 		const key = event.key;
-		const zone = this._selectingZone;
+		const zone = this._selectZone;
 
 		// HANDLE ITEM
 		if (this._selectItem) {
 			if (key === '0') {
 				this.backOrder();
 				this.removeKeyItems();
-			} else {
-				this.changeStatusItems(key);
+			}
+			else if (key === 'Enter') {
+				if (this.actionMethod == '1')
+					this.changeStatusSelectingItems(zone);
+			}
+			else {
+				if (this.actionMethod == '0')
+					this.changeStatusItem(key);
+				else if (this.actionMethod == '1') {
+					this.addListItemsChange(key);
+				}
 			}
 			return;
 		}
@@ -236,9 +251,10 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				},
 				'2': {
 					'1': () => { if (this.pageConfig.canReady) this.changeStatusItemInOrder('2', '3') },
+					'2': () => { if (this.pageConfig.canReturn) this.changeStatusItemInOrder('2', '5') },
 				},
 				'3': {
-					'1': () => { if (this.pageConfig.canConfirm) this.changeStatusItemInOrder('3', '4') },
+					'1': () => { if (this.pageConfig.canServe) this.changeStatusItemInOrder('3', '4') },
 					// '2': () => this.changeStatusOrder('3', '4'),
 				},
 				'5': {
@@ -325,6 +341,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 						name: v.Name,
 						qty: v.ShippedQuantity,
 						code: v.Code,
+						select: false,
 					})),
 				};
 			});
@@ -334,7 +351,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	selectZone(zoneId: string) {
-		this._selectingZone = zoneId;
+		this._selectZone = zoneId;
 		this.setKeyOrders(zoneId);
 	}
 
@@ -342,8 +359,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		let zone = this.getZone(zoneId);
 		if (!zone) return;
 		if (zone?.orders.length === 0) return;
-		this._selectingZone = zoneId;
-		this._selectItem = false;
+		this._selectZone = zoneId;
 
 		this.zones.forEach(z => {
 			z.orders.forEach(o => {
@@ -351,11 +367,14 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			});
 		})
 
+
+		let order: POSWorkOrder;
 		if (this._useKeyboard) {
 			zone.orders.forEach(o => {
 				if (o.key === key) {
 					o.select = true;
 					this._selectOrder = true;
+					order = o;
 				} else {
 					o.select = false;
 				}
@@ -366,10 +385,20 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				if (o.id === key.id && o.time === key.time) {
 					o.select = true;
 					this._selectOrder = true;
+					order = o;
 				} else {
 					o.select = false;
 				}
 			});
+		}
+
+
+		if (this.actionMethod == '0') {
+			this._selectItem = false;
+		}
+		else {
+			this._selectItem = true;
+			this.setKeyItems(order);
 		}
 	}
 
@@ -380,6 +409,21 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 
 			this._toZoneId = '0';
 			this._fromZoneId = '0';
+			if (!this._useKeyboard) {
+				this._selectOrder = false;
+
+				this.zones.forEach((z) => z.orders.forEach(o => {
+					o.select = false;
+				}));
+				this._selectZone = '0';
+			}
+
+			if (this.actionMethod == '1') {
+				this._selectOrder = false;
+				this.zones.forEach((z) => z.orders.forEach(o => {
+					o.select = false;
+				}));
+			}
 		}
 		else {
 			this._selectOrder = false;
@@ -388,12 +432,15 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				o.select = false;
 			}));
 			if (!this._useKeyboard) {
-				this._selectingZone = '0';
+				this._selectZone = '0';
 			}
 		}
+
+		this.listItemsChange = [];
 	}
 
 	changeStatusItemInOrder(fromZoneId: string, toZoneId: string) {
+		event?.stopPropagation();
 		const order = this.getZone(fromZoneId).orders.find(o => o.select);
 		if (!order) return;
 		this._selectItem = true;
@@ -404,7 +451,74 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		}
 	}
 
-	async changeStatusItems(key: string) {
+	async changeStatusSelectingItems(fromZoneId: string) {
+		const toZoneId = (await this.changeStatusSelectingItem_Alert(fromZoneId)).toString();
+
+		if (fromZoneId == '0' || toZoneId == '0') {
+			return;
+		}
+
+		if (this._selectOrder) {
+			const orderFrom = this.getZone(fromZoneId)?.orders.find(o => o.select);
+			if (!orderFrom) return;
+
+			let order: POSWorkOrder;
+			const orderTo = this.getZone(toZoneId)?.orders.find(o => o.id === orderFrom.id && o.time == orderFrom.time);
+			if (orderTo) {
+				order = orderTo;
+			}
+			else {
+				order = lib.cloneObject(this.getZone(fromZoneId)?.orders.find(o => o.select));
+				if (!order) return;
+				order.status = this.getZone(toZoneId).name;
+				order.select = false;
+				order.items = [];
+			}
+
+			let orderResult = [];
+			let listSplice = [];
+			orderFrom.items.forEach((item) => {
+				let itemInOrderTo;
+				let itemClone;
+				if (item.select) {
+					itemClone = item;
+					itemInOrderTo = lib.cloneObject(itemClone);
+					if (!itemInOrderTo) return;
+					itemInOrderTo.key = '0';
+					order.items.push(itemInOrderTo);
+
+					let index = orderFrom.items.findIndex((i: POSWorkOrderItem) => i.Id === item.Id);
+					listSplice.push(index);
+
+					let postDTO = { Id: itemInOrderTo.Id, Status: this.getZone(toZoneId).name, Code: itemInOrderTo.code };
+					orderResult.push(postDTO);
+				}
+			});
+
+			if (order.items.length > 0) {
+				if (!orderTo)
+					this.getZone(toZoneId)?.orders.push(order);
+			}
+
+			if (listSplice.length > 0) {
+				for (let i = listSplice.length - 1; i >= 0; i--) {
+					orderFrom.items.splice(listSplice[i], 1);
+				}
+			}
+
+			this.removeOrder(fromZoneId);
+			this.commonService.connect('POST', 'POS/WorkOrder/ChangeStatus', orderResult).toPromise().then();
+
+			this.setKeyItems(orderFrom);
+			this.listItemsChange = [];
+
+			if (toZoneId == this.printZone) {
+				this.printReceipt(order);
+			}
+		}
+	}
+
+	async changeStatusItem(key: string) {
 		if (this._fromZoneId == '0' || this._toZoneId == '0') {
 			return;
 		}
@@ -445,6 +559,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 
 			if (!itemInOrderTo) return;
 			itemInOrderTo.key = '0';
+			itemInOrderTo.select = true;
 			order.items.push(itemInOrderTo);
 			if (!orderTo)
 				this.getZone(toZoneId)?.orders.push(order);
@@ -460,9 +575,13 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				orderFrom.items.splice(index, 1);
 			}
 
-			let orderResult = [];
+			if (toZoneId == this.printZone) {
+				this.printReceipt(order);
+			}
 			this.removeOrder(fromZoneId);
-			if (toZoneId == '2') {
+
+			let orderResult = [];
+			if (fromZoneId == '1') {
 				let _changeAllOfThisItem = false;
 				this.getZone(fromZoneId)?.orders.forEach(o => {
 					if (o.id == order.id && o.time == order.time) {
@@ -479,8 +598,6 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				if (confirmed) {
 					orderResult = this.changeAllOfThisItem(itemInOrderTo.IDItem, order);
 				}
-			} else if (toZoneId == '3') {
-				this.printReceipt(order);
 			}
 
 			let postDTO = { Id: itemInOrderTo.Id, Status: this.getZone(toZoneId).name, Code: itemInOrderTo.code };
@@ -519,6 +636,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					const itemInprogress = lib.cloneObject(orderWaiting.items?.find((i: POSWorkOrderItem) => i.IDItem == itemId));
 					if (!itemInprogress) return;
 					itemInprogress.key = '0';
+					itemInprogress.select = true;
 					order.items.push(itemInprogress);
 					if (!orderInProgress)
 						this.getZone('2')?.orders.push(order);
@@ -527,7 +645,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					if (index !== -1) {
 						orderWaiting.items.splice(index, 1);
 					}
-
+					this.printReceipt(order);
 					let postDTO = { Id: itemInprogress.Id, Status: this.getZone('2').name, Code: itemInprogress.code };
 					orderList.push(postDTO);
 				}
@@ -539,22 +657,33 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	changeStatusOrder(fromZoneId: string, toZoneId: string) {
+		event?.stopPropagation();
 		const orderWaiting = this.getZone(fromZoneId)?.orders.find(o => o.select);
 		if (!orderWaiting) return;
 		const order = lib.cloneObject(this.getZone(fromZoneId)?.orders.find(o => o.select));
 		if (!order) return;
 
-		let orderInProgress = this.getZone(toZoneId)?.orders.find(o => o.id === order.id);
+		let orderInProgress = this.getZone(toZoneId)?.orders.find(o => o.id == order.id && o.time == order.time);
 		if (!orderInProgress) {
 			order.status = this.getZone(toZoneId).name;
+			order.select = false;
+			order.items.map((i: POSWorkOrderItem) => {
+				i.select = true;
+			});
 			this.getZone(toZoneId)?.orders.push(order);
 			orderInProgress = order;
 			orderWaiting.items = [];
 		} else {
-			order.items.forEach((i: POSWorkOrderItem) => {
+			order.select = false;
+			order.items.map((i: POSWorkOrderItem) => {
+				i.select = true;
 				orderInProgress.items.push(i);
 			});
 			orderWaiting.items = [];
+		}
+
+		if (toZoneId == this.printZone) {
+			this.printReceipt(order);
 		}
 
 		const orderResult = [];
@@ -570,27 +699,31 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	removeOrder(zoneId: string) {
 		let zone = this.getZone(zoneId);
 		if (!zone) return;
+		let listSplice = []
 		zone.orders.forEach((order) => {
 			if (order.items.length == 0) {
 				const index = zone.orders.findIndex(o => o.id == order.id && o.time == order.time);
-
-				if (index !== -1) {
-					zone.orders.splice(index, 1);
-				}
-
-				this._selectOrder = false;
-				this._selectItem = false;
-				this._selectingZone = '0';
-				this._fromZoneId = '0';
-				this._fromZoneId = '0';
-				if (this._useKeyboard)
-					this.setKeyOrders(zoneId);
+				listSplice.push(index);
 			}
 		});
+
+		if (listSplice.length > 0) {
+			for (let i = listSplice.length - 1; i >= 0; i--) {
+				zone.orders.splice(listSplice[i], 1);
+			}
+
+			this._selectOrder = false;
+			this._selectItem = false;
+			this._selectZone = '0';
+			this._fromZoneId = '0';
+			this._fromZoneId = '0';
+			if (this._useKeyboard)
+				this.setKeyOrders(zoneId);
+		}
 	}
 
 	setKeyItems(order: POSWorkOrder) {
-		if (this._selectItem) {
+		if (this._selectItem && this._useKeyboard) {
 			order.items?.forEach((o, i) => {
 				o.key = (i + 1).toString();
 			});
@@ -598,7 +731,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	removeKeyItems() {
-		const order = this.getZone(this._selectingZone)?.orders.find(o => o.select);
+		const order = this.getZone(this._selectZone)?.orders.find(o => o.select);
 		if (!order) return
 		order.items?.forEach((o, i) => {
 			o.key = '0';
@@ -607,7 +740,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 
 	setKeyOrders(zoneId: string) {
 		if (this._useKeyboard) {
-			if (this._selectingZone === zoneId) {
+			if (this._selectZone === zoneId) {
 				this.getZone(zoneId).orders
 					.forEach((o, i) => o.key = (i + 1).toString());
 			} else {
@@ -618,7 +751,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	selectToolbar() {
-		this._selectingZone = '9';
+		this._selectZone = '9';
 	}
 
 	_hideOrderDetails = false;
@@ -662,7 +795,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	backZone() {
-		this._selectingZone = '0';
+		this._selectZone = '0';
 	}
 
 	currentAlert: any = null;
@@ -705,6 +838,149 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				this.currentAlert = null;
 				// Nếu đóng bằng cách click ra ngoài (backdrop), mặc định là false
 				resolve(false);
+			});
+
+			await this.currentAlert.present();
+		});
+	}
+
+	async changeStatusSelectingItem_Alert(fromZoneId: string): Promise<number> {
+		return new Promise(async (resolve) => {
+			let keyHandler;
+			if (fromZoneId == '1') {
+				this.currentAlert = await this.alertCtrl.create({
+					header: 'Lựa chọn',
+					message: 'Hãy chọn thao tác muốn thực hiện',
+					buttons: [
+						{
+							text: "[1] Receive",
+							handler: () => resolve(2)
+						},
+						{
+							text: '[2] Return',
+							handler: () => resolve(5)
+						},
+						{
+							text: '[3] Cancel',
+							handler: () => resolve(0)
+						}
+					]
+				});
+
+				// Xử lý phím tắt
+				keyHandler = (event: KeyboardEvent) => {
+					if (event.key === '1') {
+						this.currentAlert.dismiss();
+						resolve(2);
+					} else if (event.key === '2') {
+						this.currentAlert.dismiss();
+						resolve(5);
+					} else if (event.key === '3') {
+						this.currentAlert.dismiss();
+						resolve(0);
+					}
+				};
+			}
+			else if (fromZoneId == '2') {
+				this.currentAlert = await this.alertCtrl.create({
+					header: 'Lựa chọn',
+					message: 'Hãy chọn thao tác muốn thực hiện',
+					buttons: [
+						{
+							text: "[1] Ready",
+							handler: () => resolve(3)
+						},
+						{
+							text: '[2] Return',
+							handler: () => resolve(5)
+						},
+						{
+							text: '[3] Cancel',
+							handler: () => resolve(0)
+						}
+					]
+				});
+
+				// Xử lý phím tắt
+				keyHandler = (event: KeyboardEvent) => {
+					if (event.key === '1') {
+						this.currentAlert.dismiss();
+						resolve(3);
+					} else if (event.key === '2') {
+						this.currentAlert.dismiss();
+						resolve(5);
+					} else if (event.key === '3') {
+						this.currentAlert.dismiss();
+						resolve(0);
+					}
+				};
+			}
+			else if (fromZoneId == '3') {
+				this.currentAlert = await this.alertCtrl.create({
+					header: 'Lựa chọn',
+					message: 'Hãy chọn thao tác muốn thực hiện',
+					buttons: [
+						{
+							text: "[1] Serve",
+							handler: () => resolve(4)
+						},
+						{
+							text: '[2] Cancel',
+							handler: () => resolve(0)
+						}
+					]
+				});
+
+				// Xử lý phím tắt
+				keyHandler = (event: KeyboardEvent) => {
+					if (event.key === '1') {
+						this.currentAlert.dismiss();
+						resolve(4);
+					} else if (event.key === '2') {
+						this.currentAlert.dismiss();
+						resolve(0);
+					}
+				};
+			} else if (fromZoneId == '5') {
+				this.currentAlert = await this.alertCtrl.create({
+					header: 'Lựa chọn',
+					message: 'Hãy chọn thao tác muốn thực hiện',
+					buttons: [
+						{
+							text: "[1] Reorder",
+							handler: () => resolve(1)
+						},
+						{
+							text: '[2] Cancel',
+							handler: () => resolve(0)
+						}
+					]
+				});
+
+				// Xử lý phím tắt
+				keyHandler = (event: KeyboardEvent) => {
+					if (event.key === '1') {
+						this.currentAlert.dismiss();
+						resolve(1);
+					} else if (event.key === '2') {
+						this.currentAlert.dismiss();
+						resolve(0);
+					}
+				};
+			}
+
+
+			// Lắng nghe phím khi alert mở
+			setTimeout(() => {
+				window.addEventListener('keydown', keyHandler);
+			}, 50);
+
+			// Gỡ bỏ lắng nghe phím khi alert đóng để tránh rò rỉ bộ nhớ
+			this.currentAlert.onDidDismiss().then(() => {
+				window.removeEventListener('keydown', keyHandler);
+				this.currentAlert = null;
+				// Nếu đóng bằng cách click ra ngoài (backdrop), mặc định là false
+				resolve(3);
 			});
 
 			await this.currentAlert.present();
@@ -762,7 +1038,11 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		return data;
 	}
 
+	orderPrint: POSWorkOrder;
 	async printReceipt(order: POSWorkOrder): Promise<any> {
+		this.orderPrint = this.getPrintOrder(order);
+		// Chờ DOM cập nhật sau khi gán orderPrint
+		await new Promise(resolve => setTimeout(resolve, 0));
 		const content = document.getElementById(`print-area-${order.id}`);
 		if (!content) {
 			console.error(`Không tìm thấy phần tử in cho order ${order.id}`);
@@ -807,7 +1087,70 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			}
 		}
 
+		this.orderPrint = null;
 		return results;
+	}
+
+	getPrintOrder(order: POSWorkOrder) {
+		if (order) {
+			let result = lib.cloneObject(order);
+			result.items = order.items.filter((i) => i.select);
+			return result;
+		}
+		return null;
+	}
+
+	loadItems(zoneId: string, order: any) {
+		let results = order.items;
+		results.map((i) => {
+			i.select = false;
+		});
+
+		if (order.select) {
+			results.map((i) => {
+				this.listItemsChange.forEach((i1) => {
+					if (i.key == i1) {
+						i.select = true;
+					}
+				})
+			});
+		}
+
+		return results;
+	}
+
+	addListItemsChange(key: string) {
+		let item = this.getZone(this._selectZone).orders.find((o) => o.select).items.find((i) => i.key == key)
+		if (item) {
+			const k = this.listItemsChange.includes(key);
+			if (k) {
+				const index = this.listItemsChange.findIndex(k => k == key)
+				if (index !== -1) {
+					this.listItemsChange.splice(index, 1)
+				}
+			}
+			else {
+				this.listItemsChange.push(key);
+			}
+		}
+	}
+
+	onMethodChange(e) {
+		let config = this.workorderConfig.find((c) => c.Code == 'POSWorkOrderMethod');
+		config.Value = JSON.stringify(this.optionMethod.Code);
+		this.sys_ConfigProvider.save(config).then().catch((err) => {
+			return;
+		});
+		this.actionMethod = this.optionMethod.Code;
+	}
+
+	onPrintStatusChange(e) {
+		let config = this.workorderConfig.find((c) => c.Code == 'POSWorkOrderPrintStatus');
+		config.Value = JSON.stringify(this.optionPrintStatus.Code);
+		this.sys_ConfigProvider.save(config).then().catch((err) => {
+			return;
+		});
+		this.printZone = this.optionPrintStatus.Code;
 	}
 }
 

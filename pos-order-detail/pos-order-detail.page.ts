@@ -454,7 +454,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private updateCanSaveOrder() {
 		const controls = this.formGroup.controls;
 		this.canSaveOrder =
-			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == this.sendKitchenStatus);
+			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New');
 	}
 
 	private updateFoCState(line) {
@@ -2997,6 +2997,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	doneOrder() {
 		let changed: any = { OrderLines: [] };
+		const checkStatusDone = this.item.OrderLines.find((line) => line.Status != 'Serving');
+		if (checkStatusDone) {
+			let message = 'Đơn hàng chưa phục vụ món xong. Bạn không thể hoàn tất đơn hàng';
+			this.env.showMessage(message, 'danger');
+			return;
+		}
 		if (this.printData.undeliveredItems.length > 0) {
 			let message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			if (this.item.Debt > 0) {

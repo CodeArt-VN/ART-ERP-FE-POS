@@ -53,7 +53,7 @@
 	}
 
 	.zone-header {
-		padding: 16px 16px;
+		padding: 8px 16px;
 		background: rgb(255, 255, 255);
 		border-bottom: 1px solid rgba(0, 0, 0, .08);
 		display: flex;
@@ -66,11 +66,11 @@
 		font-weight: 700;
 		color: #333;
 		text-transform: uppercase;
-	}
-
-	.zone-count {
-		font-size: 20px;
-		color: var(--ion-color-medium);
+		position: relative;
+		display: flex;
+		align-items: center;
+		/* 🔥 canh giữa theo chiều dọc */
+		justify-content: center;
 	}
 
 	.zone-body {
@@ -193,19 +193,23 @@
 		padding-top: 6px;
 	}
 
+	.item-cover {
+		padding: 6px 0;
+	}
+
 	.item {
 		display: flex;
 		align-items: center;
 		font-size: 20px;
-		padding: 8px 0;
+		padding: 2px 0;
 	}
 
-	.item-button {
-		all: unset;
+	.item-select {
 		display: flex;
 		align-items: center;
 		font-size: 20px;
-		padding: 8px 0;
+		padding: 2px 0;
+		border-bottom: 2px solid red;
 	}
 
 	.item-qty {
@@ -217,11 +221,6 @@
 		margin-left: 8px;
 		flex: 1;
 		text-align: left;
-	}
-
-	.item-name.done {
-		text-decoration: line-through;
-		color: var(--ion-color-medium);
 	}
 
 	button {

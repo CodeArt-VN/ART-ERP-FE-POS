@@ -43,6 +43,8 @@ export class POSEnviromentDataService {
 		POSVirtualKeyboardQuantity: false,
 		POSAllowDecimalQuantity: false,
 		POSEnableWorkOrder: false,
+		POSWorkOrderMethod: '0',
+		POSWorkOrderPrintStatus: '1',
 
 		BKIncomingDefaultBankName: '',
 		BKIncomingDefaultBankAccount: '',

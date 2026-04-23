@@ -263,6 +263,8 @@ export interface POSConfig {
 	POSVirtualKeyboardQuantity: boolean;
 	POSAllowDecimalQuantity: boolean;
 	POSEnableWorkOrder: boolean;
+	POSWorkOrderMethod: string;
+	POSWorkOrderPrintStatus: string;
 
 	// QR Code Payment
 	BKIncomingDefaultBankName?: any;
@@ -286,7 +288,7 @@ export interface POSWorkOrderItem {
 	key: string;
 	name: string;
 	qty: number;
-	done?: boolean;
+	select: boolean;
 }
 
 export interface POSWorkOrder {
