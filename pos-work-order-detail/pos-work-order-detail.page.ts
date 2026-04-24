@@ -65,33 +65,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		this.pageConfig.isDetailPage = true;
 	}
 
-	preLoadData(event?: any): void {
-		const forceReload = event === 'force';
-		Promise.all([
-			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
-			this.env.getStatus('POSOrderDetail'),
-			this.env.getType('WorkOrderMethod', true),
-			this.env.getType('WorkOrderPrintStatus', true),
-			this.sys_ConfigProvider.read(this.env.selectedBranch),
-			this.posKitchenProvider.read(),
-		])
-			.then((values: any) => {
-				console.log('POS environment data loaded', values);
-				this.orderDetailStatusList = values[1];
-				this.optionMethod = values[2];
-				this.optionPrintStatus = values[3];
-				this.workorderConfig = values[4].data;
-				this.Kitchens = values[5].data;
-				this.KitchenNow = this.Kitchens.find((s) => s.Id === Number(this.id));
-				this.KitchenName = this.KitchenNow?.Name || '';
-			})
-			.catch((err) => {
-				console.log(err);
-				this.env.showErrorMessage(err);
-
-				this.loadedData(event);
-			});
-
+	async preLoadData(event?: any): Promise<void> {
 		super.preLoadData(event);
 	}
 
@@ -124,6 +98,10 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					case 'signalR:POSPaymentSuccess':
 						this.refreshFromEvent();
 						break;
+					case 'signalR:POSWorkOrderUpdated':
+						if (data.id != this.env.user.StaffID) {
+							this.refreshFromEvent();
+						}
 				}
 			}
 		});
@@ -159,20 +137,61 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			return true;
 		}
 
-		const existingLineIds = new Set<number>();
+		// Build map of existing line IDs and their statuses
+		const existingLines = new Map<number, string>();
 		oldOrders.forEach((order: any) => {
 			order.OrderLines?.forEach((line: any) => {
-				if (line.Id != null) existingLineIds.add(line.Id);
+				if (line.Id != null) {
+					existingLines.set(line.Id, line.Status);
+				}
 			});
 		});
 
+		// Check for new items or status changes
 		return newOrders.some((order: any) => {
-			return order.OrderLines?.some((line: any) => line.Id != null && !existingLineIds.has(line.Id));
+			return order.OrderLines?.some((line: any) => {
+				if (line.Id == null) return true;
+
+				const oldStatus = existingLines.get(line.Id);
+				// New item (not in old orders) or status changed
+				if (oldStatus === undefined) return true;
+				if (oldStatus !== line.Status) return true;
+
+				return false;
+			});
 		});
 	}
 
 	orderList = [];
 	loadData(event?: null): void {
+		const forceReload = event === 'force';
+		Promise.all([
+			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
+			this.env.getStatus('POSOrderDetail'),
+			this.env.getType('WorkOrderMethod', true),
+			this.env.getType('WorkOrderPrintStatus', true),
+			this.sys_ConfigProvider.read(this.env.selectedBranch),
+			this.posKitchenProvider.read(),
+		])
+			.then((values: any) => {
+				console.log('POS environment data loaded', values);
+				this.orderDetailStatusList = values[1];
+				this.optionMethod = values[2];
+				this.optionPrintStatus = values[3];
+				this.workorderConfig = values[4].data;
+				this.Kitchens = values[5].data;
+				this.KitchenNow = this.Kitchens.find((s) => s.Id === Number(this.id));
+				this.KitchenName = this.KitchenNow?.Name || '';
+
+				this.loadConfig();
+			})
+			.catch((err) => {
+				console.log(err);
+				this.env.showErrorMessage(err);
+
+				this.loadedData(event);
+			});
+
 		this.commonService.connect('GET', 'POS/WorkOrder/GetService/' + this.id, null).toPromise().then(
 			(data: any) => {
 				console.log(data);
@@ -184,7 +203,6 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 
 	loadedData(event?: any): void {
 		this.zones = this.getZones();
-		this.loadConfig();
 		this.zones.forEach((zone) => (zone.orders = this.getOrders(this.orderList).filter((order) => order.status === zone.name)));
 		super.loadedData(event);
 	}
@@ -209,8 +227,8 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	loadConfig() {
-		this.actionMethod = this.posService.systemConfig.POSWorkOrderMethod;
-		this.printZone = this.posService.systemConfig.POSWorkOrderPrintStatus;
+		this.actionMethod = JSON.parse(this.workorderConfig.find((c) => c.Code == 'POSWorkOrderMethod').Value);
+		this.printZone = JSON.parse(this.workorderConfig.find((c) => c.Code == 'POSWorkOrderPrintStatus').Value);
 		this._useKeyboard = this.pageConfig.canUseKeyboard;
 	}
 
@@ -379,6 +397,14 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					o.select = false;
 				}
 			});
+
+			if (this.actionMethod == '0') {
+				this._selectItem = false;
+			}
+			else {
+				this._selectItem = true;
+				this.setKeyItems(order);
+			}
 		}
 		else {
 			zone.orders.forEach(o => {
@@ -390,15 +416,6 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					o.select = false;
 				}
 			});
-		}
-
-
-		if (this.actionMethod == '0') {
-			this._selectItem = false;
-		}
-		else {
-			this._selectItem = true;
-			this.setKeyItems(order);
 		}
 	}
 
