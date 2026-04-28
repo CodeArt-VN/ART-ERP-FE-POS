@@ -19,26 +19,11 @@
 			<datatable-column [checkbox]="true" name=""></datatable-column>
 			<datatable-column class="col-id" name="#" property="Id" [navLink]="pageConfig.pageName"></datatable-column>
 			<datatable-column class="col-name" name="Name" property="Name" [navLink]="pageConfig.pageName"></datatable-column>
-			<datatable-column class="col-name" name="Printer" property="Id">
-				<ng-template let-i="row" datatable-cell-template>
-						<span *ngIf="i.PrinterName" class="bold">{{i.PrinterName}}</span>
-						<small *ngIf="i.PrinterCode"label>{{i.PrinterCode}} </small>
-						<a *ngIf="i.IDPrinter"[href]="'#/'+'printer/'+i.IDPrinter" (click)="nav('printer/'+i.IDPrinter,'forward')" title="{{'Printer' | translate}}">
-							<ion-icon name="open-outline"></ion-icon> </a
-						>&nbsp;
-				</ng-template>
-			</datatable-column>
-			<datatable-column class="col-code" name="Print list" property="IsPrintList">
-				<ng-template let-i="row" datatable-cell-template>
-					<ion-icon class="min-btn" *ngIf="i.IsPrintList" name="checkmark"></ion-icon>
-				</ng-template>
-			</datatable-column>
 			<datatable-column class="col-code" name="Print OBO" property="IsPrintOneByOne">
 				<ng-template let-i="row" datatable-cell-template>
 					<ion-icon class="min-btn" *ngIf="i.IsPrintOneByOne" name="checkmark"></ion-icon>
 				</ng-template>
 			</datatable-column>
-			<datatable-column class="col-name" name="remark" property="Remark"> </datatable-column>
 		</app-data-table>
 	</div>
 

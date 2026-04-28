@@ -465,11 +465,11 @@
                                     </div>
                                     <!-- actionMethod == 0 -->
                                     <ion-grid *ngIf="order.select && actionMethod == '0'">
-                                        <ion-row *ngIf="pageConfig.canServe">
+                                        <ion-row *ngIf="!_selectItem && pageConfig.canServe">
                                             <ion-col size="12">
                                                 <ion-button color="success" expand="block">
-                                                    <ion-text *ngIf="!_selectItem && _useKeyboard"
-                                                        class="keyboard-shortcut-notes" style="margin-right: 4px;">
+                                                    <ion-text class="keyboard-shortcut-notes"
+                                                        style="margin-right: 4px;">
                                                         [1]</ion-text>
                                                     {{'SERVE' | translate}}
                                                 </ion-button>
@@ -478,7 +478,7 @@
                                     </ion-grid>
                                     <!-- actionMethod == 1 -->
                                     <ion-grid *ngIf="order.select && actionMethod == '1'">
-                                        <ion-row *ngIf="_selectItem">
+                                        <ion-row *ngIf="!_selectItem && pageConfig.canServe">
                                             <ion-col size="12">
                                                 <ion-button expand="block">
                                                     <ion-text class="keyboard-shortcut-notes"
@@ -512,7 +512,7 @@
                                                 <ion-icon *ngIf="order.select && !item.select && _selectItem"
                                                     color="medium" name="add-circle-outline"></ion-icon>
                                                 <ion-icon *ngIf="order.select && item.select && _selectItem"
-                                                    color="primary" name="checkmark-circle-outline"></ion-icon>
+                                                    color="danger" name="checkmark-circle-outline"></ion-icon>
                                             </div>
                                         </div>
                                     </div>
@@ -533,7 +533,8 @@
                                             {{ getTimeDiff(order.time) }}
                                         </div>
                                     </div>
-                                    <ion-grid *ngIf="order.select">
+                                    <!-- actionMethod == 0 -->
+                                    <ion-grid *ngIf="order.select && actionMethod == '0'">
                                         <ion-row *ngIf="pageConfig.canServe">
                                             <ion-col size="12">
                                                 <ion-button color="success" expand="block"
@@ -543,9 +544,38 @@
                                             </ion-col>
                                         </ion-row>
                                     </ion-grid>
-                                    <div class="item-list" *ngIf="!_hideOrderDetails">
+                                    <div class="item-list" *ngIf="!_hideOrderDetails && actionMethod == '0'">
                                         <div class="item-cover" *ngFor="let item of loadItems(zone.id, order)">
-                                            <div [ngClass]="{'item': !item.select, 'item-select': item.select}" (click)="changeStatusItem(item.IDItem)">
+                                            <div [ngClass]="{'item': !item.select, 'item-select': item.select}"
+                                                (click)="changeStatusItem(item.IDItem)">
+                                                <span class="item-qty">{{ item.qty }}x</span>
+                                                <span class="item-name">{{ item.name }}</span>
+                                                <ion-text style="margin-right: 8px;"
+                                                    *ngIf="order.select && _selectItem && item.key !== '0'"
+                                                    class="keyboard-shortcut-notes">[{{
+                                                    item.key }}]</ion-text>
+                                                <ion-icon *ngIf="order.select && !item.select && _selectItem"
+                                                    color="medium" name="add-circle-outline"></ion-icon>
+                                                <ion-icon *ngIf="order.select && item.select && _selectItem"
+                                                    color="danger" name="checkmark-circle-outline"></ion-icon>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- actionMethod == 1 -->
+                                    <ion-grid *ngIf="order.select && actionMethod == '1'">
+                                        <ion-row *ngIf="pageConfig.canServe">
+                                            <ion-col size="12">
+                                                <ion-button color="success" expand="block"
+                                                    (click)="changeStatusSelectingItems(zone.id)">
+                                                    {{'CONFIRM' | translate}}
+                                                </ion-button>
+                                            </ion-col>
+                                        </ion-row>
+                                    </ion-grid>
+                                    <div class="item-list" *ngIf="!_hideOrderDetails && actionMethod == '1'">
+                                        <div class="item-cover" *ngFor="let item of loadItems(zone.id, order)">
+                                            <div [ngClass]="{'item': !item.select, 'item-select': item.select}"
+                                                (click)="addListItemsChange(item.IDItem)">
                                                 <span class="item-qty">{{ item.qty }}x</span>
                                                 <span class="item-name">{{ item.name }}</span>
                                                 <ion-text style="margin-right: 8px;"
@@ -836,9 +866,8 @@
                     <ion-list [inset]="true">
                         <ion-item>
                             <ion-icon color="primary" slot="start" name="layers-outline"></ion-icon>
-                            <ion-select placeholder="{{'Select method' | translate}}"
-                                [(ngModel)]="optionMethod.Code" (ionChange)="onMethodChange($event)"
-                                interface="popover">
+                            <ion-select placeholder="{{'Select method' | translate}}" [(ngModel)]="optionMethod.Code"
+                                (ionChange)="onMethodChange($event)" interface="popover">
                                 <div slot="label">{{'Method' | translate}}</div>
                                 <ion-select-option *ngFor="let t of optionMethod"
                                     [value]="t.Code">{{t.Name}}</ion-select-option>

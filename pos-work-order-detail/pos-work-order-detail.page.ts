@@ -124,7 +124,12 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			(data: any) => {
 				if (this.hasNewKitchenItems(this.orderList, data)) {
 					this.orderList = data;
+					const orderActionSave = this.getZone(this._selectZone)?.orders.find((o: any) => o.select);
 					this.loadedData();
+					this.setKeyOrders(this._selectZone);
+					const orderAction = this.getZone(this._selectZone)?.orders.find(o => o.id === orderActionSave.id && o.time === orderActionSave.time);
+					orderAction.select = true;
+					this.setKeyItems(this.getZone(this._selectZone)?.orders.find(o => o.select));
 				} else {
 					console.log('No new kitchen items for work order', this.id);
 				}
@@ -165,6 +170,8 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	orderList = [];
 	loadData(event?: null): void {
 		const forceReload = event === 'force';
+
+		// Chạy tuần tự: Gọi API lấy thông tin môi trường trước
 		Promise.all([
 			this.posService.getEnviromentDataSource(this.env.selectedBranch, forceReload),
 			this.env.getStatus('POSOrderDetail'),
@@ -184,21 +191,20 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				this.KitchenName = this.KitchenNow?.Name || '';
 
 				this.loadConfig();
+
+				// Sau khi hoàn thành, gọi API lấy danh sách order
+				return this.commonService.connect('GET', 'POS/WorkOrder/GetService/' + this.id, null).toPromise();
+			})
+			.then((data: any) => {
+				console.log(data);
+				this.orderList = data;
+				this.loadedData(event);
 			})
 			.catch((err) => {
 				console.log(err);
 				this.env.showErrorMessage(err);
-
 				this.loadedData(event);
 			});
-
-		this.commonService.connect('GET', 'POS/WorkOrder/GetService/' + this.id, null).toPromise().then(
-			(data: any) => {
-				console.log(data);
-				this.orderList = data;
-				this.loadedData(event);
-			}
-		);
 	}
 
 	loadedData(event?: any): void {
@@ -365,7 +371,10 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			});
 		}).filter((f: any) => f.items.length > 0);
 
-		return listPOSWorkOrder;
+		// Sắp xếp theo time từ nhỏ đến lớn (ascending)
+		return listPOSWorkOrder.sort((a, b) => {
+			return new Date(a.time).getTime() - new Date(b.time).getTime();
+		});
 	}
 
 	selectZone(zoneId: string) {
@@ -393,18 +402,17 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					o.select = true;
 					this._selectOrder = true;
 					order = o;
+					if (this.actionMethod == '0') {
+						this._selectItem = false;
+					}
+					else {
+						this._selectItem = true;
+						this.setKeyItems(order);
+					}
 				} else {
 					o.select = false;
 				}
 			});
-
-			if (this.actionMethod == '0') {
-				this._selectItem = false;
-			}
-			else {
-				this._selectItem = true;
-				this.setKeyItems(order);
-			}
 		}
 		else {
 			zone.orders.forEach(o => {
@@ -412,6 +420,12 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					o.select = true;
 					this._selectOrder = true;
 					order = o;
+					if (this.actionMethod == '0') {
+						this._selectItem = false;
+					}
+					else {
+						this._selectItem = true;
+					}
 				} else {
 					o.select = false;
 				}
@@ -864,101 +878,117 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	async changeStatusSelectingItem_Alert(fromZoneId: string): Promise<number> {
 		return new Promise(async (resolve) => {
 			let keyHandler;
+			let createButtons: any[] = [];
+
+			// Luôn có button Cancel
+			createButtons.push({
+				text: '[0] Cancel',
+				handler: () => resolve(0)
+			});
 			if (fromZoneId == '1') {
+				// Thêm button Receive nếu có quyền
+				if (this.pageConfig.canReceive) {
+					createButtons.push({
+						text: "[1] Receive",
+						handler: () => resolve(2)
+					});
+				}
+
+				// Thêm button Return nếu có quyền
+				if (this.pageConfig.canReturn) {
+					createButtons.push({
+						text: '[2] Return',
+						handler: () => resolve(5)
+					});
+				}
+
 				this.currentAlert = await this.alertCtrl.create({
 					header: 'Lựa chọn',
 					message: 'Hãy chọn thao tác muốn thực hiện',
-					buttons: [
-						{
-							text: "[1] Receive",
-							handler: () => resolve(2)
-						},
-						{
-							text: '[2] Return',
-							handler: () => resolve(5)
-						},
-						{
-							text: '[3] Cancel',
-							handler: () => resolve(0)
-						}
-					]
+					buttons: createButtons,
 				});
 
 				// Xử lý phím tắt
 				keyHandler = (event: KeyboardEvent) => {
-					if (event.key === '1') {
+					if (event.key === '1' && this.pageConfig.canReceive) {
 						this.currentAlert.dismiss();
 						resolve(2);
-					} else if (event.key === '2') {
+					} else if (event.key === '2' && this.pageConfig.canReturn) {
 						this.currentAlert.dismiss();
 						resolve(5);
-					} else if (event.key === '3') {
+					} else if (event.key === '0') {
 						this.currentAlert.dismiss();
 						resolve(0);
 					}
 				};
 			}
 			else if (fromZoneId == '2') {
+				if (this.pageConfig.canReady) {
+					createButtons.push({
+						text: "[1] Ready",
+						handler: () => resolve(3)
+					});
+				}
+
+				if (this.pageConfig.canReturn) {
+					createButtons.push({
+						text: "[2] Return",
+						handler: () => resolve(5)
+					});
+				}
+
 				this.currentAlert = await this.alertCtrl.create({
 					header: 'Lựa chọn',
 					message: 'Hãy chọn thao tác muốn thực hiện',
-					buttons: [
-						{
-							text: "[1] Ready",
-							handler: () => resolve(3)
-						},
-						{
-							text: '[2] Return',
-							handler: () => resolve(5)
-						},
-						{
-							text: '[3] Cancel',
-							handler: () => resolve(0)
-						}
-					]
+					buttons: createButtons,
 				});
 
 				// Xử lý phím tắt
 				keyHandler = (event: KeyboardEvent) => {
-					if (event.key === '1') {
+					if (event.key === '1' && this.pageConfig.canReady) {
 						this.currentAlert.dismiss();
 						resolve(3);
-					} else if (event.key === '2') {
+					} else if (event.key === '2' && this.pageConfig.canReturn) {
 						this.currentAlert.dismiss();
 						resolve(5);
-					} else if (event.key === '3') {
+					} else if (event.key === '0') {
 						this.currentAlert.dismiss();
 						resolve(0);
 					}
 				};
 			}
 			else if (fromZoneId == '3') {
+				if (this.pageConfig.canServe) {
+					createButtons.push({
+						text: "[1] Serve",
+						handler: () => resolve(4)
+					});
+				}
+
 				this.currentAlert = await this.alertCtrl.create({
 					header: 'Lựa chọn',
 					message: 'Hãy chọn thao tác muốn thực hiện',
-					buttons: [
-						{
-							text: "[1] Serve",
-							handler: () => resolve(4)
-						},
-						{
-							text: '[2] Cancel',
-							handler: () => resolve(0)
-						}
-					]
+					buttons: createButtons
 				});
 
 				// Xử lý phím tắt
 				keyHandler = (event: KeyboardEvent) => {
-					if (event.key === '1') {
+					if (event.key === '1' && this.pageConfig.canServe) {
 						this.currentAlert.dismiss();
 						resolve(4);
-					} else if (event.key === '2') {
+					} else if (event.key === '0') {
 						this.currentAlert.dismiss();
 						resolve(0);
 					}
 				};
 			} else if (fromZoneId == '5') {
+				if (this.pageConfig.canReorder) {
+					createButtons.push({
+						text: "[1] Reorder",
+						handler: () => resolve(1)
+					});
+				}
+
 				this.currentAlert = await this.alertCtrl.create({
 					header: 'Lựa chọn',
 					message: 'Hãy chọn thao tác muốn thực hiện',
@@ -968,7 +998,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 							handler: () => resolve(1)
 						},
 						{
-							text: '[2] Cancel',
+							text: '[0] Cancel',
 							handler: () => resolve(0)
 						}
 					]
@@ -976,10 +1006,10 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 
 				// Xử lý phím tắt
 				keyHandler = (event: KeyboardEvent) => {
-					if (event.key === '1') {
+					if (event.key === '1' && this.pageConfig.canReorder) {
 						this.currentAlert.dismiss();
 						resolve(1);
-					} else if (event.key === '2') {
+					} else if (event.key === '0') {
 						this.currentAlert.dismiss();
 						resolve(0);
 					}
@@ -997,7 +1027,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				window.removeEventListener('keydown', keyHandler);
 				this.currentAlert = null;
 				// Nếu đóng bằng cách click ra ngoài (backdrop), mặc định là false
-				resolve(3);
+				resolve(0);
 			});
 
 			await this.currentAlert.present();
@@ -1126,8 +1156,14 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		if (order.select) {
 			results.map((i) => {
 				this.listItemsChange.forEach((i1) => {
-					if (i.key == i1) {
-						i.select = true;
+					if (this._useKeyboard) {
+						if (i.key == i1) {
+							i.select = true;
+						}
+					} else {
+						if (i.IDItem == i1) {
+							i.select = true;
+						}
 					}
 				})
 			});
@@ -1137,17 +1173,36 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	addListItemsChange(key: string) {
-		let item = this.getZone(this._selectZone).orders.find((o) => o.select).items.find((i) => i.key == key)
-		if (item) {
-			const k = this.listItemsChange.includes(key);
-			if (k) {
-				const index = this.listItemsChange.findIndex(k => k == key)
-				if (index !== -1) {
-					this.listItemsChange.splice(index, 1)
+		let item;
+		if (this._useKeyboard) {
+			item = this.getZone(this._selectZone).orders.find((o) => o.select).items.find((i) => i.key == key)
+			if (item) {
+				const k = this.listItemsChange.includes(key);
+				if (k) {
+					const index = this.listItemsChange.findIndex(k => k == key)
+					if (index !== -1) {
+						this.listItemsChange.splice(index, 1)
+					}
+				}
+				else {
+					this.listItemsChange.push(key);
 				}
 			}
-			else {
-				this.listItemsChange.push(key);
+		}
+		else {
+			if (this._selectZone == '0') return;
+			item = this.getZone(this._selectZone).orders.find((o) => o.select).items.find((i) => i.IDItem == key)
+			if (item) {
+				const k = this.listItemsChange.includes(key);
+				if (k) {
+					const index = this.listItemsChange.findIndex(k => k == key)
+					if (index !== -1) {
+						this.listItemsChange.splice(index, 1)
+					}
+				}
+				else {
+					this.listItemsChange.push(key);
+				}
 			}
 		}
 	}
