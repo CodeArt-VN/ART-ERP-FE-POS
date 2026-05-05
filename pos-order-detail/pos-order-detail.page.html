@@ -621,6 +621,7 @@
 									#img
 									[src]="i.imgPath"
 									(ionError)="img.src = noImage"
+									(click)="zoomImage(i.imgPath)"
 								></ion-img>
 								<span class="table-name clickable">
 									<span [appTranslateResource]="i"></span>
@@ -681,4 +682,7 @@
 	<!-- Kitchen Dishes Printing -->
 
 	<div class="ion-padding"></div>
+	<div *ngIf="zoomedImage" class="zoom-overlay" (click)="zoomedImage = null">
+		<ion-img class="zoomed-img" [src]="zoomedImage" #img (ionError)="img.src = noImage" (click)="$event.stopPropagation()"></ion-img>
+	</div>
 </ion-content>
