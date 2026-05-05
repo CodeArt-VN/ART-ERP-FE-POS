@@ -139,7 +139,7 @@
 											title="{{'Delete' | translate}}"
 											fill="clear"
 											*ngIf="!line._Locked"
-											[disabled]="submitAttempt"
+											[disabled]="submitAttempt || isKitchenPrinting()"
 											color="danger"
 											class="ion-float-right ion-no-padding remark-btn"
 											size="small"
@@ -149,7 +149,7 @@
 										</ion-button>
 										<ion-button
 											fill="outline"
-											[disabled]="submitAttempt || line._Locked "
+											[disabled]="submitAttempt || isKitchenPrinting() || line._Locked "
 											class="ion-float-right qty-btn"
 											size="small"
 											(click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status, line.Code); line._isShowFoC = false;"
@@ -158,7 +158,7 @@
 										</ion-button>
 										<ion-button
 											fill="outline"
-											[disabled]="submitAttempt || line._Locked "
+											[disabled]="submitAttempt || isKitchenPrinting() || line._Locked "
 											class="ion-float-right qty-btn"
 											size="small"
 											(click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status, line.Code); line._isShowFoC = false;"
@@ -199,6 +199,7 @@
 											<input
 												class="qty-input-compact"
 												type="number"
+												[disabled]="isKitchenPrinting()"
 												[step]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'any' : '1'"
 												[attr.inputmode]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'decimal' : 'numeric'"
 												[value]="line.Quantity"
@@ -642,7 +643,7 @@
 										</span>
 
 										<ion-button
-											[disabled]="i.IsDisabled || !i.IDSalesTaxDefinition"
+											[disabled]="i.IsDisabled || !i.IDSalesTaxDefinition || isKitchenPrinting()"
 											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
 											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
 											class="ion-float-right add-to-cart-btn"
