@@ -6,6 +6,7 @@ import { EnvService } from 'src/app/services/core/env.service';
 import {
 	CRM_ContactProvider,
 	HRM_StaffProvider,
+	POS_LogWorkOrderProvider,
 	// POS_KitchenProvider, // Replaced by posService.dataSource.kitchens
 	// POS_MenuProvider, // Replaced by posService.dataSource.menuList
 	// POS_TableGroupProvider, // Replaced by posService.dataSource.tableList
@@ -20,7 +21,7 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { concat, of, Subscription } from 'rxjs';
+import { async, concat, of, Subscription } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap, mergeMap } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
@@ -37,12 +38,14 @@ import { printData, PrintingService } from 'src/app/services/util/printing.servi
 import { BarcodeScannerService } from 'src/app/services/util/barcode-scanner.service';
 import { POSService } from '../_services/pos.service';
 import { InputControlComponent } from 'src/app/components/controls/input-control.component';
+import { EVENT_TYPE } from 'src/app/services/static/event-type';
 import { PromotionService } from 'src/app/services/custom/promotion.service';
 import { CanComponentDeactivate } from './deactivate-guard';
 import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-modal.component';
 import { ComboModalPage } from './combo-modal/combo-modal.page';
 import { BillPreviewComponent } from 'src/app/modals/bill-preview-modal/bill-preview-modal';
 import { BillTemplateComponent } from './bill-template/bill-template.component';
+import { NfcQrcodeScannerModalComponent } from 'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -56,6 +59,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	isOpenMemoModal = false;
 	AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
 	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png'; //No image for menu item
+	zoomedImage: string = null;
 	segmentView = '0';
 	idTable: any; //Default table
 	paymentList = [];
@@ -95,7 +99,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	});
 
 	isEnter = false;
-
+	sendKitchenStatus = '';
 	@ViewChild('contactInput') contactInput: InputControlComponent;
 	paymentSuccessTriggered = false; // check signalr payment success
 	lastEventRefreshTime = 0;
@@ -117,6 +121,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		public printerTerminalProvider: POS_TerminalProvider,
 		public printingService: PrintingService,
 		public scanner: BarcodeScannerService,
+		public LogWorkOrderProvider: POS_LogWorkOrderProvider,
 
 		public env: EnvService,
 		public navCtrl: NavController,
@@ -464,7 +469,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	private updateCanSaveOrder() {
 		const controls = this.formGroup.controls;
 		this.canSaveOrder =
-			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New' || d.Status == 'Waiting');
+			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New');
 	}
 
 	private updateFoCState(line) {
@@ -573,6 +578,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		// setTimeout(() => {
 		// 	this.segmentChanged('all');
 		// }, 100);
+
+		if (this.posService.systemConfig.POSEnableWorkOrder) {
+			this.sendKitchenStatus = 'Waiting';
+		}
+		else {
+			this.sendKitchenStatus = 'Serving';
+		}
 	}
 
 	async getStorageNotifications() {
@@ -740,11 +752,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	countDishes(segment) {
 		if (segment == 'New')
-			return this.item.OrderLines.filter((d) => d.Status == 'New' || d.Status == 'Waiting')
+			return this.item.OrderLines.filter((d) => d.Status == 'New')
 				.map((x) => x.Quantity)
 				.reduce((a, b) => +a + +b, 0);
 
-		return this.item.OrderLines.filter((d) => !(d.Status == 'New' || d.Status == 'Waiting'))
+		return this.item.OrderLines.filter((d) => !(d.Status == 'New'))
 			.map((x) => x.Quantity)
 			.reduce((a, b) => +a + +b, 0);
 	}
@@ -862,6 +874,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				OriginalDiscountFromSalesman: 0,
 				SubItems: [],
 				CreatedDate: new Date(),
+				ModifiedDate: new Date(),
 				_item: item,
 				NewPrice: price.NewPrice ?? 0,
 			};
@@ -888,7 +901,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.then((_) => {
 							this.openCancellationReason(line, quantity);
 						})
-						.catch((_) => {});
+						.catch((_) => { });
 				} else {
 					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
@@ -964,7 +977,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								],
 							});
 						})
-						.catch((_) => {});
+						.catch((_) => { });
 				} else {
 					if (this.pageConfig.canDeleteItems) {
 						this.env
@@ -1002,7 +1015,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									],
 								});
 							})
-							.catch((_) => {});
+							.catch((_) => { });
 					} else {
 						this.env.showMessage('This account does not have permission to delete products!', 'warning');
 					}
@@ -1162,6 +1175,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	segmentChanged(ev: any) {
 		this.segmentView = ev;
 		this._filteredItemsCache.clear(); // Clear cache when segment changes
+	}
+
+	zoomImage(imageSrc: string) {
+		this.zoomedImage = imageSrc || this.noImage;
 	}
 
 	trackByItemId(index: number, item: any): any {
@@ -1456,7 +1473,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => {});
+					.catch((_) => { });
 			} else {
 				let cancelData: any = {
 					Code: data.Code,
@@ -1492,19 +1509,30 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => {});
+					.catch((_) => { });
 			}
 		}
 	}
 
 	checkItemNotSendKitchen() {
-		if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
-			this.env
-				.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
-				.then(() => this.sendKitchen())
-				.catch(() => {});
+		if (this.posService.systemConfig.POSEnableWorkOrder) {
+			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
+				this.env
+					.showPrompt('Bạn có muốn đơn gửi bar/bếp ?', null, 'Thông báo')
+					.then(() => this.sendKitchenWithoutPrint())
+					.catch(() => { });
+			}
+		}
+		else {
+			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
+				this.env
+					.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
+					.then(() => this.sendKitchen())
+					.catch(() => { });
+			}
 		}
 	}
+
 	async saveOrderData() {
 		// Wait for save to complete before checking print
 		if (this.formGroup.dirty || !this.item.Id) {
@@ -1565,7 +1593,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					const finalItems = allItems.map((item) => ({
 						Code: item.Code,
 						ShippedQuantity: item.Quantity,
-						Status: 'Serving',
+						Status: this.sendKitchenStatus,
 					}));
 
 					resolve(finalItems);
@@ -1577,7 +1605,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					const finalItems = successItems.map((item) => ({
 						Code: item.Code,
 						ShippedQuantity: item.Quantity,
-						Status: 'Serving',
+						Status: this.sendKitchenStatus,
 					}));
 
 					resolve(finalItems);
@@ -2023,7 +2051,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						const finalItemsToUpdate = fullSuccessItems.map((item) => ({
 							Code: item.Code,
 							ShippedQuantity: item.Quantity,
-							Status: 'Serving',
+							Status: this.sendKitchenStatus,
 						}));
 
 						this.savePrintResults(finalItemsToUpdate)
@@ -2072,6 +2100,79 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		};
 		return data;
 	}
+
+	async sendKitchenWithoutPrint() {
+		return new Promise(async (resolve, reject) => {
+			// Update printData with current date
+			this.printData.printDate = new Date();
+			this.printData.undeliveredItems = [];
+
+			this.item.OrderLines.forEach((e) => {
+				e._undeliveredQuantity = e.Quantity - e.ShippedQuantity;
+				if (e.Remark) {
+					e.Remark = e.Remark.toString();
+				}
+				if (e._undeliveredQuantity > 0) {
+					this.printData.undeliveredItems.push(e);
+				}
+			});
+
+			if (this.printData.undeliveredItems.length == 0) {
+				if (this.posService.systemConfig.IsAutoSave) this.env.showMessage('No new product needs to be sent!', 'success');
+				resolve(true);
+				return;
+			}
+
+			// Validate items before processing
+			let itemsWithoutMenu = this.printData.undeliveredItems.filter((i) => !i._item);
+			let itemsWithoutKitchen = this.printData.undeliveredItems.filter((i) => i._item && (!i._IDKitchens || i._IDKitchens.length === 0));
+
+			// Show error for items without menu
+			if (itemsWithoutMenu.length > 0) {
+				let itemIds = itemsWithoutMenu.map((i) => i.IDItem + ';').join('<br>');
+				this.env.showAlert(
+					{
+						code: 'POS_ITEM_NOT_IN_MENU',
+						value: itemIds,
+					},
+					null,
+					'POS_PRINT_ERROR'
+				);
+				resolve(false);
+				return;
+			}
+
+			// Show error for items without kitchen
+			if (itemsWithoutKitchen.length > 0) {
+				let itemNames = itemsWithoutKitchen.map((i) => i._item?.Name + ';').join('<br>');
+				this.env.showAlert(
+					{
+						code: 'POS_ITEM_NO_KITCHEN_ASSIGNMENT',
+						value: itemNames,
+					},
+					null,
+					'POS_PRINT_ERROR'
+				);
+				resolve(false);
+				return;
+			}
+
+			// Since no print, just mark all as sent
+			const finalItemsToUpdate = this.printData.undeliveredItems.map((item) => ({
+				Code: item.Code,
+				ShippedQuantity: item.Quantity,
+				Status: this.sendKitchenStatus,
+			}));
+
+			this.savePrintResults(finalItemsToUpdate)
+				.then(() => {
+					this.env.showMessage('Sent to kitchen successfully!', 'success');
+					resolve(true);
+				})
+				.catch((err) => reject(err));
+		});
+	}
+
 	printContent(data: printData[]) {
 		return new Promise((resolve, reject) => {
 			this.printingService
@@ -2202,7 +2303,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					.then(() => {
 						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
 					})
-					.catch(() => {});
+					.catch(() => { });
 			});
 	}
 
@@ -2407,7 +2508,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				line.Status = 'New';
 			}
 			// else {
-			//     line.Status = 'Serving';
+			//     line.Status = 'Waiting';
 			// }
 			this.updateOrderLineStatus(line);
 
@@ -2464,7 +2565,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		line.StatusColor = lib.getAttrib(line.Status, this.posService.dataSource.orderDetailStatusList, 'Color', '--', 'Code');
 	}
 
-	patchOrderLines() {}
+	patchOrderLines() { }
 
 	private addOrderLine(line) {
 		let groups = <FormArray>this.formGroup.controls.OrderLines;
@@ -2497,6 +2598,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			OriginalDiscountFromSalesman: [line.OriginalDiscountFromSalesman],
 
 			CreatedDate: new FormControl({
+				value: line.CreatedDate,
+				disabled: true,
+			}),
+			ModifiedDate: new FormControl({
 				value: line.CreatedDate,
 				disabled: true,
 			}),
@@ -2637,7 +2742,55 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	alwaysReturnProps = ['Id', 'IDBranch', 'Code'];
 	async saveChange() {
 		let submitItem = this.getDirtyValues(this.formGroup);
+		this.saveLogWorkOrder(submitItem);
 		return this.saveChange2();
+	}
+
+	private saveLogWorkOrder(item) {
+		if (!item.OrderLines || item.Status == 'New') {
+			return Promise.resolve();
+		}
+
+		let lines = Object.values(item.OrderLines);
+		if (!lines.length) {
+			return Promise.resolve();
+		}
+
+		const orderId = this.item?.Id;
+		if (!orderId) {
+			return Promise.resolve();
+		}
+
+		const logs: any[] = [];
+		const SavedTime = lib.dateFormat(new Date(), 'yyyy-mm-ddThh:MM:ss');
+		lines.forEach((l: any) => {
+			if (l.Status == 'New') {
+				return;
+			}
+
+			const line = this.item.OrderLines.find((o) => o.Id == l.Id);
+
+			logs.push({
+				IDBranch: this.env.selectedBranch,
+				IDOrder: orderId,
+				IDOrderLine: line.Id,
+				Id: 0,
+				Code: lib.generateUID(this.env.user.StaffID),
+				Name: line.Name || line.ItemName,
+				Status: line.Status,
+				SavedTime: SavedTime,
+			});
+		});
+
+		if (logs.length) {
+			return this.LogWorkOrderProvider.save(logs, this.pageConfig.isForceCreate)
+				.then()
+				.catch((err) => {
+					this.env.showMessage('Cannot save, please try again', 'danger');
+				});
+		} else {
+			return Promise.resolve();
+		}
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
@@ -2871,6 +3024,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	doneOrder() {
 		let changed: any = { OrderLines: [] };
+		const checkStatusDone = this.item.OrderLines.find((line) => line.Status != 'Serving');
+		if (checkStatusDone) {
+			let message = 'Đơn hàng chưa phục vụ món xong. Bạn không thể hoàn tất đơn hàng';
+			this.env.showMessage(message, 'danger');
+			return;
+		}
 		if (this.printData.undeliveredItems.length > 0) {
 			let message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			if (this.item.Debt > 0) {
@@ -2912,7 +3071,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					changed.Status = 'Done';
 					this.setOrderValue(changed, true);
 				})
-				.catch((_) => {});
+				.catch((_) => { });
 		} else {
 			this.item.OrderLines.forEach((line) => {
 				if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -2969,7 +3128,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							Code: e.Code,
 							ShippedQuantity: e.Quantity,
 							IDUoM: e.IDUoM,
-							Status: 'Serving',
+							Status: this.sendKitchenStatus,
 						});
 					}
 				});
@@ -3004,51 +3163,221 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async scanQRCode() {
-		let code = await this.scanner.scan();
-		if (code.indexOf('VCARD;') != -1) {
-			var tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
+		return this.scanQRCodeFromModal();
+		// let code = await this.scanner.scan();
+		// if (code.indexOf('VCARD;') != -1) {
+		// 	var tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
 
-			var StaffCode = tempString.split(';')[0];
-			var QRGenTime = tempString.split(';')[1];
+		// 	var StaffCode = tempString.split(';')[0];
+		// 	var QRGenTime = tempString.split(';')[1];
 
-			let toDay = new Date();
-			let fromTime = new Date(toDay);
-			let toTime = new Date(toDay);
-			fromTime.setMinutes(toDay.getMinutes() - 1);
-			toTime.setMinutes(toDay.getMinutes() + 1);
+		// 	let toDay = new Date();
+		// 	let fromTime = new Date(toDay);
+		// 	let toTime = new Date(toDay);
+		// 	fromTime.setMinutes(toDay.getMinutes() - 1);
+		// 	toTime.setMinutes(toDay.getMinutes() + 1);
 
-			let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
-			let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+		// 	let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+		// 	let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
 
-			if (currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo) {
-				this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
-					let address = resp['data'][0];
-					address.IDAddress = address['Addresses'][0]['Id'];
-					address.Address = address['Addresses'][0];
+		// 	if (currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo) {
+		// 		this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
+		// 			let address = resp['data'][0];
+		// 			address.IDAddress = address['Addresses'][0]['Id'];
+		// 			address.Address = address['Addresses'][0];
 
-					this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
-					this._contactDataSource.selected.push(address);
-					this.changedIDAddress(address);
-					this._contactDataSource.initSearch();
-					this.cdr.detectChanges();
-					this.saveChange();
-				});
-			} else {
-				this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {{value}}', 'danger', QRGenTime);
+		// 			this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
+		// 			this._contactDataSource.selected.push(address);
+		// 			this.changedIDAddress(address);
+		// 			this._contactDataSource.initSearch();
+		// 			this.cdr.detectChanges();
+		// 			this.saveChange();
+		// 		});
+		// 	} else {
+		// 		this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {{value}}', 'danger', QRGenTime);
+		// 		setTimeout(() => this.scanQRCode(), 0);
+		// 	}
+		// } else {
+		// 	this.env
+		// 		.showPrompt('Please scan valid QR code', 'Invalid QR code', null, 'Retry', 'Cancel')
+		// 		.then(() => {
+		// 			setTimeout(() => this.scanQRCode(), 0);
+		// 		})
+		// 		.catch(() => {});
+		// 	return;
+		// }
+	}
+
+	private async scanQRCodeFromModal() {
+		const { data, role } = await this.modalController
+			.create({
+				component: NfcQrcodeScannerModalComponent,
+				cssClass: 'modal90vh',
+				componentProps: {
+					title: 'Read nfc/qr code',
+					label: 'Please tap NFC card or scan QR code to read',
+					mode: 'NFC',
+					showQrCodeButton: true,
+				},
+			})
+			.then(async (modal) => {
+				await modal.present();
+				return modal.onWillDismiss();
+			});
+
+		if (role !== 'confirm' || !data) return;
+
+		const handledNfc = await this.handleScannedNfcPayload(data);
+		if (handledNfc) return;
+
+		const handledQr = await this.handleScannedQrPayload(data);
+		if (handledQr) return;
+
+		await this.retryInvalidPosQrCode();
+		return;
+	}
+
+	private getScannerRawValue(data: any): string {
+		if (typeof data?.rawValue === 'string') return data.rawValue;
+		if (typeof data?.value === 'string') return data.value;
+		return '';
+	}
+
+	private async handleScannedNfcPayload(data: any): Promise<boolean> {
+		if (data?.mode !== 'NFC') return false;
+
+		let nfcValue = data?.value;
+		if (typeof nfcValue === 'string') {
+			try {
+				nfcValue = JSON.parse(nfcValue);
+			} catch {
+				nfcValue = null;
+			}
+		}
+		const tagInfo = data?.tagInfo?.uid;
+
+
+		const idbp = nfcValue?.IDBP;
+		if (!idbp) {
+			await this.retryInvalidPosQrCode('Invalid NFC content');
+			return true;
+		}
+
+		this.addContactByScannedId(tagInfo || idbp);
+		return true;
+	}
+
+	private async handleScannedQrPayload(data: any): Promise<boolean> {
+		const code = this.getScannerRawValue(data);
+		if (!code) return false;
+
+		if (this.tryHandleSaleOrderQr(code)) return true;
+		if (this.tryHandleBusinessPartnerQr(code)) return true;
+		if (await this.tryHandleVCardQr(code)) return true;
+
+		return false;
+	}
+
+	private tryHandleSaleOrderQr(code: string): boolean {
+		const match = /^\s*SO-(\d+)\s*$/i.exec((code || '').trim());
+		if (!match) return false;
+
+		const id = parseInt(match[1], 10);
+		if (!id) return false;
+
+		this.navCtrl.navigateForward(`/pos-order/${id}`);
+		return true;
+	}
+
+	private tryHandleBusinessPartnerQr(code: string): boolean {
+		const match = /^\s*BP-(\d+)\s*$/i.exec((code || '').trim());
+		if (!match) return false;
+
+		const id = parseInt(match[1], 10);
+		if (!id) return false;
+
+		this.addContactByScannedId(id);
+		return true;
+	}
+
+	private async tryHandleVCardQr(code: string): Promise<boolean> {
+		const parsedQr = this.parseStaffVCardQr(code);
+		if (!parsedQr) return false;
+
+		if (this.isExpiredStaffQr(parsedQr.QRGenTime)) {
+			const shouldRetry = await this.confirmRetryPosQrCode(`Code has expired, please get a new staff code! QR code generated at: ${parsedQr.QRGenTime}`);
+			if (shouldRetry) {
 				setTimeout(() => this.scanQRCode(), 0);
 			}
-		} else {
-			this.env
-				.showPrompt('Please scan valid QR code', 'Invalid QR code', null, 'Retry', 'Cancel')
-				.then(() => {
-					setTimeout(() => this.scanQRCode(), 0);
-				})
-				.catch(() => {});
-			return;
+			return true;
+		}
+
+		this.contactProvider.read({ Code: parsedQr.StaffCode, Take: 20 }).then((resp) => {
+			let address = resp['data'][0];
+			address.IDAddress = address['Addresses'][0]['Id'];
+			address.Address = address['Addresses'][0];
+
+			this.env.showMessage('Scan successful! Full name: {{value}}', null, address['Name']);
+			this._contactDataSource.selected.push(address);
+			this.changedIDAddress(address);
+			this._contactDataSource.initSearch();
+			this.cdr.detectChanges();
+			this.saveChange();
+		});
+
+		return true;
+	}
+
+	private addContactByScannedId(id: string | number): void {
+		this.isEnter = true;
+		this._contactDataSource.input$.next(String(id));
+	}
+
+	private parseStaffVCardQr(code: string): { StaffCode: string; QRGenTime: string } | null {
+		if (!code || code.indexOf('VCARD;') === -1) return null;
+
+		const tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
+		const staffCode = tempString.split(';')[0];
+		const qrGenTime = tempString.split(';')[1];
+
+		if (!staffCode || !qrGenTime) return null;
+
+		return {
+			StaffCode: staffCode,
+			QRGenTime: qrGenTime,
+		};
+	}
+
+	private isExpiredStaffQr(qrGenTime: string): boolean {
+		let toDay = new Date();
+		let fromTime = new Date(toDay);
+		let toTime = new Date(toDay);
+		fromTime.setMinutes(toDay.getMinutes() - 1);
+		toTime.setMinutes(toDay.getMinutes() + 1);
+
+		let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+		let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+
+		return !(currentTimeFrom <= qrGenTime && qrGenTime <= currentTimeTo);
+	}
+
+	private async retryInvalidPosQrCode(message: string = 'Please scan valid QR code', title: string = 'Invalid QR code'): Promise<void> {
+		const shouldRetry = await this.confirmRetryPosQrCode(message, title);
+		if (shouldRetry) {
+			setTimeout(() => this.scanQRCode(), 0);
 		}
 	}
 
-	menuItemsPaging(event) {}
+	private async confirmRetryPosQrCode(message: string, title: string = 'Invalid QR code'): Promise<boolean> {
+		try {
+			await this.env.showPrompt(message, title, null, 'Retry', 'Cancel');
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	menuItemsPaging(event) { }
 
 	isCompleteLoaded = false;
 	async previewBill() {

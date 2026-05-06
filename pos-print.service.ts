@@ -218,7 +218,7 @@ export class POSPrintService implements OnDestroy {
 			Code: item.Code,
 			ShippedQuantity: item.Quantity,
 			IDUoM: item.IDUoM,
-			Status: 'Serving'
+			Status: 'Waiting'
 		}));
 
 		try {
@@ -267,7 +267,7 @@ export class POSPrintService implements OnDestroy {
 				Code: item.Code,
 				ShippedQuantity: item.Quantity,
 				IDUoM: item.IDUoM,
-				Status: 'Serving'
+				Status: 'Waiting'
 			}));
 
 			// Force update với setOrderValue function nếu có

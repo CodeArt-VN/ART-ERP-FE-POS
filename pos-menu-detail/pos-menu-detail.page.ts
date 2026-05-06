@@ -20,10 +20,10 @@ export class POSMenuDetailPage extends PageBase {
 	menuDetailList;
 	menuItemList = [];
 
-	//removedItem
 	removedItems = [];
 	Image;
 	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png';
+	zoomedImage: string = null;
 
 	constructor(
 		public pageProvider: POS_MenuProvider,
@@ -131,6 +131,10 @@ export class POSMenuDetailPage extends PageBase {
 			}
 		});
 	};
+
+	zoomImage(imageSrc: string) {
+		this.zoomedImage = imageSrc || this.noImage;
+	}
 
 	setLines() {
 		this.formGroup.controls.Lines = new FormArray([]);
