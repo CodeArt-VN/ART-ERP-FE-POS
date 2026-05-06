@@ -35,7 +35,7 @@ export class POSVoucherModalPage extends PageBase {
 	) {
 		super();
 	}
-	loadData(event?: any): void {
+	async loadData(event?: any): Promise<void> {
 		// let date = new Date();
 		// date.setHours(0, 0, 0, 0);
 		// Object.assign(this.query, {
@@ -49,9 +49,10 @@ export class POSVoucherModalPage extends PageBase {
 		// super.loadData();
 		// this.items = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply).map(p => ({ ...p })); // clone
 		let voucherCodes = this.promotionService.promotionList.filter((p) => p.IsPublic && !p.IsAutoApply).map((p) => p.VoucherCode);
+		const saleOrder = await this.promotionService.withBrandScope(this.SaleOrder);
 		let postDTO = {
 			VoucherCodeList: voucherCodes,
-			SaleOrder: this.SaleOrder,
+			SaleOrder: saleOrder,
 		};
 		this.pageProvider.commonService
 			.connect('POST', 'PR/Program/CheckVoucher', postDTO)
@@ -93,11 +94,12 @@ export class POSVoucherModalPage extends PageBase {
 		});
 	}
 
-	changeCode() {
+	async changeCode() {
 		if (this.Code != '') {
+			const saleOrder = await this.promotionService.withBrandScope(this.SaleOrder);
 			let postDTO = {
 				VoucherCodeList: [this.Code],
-				SaleOrder: this.SaleOrder,
+				SaleOrder: saleOrder,
 			};
 			this.pageProvider.commonService
 				.connect('POST', 'PR/Program/CheckVoucher', postDTO)
