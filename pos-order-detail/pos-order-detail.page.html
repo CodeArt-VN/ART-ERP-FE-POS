@@ -142,20 +142,34 @@
 									</div>
 
 									<div class="od-quantity">
-										<ion-button title="{{'Delete' | translate}}" fill="clear" *ngIf="!line._Locked"
-											[disabled]="submitAttempt" color="danger"
-											class="ion-float-right ion-no-padding remark-btn" size="small"
-											(click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx, line.Status, line.Code);">
+										<ion-button
+											title="{{'Delete' | translate}}"
+											fill="clear"
+											*ngIf="!line._Locked"
+											[disabled]="submitAttempt || isKitchenPrinting()"
+											color="danger"
+											class="ion-float-right ion-no-padding remark-btn"
+											size="small"
+											(click)="addToCart(line._item,line.IDUoM, -(line.Quantity), idx, line.Status, line.Code);"
+										>
 											<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked "
-											class="ion-float-right qty-btn" size="small"
-											(click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status, line.Code); line._isShowFoC = false;">
+										<ion-button
+											fill="outline"
+											[disabled]="submitAttempt || isKitchenPrinting() || line._Locked "
+											class="ion-float-right qty-btn"
+											size="small"
+											(click)="addToCart(line._item, line.IDUoM, +1, idx, line.Status, line.Code); line._isShowFoC = false;"
+										>
 											<ion-icon slot="icon-only" name="add"></ion-icon>
 										</ion-button>
-										<ion-button fill="outline" [disabled]="submitAttempt || line._Locked "
-											class="ion-float-right qty-btn" size="small"
-											(click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status, line.Code); line._isShowFoC = false;">
+										<ion-button
+											fill="outline"
+											[disabled]="submitAttempt || isKitchenPrinting() || line._Locked "
+											class="ion-float-right qty-btn"
+											size="small"
+											(click)="addToCart(line._item, line.IDUoM, -1, idx, line.Status, line.Code); line._isShowFoC = false;"
+										>
 											<ion-icon slot="icon-only" name="remove"></ion-icon>
 										</ion-button>
 										<ion-button *ngIf="pageConfig.canApplyFoC"
@@ -179,7 +193,10 @@
 											<ion-text (click)="quantityChange(line,idx)" color="dark"> {{line.Quantity}}
 											</ion-text>
 											}@else{
-											<input class="qty-input-compact" type="number"
+											<input
+												class="qty-input-compact"
+												type="number"
+												[disabled]="isKitchenPrinting()"
 												[step]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'any' : '1'"
 												[attr.inputmode]="POSQuantityConfigDTO.POSAllowDecimalQuantity ? 'decimal' : 'numeric'"
 												[value]="line.Quantity" (keydown)="onQuantityKeyDown($event,line,idx)"
@@ -579,7 +596,8 @@
 											</span>
 										</span>
 
-										<ion-button [disabled]="i.IsDisabled || !i.IDSalesTaxDefinition"
+										<ion-button
+											[disabled]="i.IsDisabled || !i.IDSalesTaxDefinition || isKitchenPrinting()"
 											[ngClass]="{'linear-blue-btn': i.BookedQuantity}"
 											[title]="(i.BookedQuantity && i.Status != 'Canceled')? i.BookedQuantity: '+'"
 											class="ion-float-right add-to-cart-btn" size="small"

@@ -246,6 +246,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async quantityChange(line, idx) {
+		if (this.isKitchenPrinting()) {
+			this.env.showMessage('Printers were busy, please try again!', 'warning');
+			return;
+		}
 		const current = (line?.Quantity ?? '').toString();
 		const modal = await this.modalController.create({
 			component: NumberInputModalComponent,
@@ -283,6 +287,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	onQuantityKeyDown(event: KeyboardEvent, line, idx) {
+		if (this.isKitchenPrinting()) {
+			event.preventDefault();
+			return;
+		}
 		if (!this.POSQuantityConfigDTO.POSAllowDecimalQuantity) {
 			if (event.key === '.' || event.key === ',') {
 				event.preventDefault();
@@ -291,6 +299,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	onQuantityInputChange(event: any, line, idx: number) {
+		if (this.isKitchenPrinting()) {
+			if (event?.target) event.target.value = line?.Quantity;
+			this.env.showMessage('Printers were busy, please try again!', 'warning');
+			return;
+		}
 		try {
 			let raw = null;
 			if (event && event.target) raw = event.target.value;
@@ -750,6 +763,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	canSaveOrder = false;
 
+	isKitchenPrinting() {
+		return this.sendKitchenAttempt;
+	}
+
 	async FoC(line) {
 		dog && console.log('FoC', line);
 		if (!this.pageConfig.canEdit || this.item.Status == 'TemporaryBill') {
@@ -781,6 +798,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	async addToCart(item, idUoM, quantity = 1, idx = -1, status = '', code = '', isNumberInput = false) {
 		if (item.IsDisabled) {
+			return;
+		}
+		if (this.isKitchenPrinting()) {
+			this.env.showMessage('Printers were busy, please try again!', 'warning');
 			return;
 		}
 		if (this.submitAttempt) {
