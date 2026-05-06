@@ -227,12 +227,15 @@ export class POSPaymentModalPage extends PageBase {
 				IDOriginalTransaction: incomingPayment.Id,
 				Amount: refundAmount,
 				RefundAmount: refundAmount,
+				Type: 'GrabPay',
+				SubType: 'Grab',
+				IsRefundTransaction: true,
 				orderID,
 				isFullRefund: true,
 				refundAmountInMin: Math.round(refundAmount),
 				saleOrder: this.item,
 			};
-			const response: any = await this.commonService.connect('POST', 'BANK/IncomingPayment/GrabRefundOrder', payload).toPromise();
+			const response: any = await this.commonService.connect('POST', 'BANK/IncomingPayment', payload).toPromise();
 			if (response?.success === false) {
 				this.env.showMessage(response?.message || 'Grab refund failed', 'danger');
 				return;
