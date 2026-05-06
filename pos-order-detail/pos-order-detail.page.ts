@@ -59,6 +59,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	isOpenMemoModal = false;
 	AllSegmentImage = environment.posImagesServer + 'Uploads/POS/Menu/Icons/All.png'; //All category image;
 	noImage = environment.posImagesServer + 'assets/pos-icons/POS-Item-demo.png'; //No image for menu item
+	zoomedImage: string = null;
 	segmentView = '0';
 	idTable: any; //Default table
 	paymentList = [];
@@ -1153,6 +1154,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	segmentChanged(ev: any) {
 		this.segmentView = ev;
 		this._filteredItemsCache.clear(); // Clear cache when segment changes
+	}
+
+	zoomImage(imageSrc: string) {
+		this.zoomedImage = imageSrc || this.noImage;
 	}
 
 	trackByItemId(index: number, item: any): any {

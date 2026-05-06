@@ -142,7 +142,7 @@
 											</datatable-column>
 											<datatable-column class="col-icon large" name="Image" property="value">
 												<ng-template let-g="row" let-idx="idx" datatable-cell-template>
-													<div class="img-wrapper">
+													<div class="img-wrapper" (click)="zoomImage(g.controls.Image?.value)">
 														<ion-img  slot="start" #img [src]="g.controls.Image?.value" (ionError)="img.src = noImage"></ion-img>				
 													</div>
 												</ng-template>
@@ -172,4 +172,7 @@
 	</div>
 	<input type="file" #uploadImage class="hide-all" (change)="onFileSelected($event)" accept="image/*" />
 	<app-page-message [itemsLength]="item? 1: 0" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+	<div *ngIf="zoomedImage" class="zoom-overlay" (click)="zoomedImage = null">
+		<ion-img class="zoomed-img" [src]="zoomedImage" #img (ionError)="img.src = noImage" (click)="$event.stopPropagation()"></ion-img>
+	</div>
 </ion-content>
