@@ -20,7 +20,7 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { concat, of, Subscription } from 'rxjs';
+import { async, concat, of, Subscription } from 'rxjs';
 import { catchError, distinctUntilChanged, switchMap, tap, mergeMap } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
@@ -43,6 +43,7 @@ import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-moda
 import { ComboModalPage } from './combo-modal/combo-modal.page';
 import { BillPreviewComponent } from 'src/app/modals/bill-preview-modal/bill-preview-modal';
 import { BillTemplateComponent } from './bill-template/bill-template.component';
+import { NfcQrcodeScannerModalComponent } from 'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -2983,47 +2984,217 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	async scanQRCode() {
-		let code = await this.scanner.scan();
-		if (code.indexOf('VCARD;') != -1) {
-			var tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
+		return this.scanQRCodeFromModal();
+		// let code = await this.scanner.scan();
+		// if (code.indexOf('VCARD;') != -1) {
+		// 	var tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
 
-			var StaffCode = tempString.split(';')[0];
-			var QRGenTime = tempString.split(';')[1];
+		// 	var StaffCode = tempString.split(';')[0];
+		// 	var QRGenTime = tempString.split(';')[1];
 
-			let toDay = new Date();
-			let fromTime = new Date(toDay);
-			let toTime = new Date(toDay);
-			fromTime.setMinutes(toDay.getMinutes() - 1);
-			toTime.setMinutes(toDay.getMinutes() + 1);
+		// 	let toDay = new Date();
+		// 	let fromTime = new Date(toDay);
+		// 	let toTime = new Date(toDay);
+		// 	fromTime.setMinutes(toDay.getMinutes() - 1);
+		// 	toTime.setMinutes(toDay.getMinutes() + 1);
 
-			let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
-			let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+		// 	let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+		// 	let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
 
-			if (currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo) {
-				this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
-					let address = resp['data'][0];
-					address.IDAddress = address['Addresses'][0]['Id'];
-					address.Address = address['Addresses'][0];
+		// 	if (currentTimeFrom <= QRGenTime && QRGenTime <= currentTimeTo) {
+		// 		this.contactProvider.read({ Code: StaffCode, Take: 20 }).then((resp) => {
+		// 			let address = resp['data'][0];
+		// 			address.IDAddress = address['Addresses'][0]['Id'];
+		// 			address.Address = address['Addresses'][0];
 
-					this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
-					this._contactDataSource.selected.push(address);
-					this.changedIDAddress(address);
-					this._contactDataSource.initSearch();
-					this.cdr.detectChanges();
-					this.saveChange();
-				});
-			} else {
-				this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {{value}}', 'danger', QRGenTime);
+		// 			this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
+		// 			this._contactDataSource.selected.push(address);
+		// 			this.changedIDAddress(address);
+		// 			this._contactDataSource.initSearch();
+		// 			this.cdr.detectChanges();
+		// 			this.saveChange();
+		// 		});
+		// 	} else {
+		// 		this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {{value}}', 'danger', QRGenTime);
+		// 		setTimeout(() => this.scanQRCode(), 0);
+		// 	}
+		// } else {
+		// 	this.env
+		// 		.showPrompt('Please scan valid QR code', 'Invalid QR code', null, 'Retry', 'Cancel')
+		// 		.then(() => {
+		// 			setTimeout(() => this.scanQRCode(), 0);
+		// 		})
+		// 		.catch(() => {});
+		// 	return;
+		// }
+	}
+
+	private async scanQRCodeFromModal() {
+		const { data, role } = await this.modalController
+			.create({
+				component: NfcQrcodeScannerModalComponent,
+				cssClass: 'modal90vh',
+				componentProps: {
+					title: 'Read nfc/qr code',
+					label: 'Please tap NFC card or scan QR code to read',
+					mode: 'NFC',
+					showQrCodeButton: true,
+				},
+			})
+			.then(async (modal) => {
+				await modal.present();
+				return modal.onWillDismiss();
+			});
+
+		if (role !== 'confirm' || !data) return;
+
+		const handledNfc = await this.handleScannedNfcPayload(data);
+		if (handledNfc) return;
+
+		const handledQr = await this.handleScannedQrPayload(data);
+		if (handledQr) return;
+
+		await this.retryInvalidPosQrCode();
+		return;
+	}
+
+	private getScannerRawValue(data: any): string {
+		if (typeof data?.rawValue === 'string') return data.rawValue;
+		if (typeof data?.value === 'string') return data.value;
+		return '';
+	}
+
+	private async handleScannedNfcPayload(data: any): Promise<boolean> {
+		if (data?.mode !== 'NFC') return false;
+
+		let nfcValue = data?.value;
+		if (typeof nfcValue === 'string') {
+			try {
+				nfcValue = JSON.parse(nfcValue);
+			} catch {
+				nfcValue = null;
+			}
+		}
+		const tagInfo = data?.tagInfo?.uid;
+
+
+		const idbp = nfcValue?.IDBP;
+		if (!idbp) {
+			await this.retryInvalidPosQrCode('Invalid NFC content');
+			return true;
+		}
+
+		this.addContactByScannedId(tagInfo || idbp);
+		return true;
+	}
+
+	private async handleScannedQrPayload(data: any): Promise<boolean> {
+		const code = this.getScannerRawValue(data);
+		if (!code) return false;
+
+		if (this.tryHandleSaleOrderQr(code)) return true;
+		if (this.tryHandleBusinessPartnerQr(code)) return true;
+		if (await this.tryHandleVCardQr(code)) return true;
+
+		return false;
+	}
+
+	private tryHandleSaleOrderQr(code: string): boolean {
+		const match = /^\s*SO-(\d+)\s*$/i.exec((code || '').trim());
+		if (!match) return false;
+
+		const id = parseInt(match[1], 10);
+		if (!id) return false;
+
+		this.navCtrl.navigateForward(`/pos-order/${id}`);
+		return true;
+	}
+
+	private tryHandleBusinessPartnerQr(code: string): boolean {
+		const match = /^\s*BP-(\d+)\s*$/i.exec((code || '').trim());
+		if (!match) return false;
+
+		const id = parseInt(match[1], 10);
+		if (!id) return false;
+
+		this.addContactByScannedId(id);
+		return true;
+	}
+
+	private async tryHandleVCardQr(code: string): Promise<boolean> {
+		const parsedQr = this.parseStaffVCardQr(code);
+		if (!parsedQr) return false;
+
+		if (this.isExpiredStaffQr(parsedQr.QRGenTime)) {
+			const shouldRetry = await this.confirmRetryPosQrCode(`Code has expired, please get a new staff code! QR code generated at: ${parsedQr.QRGenTime}`);
+			if (shouldRetry) {
 				setTimeout(() => this.scanQRCode(), 0);
 			}
-		} else {
-			this.env
-				.showPrompt('Please scan valid QR code', 'Invalid QR code', null, 'Retry', 'Cancel')
-				.then(() => {
-					setTimeout(() => this.scanQRCode(), 0);
-				})
-				.catch(() => {});
-			return;
+			return true;
+		}
+
+		this.contactProvider.read({ Code: parsedQr.StaffCode, Take: 20 }).then((resp) => {
+			let address = resp['data'][0];
+			address.IDAddress = address['Addresses'][0]['Id'];
+			address.Address = address['Addresses'][0];
+
+			this.env.showMessage('Scan successful! Full name: {{value}}', null, address['Name']);
+			this._contactDataSource.selected.push(address);
+			this.changedIDAddress(address);
+			this._contactDataSource.initSearch();
+			this.cdr.detectChanges();
+			this.saveChange();
+		});
+
+		return true;
+	}
+
+	private addContactByScannedId(id: string | number): void {
+		this.isEnter = true;
+		this._contactDataSource.input$.next(String(id));
+	}
+
+	private parseStaffVCardQr(code: string): { StaffCode: string; QRGenTime: string } | null {
+		if (!code || code.indexOf('VCARD;') === -1) return null;
+
+		const tempString = code.substring(code.indexOf('VCARD;') + 6, code.length);
+		const staffCode = tempString.split(';')[0];
+		const qrGenTime = tempString.split(';')[1];
+
+		if (!staffCode || !qrGenTime) return null;
+
+		return {
+			StaffCode: staffCode,
+			QRGenTime: qrGenTime,
+		};
+	}
+
+	private isExpiredStaffQr(qrGenTime: string): boolean {
+		let toDay = new Date();
+		let fromTime = new Date(toDay);
+		let toTime = new Date(toDay);
+		fromTime.setMinutes(toDay.getMinutes() - 1);
+		toTime.setMinutes(toDay.getMinutes() + 1);
+
+		let currentTimeFrom = lib.dateFormat(fromTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(fromTime, 'hh:MM');
+		let currentTimeTo = lib.dateFormat(toTime, 'dd/mm/yyyy') + ' ' + lib.dateFormat(toTime, 'hh:MM');
+
+		return !(currentTimeFrom <= qrGenTime && qrGenTime <= currentTimeTo);
+	}
+
+	private async retryInvalidPosQrCode(message: string = 'Please scan valid QR code', title: string = 'Invalid QR code'): Promise<void> {
+		const shouldRetry = await this.confirmRetryPosQrCode(message, title);
+		if (shouldRetry) {
+			setTimeout(() => this.scanQRCode(), 0);
+		}
+	}
+
+	private async confirmRetryPosQrCode(message: string, title: string = 'Invalid QR code'): Promise<boolean> {
+		try {
+			await this.env.showPrompt(message, title, null, 'Retry', 'Cancel');
+			return true;
+		} catch {
+			return false;
 		}
 	}
 
