@@ -6,7 +6,10 @@ export const POSRoutes: Routes = [
     { path: 'pos-order', loadChildren: () => import('./pos-order/pos-order.module').then(m => m.POSOrderPageModule), canActivate: [AuthGuard] },
     { path: 'pos-order/:id', loadChildren: () => import('./pos-order-detail/pos-order-detail.module').then(m => m.POSOrderDetailPageModule), canActivate: [AuthGuard] },
     { path: 'pos-order/:id/:table', loadChildren: () => import('./pos-order-detail/pos-order-detail.module').then(m => m.POSOrderDetailPageModule), canActivate: [AuthGuard] },
+
     { path: 'pos-work-order', loadChildren: () => import('./pos-work-order/pos-work-order.module').then(m => m.POSWorkOrderPageModule), canActivate: [AuthGuard] },
+    { path: 'pos-work-order/:id', loadChildren: () => import('./pos-work-order-detail/pos-work-order-detail.module').then(m => m.POSWorkOrderDetailPageModule), canActivate: [AuthGuard] },
+    
     { path: 'pos-terminal', loadChildren: () => import('./pos-terminal/pos-terminal.module').then(m => m.POSTerminalPageModule), canActivate: [AuthGuard] },
     { path: 'pos-terminal/:id', loadChildren: () => import('./pos-terminal-detail/pos-terminal-detail.module').then(m => m.POSTerminalDetailPageModule), canActivate: [AuthGuard] },
   
