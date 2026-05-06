@@ -162,6 +162,10 @@ export class POSPaymentModalPage extends PageBase {
 		}
 		let RefundAmount = i.IncomingPayment.Amount - i.IncomingPayment.TotalRefund;
 		let idTransaction = i.IncomingPayment.Id;
+		if (this.isGrabPayment(i.IncomingPayment)) {
+			await this.refundGrabPayment(i, RefundAmount);
+			return;
+		}
 		// let payment = {
 		// 	IDBranch: this.item.IDBranch,
 		// 	IDStaff: this.env.user.StaffID,
@@ -201,6 +205,45 @@ export class POSPaymentModalPage extends PageBase {
 		// let code = this.convertUrl(str);
 		// let url = environment.appDomain + 'Payment?Code=' + code;
 		// window.open(url, '_blank');
+	}
+	private isGrabPayment(payment) {
+		return payment?.Type == 'GrabPay' && payment?.SubType == 'Grab';
+	}
+	private async refundGrabPayment(item, refundAmount) {
+		const incomingPayment = item?.IncomingPayment;
+		const orderID = incomingPayment?.ReferenceNumber;
+		if (!orderID) {
+			this.env.showMessage('Grab orderID not found', 'danger');
+			return;
+		}
+		const loading = await this.loadingController.create({
+			message: 'Refunding Grab payment...',
+		});
+		await loading.present();
+		try {
+			const payload = {
+				IDSaleOrder: this.item.Id,
+				IDIncomingPayment: incomingPayment.Id,
+				IDOriginalTransaction: incomingPayment.Id,
+				Amount: refundAmount,
+				RefundAmount: refundAmount,
+				orderID,
+				isFullRefund: true,
+				refundAmountInMin: Math.round(refundAmount),
+				saleOrder: this.item,
+			};
+			const response: any = await this.commonService.connect('POST', 'BANK/IncomingPayment/GrabRefundOrder', payload).toPromise();
+			if (response?.success === false) {
+				this.env.showMessage(response?.message || 'Grab refund failed', 'danger');
+				return;
+			}
+			this.env.showMessage('Refund successful', 'success');
+			this.refresh();
+		} catch (err) {
+			this.env.showMessage(err?.error?.message || err?.error?.Message || 'Grab refund failed', 'danger');
+		} finally {
+			await loading.dismiss();
+		}
 	}
 	toDetail(code) {
 		let url = environment.appDomain + 'Payment?Code=' + code;
