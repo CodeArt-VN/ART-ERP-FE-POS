@@ -262,6 +262,9 @@ export interface POSConfig {
 	POSIsShowMenuInMultiline: boolean;
 	POSVirtualKeyboardQuantity: boolean;
 	POSAllowDecimalQuantity: boolean;
+	POSEnableWorkOrder: boolean;
+	POSWorkOrderMethod: string;
+	POSWorkOrderPrintStatus: string;
 
 	// QR Code Payment
 	BKIncomingDefaultBankName?: any;
@@ -276,4 +279,32 @@ export interface POSConfig {
 	BillFooterLine1: string;
 	BillFooterLine2: string;
 	BillLogo: string;
+}
+
+export interface POSWorkOrderItem {
+	IDItem: string;
+	Id: string;
+	code: string;
+	key: string;
+	name: string;
+	qty: number;
+	select: boolean;
+}
+
+export interface POSWorkOrder {
+	id: string;
+	key: string;
+	table: string;
+	status: string;
+	select: boolean;
+	time: Date;
+	items: POSWorkOrderItem[];
+}
+
+export interface POSWorkOrderZone {
+	id: string;
+	name: string;
+	title: string;
+	color: string;
+	orders: POSWorkOrder[];
 }
