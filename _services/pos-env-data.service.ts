@@ -15,7 +15,6 @@ export class POSEnviromentDataService {
 	defaultPOSConfig: POSConfig = {
 		IsAutoSave: true,
 		SODefaultBusinessPartner: null,
-		SOBrand: null,
 		IsUseIPWhitelist: false,
 		IPWhitelistInput: '',
 		IsRequireOTP: false,

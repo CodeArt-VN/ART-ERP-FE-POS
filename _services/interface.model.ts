@@ -235,7 +235,6 @@ export interface Address {
 export interface POSConfig {
 	IsAutoSave: boolean;
 	SODefaultBusinessPartner: BusinessPartner;
-	SOBrand?: number;
 	IsUseIPWhitelist: boolean;
 	IPWhitelistInput: string;
 	IsRequireOTP: boolean;
