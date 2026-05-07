@@ -210,12 +210,15 @@ export class POSPaymentModalPage extends PageBase {
 		return payment?.Type == 'GrabPay' && payment?.SubType == 'Grab';
 	}
 	private async refundGrabPayment(item, refundAmount) {
+		if (this.submitAttempt) return;
+
 		const incomingPayment = item?.IncomingPayment;
 		const orderID = incomingPayment?.ReferenceNumber;
 		if (!orderID) {
 			this.env.showMessage('Grab orderID not found', 'danger');
 			return;
 		}
+		this.submitAttempt = true;
 		const loading = await this.loadingController.create({
 			message: 'Refunding Grab payment...',
 		});
@@ -235,7 +238,7 @@ export class POSPaymentModalPage extends PageBase {
 				refundAmountInMin: Math.round(refundAmount),
 				saleOrder: this.item,
 			};
-			const response: any = await this.commonService.connect('POST', 'BANK/IncomingPayment', payload).toPromise();
+			const response: any = await this.IncomingPaymentProvider.save(payload);
 			if (response?.success === false) {
 				this.env.showMessage(response?.message || 'Grab refund failed', 'danger');
 				return;
@@ -245,6 +248,7 @@ export class POSPaymentModalPage extends PageBase {
 		} catch (err) {
 			this.env.showMessage(err?.error?.message || err?.error?.Message || 'Grab refund failed', 'danger');
 		} finally {
+			this.submitAttempt = false;
 			await loading.dismiss();
 		}
 	}
