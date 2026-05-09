@@ -122,8 +122,15 @@ export class POSVoucherModalPage extends PageBase {
 	}
 
 	async applyVoucher(line) {
-		this.promotionService.applyVoucher(this.SaleOrder,line.VoucherCode).then(savedItem=>{
+		if(this.submitAttempt) return;
+		this.submitAttempt = true;
+		this.promotionService.applyVoucher(this.SaleOrder,line.VoucherCode)
+		.then(savedItem=>{
 			this.modalController.dismiss(savedItem);
+		}).catch(err=>{
+			this.env.showErrorMessage(err);
+		}).finally(()=>{
+			this.submitAttempt = false;
 		});
 	
 		// } else {
