@@ -122,7 +122,6 @@ export class POSVoucherModalPage extends PageBase {
 	}
 
 	async applyVoucher(line) {
-		if(this.submitAttempt) return;
 		this.submitAttempt = true;
 		this.promotionService.applyVoucher(this.SaleOrder,line.VoucherCode)
 		.then(savedItem=>{

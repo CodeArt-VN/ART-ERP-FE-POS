@@ -3089,7 +3089,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (p?.IsAutoApply) {
 			return;
 		}
-		if(this.submitAttempt) return;
 		this.submitAttempt = true;
 		this.promotionService
 			.deleteVoucher(this.item, [p.VoucherCode])
