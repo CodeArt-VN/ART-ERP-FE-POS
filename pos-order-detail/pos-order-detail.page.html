@@ -249,7 +249,9 @@
 							<div class="coupon" *ngFor="let p of promotionAppliedPrograms; let i=index">
 								<ion-button *ngIf="!p.IsAutoApply" fill="clear" color="danger"
 									class="ion-float-right ion-no-padding del-btn" size="small"
-									(click)="deleteVoucher(p)">
+									(click)="deleteVoucher(p)"
+									[disabled]="submitAttempt || isKitchenPrinting()"
+									>
 									<ion-icon slot="icon-only" name="trash-outline"></ion-icon>
 								</ion-button>
 								<div class="coupon-left">

@@ -39,7 +39,7 @@
 							</small>
 							<small *ngIf="Voucher.Program.ToDate">{{'Expiry' | translate}}: {{Voucher.Program.ToDate | date: 'dd/MM/yyyy'}}</small>
 						</div>
-						<ion-button class="apply-btn" expand="block" size="small" [disabled]="!Voucher.CanUse" slot="end" (click)="applyVoucher(Voucher)">{{'Áp dụng' | translate}}</ion-button>
+						<ion-button class="apply-btn" expand="block" size="small" [disabled]="!Voucher.CanUse || submitAttempt" slot="end" (click)="applyVoucher(Voucher)">{{'Áp dụng' | translate}}</ion-button>
 					</div>
 				</ion-col>
 			</ion-row>
