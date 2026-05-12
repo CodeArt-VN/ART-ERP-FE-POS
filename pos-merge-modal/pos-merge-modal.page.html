@@ -67,6 +67,21 @@
                             {{'Wholesale customer' | translate}}
                         </ion-button>
                     </div> -->
+					<div class="c-control" *ngIf="paymentReceived > 0">
+						<label class="c-label">{{'Total' | translate}}</label>
+						<div class="c-input">
+							{{mergePayableAmount | number:'1.0-0'}}
+						</div>
+					</div>
+					<div class="c-control" *ngIf="paymentReceived > 0">
+						<label class="c-label">{{'Payment' | translate}}</label>
+						<div class="c-input">
+							{{paymentReceived | number:'1.0-0'}}
+						</div>
+					</div>
+					<ion-text color="danger" *ngIf="paymentValidationMessage">
+						<small>{{paymentValidationMessage | translate}}</small>
+					</ion-text>
 				</ion-col>
 			</ion-row>
 		</ion-grid>
@@ -78,7 +93,7 @@
 
 		<div slot="end">
 			<ion-button fill="outline" color="warning" (click)="closeModal()"> {{'Cancel' | translate}} </ion-button>
-			<ion-button [strong]="true" [disabled]="submitAttempt" (click)="mergeSaleOrders()"> {{'Merge order' | translate}} </ion-button>
+			<ion-button [strong]="true" [disabled]="submitAttempt || !isCanMerge" (click)="mergeSaleOrders()"> {{'Merge order' | translate}} </ion-button>
 		</div>
 	</ion-toolbar>
 </ion-footer>
