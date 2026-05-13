@@ -182,7 +182,7 @@ export class POSSplitModalPage extends PageBase {
 						.search({
 							IgnoredBranch: true,
 							Id: JSON.stringify(ids),
-							IDSO : this.selectedOrder.Id,
+							IDSO: this.selectedOrder.Id,
 						})
 						.toPromise()
 						.then((result: any) => {
@@ -376,7 +376,7 @@ export class POSSplitModalPage extends PageBase {
 		}
 		this.checkValid();
 	}
-	checkTableStatus(o) {}
+	checkTableStatus(o) { }
 
 	segmentView = 's1';
 	segmentChanged(ev: any) {
@@ -596,11 +596,12 @@ export class POSSplitModalPage extends PageBase {
 						if (publishEventCode) {
 							this.env.publishEvent({ Code: publishEventCode });
 						}
-						this.env.showMessage('Saving completed!', 'success');
-						resolve(true);
-						this.submitAttempt = false;
 
+						this.env.showMessage('Saving completed!', 'success');
+						this.submitAttempt = false;
 						this.closeModalView();
+						
+						resolve(true);
 					})
 					.catch((err) => {
 						this.env.showMessage('Cannot save, please try again!', 'danger');
@@ -612,8 +613,8 @@ export class POSSplitModalPage extends PageBase {
 		});
 	}
 
-	closeModalView() {
-		this.modalController.dismiss();
+	async closeModalView() {
+		await this.modalController.dismiss();
 	}
 
 	remainderForItem(originalItem) {
@@ -654,7 +655,7 @@ export class POSSplitModalPage extends PageBase {
 
 		splitDetails.forEach((line) => this.calcOrderLine(line));
 	}
-	
+
 	getTotalAmountForSplit(jdx: number): number {
 		if (!this.items) return 0;
 		return this.items.reduce((sum, item) => {
