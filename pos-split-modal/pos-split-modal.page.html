@@ -237,12 +237,26 @@
 											<label class="c-label summary-value ">{{ getTotalAmountForSplit(jdx) | number:'1.0-0' }}</label>
 										</td>
 									</tr>
+									<tr *ngIf="paymentReceived > 0">
+										<td class="label">
+											<label class="c-label summary-label col-total">{{'Payment' | translate}}</label>
+										</td>
+										<td class="label"></td>
+										<td *ngFor="let o of items[0]?.splitDetail; let jdx = index;" class="UoM col-total c-control">
+											<label class="c-label summary-value" [class.important]="jdx == paymentTargetSplitIndex">
+												{{ jdx == paymentTargetSplitIndex ? (paymentReceived | number:'1.0-0') : '-' }}
+											</label>
+										</td>
+									</tr>
 									
 								</table>
 							</div>
 						</div>
 					</section>
 				</div>
+				<ion-text color="danger" *ngIf="paymentValidationMessage">
+					<small>{{paymentValidationMessage | translate}}</small>
+				</ion-text>
 			</div>
 		</div>
 	</div>
