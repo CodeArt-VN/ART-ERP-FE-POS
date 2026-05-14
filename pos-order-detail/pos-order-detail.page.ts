@@ -2742,55 +2742,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	alwaysReturnProps = ['Id', 'IDBranch', 'Code'];
 	async saveChange() {
 		let submitItem = this.getDirtyValues(this.formGroup);
-		this.saveLogWorkOrder(submitItem);
 		return this.saveChange2();
-	}
-
-	private saveLogWorkOrder(item) {
-		if (!item.OrderLines || item.Status == 'New') {
-			return Promise.resolve();
-		}
-
-		let lines = Object.values(item.OrderLines);
-		if (!lines.length) {
-			return Promise.resolve();
-		}
-
-		const orderId = this.item?.Id;
-		if (!orderId) {
-			return Promise.resolve();
-		}
-
-		const logs: any[] = [];
-		const SavedTime = lib.dateFormat(new Date(), 'yyyy-mm-ddThh:MM:ss');
-		lines.forEach((l: any) => {
-			if (l.Status == 'New') {
-				return;
-			}
-
-			const line = this.item.OrderLines.find((o) => o.Id == l.Id);
-
-			logs.push({
-				IDBranch: this.env.selectedBranch,
-				IDOrder: orderId,
-				IDOrderLine: line.Id,
-				Id: 0,
-				Code: lib.generateUID(this.env.user.StaffID),
-				Name: line.Name || line.ItemName,
-				Status: line.Status,
-				SavedTime: SavedTime,
-			});
-		});
-
-		if (logs.length) {
-			return this.LogWorkOrderProvider.save(logs, this.pageConfig.isForceCreate)
-				.then()
-				.catch((err) => {
-					this.env.showMessage('Cannot save, please try again', 'danger');
-				});
-		} else {
-			return Promise.resolve();
-		}
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {

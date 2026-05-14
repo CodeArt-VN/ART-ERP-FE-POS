@@ -96,6 +96,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					case 'signalR:POSSupport':
 					case 'signalR:POSCallToPay':
 					case 'signalR:POSPaymentSuccess':
+					case 'signalR:POSWorkOrderSave':
 						this.refreshFromEvent();
 						break;
 					case 'signalR:POSWorkOrderUpdated':
@@ -128,7 +129,8 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 					this.loadedData();
 					this.setKeyOrders(this._selectZone);
 					const orderAction = this.getZone(this._selectZone)?.orders.find(o => o.id === orderActionSave.id && o.time === orderActionSave.time);
-					orderAction.select = true;
+					if (orderAction)
+						orderAction.select = true;
 					this.setKeyItems(this.getZone(this._selectZone)?.orders.find(o => o.select));
 				} else {
 					console.log('No new kitchen items for work order', this.id);
@@ -142,6 +144,13 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			return true;
 		}
 
+		for (const order of oldOrders) {
+			const newOrder = newOrders.find((o: any) => o.Id === order.Id);
+			if (oldOrders != newOrders) {
+				return true;
+			}
+		};
+
 		// Build map of existing line IDs and their statuses
 		const existingLines = new Map<number, string>();
 		oldOrders.forEach((order: any) => {
@@ -153,8 +162,8 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 		});
 
 		// Check for new items or status changes
-		return newOrders.some((order: any) => {
-			return order.OrderLines?.some((line: any) => {
+		newOrders.some((order: any) => {
+			order.OrderLines?.some((line: any) => {
 				if (line.Id == null) return true;
 
 				const oldStatus = existingLines.get(line.Id);
@@ -181,7 +190,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			this.posKitchenProvider.read(),
 		])
 			.then((values: any) => {
-				console.log('POS environment data loaded', values);
+				// console.log('POS environment data loaded', values);
 				this.orderDetailStatusList = values[1];
 				this.optionMethod = values[2];
 				this.optionPrintStatus = values[3];
@@ -196,12 +205,12 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				return this.commonService.connect('GET', 'POS/WorkOrder/GetService/' + this.id, null).toPromise();
 			})
 			.then((data: any) => {
-				console.log(data);
+				console.log('ListData', data);
 				this.orderList = data;
 				this.loadedData(event);
 			})
 			.catch((err) => {
-				console.log(err);
+				// console.log(err);
 				this.env.showErrorMessage(err);
 				this.loadedData(event);
 			});
@@ -770,6 +779,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 	}
 
 	setKeyOrders(zoneId: string) {
+		if (zoneId === '0') return;
 		if (this._useKeyboard) {
 			if (this._selectZone === zoneId) {
 				this.getZone(zoneId).orders
@@ -877,19 +887,31 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 
 	async changeStatusSelectingItem_Alert(fromZoneId: string): Promise<number> {
 		return new Promise(async (resolve) => {
+			// Translate all labels first
+			const [cancelLabel, receiveLabel, returnLabel, readyLabel, serveLabel, reorderLabel] = await Promise.all([
+				this.env.translateResource('[0] Cancel'),
+				this.env.translateResource('[1] Receive'),
+				this.env.translateResource('[2] Return'),
+				this.env.translateResource('[1] Ready'),
+				this.env.translateResource('[1] Serve'),
+				this.env.translateResource('[1] Reorder'),
+				this.env.translateResource('pos.alert.selection'),
+				this.env.translateResource('pos.alert.choose_action')
+			]);
+
 			let keyHandler;
 			let createButtons: any[] = [];
 
 			// Luôn có button Cancel
 			createButtons.push({
-				text: '[0] Cancel',
+				text: cancelLabel,
 				handler: () => resolve(0)
 			});
 			if (fromZoneId == '1') {
 				// Thêm button Receive nếu có quyền
 				if (this.pageConfig.canReceive) {
 					createButtons.push({
-						text: "[1] Receive",
+						text: receiveLabel,
 						handler: () => resolve(2)
 					});
 				}
@@ -897,7 +919,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 				// Thêm button Return nếu có quyền
 				if (this.pageConfig.canReturn) {
 					createButtons.push({
-						text: '[2] Return',
+						text: returnLabel,
 						handler: () => resolve(5)
 					});
 				}
@@ -925,14 +947,14 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			else if (fromZoneId == '2') {
 				if (this.pageConfig.canReady) {
 					createButtons.push({
-						text: "[1] Ready",
+						text: readyLabel,
 						handler: () => resolve(3)
 					});
 				}
 
 				if (this.pageConfig.canReturn) {
 					createButtons.push({
-						text: "[2] Return",
+						text: returnLabel,
 						handler: () => resolve(5)
 					});
 				}
@@ -960,7 +982,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			else if (fromZoneId == '3') {
 				if (this.pageConfig.canServe) {
 					createButtons.push({
-						text: "[1] Serve",
+						text: serveLabel,
 						handler: () => resolve(4)
 					});
 				}
@@ -984,7 +1006,7 @@ export class POSWorkOrderDetailPage extends PageBase implements DoCheck {
 			} else if (fromZoneId == '5') {
 				if (this.pageConfig.canReorder) {
 					createButtons.push({
-						text: "[1] Reorder",
+						text: reorderLabel,
 						handler: () => resolve(1)
 					});
 				}
