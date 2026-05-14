@@ -32,6 +32,9 @@ export class POSSplitModalPage extends PageBase {
 	tables = [];
 	currentTable;
 	quantityEditSequence = 0;
+	paymentReceived = 0;
+	paymentTargetSplitIndex = -1;
+	paymentValidationMessage = '';
 
 	constructor(
 		public pageProvider: SALE_OrderProvider,
@@ -172,6 +175,16 @@ export class POSSplitModalPage extends PageBase {
 				this.addSplitedOrder();
 
 				this.calcOrders();
+				this.getPaymentReceived(this.selectedOrder.Id)
+					.then((amount) => {
+						this.paymentReceived = amount;
+						this.checkValid();
+					})
+					.catch(() => {
+						this.paymentReceived = 0;
+						this.isCanSplit = false;
+						this.paymentValidationMessage = 'Cannot verify payment before splitting this bill.';
+					});
 
 				this.loadedData(event);
 
@@ -487,6 +500,7 @@ export class POSSplitModalPage extends PageBase {
 	isCanSplit = false;
 	checkValid() {
 		this.isCanSplit = true;
+		this.paymentValidationMessage = '';
 
 		for (let i = 0; i < this.item.SplitedOrders.length; i++) {
 			const o = this.item.SplitedOrders[i];
@@ -511,7 +525,37 @@ export class POSSplitModalPage extends PageBase {
 			}
 		}
 
+		this.validatePaymentTarget();
+
 		this.isCanSplit;
+	}
+
+	validatePaymentTarget(showMessage = false) {
+		this.paymentTargetSplitIndex = -1;
+		this.paymentValidationMessage = '';
+
+		if (!this.paymentReceived || this.paymentReceived <= 0 || !this.item?.SplitedOrders?.length) {
+			return true;
+		}
+
+		const target = this.item.SplitedOrders
+			.map((order, index) => ({
+				order,
+				index,
+				total: this.getPayableAmountForSplit(index),
+			}))
+			.filter((x) => x.total >= this.paymentReceived)
+			.sort((a, b) => a.total - b.total)[0];
+
+		if (target) {
+			this.paymentTargetSplitIndex = target.index;
+			return true;
+		}
+
+		this.isCanSplit = false;
+		this.paymentValidationMessage = 'Cannot split this bill because no new order total can cover the paid amount.';
+		if (showMessage) this.env.showMessage(this.paymentValidationMessage, 'warning');
+		return false;
 	}
 
 	calcOrderLine(line) {
@@ -571,7 +615,9 @@ export class POSSplitModalPage extends PageBase {
 		let publishEventCode = this.pageConfig.pageName;
 		return new Promise((resolve, reject) => {
 			if (!this.isCanSplit) {
-				this.env.showMessage('Please check customer name and order must have at least 01 item.', 'warning');
+				this.env.showMessage(this.paymentValidationMessage || 'Please check customer name and order must have at least 01 item.', 'warning');
+			} else if (!this.validatePaymentTarget(true)) {
+				return;
 			} else if (this.submitAttempt == false) {
 				this.submitAttempt = true;
 
@@ -656,6 +702,19 @@ export class POSSplitModalPage extends PageBase {
 		splitDetails.forEach((line) => this.calcOrderLine(line));
 	}
 
+	getPayableAmountForSplit(jdx: number): number {
+		if (!this.items) return 0;
+		return Math.round(
+			this.items.reduce((sum, item) => {
+				const line = item.splitDetail?.[jdx];
+				if (!line) return sum;
+				const total = parseFloat(line.OriginalTotalAfterTax) || (parseFloat(line.UoMPrice) || 0) * (parseFloat(line.Quantity) || 0);
+				const discountFromSalesman = parseFloat(line.OriginalDiscountFromSalesman) || 0;
+				return sum + Math.max(0, total - discountFromSalesman);
+			}, 0)
+		);
+	}
+	
 	getTotalAmountForSplit(jdx: number): number {
 		if (!this.items) return 0;
 		return this.items.reduce((sum, item) => {
@@ -694,5 +753,24 @@ export class POSSplitModalPage extends PageBase {
 	markQuantityEdited(row) {
 		this.quantityEditSequence++;
 		row._quantityEditSeq = this.quantityEditSequence; // mark edit order
+	}
+
+	private getPaymentReceived(IDSaleOrder) {
+		return this.pageProvider.commonService
+			.connect('GET', 'BANK/IncomingPaymentDetail', { IDSaleOrder })
+			.toPromise()
+			.then((result: any) => {
+				const paymentList = Array.isArray(result) ? result : [];
+				const paidAmount = paymentList
+					.filter((x) => x.IncomingPayment?.Status == 'Success' && x.IncomingPayment?.IsRefundTransaction == false)
+					.map((x) => parseFloat(x.Amount) || 0)
+					.reduce((a, b) => a + b, 0);
+				const refundAmount = paymentList
+					.filter((x) => (x.IncomingPayment?.Status == 'Success' || x.IncomingPayment?.Status == 'Processing') && x.IncomingPayment?.IsRefundTransaction == true)
+					.map((x) => parseFloat(x.Amount) || 0)
+					.reduce((a, b) => a + b, 0);
+
+				return Math.max(0, paidAmount - refundAmount);
+			});
 	}
 }

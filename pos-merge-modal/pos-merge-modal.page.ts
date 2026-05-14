@@ -20,6 +20,10 @@ export class POSMergeModalPage extends PageBase {
 	@Input() selectedOrders;
 
 	initContactsIds = [];
+	paymentReceived = 0;
+	mergePayableAmount = 0;
+	paymentValidationMessage = '';
+	isCanMerge = true;
 
 	constructor(
 		public pageProvider: SALE_OrderProvider,
@@ -57,6 +61,17 @@ export class POSMergeModalPage extends PageBase {
 				this.initContactsIds.push(i.IDContact);
 			});
 		}
+		this.mergePayableAmount = this.getMergePayableAmount();
+		this.getPaymentReceivedForOrders(this.item.Ids)
+			.then((amount) => {
+				this.paymentReceived = amount;
+				this.validatePaymentTarget();
+			})
+			.catch(() => {
+				this.paymentReceived = 0;
+				this.isCanMerge = false;
+				this.paymentValidationMessage = 'Cannot verify payment before merging these bills.';
+			});
 		this.loadedData(event);
 	}
 
@@ -130,6 +145,8 @@ export class POSMergeModalPage extends PageBase {
 		return new Promise((resolve, reject) => {
 			if (!this.item.Ids.length || !this.item.IDContact) {
 				this.env.showMessage('Please check the invoice to combine and select customer', 'warning');
+			} else if (!this.validatePaymentTarget(true)) {
+				return;
 			} else if (this.submitAttempt == false) {
 				this.submitAttempt = true;
 
@@ -163,6 +180,55 @@ export class POSMergeModalPage extends PageBase {
 				this.contactSearch();
 			}
 		}
+	}
+
+	validatePaymentTarget(showMessage = false) {
+		this.paymentValidationMessage = '';
+		this.isCanMerge = true;
+
+		if (this.paymentReceived > 0 && this.mergePayableAmount < this.paymentReceived) {
+			this.isCanMerge = false;
+			this.paymentValidationMessage = 'Cannot merge these bills because the merged order total cannot cover the paid amount.';
+			if (showMessage) this.env.showMessage(this.paymentValidationMessage, 'warning');
+			return false;
+		}
+
+		return true;
+	}
+
+	getMergePayableAmount() {
+		if (!Array.isArray(this.selectedOrders)) return 0;
+		return Math.round(
+			this.selectedOrders.reduce((sum, order) => {
+				const total = parseFloat(order?.CalcTotalOriginal) || 0;
+				const discountFromSalesman = parseFloat(order?.OriginalDiscountFromSalesman) || 0;
+				return sum + Math.max(0, total - discountFromSalesman);
+			}, 0)
+		);
+	}
+
+	private getPaymentReceivedForOrders(ids) {
+		if (!ids?.length) return Promise.resolve(0);
+		return Promise.all(ids.map((id) => this.getPaymentReceived(id))).then((amounts) => amounts.reduce((sum, amount) => sum + amount, 0));
+	}
+
+	private getPaymentReceived(IDSaleOrder) {
+		return this.pageProvider.commonService
+			.connect('GET', 'BANK/IncomingPaymentDetail', { IDSaleOrder })
+			.toPromise()
+			.then((result: any) => {
+				const paymentList = Array.isArray(result) ? result : [];
+				const paidAmount = paymentList
+					.filter((x) => x.IncomingPayment?.Status == 'Success' && x.IncomingPayment?.IsRefundTransaction == false)
+					.map((x) => parseFloat(x.Amount) || 0)
+					.reduce((a, b) => a + b, 0);
+				const refundAmount = paymentList
+					.filter((x) => (x.IncomingPayment?.Status == 'Success' || x.IncomingPayment?.Status == 'Processing') && x.IncomingPayment?.IsRefundTransaction == true)
+					.map((x) => parseFloat(x.Amount) || 0)
+					.reduce((a, b) => a + b, 0);
+
+				return Math.max(0, paidAmount - refundAmount);
+			});
 	}
 
 	closeModalView() {
