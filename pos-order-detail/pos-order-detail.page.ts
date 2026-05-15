@@ -468,8 +468,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	private updateCanSaveOrder() {
 		const controls = this.formGroup.controls;
-		this.canSaveOrder =
-			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New');
+		this.canSaveOrder = Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New');
 	}
 
 	private updateFoCState(line) {
@@ -581,8 +580,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		if (this.posService.systemConfig.POSEnableWorkOrder) {
 			this.sendKitchenStatus = 'Waiting';
-		}
-		else {
+		} else {
 			this.sendKitchenStatus = 'Serving';
 		}
 	}
@@ -901,7 +899,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.then((_) => {
 							this.openCancellationReason(line, quantity);
 						})
-						.catch((_) => { });
+						.catch((_) => {});
 				} else {
 					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
@@ -977,7 +975,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								],
 							});
 						})
-						.catch((_) => { });
+						.catch((_) => {});
 				} else {
 					if (this.pageConfig.canDeleteItems) {
 						this.env
@@ -1015,7 +1013,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									],
 								});
 							})
-							.catch((_) => { });
+							.catch((_) => {});
 					} else {
 						this.env.showMessage('This account does not have permission to delete products!', 'warning');
 					}
@@ -1291,6 +1289,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			IsRefundTransaction: isRefund,
 			RefundAmount: amount ?? 0,
 			IDOriginalTransaction: idTransaction,
+			Point: this.item._Customer?.Point || 0,
+			PolLevelName: this.item._Customer?.PolLevelName || '',
+			PointConversionRate: this.item._Customer?.PointConversionRate || 0,
+			MaxPointUsagePercent: this.posService.systemConfig.POSMaxPointUsagePercent || 0,
+			DefaultBusinessPartnerId: this.posService.systemConfig.SODefaultBusinessPartner?.Id,
 		};
 		const modal = await this.modalController.create({
 			component: PaymentModalComponent,
@@ -1473,7 +1476,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => { });
+					.catch((_) => {});
 			} else {
 				let cancelData: any = {
 					Code: data.Code,
@@ -1509,7 +1512,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => { });
+					.catch((_) => {});
 			}
 		}
 	}
@@ -1520,15 +1523,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.env
 					.showPrompt('Bạn có muốn đơn gửi bar/bếp ?', null, 'Thông báo')
 					.then(() => this.sendKitchenWithoutPrint())
-					.catch(() => { });
+					.catch(() => {});
 			}
-		}
-		else {
+		} else {
 			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
 				this.env
 					.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
 					.then(() => this.sendKitchen())
-					.catch(() => { });
+					.catch(() => {});
 			}
 		}
 	}
@@ -2303,7 +2305,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					.then(() => {
 						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
 					})
-					.catch(() => { });
+					.catch(() => {});
 			});
 	}
 
@@ -2565,7 +2567,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		line.StatusColor = lib.getAttrib(line.Status, this.posService.dataSource.orderDetailStatusList, 'Color', '--', 'Code');
 	}
 
-	patchOrderLines() { }
+	patchOrderLines() {}
 
 	private addOrderLine(line) {
 		let groups = <FormArray>this.formGroup.controls.OrderLines;
@@ -3023,7 +3025,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					changed.Status = 'Done';
 					this.setOrderValue(changed, true);
 				})
-				.catch((_) => { });
+				.catch((_) => {});
 		} else {
 			this.item.OrderLines.forEach((line) => {
 				if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -3049,7 +3051,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			})
 			.catch((err) => {
 				this.env.showErrorMessage(err);
-			}).finally(() => {
+			})
+			.finally(() => {
 				this.submitAttempt = false;
 			});
 	}
@@ -3211,7 +3214,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 		const tagInfo = data?.tagInfo?.uid;
 
-
 		const idbp = nfcValue?.IDBP;
 		if (!idbp) {
 			await this.retryInvalidPosQrCode('Invalid NFC content');
@@ -3332,7 +3334,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	menuItemsPaging(event) { }
+	menuItemsPaging(event) {}
 
 	isCompleteLoaded = false;
 	async previewBill() {
