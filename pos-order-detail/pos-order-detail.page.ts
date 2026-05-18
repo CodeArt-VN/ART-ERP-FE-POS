@@ -63,6 +63,15 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	segmentView = '0';
 	idTable: any; //Default table
 	paymentList = [];
+	loyaltyPointUsage: any = {
+		finalPayableAmount: 0,
+		capAmount: 0,
+		usedAmount: 0,
+		remainingCapAmount: 0,
+		exceededAmount: 0,
+		isExceeded: false,
+		maxPointUsagePercent: 0,
+	};
 	subPromotion: any;
 	private formValueChangesSubscription?: Subscription;
 	private _filteredItemsCache: Map<string, any[]> = new Map();
@@ -90,7 +99,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	_defaultREFID = 0;
 
 	_contactDataSource = this.buildSelectDataSource((term) => {
-		return this.contactProvider.search({
+		return this.commonService.connect('GET', 'CRM/Contact/POSSearch', {
 			Take: 20,
 			Skip: 0,
 			SkipMCP: true,
@@ -402,7 +411,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					distinctUntilChanged(),
 					tap(() => (this._contactDataSource.loading = true)),
 					switchMap((term) => {
-						console.log('search term:', term);
 						return this._contactDataSource.searchFunction(term).pipe(
 							catchError(() => of([])), // empty list on error
 							tap(() => (this._contactDataSource.loading = false)),
@@ -468,8 +476,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	private updateCanSaveOrder() {
 		const controls = this.formGroup.controls;
-		this.canSaveOrder =
-			Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New');
+		this.canSaveOrder = Object.values(controls).some((control: any) => control.dirty || control.errors) || this.item?.OrderLines?.some((d) => d.Status == 'New');
 	}
 
 	private updateFoCState(line) {
@@ -581,8 +588,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		if (this.posService.systemConfig.POSEnableWorkOrder) {
 			this.sendKitchenStatus = 'Waiting';
-		}
-		else {
+		} else {
 			this.sendKitchenStatus = 'Serving';
 		}
 	}
@@ -901,7 +907,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.then((_) => {
 							this.openCancellationReason(line, quantity);
 						})
-						.catch((_) => { });
+						.catch((_) => {});
 				} else {
 					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
@@ -977,7 +983,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								],
 							});
 						})
-						.catch((_) => { });
+						.catch((_) => {});
 				} else {
 					if (this.pageConfig.canDeleteItems) {
 						this.env
@@ -1015,7 +1021,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 									],
 								});
 							})
-							.catch((_) => { });
+							.catch((_) => {});
 					} else {
 						this.env.showMessage('This account does not have permission to delete products!', 'warning');
 					}
@@ -1050,7 +1056,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			});
 			await modal.present();
 			const { data, role } = await modal.onWillDismiss();
-			console.log(data);
 			if (data) {
 				let uom = item.UoMs.find((d) => d.Id == line.IDUoM);
 				let price = uom.PriceList.find((d) => d.Type == 'SalePriceList');
@@ -1291,6 +1296,12 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			IsRefundTransaction: isRefund,
 			RefundAmount: amount ?? 0,
 			IDOriginalTransaction: idTransaction,
+			Point: this.item._Customer?.Point || 0,
+			PolLevelName: this.item._Customer?.PolLevelName || '',
+			PointConversionRate: this.item._Customer?.PointConversionRate || 0,
+			MaxPointUsagePercent: this.posService.systemConfig.POSMaxPointUsagePercent || 0,
+			DefaultBusinessPartnerId: this.posService.systemConfig.SODefaultBusinessPartner?.Id,
+			LoyaltyPointUsage: this.calculateLoyaltyPointUsage(),
 		};
 		const modal = await this.modalController.create({
 			component: PaymentModalComponent,
@@ -1403,7 +1414,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		});
 		await modal.present();
 		const { data } = await modal.onWillDismiss();
-		console.log('Dismiss : ', data);
 		if (data !== undefined) {
 			this.item.IsInvoiceRequired = true;
 			this.formGroup.controls.IsInvoiceRequired.patchValue(true);
@@ -1473,7 +1483,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => { });
+					.catch((_) => {});
 			} else {
 				let cancelData: any = {
 					Code: data.Code,
@@ -1509,7 +1519,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 								});
 						}
 					})
-					.catch((_) => { });
+					.catch((_) => {});
 			}
 		}
 	}
@@ -1520,15 +1530,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				this.env
 					.showPrompt('Bạn có muốn đơn gửi bar/bếp ?', null, 'Thông báo')
 					.then(() => this.sendKitchenWithoutPrint())
-					.catch(() => { });
+					.catch(() => {});
 			}
-		}
-		else {
+		} else {
 			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
 				this.env
 					.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
 					.then(() => this.sendKitchen())
-					.catch(() => { });
+					.catch(() => {});
 			}
 		}
 	}
@@ -2303,7 +2312,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					.then(() => {
 						if (this.posService.systemConfig.POSEnablePrintTemporaryBill) this.sendPrint('TemporaryBill');
 					})
-					.catch(() => { });
+					.catch(() => {});
 			});
 	}
 
@@ -2524,6 +2533,56 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.item.AdditionsAmountPercent = ((this.item.AdditionsAmount / this.item.OriginalTotalAfterDiscount) * 100.0).toFixed(0);
 		this.item.OriginalDiscountFromSalesmanPercent = ((this.item.OriginalDiscountFromSalesman / this.item.CalcTotalOriginal) * 100.0).toFixed(0);
 		this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
+		this.calculateLoyaltyPointUsage();
+	}
+
+	private getFinalPayableAmount() {
+		return Math.max(0, Math.round((Number(this.item?.CalcTotalOriginal) || 0) - (Number(this.item?.OriginalDiscountFromSalesman) || 0)));
+	}
+
+	private getPaymentAmount(paymentDetail) {
+		return Math.abs(Number(paymentDetail?.Amount ?? paymentDetail?.IncomingPayment?.Amount) || 0);
+	}
+
+	private getUsedLoyaltyPointAmount() {
+		return (this.paymentList || [])
+			.filter((paymentDetail) => {
+				const payment = paymentDetail?.IncomingPayment || paymentDetail;
+				return payment?.Type == 'LoyaltyPoint' && payment?.Status == 'Success';
+			})
+			.reduce((sum, paymentDetail) => {
+				const payment = paymentDetail?.IncomingPayment || paymentDetail;
+				const amount = this.getPaymentAmount(paymentDetail);
+				return sum + (payment?.IsRefundTransaction ? -amount : amount);
+			}, 0);
+	}
+
+	private calculateLoyaltyPointUsage() {
+		const maxPointUsagePercent = Number(this.posService.systemConfig.POSMaxPointUsagePercent) || 0;
+		const finalPayableAmount = this.getFinalPayableAmount();
+		const capAmount = Math.floor((finalPayableAmount * maxPointUsagePercent) / 100);
+		const usedAmount = Math.max(0, this.getUsedLoyaltyPointAmount());
+		const exceededAmount = Math.max(0, usedAmount - capAmount);
+
+		this.loyaltyPointUsage = {
+			finalPayableAmount,
+			capAmount,
+			usedAmount,
+			remainingCapAmount: Math.max(0, capAmount - usedAmount),
+			exceededAmount,
+			isExceeded: exceededAmount > 0,
+			maxPointUsagePercent,
+		};
+
+		return this.loyaltyPointUsage;
+	}
+
+	private validateLoyaltyPointBeforeDone() {
+		const usage = this.calculateLoyaltyPointUsage();
+		if (!usage.isExceeded) return true;
+
+		this.env.showMessage(`Loyalty point payment exceeds allowed limit by ${usage.exceededAmount.toLocaleString('vi-VN')}`, 'warning');
+		return false;
 	}
 
 	private getMenuEffectivePrice(menuList, itemId, uomId): number | null {
@@ -2565,7 +2624,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		line.StatusColor = lib.getAttrib(line.Status, this.posService.dataSource.orderDetailStatusList, 'Color', '--', 'Code');
 	}
 
-	patchOrderLines() { }
+	patchOrderLines() {}
 
 	private addOrderLine(line) {
 		let groups = <FormArray>this.formGroup.controls.OrderLines;
@@ -2957,6 +3016,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 					this.item.Received = PaidAmounted - RefundAmount;
 					this.item.Debt = Math.round(this.item.CalcTotalOriginal - this.item.OriginalDiscountFromSalesman - this.item.Received);
+					this.calculateLoyaltyPointUsage();
 					if (this.item.Debt > 0) {
 						this.item.IsDebt = true;
 					}
@@ -2975,6 +3035,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	doneOrder() {
+		if (!this.validateLoyaltyPointBeforeDone()) return;
+
 		let changed: any = { OrderLines: [] };
 		const checkStatusDone = this.item.OrderLines.find((line) => line.Status != 'Serving');
 		if (checkStatusDone) {
@@ -3023,7 +3085,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					changed.Status = 'Done';
 					this.setOrderValue(changed, true);
 				})
-				.catch((_) => { });
+				.catch((_) => {});
 		} else {
 			this.item.OrderLines.forEach((line) => {
 				if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -3049,7 +3111,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			})
 			.catch((err) => {
 				this.env.showErrorMessage(err);
-			}).finally(() => {
+			})
+			.finally(() => {
 				this.submitAttempt = false;
 			});
 	}
@@ -3211,7 +3274,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 		const tagInfo = data?.tagInfo?.uid;
 
-
 		const idbp = nfcValue?.IDBP;
 		if (!idbp) {
 			await this.retryInvalidPosQrCode('Invalid NFC content');
@@ -3332,7 +3394,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	menuItemsPaging(event) { }
+	menuItemsPaging(event) {}
 
 	isCompleteLoaded = false;
 	async previewBill() {

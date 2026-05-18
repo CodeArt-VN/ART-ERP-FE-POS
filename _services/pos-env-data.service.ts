@@ -45,7 +45,8 @@ export class POSEnviromentDataService {
 		POSEnableWorkOrder: false,
 		POSWorkOrderMethod: '0',
 		POSWorkOrderPrintStatus: '1',
-
+		POSMaxPointUsagePercent: 0,
+		
 		BKIncomingDefaultBankName: '',
 		BKIncomingDefaultBankAccount: '',
 		BKIncomingQRPrefix: '',

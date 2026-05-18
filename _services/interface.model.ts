@@ -265,6 +265,8 @@ export interface POSConfig {
 	POSEnableWorkOrder: boolean;
 	POSWorkOrderMethod: string;
 	POSWorkOrderPrintStatus: string;
+	POSMaxPointUsagePercent: number;
+
 
 	// QR Code Payment
 	BKIncomingDefaultBankName?: any;
