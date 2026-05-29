@@ -2940,6 +2940,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						};
 						e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.posService.dataSource.paymentTypeList, 'Name', '--', 'Code');
 					});
+
+					let HasIncomingPayment = false;
+					if(nextList.length > 0) {
+						HasIncomingPayment = true;
+					};
 					if (!Array.isArray(this.paymentList)) this.paymentList = [];
 					this.paymentList.splice(0, this.paymentList.length, ...nextList);
 					let PaidAmounted = this.paymentList
@@ -2957,7 +2962,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						this.item.IsDebt = true;
 					}
 
-					if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done') {
+					if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done' && HasIncomingPayment) {
 						this.env.showMessage('The order has been paid, the system will automatically close this bill.');
 						this.formGroup.enable();
 						this.doneOrder();
