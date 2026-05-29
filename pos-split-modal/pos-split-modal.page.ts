@@ -686,17 +686,19 @@ export class POSSplitModalPage extends PageBase {
 			const totalProp = parseInt(originalItem[prop]) || 0; // total prop value
 			let allocated = 0;
 
-			for (let idx = 0; idx < splitDetails.length; idx++) {
+			// Allocate split rows first, then assign the remaining value to the original row.
+			for (let idx = 1; idx < splitDetails.length; idx++) {
 				const line = splitDetails[idx];  // current line
-				if (idx === 0) {
-					line[prop] = Math.max(0, totalProp - allocated); // remainder gets rest
-				} else if (quantityTotal > 0 && totalProp > 0) {
-					line[prop] = Math.round((totalProp * (parseInt(line.Quantity) || 0)) / quantityTotal);  // proportional split
-					allocated += line[prop]; // accumulate allocated
+				if (quantityTotal > 0 && totalProp > 0) {
+					const splitValue = Math.round((totalProp * (parseInt(line.Quantity) || 0)) / quantityTotal);  // proportional split
+					line[prop] = Math.min(splitValue, Math.max(0, totalProp - allocated));
+					allocated += line[prop];
 				} else {
 					line[prop] = 0; // fallback 
 				}
 			}
+			// set Original bill
+			splitDetails[0][prop] = Math.max(0, totalProp - allocated); // remainder gets rest
 		}
 
 		splitDetails.forEach((line) => this.calcOrderLine(line));
