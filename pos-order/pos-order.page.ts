@@ -190,7 +190,7 @@ export class POSOrderPage extends PageBase {
 							this.pageConfig.isEndOfData = true;
 						}
 						if (result.length > 0) {
-							this.items = this.dataManagementService.mergeItems(this.items, result);
+							this.items = this.dataManagementService.appendPaginatedItems(this.items, result);
 						}
 
 						this.loadedData(event);
