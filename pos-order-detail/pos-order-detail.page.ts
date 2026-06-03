@@ -110,7 +110,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	isEnter = false;
 	sendKitchenStatus = '';
 	@ViewChild('contactInput') contactInput: InputControlComponent;
-	paymentSuccessTriggered = false; // check signalr payment success
 	lastEventRefreshTime = 0;
 	private readonly EVENT_REFRESH_THROTTLE = 5000; // 5 seconds in milliseconds
 	constructor(
@@ -201,7 +200,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			if (value.IDSaleOrder != this.item?.Id) return;
 
 			switch (data.code) {
-				case 'signalR:POSOrderPaymentUpdate':
 				case 'signalR:POSOrderFromCustomer':
 				case 'signalR:POSOrderFromStaff':
 				case 'signalR:POSLockOrderFromStaff':
@@ -212,10 +210,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				case 'signalR:POSOrderMergedFromStaff':
 				case 'signalR:POSSupport':
 				case 'signalR:POSCallToPay':
-					this.refreshFromEvent();
-					break;
+				case 'signalR:POSOrderPaymentUpdate':
 				case 'signalR:POSPaymentSuccess':
-					this.paymentSuccessTriggered = true;
 					this.refreshFromEvent();
 					break;
 
@@ -3003,6 +2999,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						};
 						e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.posService.dataSource.paymentTypeList, 'Name', '--', 'Code');
 					});
+
+					let HasIncomingPayment = false;
+					if(nextList.length > 0) {
+						HasIncomingPayment = true;
+					};
 					if (!Array.isArray(this.paymentList)) this.paymentList = [];
 					this.paymentList.splice(0, this.paymentList.length, ...nextList);
 					let PaidAmounted = this.paymentList
@@ -3021,7 +3022,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						this.item.IsDebt = true;
 					}
 
-					if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done' && this.paymentSuccessTriggered) {
+					if (this.posService.systemConfig.POSSettleAtCheckout && Math.abs(this.item.Debt) < 10 && this.item.Status != 'Done' && HasIncomingPayment) {
 						this.env.showMessage('The order has been paid, the system will automatically close this bill.');
 						this.formGroup.enable();
 						this.doneOrder();
@@ -3096,7 +3097,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			changed.Status = 'Done';
 			this.setOrderValue(changed, true);
 		}
-		this.paymentSuccessTriggered = false; // reset flag
 	}
 
 	deleteVoucher(p) {
