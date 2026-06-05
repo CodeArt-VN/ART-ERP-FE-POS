@@ -896,19 +896,22 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.addOrderLine(line);
 			this.setOrderValue({ OrderLines: [line], Status: 'New' });
 		} else {
-			if (line.Quantity > 0 && line.Quantity + quantity < line.ShippedQuantity) {
+			const nextQuantity = isNumberInput ? quantity : line.Quantity + quantity;
+			if (line.Quantity > 0 && nextQuantity < line.ShippedQuantity) {
 				if (this.pageConfig.canDeleteItems) {
+					const reduceQuantity = isNumberInput ? quantity - line.Quantity : quantity;
 					this.env
 						.showPrompt('Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?', item.Name, 'Xóa sản phẩm')
 						.then((_) => {
-							this.openCancellationReason(line, quantity);
+							this.openCancellationReason(line, reduceQuantity);
 						})
 						.catch((_) => {});
 				} else {
 					this.env.showMessage('Item has been sent to Bar/Kitchen');
 					return;
 				}
-			} else if ((!isNumberInput && line.Quantity + quantity > 0) || (isNumberInput && quantity > 0)) {
+			} else if (nextQuantity > 0) {
+				const previousQuantity = line.Quantity;
 				line.Quantity += quantity;
 				if (isNumberInput) line.Quantity = quantity;
 				if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
@@ -917,7 +920,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				let subItems = [];
 				if (line.SubItems && line.SubItems.length > 0) {
 					line.SubItems.forEach((so) => {
-						let orginalQty = so.Quantity / (line.Quantity - quantity);
+						let orginalQty = so.Quantity / previousQuantity;
 						so.Quantity = orginalQty * line.Quantity;
 					});
 					subItems = line.SubItems;
@@ -2718,7 +2721,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						idx = this.item[c].findIndex((d) => d.Code == line.Code);
 					}
 					//Remove Order line
-					if (line.Quantity < 1) {
+					if (line.Quantity <= 0) {
 						if (line.Id) {
 							let deletedLines = this.formGroup.get('DeletedLines').value;
 							deletedLines.push(line.Id);
