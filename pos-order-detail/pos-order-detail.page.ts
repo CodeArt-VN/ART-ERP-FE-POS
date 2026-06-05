@@ -359,6 +359,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			return;
 		}
 
+		if(this.item.Status == 'Done' || this.item.Status == 'TemporaryBill') {
+			return;
+		}
+
 		if (!this.item?.Id) {
 			this.autoApplyPending = true;
 			return;
