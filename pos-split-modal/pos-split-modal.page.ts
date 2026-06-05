@@ -452,12 +452,12 @@ export class POSSplitModalPage extends PageBase {
 			return;
 		}
 
-		const maxValue = this.toQuantity(originalRow[prop]);
+		const maxValue = parseInt(originalRow[prop]) || 0;
 		const splitDetails = originalRow.splitDetail || [];
 		const editingIdx = splitDetails.indexOf(editingRow);
-		const previousValue = this.toQuantity(editingRow._previousQuantity);
-		const nextValue = this.roundQuantity(Math.max(0, Math.min(this.toQuantity(editingRow[prop]), maxValue)));// clamp value
-		const delta = this.roundQuantity(nextValue - previousValue); // change difference
+		const previousValue = parseInt(editingRow._previousQuantity) || 0;
+		const nextValue = Math.max(0, Math.min(parseInt(editingRow[prop]) || 0, maxValue));// clamp value
+		const delta = nextValue - previousValue; // change difference
 
 		editingRow[prop] = nextValue;
 
@@ -468,13 +468,13 @@ export class POSSplitModalPage extends PageBase {
 				if (needed <= 0) {
 					break;
 				}
-				const sourceValue = this.toQuantity(sourceRow[prop]); // source quantity
+				const sourceValue = parseInt(sourceRow[prop]) || 0; // source quantity
 				const deducted = Math.min(sourceValue, needed); // amount to take
-				sourceRow[prop] = this.roundQuantity(sourceValue - deducted); // reduce source
-				needed = this.roundQuantity(needed - deducted);
+				sourceRow[prop] = sourceValue - deducted; // reduce source
+				needed -= deducted;
 			}
 			if (needed > 0) {
-				editingRow[prop] = this.roundQuantity(nextValue - needed);  // rollback excess
+				editingRow[prop] = nextValue - needed;  // rollback excess
 			}
 		}
 
@@ -485,15 +485,15 @@ export class POSSplitModalPage extends PageBase {
 			if (firstRow === editingRow) {
 				if (splitDetails.length > 1) {
 					const nextRow = splitDetails[1];  // next row
-					nextRow[prop] = this.roundQuantity(this.toQuantity(nextRow[prop]) + returned); // give next row
+					nextRow[prop] = (parseInt(nextRow[prop]) || 0) + returned; // give next row
 				}
 			} else {
-				firstRow[prop] = this.roundQuantity(this.toQuantity(firstRow[prop]) + returned);  // return to remainder
+				firstRow[prop] = (parseInt(firstRow[prop]) || 0) + returned;  // return to remainder
 			}
 		}
 
 		this.remainderForItem(originalRow); // recalc remainder
-		editingRow._previousQuantity = this.toQuantity(editingRow[prop]);  // update previous
+		editingRow._previousQuantity = parseInt(editingRow[prop]) || 0;  // update previous
 		this.checkValid();
 	}
 
@@ -563,9 +563,9 @@ export class POSSplitModalPage extends PageBase {
 		line.BuyPrice = parseInt(line.BuyPrice) || 0;
 
 		if (line.ShippedQuantity != 0) {
-			line.Quantity = line.ShippedQuantity = this.roundQuantity(this.toQuantity(line.Quantity));
+			line.Quantity = line.ShippedQuantity = parseInt(line.Quantity) || 0;
 		} else {
-			line.Quantity = this.roundQuantity(this.toQuantity(line.Quantity));
+			line.Quantity = parseInt(line.Quantity) || 0;
 		}
 		line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscount1) || 0;
 		line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscount2) || 0;
@@ -670,16 +670,16 @@ export class POSSplitModalPage extends PageBase {
 
 		const splitDetails = originalItem.splitDetail; // all rows
 		const remainderRow = splitDetails[0]; // remainder holder
-		const originalQty = this.toQuantity(originalItem.Quantity);  // total quantity
+		const originalQty = parseInt(originalItem.Quantity) || 0;  // total quantity
 		const editableRows = splitDetails.slice(1); // user rows
-		const allocatedQty = editableRows.reduce((sum, row) => sum + this.toQuantity(row.Quantity), 0);  // sum allocated
+		const allocatedQty = editableRows.reduce((sum, row) => sum + (parseInt(row.Quantity) || 0), 0);  // sum allocated
 
-		remainderRow.Quantity = this.roundQuantity(Math.max(0, originalQty - allocatedQty));  // remaining quantity
+		remainderRow.Quantity = Math.max(0, originalQty - allocatedQty);  // remaining quantity
 		this.linePropsByQuantity(originalItem, splitDetails);  // recalc props
 	}
 
 	linePropsByQuantity(originalItem, splitDetails) {
-		const quantityTotal = this.toQuantity(originalItem.Quantity);
+		const quantityTotal = parseInt(originalItem.Quantity) || 0;
 		const props = ['ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
 
 		for (const prop of props) {
@@ -690,7 +690,7 @@ export class POSSplitModalPage extends PageBase {
 			for (let idx = 1; idx < splitDetails.length; idx++) {
 				const line = splitDetails[idx];  // current line
 				if (quantityTotal > 0 && totalProp > 0) {
-					const splitValue = Math.round((totalProp * this.toQuantity(line.Quantity)) / quantityTotal);  // proportional split
+					const splitValue = Math.round((totalProp * (parseInt(line.Quantity) || 0)) / quantityTotal);  // proportional split
 					line[prop] = Math.min(splitValue, Math.max(0, totalProp - allocated));
 					allocated += line[prop];
 				} else {
@@ -727,19 +727,7 @@ export class POSSplitModalPage extends PageBase {
 	}
 
 	capturePreviousQuantity(row) {
-		row._previousQuantity = this.toQuantity(row?.Quantity); // store old quantity
-	}
-
-	private toQuantity(value): number {
-		if (value == null || value === '') return 0;
-		const raw = String(value).trim();
-		const normalized = raw.includes('.') ? raw.replace(/,/g, '') : raw.replace(',', '.');
-		const quantity = parseFloat(normalized);
-		return Number.isFinite(quantity) ? quantity : 0;
-	}
-
-	private roundQuantity(value: number): number {
-		return Math.round((value + Number.EPSILON) * 100) / 100;
+		row._previousQuantity = parseInt(row?.Quantity) || 0; // store old quantity
 	}
 
 	getTransferPriority(splitDetails, editingIdx: number) {
