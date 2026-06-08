@@ -415,6 +415,7 @@ export class POSOrderPage extends PageBase {
 			componentProps: {
 				selectedOrder: this.selectedItems[0],
 				orders: this.items,
+				POSAllowDecimalQuantity: this.POSQuantityDTO.POSAllowDecimalQuantity,
 			},
 		});
 		await modal.present();
