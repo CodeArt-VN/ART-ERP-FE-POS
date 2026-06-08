@@ -2428,7 +2428,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		for (let m of this.posService.dataSource.menuList) for (let mi of m.Items) mi.BookedQuantity = 0;
 
 		for (let line of this.item.OrderLines) {
-			line._serviceCharge = this.posService.systemConfig.POSServiceCharge || 0;
+			const isTipLine = line.IDItem == -2;
+			line._serviceCharge = isTipLine ? 0 : this.posService.systemConfig.POSServiceCharge || 0;
 
 			//Parse data + Tính total
 			line.UoMPrice = line.IsPromotionItem ? 0 : parseFloat(line.UoMPrice) || 0;
@@ -2438,13 +2439,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.item.OriginalTotalBeforeDiscount += line.OriginalTotalBeforeDiscount;
 
 			//line.OriginalPromotion
-			line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount1) || 0;
-			line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseFloat(line.OriginalDiscount2) || 0;
+			line.OriginalDiscount1 = line.IsPromotionItem || isTipLine ? 0 : parseFloat(line.OriginalDiscount1) || 0;
+			line.OriginalDiscount2 = line.IsPromotionItem || isTipLine ? 0 : parseFloat(line.OriginalDiscount2) || 0;
 			line.OriginalDiscountByItem = line.OriginalDiscount1 + line.OriginalDiscount2;
 			line.OriginalDiscountByGroup = 0;
 			line.OriginalDiscountByLine = line.OriginalDiscountByItem + line.OriginalDiscountByGroup;
-			line.OriginalDiscountByOrder = parseFloat(line.OriginalDiscountByOrder) || 0;
-			if (this.Discount?.Percent > 0) {
+			line.OriginalDiscountByOrder = isTipLine ? 0 : parseFloat(line.OriginalDiscountByOrder) || 0;
+			if (!isTipLine && this.Discount?.Percent > 0) {
 				line.OriginalDiscountByOrder = (this.Discount?.Percent * line.OriginalTotalBeforeDiscount) / 100;
 			}
 			this.item.OriginalDiscountByOrder += line.OriginalDiscountByOrder;
@@ -2499,6 +2500,21 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				}
 
 			if (!foundItem) {
+				if (line.IDItem == -2) {
+					line._item = {
+						Id: -2,
+						Name: line.Name || 'TIP',
+						Image: null,
+						UoMs: [
+							{
+								Id: line.IDUoM,
+								Name: line.UoMName || '',
+								PriceList: [{ Price: line.UoMPrice }],
+							},
+						],
+					};
+					line._IDKitchens = [];
+				}
 				dog && console.warn('⚠️ Item NOT found in menuList! IDItem:', line.IDItem, 'Status:', line.Status);
 			}
 
