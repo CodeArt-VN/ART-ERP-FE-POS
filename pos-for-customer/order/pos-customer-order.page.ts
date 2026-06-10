@@ -107,6 +107,7 @@ export class POSCustomerOrderPage extends PageBase {
 
 	////EVENTS
 	ngOnInit() {
+		this.env.ensureSignalR();
 		this.pageConfig.subscribePOSOrder = this.env.getEvents().subscribe((data) => {
 			switch (data.code) {
 				case 'app:POSOrderPaymentUpdate':

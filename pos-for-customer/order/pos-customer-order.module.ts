@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Routes, RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
-import { ShareModule } from 'src/app/share.module';
+import { TranslateModule } from '@ngx-translate/core';
+import { ShareDirectivesModule } from 'src/app/directives/share-directives.module';
 import { POSCustomerOrderPage } from './pos-customer-order.page';
 import { PipesModule } from 'src/app/pipes/pipes.module';
 import { POSCustomerMemoModalPage } from '../memo/pos-memo-modal.page';
@@ -16,7 +17,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, PipesModule, RouterModule.forChild(routes)],
+	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, TranslateModule, ShareDirectivesModule, PipesModule, RouterModule.forChild(routes)],
 	declarations: [POSCustomerOrderPage, POSCustomerMemoModalPage, POSForCustomerPaymentModalPage],
 })
 export class POSCustomerOrderPageModule {}

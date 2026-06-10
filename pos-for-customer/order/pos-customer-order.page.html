@@ -526,7 +526,11 @@
 				</ng-container>
 			</ng-container>
 		</ion-grid>
-		<app-page-message [itemsLength]="menuList.length" [showSpinner]="pageConfig.showSpinner"></app-page-message>
+		<div class="message-container" *ngIf="pageConfig.showSpinner || !menuList.length">
+			<div *ngIf="pageConfig.showSpinner" class="page-loading">
+				<ion-spinner name="dots"></ion-spinner>
+			</div>
+		</div>
 	</div>
 
 	<div style="margin-top: 60px"></div>
