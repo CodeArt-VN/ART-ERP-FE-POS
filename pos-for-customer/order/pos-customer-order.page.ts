@@ -208,16 +208,18 @@ export class POSCustomerOrderPage extends PageBase {
 			}
 		});
 		if (!this.item?.Id) {
-			await this.checkOrderOfTable(this.idTable);
-			if (this.id != 0) {
-				let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
-				history.pushState({}, null, newURL);
-				this.env.showAlert(
-					'Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ',
-					'Kiểm tra đơn hàng và cập nhật',
-					'Thông báo'
-				);
-				this.refresh();
+			if (!this.Table?.IsAllowMultipleOrder) {
+				await this.checkOrderOfTable(this.idTable);
+				if (this.id != 0) {
+					let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
+					history.pushState({}, null, newURL);
+					this.env.showAlert(
+						'Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ',
+						'Kiểm tra đơn hàng và cập nhật',
+						'Thông báo'
+					);
+					this.refresh();
+				}
 			}
 			if (this.formGroup.controls['Id'].value != 0 && this.id == 0) {
 				this.env
@@ -329,6 +331,7 @@ export class POSCustomerOrderPage extends PageBase {
 			line = {
 				IDOrder: this.item.Id,
 				Id: 0,
+				Code: lib.generateUID('GUEST'),
 				Type: 'TableService',
 				Status: 'New',
 
@@ -350,6 +353,9 @@ export class POSCustomerOrderPage extends PageBase {
 				IDPromotion: null,
 
 				OriginalDiscountFromSalesman: 0,
+				CreatedDate: new Date(),
+				ModifiedDate: new Date(),
+				SubItems: [],
 			};
 
 			this.item.OrderLines.push(line);
@@ -369,6 +375,7 @@ export class POSCustomerOrderPage extends PageBase {
 					OrderLines: [
 						{
 							Id: line.Id,
+							Code: line.Code,
 							IDUoM: line.IDUoM,
 							Quantity: line.Quantity,
 						},
@@ -385,6 +392,7 @@ export class POSCustomerOrderPage extends PageBase {
 							OrderLines: [
 								{
 									Id: line.Id,
+									Code: line.Code,
 									IDUoM: line.IDUoM,
 									Quantity: line.Quantity,
 								},
@@ -419,7 +427,7 @@ export class POSCustomerOrderPage extends PageBase {
 		if (role == 'confirm') {
 			line.Remark = data ? data.toString() : null;
 			this.setOrderValue({
-				OrderLines: [{ Id: line.Id, IDUoM: line.IDUoM, Remark: line.Remark }],
+				OrderLines: [{ Id: line.Id, Code: line.Code, IDUoM: line.IDUoM, Remark: line.Remark }],
 			});
 		}
 	}
@@ -929,6 +937,7 @@ export class POSCustomerOrderPage extends PageBase {
 		let group = this.formBuilder.group({
 			IDOrder: [line.IDOrder],
 			Id: new FormControl({ value: line.Id, disabled: true }),
+			Code: [line.Code],
 
 			Type: [line.Type],
 			Status: new FormControl({ value: line.Status, disabled: true }),
@@ -1083,10 +1092,13 @@ export class POSCustomerOrderPage extends PageBase {
 	}
 
 	async saveChange() {
+		if (!this.formGroup.controls.Code.value) {
+			this.formGroup.controls.Code.patchValue(lib.generateUID('GUEST'));
+			this.formGroup.controls.Code.markAsDirty();
+		}
 		this.formGroup.controls.Status.patchValue('New');
 		this.formGroup.controls.Status.markAsDirty();
-		let submitItem = this.getDirtyValues(this.formGroup);
-		this.saveChange2();
+		return this.saveChange2();
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
@@ -1105,14 +1117,38 @@ export class POSCustomerOrderPage extends PageBase {
 				history.pushState({}, null, newURL);
 			}
 
-			this.item = savedItem;
-			if (this.item.Status == 'New') {
-				this.isSuccessModalOpen = true;
+			if (Array.isArray(savedItem)) {
+				this.updateLineIDs(savedItem);
+			} else if (savedItem.Id) {
+				this.item = savedItem;
+				if (this.item.Status == 'New') {
+					this.isSuccessModalOpen = true;
+				}
 			}
 		}
-		this.loadedData();
-
 		this.submitAttempt = false;
+		this.loadedData();
+	}
+
+	private updateLineIDs(savedLines: any[]): void {
+		if (!Array.isArray(savedLines)) return;
+
+		for (let savedLine of savedLines) {
+			let idx = this.item.OrderLines.findIndex((d) => d.Code == savedLine.Code);
+			if (idx == -1) continue;
+
+			Object.assign(this.item.OrderLines[idx], savedLine);
+			let formLine = this.formGroup.controls.OrderLines?.['controls']?.[idx];
+			if (!formLine) continue;
+
+			for (const c in savedLine) {
+				if (formLine.controls[c]) {
+					formLine.controls[c].setValue(savedLine[c]);
+				}
+			}
+		}
+
+		this.formGroup.markAsPristine();
 	}
 
 	closeSuccessModal() {
@@ -1137,17 +1173,21 @@ export class POSCustomerOrderPage extends PageBase {
 	async sendOrder() {
 		if (this.Table.IsAllowCustomerOrder == true) {
 			if (this.id == 0) {
-				await this.checkOrderOfTable(this.idTable);
-				if (this.id != 0) {
-					let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
-					history.pushState({}, null, newURL);
-					this.env.showAlert(
-						'Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ',
-						'Kiểm tra đơn hàng và cập nhật',
-						'Thông báo'
-					);
-					this.refresh();
-				} else {
+				if (!this.Table?.IsAllowMultipleOrder) {
+					await this.checkOrderOfTable(this.idTable);
+					if (this.id != 0) {
+						let newURL = '#/pos-customer-order/' + this.id + '/' + this.idTable;
+						history.pushState({}, null, newURL);
+						this.env.showAlert(
+							'Bàn này đã có người đặt hàng trước đó. Nếu không phải là khách hàng đi cùng bạn vui lòng bấm vào loa bên dưới để gọi phục vụ',
+							'Kiểm tra đơn hàng và cập nhật',
+							'Thông báo'
+						);
+						this.refresh();
+						return;
+					}
+				}
+				if (this.id == 0) {
 					this.saveOrder();
 				}
 			} else {
@@ -1159,12 +1199,16 @@ export class POSCustomerOrderPage extends PageBase {
 		}
 	}
 
-	saveOrder() {
-		this.saveChange();
-		this.AllowSendOrder = false;
-		this.IsMyHandle = true;
-		this.OrderLines = [];
-		this.env.setStorage('OrderLines' + this.idTable, []);
+	async saveOrder() {
+		try {
+			await this.saveChange();
+			this.AllowSendOrder = false;
+			this.IsMyHandle = true;
+			this.OrderLines = [];
+			this.env.setStorage('OrderLines' + this.idTable, []);
+		} catch (err) {
+			this.submitAttempt = false;
+		}
 		// this.callOrder();
 	}
 
