@@ -5,6 +5,13 @@ ion-content {
 	--padding-bottom: var(--ion-padding, 0);
 
 	--background: white !important;
+	--ion-color-primary: #005ce6;
+	--ion-color-primary-rgb: 0, 92, 230;
+	--ion-color-primary-contrast: #ffffff;
+	--ion-text-color: #111827;
+	--ion-text-color-rgb: 17, 24, 39;
+
+	color: var(--ion-text-color);
 }
 ion-toolbar {
 	display: none !important;
@@ -15,6 +22,7 @@ ion-toolbar {
 	height: 100%;
 	padding: 20px;
 	background-color: white;
+	color: #111827;
 }
 .sticky-btn {
 	position: sticky;
@@ -39,6 +47,7 @@ swiper-container {
 	swiper-slide {
 		min-width: 100%;
 		background-color: white;
+		color: #111827;
 
 		.slide-view {
 			display: flex;
@@ -71,12 +80,14 @@ swiper-container {
 
 				.header {
 					color: var(--ion-color-primary);
+					font-weight: 600;
 					padding: 10px 30px;
 				}
 
 				.remark {
 					font-size: 70%;
 					padding: 10px 30px;
+					color: #111827;
 				}
 				.note {
 					font-size: 60%;
@@ -84,6 +95,7 @@ swiper-container {
 					text-align: center;
 					position: absolute;
 					bottom: 25px;
+					color: #111827;
 				}
 			}
 		}
