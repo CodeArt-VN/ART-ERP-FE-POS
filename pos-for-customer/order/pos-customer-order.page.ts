@@ -119,14 +119,16 @@ export class POSCustomerOrderPage extends PageBase {
 				case 'app:POSLockOrderFromStaff':
 					this.notifyLockOrderFromStaff(data);
 					break;
-				case 'app:POSLockOrderFromCustomer':
-					this.notifyLockOrderFromCustomer(data);
-					break;
+				// Customer lock/unlock events are emitted by this same guest flow after toggleBillStatus.
+				// case 'app:POSLockOrderFromCustomer':
+				// 	this.notifyLockOrderFromCustomer(data);
+				// 	break;
 				case 'app:POSUnlockOrderFromStaff':
 					this.notifyUnlockOrder(data);
-				case 'app:POSUnlockOrderFromCustomer':
-					this.notifyUnlockOrder(data);
 					break;
+				// case 'app:POSUnlockOrderFromCustomer':
+				// 	this.notifyUnlockOrder(data);
+				// 	break;
 				// case 'app:POSOrderFromCustomer':
 				//     this.notifyFromCustomer(data);
 				//     break;
@@ -716,18 +718,18 @@ export class POSCustomerOrderPage extends PageBase {
 		}
 	}
 
-	private notifyLockOrderFromCustomer(data) {
-		const value = JSON.parse(data.value);
-		let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
-		if (index != -1) {
-			this.refresh();
-			setTimeout(() => {
-				this.isLockOrderFromStaff = false;
-				this.pageConfig.isShowFeature = true;
-				this.isStatusModalOpen = true;
-			}, 2500);
-		}
-	}
+	// private notifyLockOrderFromCustomer(data) {
+	// 	const value = JSON.parse(data.value);
+	// 	let index = value.Tables.map((t) => t.IDTable).indexOf(this.idTable);
+	// 	if (index != -1) {
+	// 		this.refresh();
+	// 		setTimeout(() => {
+	// 			this.isLockOrderFromStaff = false;
+	// 			this.pageConfig.isShowFeature = true;
+	// 			this.isStatusModalOpen = true;
+	// 		}, 2500);
+	// 	}
+	// }
 
 	private notifyUnlockOrder(data) {
 		const value = JSON.parse(data.value);
