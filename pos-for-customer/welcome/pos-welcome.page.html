@@ -36,7 +36,7 @@
 		<ion-row class="sticky-btn">
 			<ion-col>
 				<div class="c-control ion-text-center">
-					<ion-button expand="block" (click)="closeWelcome()">{{'T1694' | translate}}</ion-button>
+					<ion-button expand="block" [disabled]="!Table" (click)="closeWelcome()">{{'T1694' | translate}}</ion-button>
 				</div>
 			</ion-col>
 		</ion-row>

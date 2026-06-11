@@ -17,6 +17,7 @@ export class POSWelcomePage extends PageBase {
 	idTable = this.route.snapshot.paramMap.get('id');
 	currentBranch: any;
 	Table;
+	private serverReady: Promise<void>;
 	constructor(
 		//public pageProvider: POS_TableProvider,
 
@@ -31,6 +32,7 @@ export class POSWelcomePage extends PageBase {
 		public commonService: CommonService
 	) {
 		super();
+		this.serverReady = this.setTenantFromRoute();
 	}
 
 	Note = {
@@ -227,7 +229,7 @@ export class POSWelcomePage extends PageBase {
 				return ApiSetting.apiDomain('POS/ForCustomer/Welcome/') + id;
 			},
 		};
-		this.commonService.getAnItemOnServer(parseInt(this.idTable), '', apiPath).then((result: any) => {
+		this.serverReady.then(() => this.commonService.getAnItemOnServer(parseInt(this.idTable), '', apiPath)).then((result: any) => {
 			this.currentBranch = result.Branch;
 			this.env.branchList.push(this.currentBranch);
 			this.env.storage.app.selectedBranch = this.currentBranch.Id;
@@ -238,7 +240,8 @@ export class POSWelcomePage extends PageBase {
 		});
 	}
 
-	preLoadData(event?: any): void {
+	async preLoadData(event?: any): Promise<void> {
+		await this.serverReady;
 		Promise.all([this.getTable()])
 			.then((values: any) => {
 				this.Table = values[0];
@@ -249,7 +252,18 @@ export class POSWelcomePage extends PageBase {
 			});
 	}
 	async closeWelcome() {
-		if (this.Table.IsAllowMultipleOrder == true) {
+		await this.serverReady;
+
+		if (!this.Table) {
+			try {
+				this.Table = await this.getTable();
+			} catch (err) {
+				this.env.showMessage('Không lấy được thông tin bàn. Vui lòng kiểm tra kết nối và thử lại.', 'warning');
+				return;
+			}
+		}
+
+		if (this.Table?.IsAllowMultipleOrder == true) {
 			this.navCtrl.navigateForward('/pos-customer-order/0/' + this.idTable);
 		} else {
 			let apiPath = {
@@ -289,5 +303,19 @@ export class POSWelcomePage extends PageBase {
 					reject(err);
 				});
 		});
+	}
+
+	private async setTenantFromRoute(): Promise<void> {
+		await this.env.ready;
+
+		const server = this.route.snapshot.queryParamMap.get('server');
+		if (!server || server == this.env.app.tenant.current) return;
+
+		try {
+			await this.env.userContext.switchTenant(server);
+		} catch (err) {
+			console.log(err);
+			this.env.showMessage('Không chuyển được server. Vui lòng kiểm tra lại mã QR.', 'warning');
+		}
 	}
 }
