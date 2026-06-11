@@ -7,6 +7,7 @@ import { POS_TableGroupProvider, POS_TableProvider } from 'src/app/services/stat
 import { FormBuilder, Validators, FormControl } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import QRCode from 'qrcode';
+import { environment } from 'src/environments/environment';
 
 @Component({
 	selector: 'app-pos-table-detail',
@@ -16,6 +17,7 @@ import QRCode from 'qrcode';
 })
 export class POSTableDetailPage extends PageBase {
 	tableGroupList = [];
+	customerOrderUrl  = '';
 	constructor(
 		public pageProvider: POS_TableProvider,
 		public tableGroupProvider: POS_TableGroupProvider,
@@ -72,9 +74,10 @@ export class POSTableDetailPage extends PageBase {
 
 	loadedData(event?: any) {
 		super.loadedData(event);
+		this.customerOrderUrl = this.getCustomerOrderUrl(this.item?.Id);
 		let that = this;
 		QRCode.toDataURL(
-			'http://app.inholdings.vn/#/pos-welcome/' + this.item?.Id,
+			this.customerOrderUrl,
 			{
 				errorCorrectionLevel: 'M',
 				version: 4,
@@ -95,5 +98,10 @@ export class POSTableDetailPage extends PageBase {
 	async saveChange() {
 		this.formGroup.controls.IDBranch.setValue(this.env.selectedBranch);
 		super.saveChange();
+	}
+	private getCustomerOrderUrl(tableId: number | string) {
+		const url = new URL(window.location.href);
+		url.hash = `/pos-welcome/${tableId}`;
+		return url.toString();
 	}
 }
