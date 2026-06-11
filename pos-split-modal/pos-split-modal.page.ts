@@ -564,11 +564,8 @@ export class POSSplitModalPage extends PageBase {
 		line.UoMPrice = line.IsPromotionItem ? 0 : parseInt(line.UoMPrice) || 0;
 		line.BuyPrice = parseInt(line.BuyPrice) || 0;
 
-		if (line.ShippedQuantity != 0) {
-			line.Quantity = line.ShippedQuantity = this.roundQuantity(this.toQuantity(line.Quantity));
-		} else {
-			line.Quantity = this.roundQuantity(this.toQuantity(line.Quantity));
-		}
+		line.Quantity = this.roundQuantity(this.toQuantity(line.Quantity));
+		line.ShippedQuantity = this.roundQuantity(Math.min(this.toQuantity(line.ShippedQuantity), line.Quantity));
 		line.OriginalDiscount1 = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscount1) || 0;
 		line.OriginalDiscount2 = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscount2) || 0;
 		line.OriginalDiscountFromSalesman = line.IsPromotionItem ? 0 : parseInt(line.OriginalDiscountFromSalesman) || 0;
@@ -685,25 +682,43 @@ export class POSSplitModalPage extends PageBase {
 		const props = ['ShippedQuantity', 'OriginalDiscount1', 'OriginalDiscount2', 'OriginalDiscountFromSalesman'];
 
 		for (const prop of props) {
-			const totalProp = parseInt(originalItem[prop]) || 0; // total prop value
+			const totalProp = prop == 'ShippedQuantity' ? this.toQuantity(originalItem[prop]) : parseInt(originalItem[prop]) || 0; // total prop value
 			let allocated = 0;
 
 			// Allocate split rows first, then assign the remaining value to the original row.
 			for (let idx = 1; idx < splitDetails.length; idx++) {
 				const line = splitDetails[idx];  // current line
 				if (quantityTotal > 0 && totalProp > 0) {
-					const splitValue = Math.round((totalProp * this.toQuantity(line.Quantity)) / quantityTotal);  // proportional split
-					line[prop] = Math.min(splitValue, Math.max(0, totalProp - allocated));
+					const splitValue =
+						prop == 'ShippedQuantity'
+							? this.roundQuantity((totalProp * this.toQuantity(line.Quantity)) / quantityTotal)
+							: Math.round((totalProp * this.toQuantity(line.Quantity)) / quantityTotal);  // proportional split
+					line[prop] = Math.min(splitValue, Math.max(0, this.roundQuantity(totalProp - allocated)));
 					allocated += line[prop];
 				} else {
 					line[prop] = 0; // fallback 
 				}
 			}
 			// set Original bill
-			splitDetails[0][prop] = Math.max(0, totalProp - allocated); // remainder gets rest
+			splitDetails[0][prop] = Math.max(0, this.roundQuantity(totalProp - allocated)); // remainder gets rest
 		}
 
+		splitDetails.forEach((line) => this.keepLineStatusByQuantity(originalItem, line));
 		splitDetails.forEach((line) => this.calcOrderLine(line));
+	}
+
+	private keepLineStatusByQuantity(originalItem, line) {
+		if (!line) return;
+
+		const quantity = this.toQuantity(line.Quantity);
+		if (quantity <= 0) {
+			line.ShippedQuantity = 0;
+			return;
+		}
+
+		if (originalItem?.Status) {
+			line.Status = originalItem.Status;
+		}
 	}
 
 	getPayableAmountForSplit(jdx: number): number {
