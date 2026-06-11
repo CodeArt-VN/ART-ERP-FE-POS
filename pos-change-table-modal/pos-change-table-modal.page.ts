@@ -191,9 +191,7 @@ export class POSChangeTableModalPage extends PageBase {
 		console.log(this.item);
 
 		if (i) {
-			console.log(this.orders.find((f) => (f.Tables[0] = i.Id)));
-
-			this.selectedOrder = this.orders.find((f) => (f.Tables[0] = i.Id));
+			this.selectedOrder = this.orders.find((f) => f.Tables[0] == i.Id);
 			this.selectedOrder.TableName = i.Name;
 
 			console.log(this.selectedOrder);
@@ -226,7 +224,6 @@ export class POSChangeTableModalPage extends PageBase {
 
 									let bindOrder;
 									this.item.Ids = [];
-									this.item.Ids.push(this.selectedOrder.Id);
 									this.orders.forEach((e) => {
 										let temp = [];
 										if (this.checkBillStatus.indexOf(e._Status.Code) == -1) {
@@ -235,12 +232,18 @@ export class POSChangeTableModalPage extends PageBase {
 
 										temp.forEach((t) => {
 											if (t.Tables.indexOf(i.Id) != -1) {
-												bindOrder = t.Id;
-												this.item.Ids.push(bindOrder);
+												bindOrder = t;
 												return;
 											}
 										});
 									});
+									if (bindOrder?.Id) {
+										this.item.Id = bindOrder.Id;
+										this.item.IDContact = bindOrder.IDContact;
+										this.item.IDAddress = bindOrder.IDAddress;
+										this.item.Ids.push(bindOrder.Id);
+									}
+									this.item.Ids.push(this.selectedOrder.Id);
 									this.item.Ids;
 								},
 							},
