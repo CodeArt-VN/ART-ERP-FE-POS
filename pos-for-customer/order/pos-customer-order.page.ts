@@ -184,7 +184,7 @@ export class POSCustomerOrderPage extends PageBase {
 					let itemModifiedDateText = lib.dateFormat(this.item.ModifiedDate, 'yyyy-mm-dd') + ' ' + lib.dateFormat(this.item.ModifiedDate, 'hh:MM:ss');
 					let lastModifiedDateText = lib.dateFormat(lastModifiedDate, 'yyyy-mm-dd') + ' ' + lib.dateFormat(lastModifiedDate, 'hh:MM:ss');
 					if (lastModifiedDateText > itemModifiedDateText) {
-						this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.', 'danger');
+						this.env.showMessage('Thông tin đơn hàng đã được thay đổi, đơn sẽ được cập nhật lại.', 'warning');
 						this.refresh();
 						return true;
 					}
@@ -1314,6 +1314,9 @@ export class POSCustomerOrderPage extends PageBase {
 			.toPromise()
 			.then((savedItem: any) => {
 				this.refresh();
+			})
+			.catch((err) => {
+				console.log(err);
 			});
 	}
 
@@ -1336,9 +1339,24 @@ export class POSCustomerOrderPage extends PageBase {
 				.connect('POST', 'POS/ForCustomer/toggleBillStatus/', postDTO)
 				.toPromise()
 				.then((savedItem: any) => {
-					this.refresh();
+					this.applyTemporaryBillStatus(savedItem);
+				})
+				.catch((err) => {
+					console.log(err);
 				});
 		}
+	}
+
+	private applyTemporaryBillStatus(savedItem?: any) {
+		if (savedItem?._Order) {
+			this.item = savedItem._Order;
+		}
+		this.item.Status = 'TemporaryBill';
+		this.formGroup.controls.Status.setValue('TemporaryBill');
+		this.loadOrder();
+		this.pageConfig.isShowFeature = true;
+		this.isLockOrderFromStaff = false;
+		this.isStatusModalOpen = true;
 	}
 
 	async helpOrder(status) {
