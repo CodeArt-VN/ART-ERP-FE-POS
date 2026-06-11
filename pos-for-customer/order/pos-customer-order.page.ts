@@ -1104,10 +1104,11 @@ export class POSCustomerOrderPage extends PageBase {
 	}
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
+		const isNewOrder = this.id == 0;
 		if (savedItem) {
 			if (form.controls.Id && savedItem.Id && form.controls.Id.value != savedItem.Id) form.controls.Id.setValue(savedItem.Id);
 
-			if (this.pageConfig.isDetailPage && form == this.formGroup && this.id == 0) {
+			if (this.pageConfig.isDetailPage && form == this.formGroup && isNewOrder) {
 				let order = {
 					Id: savedItem.Id,
 					IDTable: this.idTable,
@@ -1118,9 +1119,13 @@ export class POSCustomerOrderPage extends PageBase {
 				let newURL = '#/pos-customer-order/' + savedItem.Id + '/' + this.idTable;
 				history.pushState({}, null, newURL);
 			}
-
 			if (Array.isArray(savedItem)) {
 				this.updateLineIDs(savedItem);
+				this.clearOrderLines();
+				this.loadOrder();
+				this.loadInfoOrder();
+				this.submitAttempt = false;
+				return;
 			} else if (savedItem.Id) {
 				this.item = savedItem;
 				if (this.item.Status == 'New') {
@@ -1129,7 +1134,17 @@ export class POSCustomerOrderPage extends PageBase {
 			}
 		}
 		this.submitAttempt = false;
+		if (isNewOrder && savedItem?.Id) {
+			this.clearOrderLines().finally(() => this.loadedData());
+			return;
+		}
 		this.loadedData();
+	}
+
+	private clearOrderLines(): Promise<any> {
+		this.OrderLines = [];
+		this.AllowSendOrder = false;
+		return this.env.setStorage('OrderLines' + this.idTable, []);
 	}
 
 	private updateLineIDs(savedLines: any[]): void {
@@ -1204,10 +1219,7 @@ export class POSCustomerOrderPage extends PageBase {
 	async saveOrder() {
 		try {
 			await this.saveChange();
-			this.AllowSendOrder = false;
 			this.IsMyHandle = true;
-			this.OrderLines = [];
-			this.env.setStorage('OrderLines' + this.idTable, []);
 		} catch (err) {
 			this.submitAttempt = false;
 		}
@@ -1298,10 +1310,51 @@ export class POSCustomerOrderPage extends PageBase {
 		}
 	}
 
-	newOrder() {
-		let newURL = '#/pos-customer-order/' + 0 + '/' + this.item.Tables[0];
-		window.location.href = newURL;
-		window.location.reload();
+	async newOrder() {
+		const tableId = this.item?.Tables?.[0] || this.idTable;
+		const newURL = '#/pos-customer-order/' + 0 + '/' + tableId;
+		history.pushState({}, null, newURL);
+
+		this.id = 0;
+		this.idTable = tableId;
+		this.item = { Id: 0, IsDisabled: false };
+		this.resetOrderForm(tableId);
+		await this.clearOrderLines();
+		this.preLoadData('force');
+	}
+
+	private resetOrderForm(tableId): void {
+		this.formGroup.setControl('OrderLines', this.formBuilder.array([]));
+		this.formGroup.setControl('Additions', this.formBuilder.array([]));
+		this.formGroup.setControl('Deductions', this.formBuilder.array([]));
+
+		this.formGroup.reset({
+			Id: 0,
+			Code: null,
+			Name: null,
+			Remark: null,
+			DeletedLines: [],
+			Tables: [tableId],
+			IDBranch: this.Table?.IDBranch || this.IDBranch || this.env.selectedBranch,
+			IDOwner: -1,
+			IDContact: -1,
+			IDAddress: -1,
+			Type: 'POSOrder',
+			SubType: 'TableService',
+			Status: 'New',
+			IDTable: tableId,
+			IsCOD: null,
+			IsInvoiceRequired: null,
+			NumberOfGuests: 1,
+			InvoicDate: null,
+			InvoiceNumber: null,
+			IsDebt: null,
+			Debt: null,
+			IsPaymentReceived: null,
+			Received: null,
+			ReceivedDiscountFromSalesman: null,
+		});
+		this.formGroup.markAsPristine();
 	}
 	unlockOrder() {
 		let orderUpdate = this.checkLastModifiedDate();
