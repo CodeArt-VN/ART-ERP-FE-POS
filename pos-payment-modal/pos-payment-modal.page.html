@@ -107,7 +107,14 @@
 													</ng-template>
 												</ion-popover>
 											</ng-container>
-											<ion-text *ngIf="i.IncomingPayment.Status=='Success'" (click)="goToRefund(i)" color="primary" class="clickable" style="margin-top: 2px; padding-left: 5px" title="hoàn tiền">
+											<ion-text
+												*ngIf="i.IncomingPayment.Status=='Success' && !(i.IncomingPayment.Type=='PromotionIntegration' && i.IncomingPayment.SubType=='Gotit')"
+												(click)="goToRefund(i)"
+												color="primary"
+												class="clickable"
+												style="margin-top: 2px; padding-left: 5px"
+												title="hoàn tiền"
+											>
 												<ion-icon name="arrow-undo-circle-outline"></ion-icon>
 											</ion-text>
 										</div>
