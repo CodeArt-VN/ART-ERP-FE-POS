@@ -89,17 +89,15 @@ export class POSPaymentModalPage extends PageBase {
 			.map((x) => x.IncomingPayment.Amount)
 			.reduce((a, b) => +a + +b, 0);
 		let RefundAmount = this.items
-			?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == true)
+			?.filter((x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true)
 			.map((x) => x.IncomingPayment.Amount)
 			.reduce((a, b) => +a + +b, 0);
 		this.payments = this.items?.filter((x) => x.IncomingPayment.IsRefundTransaction == false);
 		this.payments.forEach((e) => {
 			let TotalRefund = this.items
-				?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id)
-				.map((x) => x.IncomingPayment.Amount)
-				.reduce((a, b) => +a + +b, 0);
-			let PendingRefund = this.items
-				?.filter((x) => x.IncomingPayment.Status == 'Processing' && x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id)
+				?.filter(
+					(x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id
+				)
 				.map((x) => x.IncomingPayment.Amount)
 				.reduce((a, b) => +a + +b, 0);
 			e.IncomingPayment.PaymentCode = lib.dateFormat(e.IncomingPayment.CreatedDate, 'yyMMdd') + '_' + e.IncomingPayment.Id;
@@ -108,9 +106,7 @@ export class POSPaymentModalPage extends PageBase {
 			e.IncomingPayment.TypeText = lib.getAttrib(e.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
 			e.IncomingPayment.StatusText = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Name', '--', 'Code');
 			e.IncomingPayment.StatusColor = lib.getAttrib(e.IncomingPayment.Status, this.statusList, 'Color', 'dark', 'Code');
-			e.IncomingPayment.TotalRefund = TotalRefund || 0;
-			e.IncomingPayment.PendingRefund = PendingRefund || 0;
-			e.IncomingPayment.RefundBlockingAmount = e.IncomingPayment.TotalRefund + e.IncomingPayment.PendingRefund;
+			e.IncomingPayment.TotalRefund = TotalRefund;
 			e.IncomingPayment.Refund = this.items?.filter((x) => x.IncomingPayment.IDOriginalTransaction == e.IncomingPayment.Id);
 			e.IncomingPayment.Refund.forEach((r) => {
 				r.IncomingPayment.TypeText = lib.getAttrib(r.IncomingPayment.Type, this.typeList, 'Name', '--', 'Code');
@@ -160,11 +156,11 @@ export class POSPaymentModalPage extends PageBase {
 			this.env.showMessage('You have not been authorized to refund', 'danger');
 			return false;
 		}
-		if (parseInt(i.IncomingPayment.RefundBlockingAmount || 0) >= parseInt(i.IncomingPayment.Amount)) {
+		if (parseInt(i.IncomingPayment.TotalRefund) >= parseInt(i.IncomingPayment.Amount)) {
 			this.env.showMessage('Refunds cannot be continued on this transaction', 'danger');
 			return false;
 		}
-		let RefundAmount = i.IncomingPayment.Amount - (i.IncomingPayment.RefundBlockingAmount || 0);
+		let RefundAmount = i.IncomingPayment.Amount - i.IncomingPayment.TotalRefund;
 		let idTransaction = i.IncomingPayment.Id;
 		if (this.isGrabPayment(i.IncomingPayment)) {
 			await this.refundGrabPayment(i, RefundAmount);
@@ -247,7 +243,7 @@ export class POSPaymentModalPage extends PageBase {
 				this.env.showMessage(response?.message || 'Grab refund failed', 'danger');
 				return;
 			}
-			this.env.showMessage(response?.message || 'Refund request sent. Waiting for Grab confirmation', 'warning');
+			this.env.showMessage('Refund successful', 'success');
 			this.refresh();
 		} catch (err) {
 			this.env.showMessage(err?.error?.message || err?.error?.Message || 'Grab refund failed', 'danger');
