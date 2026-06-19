@@ -3034,7 +3034,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.map((x) => x.Amount)
 						.reduce((a, b) => +a + +b, 0);
 					let RefundAmount = this.paymentList
-						?.filter((x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true)
+						?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == true)
 						.map((x) => x.Amount)
 						.reduce((a, b) => +a + +b, 0);
 
