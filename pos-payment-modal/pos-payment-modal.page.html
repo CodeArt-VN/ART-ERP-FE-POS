@@ -70,9 +70,14 @@
 										</div>
 										<div class="col-money cell">{{i.IncomingPayment.Amount | number: '1.0-0'}} đ</div>
 										<div class="col-refund cell">
-											<ng-container *ngIf="i.IncomingPayment.TotalRefund > 0">
+											<ng-container *ngIf="i.IncomingPayment.TotalRefund > 0 || i.IncomingPayment.PendingRefund > 0">
 												<ion-text title="xem chi tiết" class="clickable" color="dark" id="refund-trigger-{{idx}}">
-													{{i.IncomingPayment.TotalRefund | number: '1.0-0'}} đ
+													<ng-container *ngIf="i.IncomingPayment.TotalRefund > 0">
+														{{i.IncomingPayment.TotalRefund | number: '1.0-0'}} đ
+													</ng-container>
+													<small *ngIf="i.IncomingPayment.PendingRefund > 0" class="pending-refund">
+														{{'Refund pending' | translate}}
+													</small>
 												</ion-text>
 												<ion-popover trigger="refund-trigger-{{idx}}" triggerAction="click">
 													<ng-template>

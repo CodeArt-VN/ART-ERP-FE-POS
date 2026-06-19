@@ -1251,7 +1251,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			cssClass: 'modal-payments',
 			componentProps: {
 				item: this.item,
-				onUpdateItem: (updated) => this.updateRefundPayment(updated.RefundAmount, updated.IDTransaction),
+				onUpdateItem: (updated) => this.updateRefundPayment(updated.RefundAmount, updated.IDTransaction, updated.Type, updated.SubType),
 			},
 		});
 		await modal.present();
@@ -1280,7 +1280,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		// }
 	}
 
-	async goToPayment(amount = null, isRefund = false, idTransaction = null) {
+	async goToPayment(amount = null, isRefund = false, idTransaction = null, type = null, subType = null) {
 		await this.setKitchenID('all');
 		await this.setItemQuery('all');
 
@@ -1305,6 +1305,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			MaxPointUsagePercent: this.posService.systemConfig.POSMaxPointUsagePercent || 0,
 			DefaultBusinessPartnerId: this.posService.systemConfig.SODefaultBusinessPartner?.Id,
 			LoyaltyPointUsage: this.calculateLoyaltyPointUsage(),
+			Type: type,
+			SubType: subType,
 		};
 		const modal = await this.modalController.create({
 			component: PaymentModalComponent,
@@ -1389,8 +1391,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		return this.item;
 	}
 
-	async updateRefundPayment(amount, idTransaction) {
-		this.goToPayment(amount, true, idTransaction);
+	async updateRefundPayment(amount, idTransaction, type, subType) {
+		this.goToPayment(amount, true, idTransaction, type, subType);
 	}
 
 	InvoiceRequired() {
@@ -3034,7 +3036,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 						.map((x) => x.Amount)
 						.reduce((a, b) => +a + +b, 0);
 					let RefundAmount = this.paymentList
-						?.filter((x) => (x.IncomingPayment.Status == 'Success' || x.IncomingPayment.Status == 'Processing') && x.IncomingPayment.IsRefundTransaction == true)
+						?.filter((x) => x.IncomingPayment.Status == 'Success' && x.IncomingPayment.IsRefundTransaction == true)
 						.map((x) => x.Amount)
 						.reduce((a, b) => +a + +b, 0);
 
