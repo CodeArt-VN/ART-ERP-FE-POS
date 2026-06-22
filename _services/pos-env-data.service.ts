@@ -20,7 +20,7 @@ export class POSEnviromentDataService {
 		IsRequireOTP: false,
 		POSLockSpamPhoneNumber: false,
 		LeaderMachineHost: '',
-		POSSettleAtCheckout: true,
+		POSSettleAtCheckout: false,
 		POSHideSendBarKitButton: false,
 		POSEnableTemporaryPayment: true,
 		POSEnablePrintTemporaryBill: false,
