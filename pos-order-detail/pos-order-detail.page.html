@@ -509,7 +509,7 @@
 					</ion-col>
 				</ion-row>
 				<ion-row
-					*ngIf="(item && pageConfig.canEdit && !posService.systemConfig.POSSettleAtCheckout) || (item.Debt == 0 && item.Status == 'TemporaryBill')"
+					*ngIf="(item && pageConfig.canEdit && !posService.systemConfig.POSSettleAtCheckout) && (item.Debt == 0 && item.Status == 'TemporaryBill')"
 					style="flex-wrap: nowrap">
 					<ion-col>
 						<ion-button class="linear-blue-btn" expand="block" (click)="doneOrder()"
