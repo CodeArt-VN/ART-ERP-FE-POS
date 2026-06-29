@@ -1524,17 +1524,17 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 	}
 
-	checkItemNotSendKitchen() {
+	async checkItemNotSendKitchen() {
 		if (this.posService.systemConfig.POSEnableWorkOrder) {
 			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
-				this.env
+				await this.env
 					.showPrompt('Bạn có muốn đơn gửi bar/bếp ?', null, 'Thông báo')
 					.then(() => this.sendKitchenWithoutPrint())
 					.catch(() => {});
 			}
 		} else {
 			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
-				this.env
+				await this.env
 					.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
 					.then(() => this.sendKitchen())
 					.catch(() => {});
@@ -1547,11 +1547,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (this.formGroup.dirty || !this.item.Id) {
 			// Force save and wait for completion
 			await this.saveChange();
-			this.checkItemNotSendKitchen();
+			await this.checkItemNotSendKitchen();
 			return;
 		} else {
 			// No changes to save
-			this.checkItemNotSendKitchen();
+			await this.checkItemNotSendKitchen();
 		}
 	}
 	sendKitchenAttempt = false;
