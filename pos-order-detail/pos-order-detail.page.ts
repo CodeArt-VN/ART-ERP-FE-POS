@@ -461,6 +461,36 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			});
 	}
 
+	loadAnItem(event = null) {
+		this.id = typeof this.id == 'string' ? parseInt(this.id) : this.id;
+
+		if (this.id) {
+			this.commonService
+				.connect('GET', 'SALE/Order/GetOrdersPOS', { Id: this.id })
+				.toPromise()
+				.then((result) => {
+					this.item = result;
+					this.loadedData(event);
+				})
+				.catch((err) => {
+					console.log(err);
+					if (err && typeof err === 'object' && 'status' in err && err.status == 404) {
+						// Not found
+					} else {
+						this.item = null;
+					}
+					this.loadedData(event);
+				});
+		} else if (this.id == 0) {
+			if (!this.item) this.item = {};
+
+			Object.assign(this.item, this.DefaultItem);
+			this.loadedData(event);
+		} else {
+			this.loadedData(event);
+		}
+	}
+
 	onContactKeyDown(obj) {
 		this.isEnter = obj.isEnter;
 		this._contactDataSource.input$.next(obj.term);
