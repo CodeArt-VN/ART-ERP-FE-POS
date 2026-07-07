@@ -2854,6 +2854,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 	savedChange(savedItem?: any, form?: FormGroup<any>): void {
 		this.submitAttempt = false;
+		this.runAutoApply(true);
 		if (this.item.Id < 1) {
 			this.id = savedItem.Id;
 			let newURL = '#pos-order/' + savedItem.Id + '/' + this.idTable;
@@ -2861,7 +2862,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			this.formGroup.controls.Id.setValue(savedItem.Id);
 			this.item = savedItem;
 			this.loadedData();
-			// this.runAutoApply(true);
 			return;
 		} else {
 			this.updateLineIDs(savedItem);
@@ -2876,7 +2876,6 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			}
 		}
 		this.env.showMessage('Saving completed!', 'success');
-		// this.runAutoApply(true);
 	}
 
 	private updateLineIDs(savedItem: any) {

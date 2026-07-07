@@ -105,11 +105,16 @@ export class POSVoucherModalPage extends PageBase {
 				.then((voucher: any) => {
 					if (voucher.length > 0) {
 						this.Voucher = voucher[0];
-						if (this.Voucher.Program.IsByPercent == true) {
-							this.Voucher.Program.PerCentValue = this.Voucher.Program.Value;
-							this.Voucher.Program.Value = (this.Voucher.Program.Value * this.SaleOrder.OriginalTotalBeforeDiscount) / 100;
-							if (this.Voucher.Program.Value > this.Voucher.Program.MaxValue) {
-								this.Voucher.Program.Value = this.Voucher.Program.MaxValue;
+						if (!this.Voucher.CanUse) {
+							this.env.showMessage(this.Voucher.ErrorMesage, 'danger');
+						}
+						else {
+							if (this.Voucher.Program.IsByPercent == true) {
+								this.Voucher.Program.PerCentValue = this.Voucher.Program.Value;
+								this.Voucher.Program.Value = (this.Voucher.Program.Value * this.SaleOrder.OriginalTotalBeforeDiscount) / 100;
+								if (this.Voucher.Program.Value > this.Voucher.Program.MaxValue) {
+									this.Voucher.Program.Value = this.Voucher.Program.MaxValue;
+								}
 							}
 						}
 					} else {
@@ -123,15 +128,15 @@ export class POSVoucherModalPage extends PageBase {
 
 	async applyVoucher(line) {
 		this.submitAttempt = true;
-		this.promotionService.applyVoucher(this.SaleOrder,line.VoucherCode)
-		.then(savedItem=>{
-			this.modalController.dismiss(savedItem);
-		}).catch(err=>{
-			this.env.showErrorMessage(err);
-		}).finally(()=>{
-			this.submitAttempt = false;
-		});
-	
+		this.promotionService.applyVoucher(this.SaleOrder, line.VoucherCode)
+			.then(savedItem => {
+				this.modalController.dismiss(savedItem);
+			}).catch(err => {
+				this.env.showErrorMessage(err);
+			}).finally(() => {
+				this.submitAttempt = false;
+			});
+
 		// } else {
 		// 	this.env.showMessage('Chỉ được áp dụng 2 mã voucher trên 1 đơn hàng', 'warning');
 		// }
