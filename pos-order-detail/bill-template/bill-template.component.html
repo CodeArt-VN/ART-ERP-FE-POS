@@ -171,7 +171,17 @@
 																	}}</small>
 															</td>
 															<td class="col-name"
-																*ngIf="!p.IncomingPayment?.IsRefundTransaction">
+																*ngIf="!p.IncomingPayment?.IsRefundTransaction && p.IncomingPayment?.Type === 'CollectionOnBehalf'">
+																{{ i + 1 }}. TM/CK<span
+																	*ngIf="p.IncomingPayment?.SubType"> ({{
+																	p.IncomingPayment.SubType }})</span>
+																<small
+																	*ngIf="p.IncomingPayment?.Remark && p.IncomingPayment?.Remark != ''">{{
+																	' | ' + p.IncomingPayment?.Remark
+																	}}</small>
+															</td>
+															<td class="col-name"
+																*ngIf="!p.IncomingPayment?.IsRefundTransaction && p.IncomingPayment?.Type !== 'CollectionOnBehalf'">
 																{{ i + 1 }}. {{ p.IncomingPayment?.TypeText ||
 																p.IncomingPayment?.Type || '---'
 																}}<span *ngIf="p.IncomingPayment?.SubType"> ({{
