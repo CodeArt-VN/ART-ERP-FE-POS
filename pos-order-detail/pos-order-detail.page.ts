@@ -1581,8 +1581,31 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			return;
 		} else {
 			// No changes to save
+			let invalidControls = this.findInvalidControlsRecursive(this.formGroup);
+			this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | '));this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | '));
 			await this.checkItemNotSendKitchen();
 		}
+	}
+
+	findInvalidControlsRecursive(form: FormGroup | FormArray): string[] {
+		const invalidControls: string[] = [];
+		const recursiveFunc = (form: FormGroup | FormArray) => {
+			// Handle FormGroup
+			Object.keys(form.controls).forEach((field) => {
+				const control = form.get(field);
+				if (control) {
+					if (control instanceof FormGroup || control instanceof FormArray) {
+						recursiveFunc(control);
+					} else if (control.invalid) {
+						let label = this.formControls.find((d) => d.id === field && d.form === form)?.label;
+						if (!label) label = this.inputControls.find((d) => d.id === field && d.form === form)?.label;
+						invalidControls.push(label ?? field);
+					}
+				}
+			});
+		};
+		recursiveFunc(form);
+		return invalidControls;
 	}
 	sendKitchenAttempt = false;
 
