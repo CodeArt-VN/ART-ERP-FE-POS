@@ -1582,7 +1582,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		} else {
 			// No changes to save
 			let invalidControls = this.findInvalidControlsRecursive(this.formGroup);
-			this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | '));this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | '));
+			if (invalidControls) {
+				this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | ')); this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | '));
+			}
 			await this.checkItemNotSendKitchen();
 		}
 	}

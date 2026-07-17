@@ -205,7 +205,9 @@ export class POSInvoiceModalPage extends PageBase {
 					// Walk-in customer - do not get tax info
 					let submitItem = {
 						Id: this.id,
-						IDAddress: this.address?.Address?.Id,
+						IDAddress: this.address?.Address?.Id
+							? this.address?.Address?.Id
+							: this.address?.IDAddress,
 						IDTaxInfo: -1,
 						TaxCode: null,
 					};
@@ -215,7 +217,9 @@ export class POSInvoiceModalPage extends PageBase {
 					// Default tax info - get default tax info (IsDefault = 1)
 					let submitItem = {
 						Id: this.id,
-						IDAddress: this.address?.Address?.Id,
+						IDAddress: this.address?.Address?.Id
+							? this.address?.Address?.Id
+							: this.address?.IDAddress,
 						IDTaxInfo: null,
 						TaxCode: null,
 					};
@@ -259,7 +263,9 @@ export class POSInvoiceModalPage extends PageBase {
 					if (this.taxInfoGroup.disabled) {
 						let submitItem = {
 							Id: this.id,
-							IDAddress: this.address?.Address?.Id,
+							IDAddress: this.address?.Address?.Id
+								? this.address?.Address?.Id
+								: this.address?.IDAddress,
 							IDTaxInfo: this.taxInfoGroup.controls.Id.value,
 							TaxCode: this.taxInfoGroup.controls.TaxCode.value,
 							TaxAddresses: [this.taxInfoGroup.getRawValue()],
@@ -270,7 +276,9 @@ export class POSInvoiceModalPage extends PageBase {
 						this.saveChange2(this.taxInfoGroup, this.pageConfig.pageName, this.partnerTaxInfoProvider).then((taxInfo: any) => {
 							let submitItem = {
 								Id: this.id,
-								IDAddress: this.address?.Address?.Id,
+								IDAddress: this.address?.Address?.Id
+									? this.address?.Address?.Id
+									: this.address?.IDAddress,
 								IDTaxInfo: taxInfo.Id,
 								TaxCode: taxInfo.TaxCode,
 								TaxAddresses: [taxInfo],
