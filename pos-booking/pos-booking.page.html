@@ -4,7 +4,7 @@
 	</app-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" appScrollbarTheme class="header-table" scroll-x="true">
+<ion-content [fullscreen]="true" appScrollbarTheme class="header-table scrollx">
 	<app-data-table
 		class="box-shadow responsive padding-number-right"
 		[rows]="items"
@@ -92,7 +92,4 @@
 	</app-data-table>
 
 	<div class="ion-padding"></div>
-	<ion-infinite-scroll color="primary" threshold="30%" (ionInfinite)="loadData($event)" [disabled]="!pageConfig.infiniteScroll || pageConfig.isEndOfData">
-		<ion-infinite-scroll-content loadingSpinner="dots"></ion-infinite-scroll-content>
-	</ion-infinite-scroll>
 </ion-content>

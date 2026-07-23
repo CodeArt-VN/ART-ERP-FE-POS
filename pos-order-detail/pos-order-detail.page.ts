@@ -21,8 +21,8 @@ import {
 import { FormBuilder, Validators, FormControl, FormArray, FormGroup } from '@angular/forms';
 import { CommonService } from 'src/app/services/core/common.service';
 import { lib } from 'src/app/services/static/global-functions';
-import { async, concat, of, Subscription } from 'rxjs';
-import { catchError, distinctUntilChanged, switchMap, tap, mergeMap } from 'rxjs/operators';
+import { async, concat, firstValueFrom, of, Subscription } from 'rxjs';
+import { catchError, distinctUntilChanged, switchMap, tap, mergeMap, take } from 'rxjs/operators';
 import { POSPaymentModalPage } from '../pos-payment-modal/pos-payment-modal.page';
 import { POSDiscountModalPage } from '../pos-discount-modal/pos-discount-modal.page';
 
@@ -45,7 +45,7 @@ import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-moda
 import { ComboModalPage } from './combo-modal/combo-modal.page';
 import { BillPreviewComponent } from 'src/app/modals/bill-preview-modal/bill-preview-modal';
 import { BillTemplateComponent } from './bill-template/bill-template.component';
-import { NfcQrcodeScannerModalComponent } from 'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component';
+import { NfcQrcodeScannerModalComponent, NfcScanResolveResult } from 'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -416,16 +416,17 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 							tap(() => (this._contactDataSource.loading = false)),
 							mergeMap((e: any) => {
 								return new Promise((resolve) => {
-									if (e && e.length === 1 && this.isEnter) {
-										const valueToSet = e[0]['IDAddress'];
-										this.formGroup.get('IDAddress').setValue(valueToSet);
-										this.formGroup.get('IDAddress').markAsDirty();
-										this.changedIDAddress(e[0]);
-										this.contactInput?.closeDropdown();
+									if (this.isEnter) {
+										if (e && e.length === 1) {
+											const valueToSet = e[0]['IDAddress'];
+											this.formGroup.get('IDAddress').setValue(valueToSet);
+											this.formGroup.get('IDAddress').markAsDirty();
+											this.changedIDAddress(e[0]);
+											this.contactInput?.closeDropdown();
+										}
 										this._contactDataSource.loading = false;
-										// onAutoSelect(e[0]);
+										this.isEnter = false;
 									}
-									this.isEnter = false;
 									resolve(e);
 								});
 							})
@@ -2479,7 +2480,11 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		this.item.AdditionsAmountPercent = 0;
 		this.item.OriginalDiscountFromSalesmanPercent = 0;
 		this.item.VATSummary = [];
-		for (let m of this.posService.dataSource.menuList) for (let mi of m.Items) mi.BookedQuantity = 0;
+		for (let m of this.posService.dataSource?.menuList || []) for (let mi of m.Items || []) mi.BookedQuantity = 0;
+
+		if (!Array.isArray(this.item.OrderLines)) {
+			this.item.OrderLines = [];
+		}
 
 		for (let line of this.item.OrderLines) {
 			const isTipLine = line.IDItem == -2;
@@ -2858,7 +2863,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			return this.saveChange();
 		} else {
 			if (autoSave === null) autoSave = this.posService.systemConfig.IsAutoSave;
-			if ((this.item.OrderLines.length || this.formGroup.controls.DeletedLines.value.length) && autoSave) {
+			if ((this.item.OrderLines?.length || this.formGroup.controls.DeletedLines?.value?.length) && autoSave) {
 				if (this.submitAttempt) {
 					this.delay += 1000;
 				}
@@ -2996,11 +3001,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			if (this.item._Customer.IsStaff == true) {
 				this.getStaffInfo(this.item._Customer.Code);
 			}
+			if (!this._contactDataSource.selected) {
+				this._contactDataSource.selected = [];
+			}
 			if (!this._contactDataSource.selected.some((s) => s.Id == address.Id)) {
 				this._contactDataSource.selected.push(address);
 			}
 			this._contactDataSource.selected = [...this._contactDataSource.selected];
-			this._contactDataSource.initSearch();
+			this._contactDataSource.initSearch?.();
 		}
 	}
 
@@ -3305,12 +3313,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		const { data, role } = await this.modalController
 			.create({
 				component: NfcQrcodeScannerModalComponent,
-				cssClass: 'modal90vh',
+				cssClass: 'nfc-scanner-modal',
 				componentProps: {
-					title: 'Read nfc/qr code',
+					title: 'Scan card',
 					label: 'Please tap NFC card or scan QR code to read',
 					mode: 'NFC',
 					showQrCodeButton: true,
+					resolveNfcScan: (scanData: any) => this.resolvePosNfcScan(scanData),
 				},
 			})
 			.then(async (modal) => {
@@ -3320,8 +3329,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 		if (role !== 'confirm' || !data) return;
 
-		const handledNfc = await this.handleScannedNfcPayload(data);
-		if (handledNfc) return;
+		if (data?.mode === 'NFC') return;
 
 		const handledQr = await this.handleScannedQrPayload(data);
 		if (handledQr) return;
@@ -3336,27 +3344,319 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		return '';
 	}
 
-	private async handleScannedNfcPayload(data: any): Promise<boolean> {
-		if (data?.mode !== 'NFC') return false;
+	/**
+	 * NFC flow:
+	 * 1) MemberCard.Code = Tag UID
+	 * 2) IDBP đọc từ NDEF trên thẻ
+	 * 3) POSSearch(?MemberCard.Code=...)
+	 * 4) So khớp API.Id với IDBP → OK; lệch → thẻ không hợp lệ (+ hiện Id/Name API)
+	 */
+	private async resolvePosNfcScan(data: any): Promise<NfcScanResolveResult> {
+		const log = (...args: any[]) => console.log('[POS-NFC]', ...args);
+		const logWarn = (...args: any[]) => console.warn('[POS-NFC]', ...args);
+		const logErr = (...args: any[]) => console.error('[POS-NFC]', ...args);
 
-		let nfcValue = data?.value;
-		if (typeof nfcValue === 'string') {
-			try {
-				nfcValue = JSON.parse(nfcValue);
-			} catch {
-				nfcValue = null;
-			}
+		const memberCardCode = this.extractNfcMemberCardCode(data);
+		const cardIdbp = this.extractNfcIdbp(data);
+
+		log('1. resolvePosNfcScan START', {
+			rawValue: data?.rawValue,
+			value: data?.value,
+			tagInfo: data?.tagInfo,
+			memberCardCode,
+			cardIdbp,
+		});
+
+		if (!memberCardCode) {
+			logWarn('2. FAIL — missing Tag UID / MemberCard.Code');
+			return {
+				ok: false,
+				message: 'Invalid NFC content',
+				detail: 'Missing Tag UID (MemberCard.Code)',
+				cardIdbp,
+				memberCardCode,
+			};
 		}
-		const tagInfo = data?.tagInfo?.uid;
 
-		const idbp = nfcValue?.IDBP;
-		if (!idbp) {
-			await this.retryInvalidPosQrCode('Invalid NFC content');
-			return true;
+		if (cardIdbp == null || cardIdbp === '') {
+			logWarn('2. FAIL — missing IDBP on card NDEF');
+			return {
+				ok: false,
+				message: 'Invalid NFC content',
+				detail: `Missing IDBP on card. MemberCard.Code=${memberCardCode}`,
+				cardIdbp,
+				memberCardCode,
+			};
 		}
 
-		this.addContactByScannedId(tagInfo || idbp);
-		return true;
+		log('2. API GET CRM/Contact/POSSearch', { 'MemberCard.Code': memberCardCode });
+		const list = await this.searchPosContactsByMemberCardCode(memberCardCode);
+		log('3. POSSearch response', {
+			count: list.length,
+			items: list.map((x) => ({ Id: x?.Id, Code: x?.Code, Name: x?.Name, IDAddress: x?.IDAddress })),
+		});
+
+		if (!list.length) {
+			logWarn('4. FAIL — no active MemberCard for UID');
+			return {
+				ok: false,
+				message: 'No customer found for scanned code',
+				detail: `MemberCard.Code=${memberCardCode} · IDBP on card=${cardIdbp}`,
+				cardIdbp,
+				memberCardCode,
+			};
+		}
+
+		const contact = this.normalizePosContact(list[0]);
+		const apiId = contact?.Id;
+		const cardIdText = String(cardIdbp).trim();
+		const apiIdText = String(apiId ?? '').trim();
+		const matched = apiIdText !== '' && apiIdText === cardIdText;
+
+		log('4. compare API.Id vs card IDBP', { apiId: apiIdText, cardIdbp: cardIdText, matched });
+
+		if (!matched) {
+			const found = { Id: contact?.Id, Code: contact?.Code, Name: contact?.Name };
+			logWarn('5. FAIL — invalid card (Id mismatch)', found);
+			return {
+				ok: false,
+				message: 'Invalid card',
+				detail: `API #${found.Id ?? '-'} ${found.Name || found.Code || ''} ≠ IDBP ${cardIdText}`,
+				foundContact: found,
+				cardIdbp,
+				memberCardCode,
+			};
+		}
+
+		log('5. SUCCESS — applyScannedContact', { Id: contact.Id, Name: contact.Name });
+		try {
+			this.applyScannedContact(contact);
+		} catch (err) {
+			logErr('5. applyScannedContact threw (contact already matched — still OK)', err);
+		}
+		return { ok: true, foundContact: { Id: contact.Id, Code: contact.Code, Name: contact.Name }, cardIdbp, memberCardCode };
+	}
+
+	/** Tag UID = MemberCard.Code khi ghi thẻ (write-nfc-modal: result.tagInfo.uid / RD300 tag.uid) */
+	private extractNfcMemberCardCode(data: any): string {
+		const fromTagInfo = this.normalizeTagInfoUid(data?.tagInfo);
+		if (fromTagInfo) return fromTagInfo;
+
+		const fromNested =
+			this.normalizeTagInfoUid(data?.value?.tagInfo) ||
+			this.normalizeTagInfoUid(data?.tagInfo) ||
+			`${data?.uid || data?.serialNumber || ''}`.trim();
+		if (fromNested) return fromNested;
+
+		return '';
+	}
+
+	private normalizeTagInfoUid(tagInfo: any): string {
+		if (!tagInfo) return '';
+		const fromIdentifier = Array.isArray(tagInfo.identifier)
+			? tagInfo.identifier.map((b: number) => Number(b).toString(16).padStart(2, '0')).join('')
+			: '';
+		const uid =
+			tagInfo.uid ||
+			tagInfo.UID ||
+			tagInfo.serialNumber ||
+			tagInfo.id ||
+			tagInfo.Id ||
+			fromIdentifier ||
+			'';
+		return `${uid || ''}`.trim();
+	}
+
+	/** IDBP ghi trong NDEF payload JSON */
+	private extractNfcIdbp(data: any): string | number | null {
+		let parsed: any = data?.value;
+		if (typeof parsed === 'string') parsed = this.parseNfcJsonValue(parsed);
+
+		const raw = this.getScannerRawValue(data)?.trim().replace(/^\uFEFF/, '') || '';
+		if ((!parsed || typeof parsed !== 'object') && raw) {
+			const fromRaw = this.parseNfcJsonValue(raw);
+			if (fromRaw && typeof fromRaw === 'object') parsed = fromRaw;
+		}
+
+		if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+			const record = parsed as Record<string, unknown>;
+			const idbp = record.IDBP ?? record.IDContact;
+			if (idbp != null && idbp !== '') return idbp as string | number;
+		}
+
+		const bpMatch = /^\s*BP[-:](\d+)\s*$/i.exec(raw);
+		if (bpMatch) return parseInt(bpMatch[1], 10);
+
+		return null;
+	}
+
+	private async searchPosContactsByMemberCardCode(memberCardCode: string): Promise<any[]> {
+		const code = (memberCardCode || '').trim();
+		if (!code) return [];
+
+		try {
+			const items: any = await firstValueFrom(
+				this.commonService
+					.connect('GET', 'CRM/Contact/POSSearch', {
+						Take: 20,
+						Skip: 0,
+						SkipMCP: true,
+						'MemberCard.Code': code,
+					})
+					.pipe(
+						catchError(() => of([])),
+						take(1)
+					)
+			);
+			if (Array.isArray(items)) return items;
+			if (Array.isArray(items?.data)) return items.data;
+			if (Array.isArray(items?.Data)) return items.Data;
+			return [];
+		} catch {
+			return [];
+		}
+	}
+
+	/** BP-123 / BP:123 → BP:123 (số = Contact.Id). Mã thẻ giữ nguyên. */
+	private normalizePosByScan(value: string | number): string {
+		const raw = String(value ?? '')
+			.trim()
+			.replace(/^\uFEFF/, '');
+		if (!raw) return '';
+
+		const bpMatch = /^BP[-:](\d+)$/i.exec(raw);
+		if (bpMatch) return `BP:${bpMatch[1]}`;
+		return raw;
+	}
+
+	private async searchPosContactsByScan(byScan: string, requireActiveMemberCard = false): Promise<any[]> {
+		const scan = (byScan || '').trim();
+		if (!scan) return [];
+
+		const params: any = {
+			Take: 20,
+			Skip: 0,
+			SkipMCP: true,
+			ByScan: scan,
+		};
+		if (requireActiveMemberCard) {
+			params.RequireActiveMemberCard = true;
+		}
+
+		try {
+			const items: any = await firstValueFrom(
+				this.commonService.connect('GET', 'CRM/Contact/POSSearch', params).pipe(
+					catchError(() => of([])),
+					take(1)
+				)
+			);
+			if (Array.isArray(items)) return items;
+			if (Array.isArray(items?.data)) return items.data;
+			if (Array.isArray(items?.Data)) return items.Data;
+			return [];
+		} catch {
+			return [];
+		}
+	}
+
+	/**
+	 * @param forceBpPrefix true → ByScan=BP:{Contact.Id}
+	 *                     false → ByScan = mã thẻ / raw (MemberCard.Code)
+	 * @param requireActiveMemberCard NFC: bắt buộc còn thẻ active
+	 */
+	private async findContactByScanValue(
+		value: string | number,
+		forceBpPrefix = false,
+		requireActiveMemberCard = false
+	): Promise<any | null> {
+		let byScan = this.normalizePosByScan(value);
+		if (!byScan) {
+			console.log('[POS-NFC] findContactByScanValue empty after normalize', { value, forceBpPrefix });
+			return null;
+		}
+		if (forceBpPrefix && /^\d+$/.test(byScan)) {
+			byScan = `BP:${byScan}`; // Contact.Id, không phải Code
+		}
+
+		console.log('[POS-NFC] API GET CRM/Contact/POSSearch', {
+			ByScan: byScan,
+			RequireActiveMemberCard: requireActiveMemberCard,
+			Take: 20,
+			Skip: 0,
+			SkipMCP: true,
+			forceBpPrefix,
+			note: byScan.startsWith('BP:') ? 'BP:{n} = Contact.Id' : 'raw = MemberCard.Code',
+		});
+
+		const list = await this.searchPosContactsByScan(byScan, requireActiveMemberCard);
+		console.log('[POS-NFC] POSSearch response', {
+			ByScan: byScan,
+			RequireActiveMemberCard: requireActiveMemberCard,
+			count: Array.isArray(list) ? list.length : -1,
+			items: Array.isArray(list)
+				? list.map((x) => ({ Id: x?.Id, Code: x?.Code, Name: x?.Name, IDAddress: x?.IDAddress }))
+				: list,
+		});
+
+		if (!Array.isArray(list) || !list.length) return null;
+		if (list.length === 1) return this.normalizePosContact(list[0]);
+
+		// BP:{n} → match đúng Contact.Id
+		if (byScan.startsWith('BP:')) {
+			const idText = byScan.substring(3);
+			const matched = list.find((item) => String(item?.Id ?? '') === idText);
+			console.log('[POS-NFC] multi-result pick by Contact.Id', { idText, matchedId: matched?.Id ?? null });
+			return matched ? this.normalizePosContact(matched) : null;
+		}
+
+		return null;
+	}
+
+	private normalizePosContact(contact: any): any {
+		if (!contact) return null;
+
+		if (contact.IDAddress == null && Array.isArray(contact.Addresses) && contact.Addresses[0]?.Id != null) {
+			contact.IDAddress = contact.Addresses[0].Id;
+			contact.Address = contact.Addresses[0];
+		}
+
+		return contact;
+	}
+
+	private applyScannedContact(contact: any): void {
+		const normalized = this.normalizePosContact(contact);
+		if (!normalized?.Id) return;
+
+		const valueToSet = normalized.IDAddress ?? normalized.Addresses?.[0]?.Id;
+		if (valueToSet != null) {
+			this.formGroup.get('IDAddress')?.setValue(valueToSet);
+			this.formGroup.get('IDAddress')?.markAsDirty();
+		}
+
+		this.changedIDAddress(normalized);
+
+		try {
+			this.contactInput?.closeDropdown();
+		} catch {
+			/* ignore */
+		}
+
+		try {
+			this.cdr.detectChanges();
+		} catch {
+			/* ignore — can fail while modal is dismissing */
+		}
+	}
+
+	private parseNfcJsonValue(value: string): string | object | null {
+		const trimmed = (value || '').trim();
+		if (!trimmed) return null;
+		if (!['{', '['].includes(trimmed.charAt(0))) return trimmed;
+		try {
+			return JSON.parse(trimmed);
+		} catch {
+			return null;
+		}
 	}
 
 	private async handleScannedQrPayload(data: any): Promise<boolean> {
@@ -3364,8 +3664,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (!code) return false;
 
 		if (this.tryHandleSaleOrderQr(code)) return true;
-		if (this.tryHandleBusinessPartnerQr(code)) return true;
+		if (await this.tryHandleBusinessPartnerQr(code)) return true;
 		if (await this.tryHandleVCardQr(code)) return true;
+		if (await this.tryHandleMemberCardQr(code)) return true;
 
 		return false;
 	}
@@ -3381,14 +3682,29 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		return true;
 	}
 
-	private tryHandleBusinessPartnerQr(code: string): boolean {
-		const match = /^\s*BP-(\d+)\s*$/i.exec((code || '').trim());
+	private async tryHandleBusinessPartnerQr(code: string): Promise<boolean> {
+		const match = /^\s*BP[-:](\d+)\s*$/i.exec((code || '').trim());
 		if (!match) return false;
 
 		const id = parseInt(match[1], 10);
 		if (!id) return false;
 
-		this.addContactByScannedId(id);
+		await this.addContactByScannedId(id);
+		return true;
+	}
+
+	private async tryHandleMemberCardQr(code: string): Promise<boolean> {
+		const raw = (code || '').trim();
+		if (!raw) return false;
+		// Skip formats already handled above
+		if (/^\s*SO-\d+\s*$/i.test(raw) || /^\s*BP[-:]\d+\s*$/i.test(raw) || raw.indexOf('VCARD;') !== -1) {
+			return false;
+		}
+
+		const contact = await this.findContactByScanValue(raw);
+		if (!contact) return false;
+
+		this.applyScannedContact(contact);
 		return true;
 	}
 
@@ -3420,9 +3736,13 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		return true;
 	}
 
-	private addContactByScannedId(id: string | number): void {
-		this.isEnter = true;
-		this._contactDataSource.input$.next(String(id));
+	private async addContactByScannedId(id: string | number): Promise<void> {
+		const contact = await this.findContactByScanValue(id, true);
+		if (!contact) {
+			this.env.showMessage('No customer found for the scanned code', 'warning');
+			return;
+		}
+		this.applyScannedContact(contact);
 	}
 
 	private parseStaffVCardQr(code: string): { StaffCode: string; QRGenTime: string } | null {
