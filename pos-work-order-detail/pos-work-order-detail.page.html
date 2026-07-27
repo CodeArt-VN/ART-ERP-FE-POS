@@ -109,7 +109,7 @@
                                                 <ion-button expand="block">
                                                     <ion-text *ngIf="!_selectItem" class="keyboard-shortcut-notes"
                                                         style="margin-right: 4px;">[1]</ion-text>
-                                                    {{'RECEIVE' | translate}}</ion-button>
+                                                    {{'Receive' | translate}}</ion-button>
                                             </ion-col>
                                             <ion-col *ngIf="pageConfig.canReturn"
                                                 [size]="!pageConfig.canReceive ? 12 : 6">
@@ -125,7 +125,7 @@
                                                     <ion-text *ngIf="!_selectItem" class="keyboard-shortcut-notes"
                                                         style="margin-right: 4px;">
                                                         [3]</ion-text>
-                                                    {{'RECEIVE THE ORDER' | translate}}
+                                                    {{'Receive THE ORDER' | translate}}
                                                 </ion-button>
                                             </ion-col>
                                         </ion-row>
@@ -193,7 +193,7 @@
                                                 [size]="!pageConfig.canReturn ? 12 : 6">
                                                 <ion-button expand="block"
                                                     (click)="changeStatusItemInOrder(zone.id, '2')">
-                                                    {{'RECEIVE' | translate}}</ion-button>
+                                                    {{'Receive' | translate}}</ion-button>
                                             </ion-col>
                                             <ion-col *ngIf="pageConfig.canReturn"
                                                 [size]="!pageConfig.canReceive ? 12 : 6">
@@ -205,7 +205,7 @@
                                         <ion-row *ngIf="pageConfig.canReceive">
                                             <ion-col size="12">
                                                 <ion-button expand="block" (click)="changeStatusOrder(zone.id, '2')">
-                                                    {{'RECEIVE THE ORDER' | translate}}
+                                                    {{'Receive THE ORDER' | translate}}
                                                 </ion-button>
                                             </ion-col>
                                         </ion-row>
