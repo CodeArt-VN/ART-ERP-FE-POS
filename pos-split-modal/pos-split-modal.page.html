@@ -2,7 +2,7 @@
 	<ion-toolbar>
 		<ion-segment scrollable="true" (ionChange)="segmentChanged($event)" [value]="segmentView">
 			<ion-segment-button value="s1">
-				<ion-label>{{'split order' | translate}}</ion-label>
+				<ion-label>{{'Split order' | translate}}</ion-label>
 			</ion-segment-button>
 			<ion-segment-button value="s2">
 				<ion-label>{{'Details' | translate}}</ion-label>
@@ -268,7 +268,7 @@
 			<ion-button fill="outline" color="warning" (click)="closeModal()"> {{'Cancel' | translate}} </ion-button>
 			<ion-button *ngIf="segmentView == 's1'" [strong]="true" (click)="addSplitedOrder()"> {{'Add more bill' | translate}} </ion-button>
 			<ion-button *ngIf="segmentView != 's1'" [strong]="true" (click)="splitSaleOrder()" [disabled]="!isCanSplit || submitAttempt || this.item.SplitedOrders.length < 2">
-				{{'Split Order' | translate}}
+				{{'Split order' | translate}}
 			</ion-button>
 		</div>
 	</ion-toolbar>

@@ -45,7 +45,7 @@ import { PaymentModalComponent } from 'src/app/modals/payment-modal/payment-moda
 import { ComboModalPage } from './combo-modal/combo-modal.page';
 import { BillPreviewComponent } from 'src/app/modals/bill-preview-modal/bill-preview-modal';
 import { BillTemplateComponent } from './bill-template/bill-template.component';
-import { NfcQrcodeScannerModalComponent, NfcScanResolveResult } from 'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component';
+import type { NfcScanResolveResult } from 'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component';
 
 @Component({
 	selector: 'app-pos-order-detail',
@@ -562,7 +562,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		// 	this._contactDataSource.input$.next(obj.term);
 		// });
 		if (this.item.IDBranch != this.env.selectedBranch && this.item.Id) {
-			this.env.showMessage('Không tìm thấy đơn hàng, vui lòng kiểm tra chi nhánh!', 'danger');
+			this.env.showMessage('Order not found. Please check the branch!', 'danger');
 			return;
 		}
 
@@ -869,7 +869,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		}
 
 		if (!item.UoMs.length) {
-			this.env.showAlert('Sản phẩm này không có đơn vị tính! Xin vui lòng liên hệ quản lý để thêm giá sản phẩm.');
+			this.env.showAlert("This product doesn't have unit!Pleease contact manager to add the price");
 			return;
 		}
 
@@ -936,7 +936,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				if (this.pageConfig.canDeleteItems) {
 					const reduceQuantity = isNumberInput ? quantity - line.Quantity : quantity;
 					this.env
-						.showPrompt('Item này đã chuyển Bar/Bếp, bạn chắc muốn giảm số lượng sản phẩm này?', item.Name, 'Xóa sản phẩm')
+						.showPrompt('This item has already been sent to bar/kitchen. Are you sure you want to reduce the quantity?', item.Name, 'Delete the product')
 						.then((_) => {
 							this.openCancellationReason(line, reduceQuantity);
 						})
@@ -983,7 +983,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			} else {
 				if (line.Status == 'New') {
 					this.env
-						.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
+						.showPrompt('Are you sure you want to remove this product from the cart?', item.Name, 'Delete the product')
 						.then((_) => {
 							line.Quantity += quantity;
 							if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
@@ -1021,7 +1021,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				} else {
 					if (this.pageConfig.canDeleteItems) {
 						this.env
-							.showPrompt('Bạn có chắc muốn bỏ sản phẩm này khỏi giỏ hàng?', item.Name, 'Xóa sản phẩm')
+							.showPrompt('Are you sure you want to remove this product from the cart?', item.Name, 'Delete the product')
 							.then((_) => {
 								line.Quantity += quantity;
 								if (line.NewPrice > 0 && line.NewPrice != line.UoMPrice) {
@@ -1488,7 +1488,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 
 			if (!line) {
 				this.env
-					.showPrompt('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
+					.showPrompt('Are you sure you want to cancel this order?', null, 'Cancel the order')
 					.then((_) => {
 						let publishEventCode = this.pageConfig.pageName;
 						if (this.submitAttempt == false) {
@@ -1526,7 +1526,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				}
 
 				this.env
-					.showPrompt('Bạn có chắc muốn xóa / giảm số lượng sản phẩm này?', null, 'Xóa sản phẩm')
+					.showPrompt('Are you sure you want to delete or reduce the quantity of this product?', null, 'Delete the product')
 					.then((_) => {
 						let publishEventCode = this.pageConfig.pageName;
 						if (this.submitAttempt == false) {
@@ -1559,14 +1559,14 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		if (this.posService.systemConfig.POSEnableWorkOrder) {
 			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
 				await this.env
-					.showPrompt('Bạn có muốn đơn gửi bar/bếp ?', null, 'Thông báo')
+					.showPrompt('Do you want to send the order to bar/kitchen?', null, 'Announcement')
 					.then(() => this.sendKitchenWithoutPrint())
 					.catch(() => { });
 			}
 		} else {
 			if (this.item.OrderLines.some((i) => i._undeliveredQuantity > 0)) {
 				await this.env
-					.showPrompt('Bạn có muốn in đơn gửi bar/bếp ?', null, 'Thông báo')
+					.showPrompt('Do you want to print the order for bar/kitchen?', null, 'Announcement')
 					.then(() => this.sendKitchen())
 					.catch(() => { });
 			}
@@ -1647,8 +1647,8 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 					},
 					null,
 					'POS_PRINT_WARNING',
-					'Chuyển sang Đang phục vụ',
-					'Giữ nguyên (Không lưu)'
+					'Switch to Serving',
+					'Keep as is (Do not save)'
 				)
 				.then(() => {
 					dog && console.log('✅ User agreed to move failed items to Serving');
@@ -3133,7 +3133,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			if (this.item.Debt > 0) {
 				message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			}
-			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: this.printData.undeliveredItems.length }, null, 'Thông báo', 'GỬI', null).then((_) => {
+			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: this.printData.undeliveredItems.length }, null, 'Announcement', 'SEND', null).then((_) => {
 				this.printData.undeliveredItems = []; //<-- clear;
 				this.item.OrderLines.forEach((line) => {
 					if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -3158,7 +3158,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		} else if (this.item.Debt > 0) {
 			let message = 'Đơn hàng chưa thanh toán xong. Bạn có muốn tiếp tục hoàn tất?';
 			this.env
-				.showPrompt(message, null, 'Thông báo')
+				.showPrompt(message, null, 'Announcement')
 				.then((_) => {
 					this.item.OrderLines.forEach((line) => {
 						if (this.checkDoneLineStatusList.indexOf(line.Status) == -1) {
@@ -3310,6 +3310,10 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 	}
 
 	private async scanQRCodeFromModal() {
+		const { NfcQrcodeScannerModalComponent } = await import(
+			'src/app/modals/nfc-qrcode-scanner-modal/nfc-qrcode-scanner-modal.component'
+		);
+
 		const { data, role } = await this.modalController
 			.create({
 				component: NfcQrcodeScannerModalComponent,
@@ -3317,9 +3321,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				componentProps: {
 					title: 'Scan card',
 					label: 'Please tap NFC card or scan QR code to read',
-					mode: 'NFC',
 					showQrCodeButton: true,
 					resolveNfcScan: (scanData: any) => this.resolvePosNfcScan(scanData),
+					resolveQrScan: (scanData: any) => this.resolvePosQrScan(scanData),
 				},
 			})
 			.then(async (modal) => {
@@ -3327,15 +3331,217 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 				return modal.onWillDismiss();
 			});
 
+		// NFC / QR customer resolve đã xử lý trong modal; dismiss confirm = success.
 		if (role !== 'confirm' || !data) return;
+	}
 
-		if (data?.mode === 'NFC') return;
+	/**
+	 * QR formats:
+	 * - SMC:{base64} — member card từ user-card-viewer: { StaffId, BusinessPartnerId, Timespan }
+	 * - BP-{id} / BP:{id}
+	 * - SO-{id}
+	 * - VCARD;{StaffCode};{QRGenTime}
+	 * - raw MemberCard.code
+	 */
+	private async resolvePosQrScan(data: any): Promise<NfcScanResolveResult> {
+		const log = (...args: any[]) => console.log('[POS-QR]', ...args);
+		const logWarn = (...args: any[]) => console.warn('[POS-QR]', ...args);
+		const logErr = (...args: any[]) => console.error('[POS-QR]', ...args);
 
-		const handledQr = await this.handleScannedQrPayload(data);
-		if (handledQr) return;
+		const code = this.getScannerRawValue(data)?.trim().replace(/^\uFEFF/, '') || '';
+		log('1. resolvePosQrScan START', { code });
 
-		await this.retryInvalidPosQrCode();
-		return;
+		if (!code) {
+			return { ok: false, message: 'Invalid QR code', detail: 'Empty scan content' };
+		}
+
+		const smc = this.parseStaffMemberCardQr(code);
+		if (smc) {
+			log('2. SMC payload', smc);
+			if (this.isExpiredSmcQr(smc.Timespan)) {
+				logWarn('3. FAIL — SMC expired', { Timespan: smc.Timespan });
+				return {
+					ok: false,
+					message: 'QR code has expired',
+					detail: `Please get a new staff QR. Generated at: ${new Date(smc.Timespan).toLocaleString()}`,
+				};
+			}
+			if (!smc.BusinessPartnerId) {
+				return {
+					ok: false,
+					message: 'Invalid QR code',
+					detail: 'Missing BusinessPartnerId in SMC payload',
+				};
+			}
+
+			const contact = await this.findContactByScanValue(smc.BusinessPartnerId, true);
+			if (!contact) {
+				logWarn('3. FAIL — no contact for BusinessPartnerId', smc.BusinessPartnerId);
+				return {
+					ok: false,
+					message: 'No customer found for scanned code',
+					detail: `BusinessPartnerId=${smc.BusinessPartnerId}`,
+					cardIdbp: smc.BusinessPartnerId,
+				};
+			}
+
+			log('3. SUCCESS SMC', { Id: contact.Id, Name: contact.Name });
+			try {
+				this.applyScannedContact(contact);
+			} catch (err) {
+				logErr('applyScannedContact threw (still Ok)', err);
+			}
+			return {
+				ok: true,
+				foundContact: { Id: contact.Id, Code: contact.Code, Name: contact.Name },
+				cardIdbp: smc.BusinessPartnerId,
+			};
+		}
+
+		if (/^SMC:/i.test(code)) {
+			logWarn('2. FAIL — cannot decode SMC payload', code);
+			return {
+				ok: false,
+				message: 'Invalid QR code',
+				detail: 'Cannot decode SMC member card payload',
+			};
+		}
+
+		const soMatch = /^\s*SO-(\d+)\s*$/i.exec(code);
+		if (soMatch) {
+			const id = parseInt(soMatch[1], 10);
+			if (!id) {
+				return { ok: false, message: 'Invalid QR code', detail: code };
+			}
+			log('2. SO navigate', id);
+			setTimeout(() => this.navCtrl.navigateForward(`/pos-order/${id}`), 0);
+			return { ok: true };
+		}
+
+		const bpMatch = /^\s*BP[-:](\d+)\s*$/i.exec(code);
+		if (bpMatch) {
+			const id = parseInt(bpMatch[1], 10);
+			log('2. BP lookup', id);
+			const contact = await this.findContactByScanValue(id, true);
+			if (!contact) {
+				return {
+					ok: false,
+					message: 'No customer found for scanned code',
+					detail: `BP:${id}`,
+					cardIdbp: id,
+				};
+			}
+			try {
+				this.applyScannedContact(contact);
+			} catch (err) {
+				logErr('applyScannedContact threw (still Ok)', err);
+			}
+			return {
+				ok: true,
+				foundContact: { Id: contact.Id, Code: contact.Code, Name: contact.Name },
+				cardIdbp: id,
+			};
+		}
+
+		const vcard = this.parseStaffVCardQr(code);
+		if (vcard) {
+			log('2. VCARD', vcard);
+			if (this.isExpiredStaffQr(vcard.QRGenTime)) {
+				return {
+					ok: false,
+					message: 'QR code has expired',
+					detail: `Please get a new staff code! QR code generated at: ${vcard.QRGenTime}`,
+				};
+			}
+
+			try {
+				const resp: any = await this.contactProvider.read({ Code: vcard.StaffCode, Take: 20 });
+				const address = resp?.data?.[0];
+				if (!address?.Id) {
+					return {
+						ok: false,
+						message: 'No customer found for scanned code',
+						detail: `StaffCode=${vcard.StaffCode}`,
+					};
+				}
+				if (Array.isArray(address.Addresses) && address.Addresses[0]?.Id != null) {
+					address.IDAddress = address.Addresses[0].Id;
+					address.Address = address.Addresses[0];
+				}
+				try {
+					this.applyScannedContact(address);
+				} catch (err) {
+					logErr('applyScannedContact threw (still Ok)', err);
+				}
+				return {
+					ok: true,
+					foundContact: { Id: address.Id, Code: address.Code, Name: address.Name },
+				};
+			} catch (err) {
+				logErr('VCARD contact read failed', err);
+				return {
+					ok: false,
+					message: 'Unable to verify scanned card',
+					detail: `StaffCode=${vcard.StaffCode}`,
+				};
+			}
+		}
+
+		log('2. fallback MemberCard.Code / raw POSSearch', code);
+		const contact = await this.findContactByScanValue(code);
+		if (!contact) {
+			logWarn('3. FAIL — invalid QR / no customer', code);
+			return {
+				ok: false,
+				message: 'Invalid QR code',
+				detail: code.length > 180 ? `${code.slice(0, 180)}…` : code,
+			};
+		}
+
+		log('3. SUCCESS raw', { Id: contact.Id, Name: contact.Name });
+		try {
+			this.applyScannedContact(contact);
+		} catch (err) {
+			logErr('applyScannedContact threw (still Ok)', err);
+		}
+		return {
+			ok: true,
+			foundContact: { Id: contact.Id, Code: contact.Code, Name: contact.Name },
+		};
+	}
+
+	/** member-card QR từ user-card-viewer: SMC: + base64({ StaffId, BusinessPartnerId, Timespan }) */
+	private parseStaffMemberCardQr(code: string): { StaffId: number; BusinessPartnerId: number; Timespan: number } | null {
+		const raw = (code || '').trim();
+		if (!/^SMC:/i.test(raw)) return null;
+
+		try {
+			const encoded = raw
+				.substring(4)
+				.replace(/\s+/g, '')
+				.replace(/-/g, '+')
+				.replace(/_/g, '/');
+			const normalized = encoded.padEnd(Math.ceil(encoded.length / 4) * 4, '=');
+			const decoded = atob(normalized);
+			const payload = JSON.parse(decoded);
+			const businessPartnerId = Number(payload?.BusinessPartnerId ?? 0);
+			const staffId = Number(payload?.StaffId ?? 0);
+			const timespan = Number(payload?.Timespan ?? 0);
+			if (!Number.isFinite(timespan) || timespan <= 0) return null;
+			return {
+				StaffId: staffId,
+				BusinessPartnerId: businessPartnerId,
+				Timespan: timespan,
+			};
+		} catch {
+			return null;
+		}
+	}
+
+	/** Đồng bộ countdown 30s ở user-card-viewer (STAFF_POS_TIMEOUT). */
+	private isExpiredSmcQr(timespan: number): boolean {
+		const ageMs = Date.now() - Number(timespan);
+		return !Number.isFinite(ageMs) || ageMs < 0 || ageMs > 30_000;
 	}
 
 	private getScannerRawValue(data: any): string {
