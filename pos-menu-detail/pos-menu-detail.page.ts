@@ -114,7 +114,7 @@ export class POSMenuDetailPage extends PageBase {
 
 		this.commonService.upload(apiPath, event.target.files[0]).then((result: any) => {
 			if (result != null) {
-				this.env.showMessage('upload thành công', 'success');
+				this.env.showMessage('Upload successful', 'success');
 				const envImage = environment.posImagesServer + result;
 				if (this.uploadContext.isParent) {
 					this.Image = envImage;
@@ -127,7 +127,7 @@ export class POSMenuDetailPage extends PageBase {
 					}
 				}
 			} else {
-				this.env.showMessage('upload thất bại', 'success');
+				this.env.showMessage('Upload failed', 'success');
 			}
 		});
 	};
@@ -252,7 +252,7 @@ export class POSMenuDetailPage extends PageBase {
 		let group = groups.controls[index];
 		if (group.get('Id').value) {
 			this.env
-				.showPrompt('Bạn có chắc muốn xóa sản phẩm?', null, 'Xóa sản phẩm')
+				.showPrompt('Are you sure you want to delete the product?', null, 'Delete the product')
 				.then((_) => {
 					let Ids = [];
 					Ids.push(groups.controls[index].get('Id').value);

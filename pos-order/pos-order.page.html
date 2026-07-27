@@ -151,7 +151,7 @@
 													[detail]="false"
 													(click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();"
 												>
-													{{'Chuyển bàn' | translate}}
+													{{'Change table' | translate}}
 													<ion-icon color="warning" slot="icon-only" name="git-compare" slot="start"></ion-icon>
 												</ion-item>
 												<ion-item
@@ -160,7 +160,7 @@
 													[detail]="false"
 													(click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();"
 												>
-													{{'Chia đơn' | translate}}
+													{{'Split bill' | translate}}
 													<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
 												</ion-item>
 												<ion-item
@@ -169,7 +169,7 @@
 													[detail]="false"
 													(click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();"
 												>
-													{{'Hủy đơn' | translate}}
+													{{'Cancel bill' | translate}}
 													<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
 												</ion-item>
 											</ion-list>
@@ -205,7 +205,7 @@
 									<ion-content>
 										<ion-list>
 											<ion-list-header>
-												<ion-label>{{'Bàn' | translate}} {{t.Name}}</ion-label>
+												<ion-label>{{'Table' | translate}} {{t.Name}}</ion-label>
 											</ion-list-header>
 											<ion-item
 												[button]="true"
@@ -215,7 +215,7 @@
 												(click)="$event.stopPropagation(); this.popoverCtrl.dismiss();"
 											>
 												<ion-icon color="success" slot="icon-only" name="add-outline" slot="end"></ion-icon>
-												<ion-text color="success">{{'Thêm đơn mới' | translate}}</ion-text>
+												<ion-text color="success">{{'Add extra order' | translate}}</ion-text>
 											</ion-item>
 
 											<ng-container *ngFor="let od of t._Orders">
@@ -246,7 +246,7 @@
 																	[detail]="false"
 																	(click)="$event.stopPropagation(); changeTable(od.Order); this.popoverCtrl.dismiss();"
 																>
-																	{{'Chuyển bàn' | translate}}
+																	{{'Change table' | translate}}
 																	<ion-icon color="warning" slot="icon-only" name="git-compare" slot="start"></ion-icon>
 																</ion-item>
 																<ion-item
@@ -255,7 +255,7 @@
 																	[detail]="false"
 																	(click)="$event.stopPropagation(); this.selectedItems.push(od.Order); splitPOSBill(); this.popoverCtrl.dismiss();"
 																>
-																	{{'Chia đơn' | translate}}
+																	{{'Split bill' | translate}}
 																	<ion-icon color="warning" slot="icon-only" name="git-branch" slot="start"></ion-icon>
 																</ion-item>
 																<ion-item
@@ -264,7 +264,7 @@
 																	[detail]="false"
 																	(click)="$event.stopPropagation(); openCancellationReason(od.Order); this.popoverCtrl.dismiss();"
 																>
-																	{{'Hủy đơn' | translate}}
+																	{{'Cancel bill' | translate}}
 																	<ion-icon color="danger" slot="icon-only" name="ban-outline" slot="start"></ion-icon>
 																</ion-item>
 															</ion-list>

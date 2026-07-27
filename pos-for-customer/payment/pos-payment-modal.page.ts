@@ -135,13 +135,13 @@ export class POSForCustomerPaymentModalPage extends PageBase {
 			this.items[i].IncomingPayment.Status = data['Status'];
 			switch (data['Status']) {
 				case 'Success':
-					this.env.showMessage('Thanh toán thành công', 'success');
+					this.env.showMessage('Payment successful', 'success');
 					break;
 				case 'Fail':
-					this.env.showMessage('Giao dịch thất bại', 'danger');
+					this.env.showMessage('Transaction failed', 'danger');
 					break;
 				default:
-					this.env.showMessage('Đang chờ khách hàng thanh toán', 'warning');
+					this.env.showMessage('Waiting for customer payment', 'warning');
 					break;
 			}
 			this.calcPayment();
@@ -191,7 +191,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
 		if (this.DebtAmount > 0) {
 			this.alertCtrl
 				.create({
-					header: 'Thông báo',
+					header: 'Announcement',
 					message: 'Bạn có chắc chắn kết thúc đơn? Đơn sẽ được ghi nhận là thanh toán sau.',
 					buttons: [
 						{
@@ -221,7 +221,7 @@ export class POSForCustomerPaymentModalPage extends PageBase {
 				code = 'Ví zalo pay';
 				break;
 			case 'ATM':
-				code = 'Thẻ ATM';
+				code = 'ATM card';
 				break;
 			case 'CC':
 				code = 'Thẻ Visa,Master';

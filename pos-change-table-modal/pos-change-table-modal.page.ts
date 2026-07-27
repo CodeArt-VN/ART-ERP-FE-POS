@@ -34,7 +34,7 @@ export class POSChangeTableModalPage extends PageBase {
 	checkBillStatus = ['Splitted', 'Merged', 'Done', 'Canceled'];
 	checkSplitMergeStatus = ['Splitted', 'Merged'];
 	isMerging = false;
-	buttonText = 'Chuyển bàn';
+	buttonText = 'Change table';
 
 	constructor(
 		public pageProvider: SALE_OrderProvider,
@@ -254,11 +254,11 @@ export class POSChangeTableModalPage extends PageBase {
 					});
 			} else {
 				this.isMerging = false;
-				this.buttonText = 'Chuyển bàn';
+				this.buttonText = 'Change table';
 			}
 		} else {
 			this.isMerging = false;
-			this.buttonText = 'Chuyển bàn';
+			this.buttonText = 'Change table';
 		}
 	}
 

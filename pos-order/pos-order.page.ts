@@ -501,7 +501,7 @@ export class POSOrderPage extends PageBase {
 			}
 
 			this.env
-				.showPrompt('Bạn có chắc muốn hủy đơn hàng này?', null, 'Hủy đơn hàng')
+				.showPrompt('Are you sure you want to cancel this order?', null, 'Cancel the order')
 				.then((_) => {
 					let publishEventCode = this.pageConfig.pageName;
 					if (this.submitAttempt == false) {
@@ -634,7 +634,7 @@ export class POSOrderPage extends PageBase {
 			let maxToDateText = lib.dateFormat(maxToDate);
 
 			if (toDateText > maxToDateText) {
-				this.env.showMessage('Giới hạn tải xuống dữ liệu tối đa trong vòng 3 tháng!', 'danger', 5000);
+				this.env.showMessage('The limit for data download is maximum within 3 months', 'danger', 5000);
 				return;
 			}
 		}
