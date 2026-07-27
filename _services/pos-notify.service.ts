@@ -303,7 +303,7 @@ export class POSNotifyService {
 			tableId,
 			value,
 			type: NotificationType.PaymentSuccess,
-			name: 'Thanh toán thành công',
+			name: 'Payment successful',
 			audioType: AudioType.PaymentSuccess,
 			message,
 			showMessage: true,

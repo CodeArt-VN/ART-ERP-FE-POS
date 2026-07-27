@@ -258,7 +258,7 @@ export class POSWelcomePage extends PageBase {
 			try {
 				this.Table = await this.getTable();
 			} catch (err) {
-				this.env.showMessage('Không lấy được thông tin bàn. Vui lòng kiểm tra kết nối và thử lại.', 'warning');
+				this.env.showMessage('Unable to get table information. Please check the connection and try again', 'warning');
 				return;
 			}
 		}
@@ -315,7 +315,7 @@ export class POSWelcomePage extends PageBase {
 			await this.env.userContext.switchTenant(server);
 		} catch (err) {
 			console.log(err);
-			this.env.showMessage('Không chuyển được server. Vui lòng kiểm tra lại mã QR.', 'warning');
+			this.env.showMessage('Unable to switch server. Please check the QR code', 'warning');
 		}
 	}
 }

@@ -32,7 +32,7 @@ export class POSOrderLinesCancelModalPage extends PageBase {
 	}
 	dismiss(role = 'cancel') {
 		if (role == 'confirm' && this.item.Code == 'Other' && !this.item.CancelNote) {
-			this.env.showMessage('Xin vui lòng nhập lý do.');
+			this.env.showMessage('Please input the reason');
 			return;
 		}
 

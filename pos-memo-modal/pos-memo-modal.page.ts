@@ -73,7 +73,7 @@ export class POSMemoModalPage extends PageBase {
 
 	addRemark(value) {
 		if (this.item._Locked) {
-			this.env.showMessage('Sản phẩm này đã khóa.', 'warning');
+			this.env.showMessage('This product was locked', 'warning');
 		}
 
 		let string = this.Remark;
