@@ -213,7 +213,7 @@ export class POSNotifyService {
 			message,
 			audioType: AudioType.Order,
 			showMessage: true,
-			messageTemplate: 'Khách bàn {{value}} đã khóa đơn',
+			messageTemplate: 'Khách bàn {value} đã khóa đơn',
 			messageValue: tableName,
 		});
 	}
@@ -249,7 +249,7 @@ export class POSNotifyService {
 			message,
 			audioType: AudioType.Order,
 			showMessage: true,
-			messageTemplate: 'Khách bàn {{value}} đã mở đơn',
+			messageTemplate: 'Khách bàn {value} đã mở đơn',
 			messageValue: tableName,
 		});
 	}
@@ -268,7 +268,7 @@ export class POSNotifyService {
 			message,
 			audioType: AudioType.Order,
 			showMessage: true,
-			messageTemplate: 'Nhân viên đã chia đơn bàn {{value}}',
+			messageTemplate: 'Nhân viên đã chia đơn bàn {value}',
 			messageValue: tableName,
 		});
 	}
@@ -328,7 +328,7 @@ export class POSNotifyService {
 			message,
 			audioType: AudioType.Order,
 			showMessage: true,
-			messageTemplate: 'Nhân viên đã gộp đơn bàn {{value}}',
+			messageTemplate: 'Nhân viên đã gộp đơn bàn {value}',
 			messageValue: tableName,
 		});
 	}

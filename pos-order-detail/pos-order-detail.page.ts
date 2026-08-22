@@ -1584,7 +1584,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			// No changes to save
 			let invalidControls = this.findInvalidControlsRecursive(this.formGroup);
 			if (invalidControls.length > 0) {
-				this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | ')); this.env.showMessage('Please recheck control(s): {{value}}', 'warning', invalidControls.join(' | '));
+				this.env.showMessage('Please recheck control(s): {value}', 'warning', invalidControls.join(' | ')); this.env.showMessage('Please recheck control(s): {value}', 'warning', invalidControls.join(' | '));
 			}
 			await this.checkItemNotSendKitchen();
 		}
@@ -3129,9 +3129,9 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			return;
 		}
 		if (this.printData.undeliveredItems.length > 0) {
-			let message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
+			let message = `Bàn số {value} có {value1} sản phẩm chưa gửi bar/bếp. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			if (this.item.Debt > 0) {
-				message = `Bàn số {{value}} có {{value1}} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
+				message = `Bàn số {value} có {value1} sản phẩm chưa gửi bar/bếp và đơn hàng chưa thanh toán xong. Bạn hãy gửi bar/bếp và hoàn tất.`;
 			}
 			this.env.showPrompt({ code: message, value: this.item.Tables[0], value1: this.printData.undeliveredItems.length }, null, 'Announcement', 'SEND', null).then((_) => {
 				this.printData.undeliveredItems = []; //<-- clear;
@@ -3287,7 +3287,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		// 			address.IDAddress = address['Addresses'][0]['Id'];
 		// 			address.Address = address['Addresses'][0];
 
-		// 			this.env.showMessage('Quét thành công! Họ và Tên: {{value}}', null, address['Name']);
+		// 			this.env.showMessage('Quét thành công! Họ và Tên: {value}', null, address['Name']);
 		// 			this._contactDataSource.selected.push(address);
 		// 			this.changedIDAddress(address);
 		// 			this._contactDataSource.initSearch();
@@ -3295,7 +3295,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 		// 			this.saveChange();
 		// 		});
 		// 	} else {
-		// 		this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {{value}}', 'danger', QRGenTime);
+		// 		this.env.showMessage('Code has expired, please get a new staff code! QR code generated at: {value}', 'danger', QRGenTime);
 		// 		setTimeout(() => this.scanQRCode(), 0);
 		// 	}
 		// } else {
@@ -3931,7 +3931,7 @@ export class POSOrderDetailPage extends PageBase implements CanComponentDeactiva
 			address.IDAddress = address['Addresses'][0]['Id'];
 			address.Address = address['Addresses'][0];
 
-			this.env.showMessage('Scan successful! Full name: {{value}}', null, address['Name']);
+			this.env.showMessage('Scan successful! Full name: {value}', null, address['Name']);
 			this._contactDataSource.selected.push(address);
 			this.changedIDAddress(address);
 			this._contactDataSource.initSearch();

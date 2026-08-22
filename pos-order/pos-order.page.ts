@@ -387,9 +387,9 @@ export class POSOrderPage extends PageBase {
 	archiveItems(publishEventCode?: string): void {
 		this.pageProvider.disable(this.selectedItems, !this.query.IsDisabled).then(() => {
 			if (this.query.IsDisabled) {
-				this.env.showMessage('Reopened {{value}} lines!', 'success', this.selectedItems.length);
+				this.env.showMessage('Reopened {value} lines!', 'success', this.selectedItems.length);
 			} else {
-				this.env.showMessage('Archived {{value}} lines!', 'success', this.selectedItems.length);
+				this.env.showMessage('Archived {value} lines!', 'success', this.selectedItems.length);
 			}
 			this.removeSelectedItems();
 			this.refresh();

@@ -190,7 +190,7 @@ export class POSInvoiceModalPage extends PageBase {
 				let joininvalidControls = invalidControls.concat(invalidControls1);
 				const translationPromises = joininvalidControls.map((control) => this.env.translateResource(control));
 				Promise.all(translationPromises).then((values: any) => {
-					this.env.showMessage('Please recheck control(s): {{value}}', 'warning', values.join(' | '));
+					this.env.showMessage('Please recheck control(s): {value}', 'warning', values.join(' | '));
 				});
 				return;
 			}

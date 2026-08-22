@@ -368,7 +368,7 @@ export class POSCustomerOrderPage extends PageBase {
 			if (line.Quantity > 0 && line.Quantity + quantity < line.ShippedQuantity) {
 				this.env.showAlert(
 					'Please contact the staff for assistance',
-					{ code: '{{value}} sent to Kitchen {{value1}} {{value2}}', value: { value: item.Name, value1: line.ShippedQuantity, value2: line.UoMName } },
+					{ code: '{value} sent to Kitchen {value1} {value2}', value: { value: item.Name, value1: line.ShippedQuantity, value2: line.UoMName } },
 					'Announcement'
 				);
 			} else if (line.Quantity + quantity > 0) {
@@ -827,7 +827,7 @@ export class POSCustomerOrderPage extends PageBase {
 		}
 		if (this.idTable != this.item.Tables[0]) {
 			await this.reloadTable(this.item.Tables[0]);
-			this.env.showAlert({ code: 'Your order has been moved to table {{value}}', value: { value: this.Table.Name } }, null, 'Table change notice');
+			this.env.showAlert({ code: 'Your order has been moved to table {value}', value: { value: this.Table.Name } }, null, 'Table change notice');
 			this.env.setStorage('OrderLines' + this.idTable, []);
 			this.env.setStorage('OrderLines' + this.item.Tables[0], this.OrderLines);
 			this.idTable = this.item.Tables[0];

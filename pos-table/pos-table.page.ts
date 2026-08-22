@@ -56,7 +56,7 @@ export class POSTablePage extends PageBase {
 		if (this.pageConfig.canDelete) {
 			this.env
 				.showPrompt({ code: item.Name ? 'DELETE_ITEM_CONFIRM_MESSAGE' : 'Are you sure you want to delete?', value: { value: item.Name } }, null, {
-					code: item.Name ? 'Xóa {{value}}' : 'Delete',
+					code: item.Name ? 'Xóa {value}' : 'Delete',
 					value: { value: item.Name },
 				})
 				.then((_) => {
