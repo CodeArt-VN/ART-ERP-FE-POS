@@ -8,7 +8,7 @@ import { POSOrderDetailPage } from './pos-order-detail.page';
 import { PipesModule } from 'src/app/pipes/pipes.module';
 import { POSVoucherModalPage } from '../pos-voucher-modal/pos-voucher-modal.page';
 import { POSContactModalPage } from '../pos-contact-modal/pos-contact-modal.page';
-import { POSInvoiceModalPage } from '../pos-invoice-modal/pos-invoice-modal.page';
+import { POSInvoiceModalPageModule } from '../pos-invoice-modal/pos-invoice-modal.module';
 import { DeactivateGuard } from './deactivate-guard';
 import { ComboModalPage } from './combo-modal/combo-modal.page';
 import { BillTemplateComponent } from './bill-template/bill-template.component';
@@ -21,7 +21,16 @@ const routes: Routes = [
 ];
 
 @NgModule({
-	imports: [CommonModule, FormsModule, IonicModule, ReactiveFormsModule, ShareModule, PipesModule, RouterModule.forChild(routes)],
-	declarations: [POSOrderDetailPage, POSVoucherModalPage, POSContactModalPage, POSInvoiceModalPage, ComboModalPage, BillTemplateComponent],
+	imports: [
+		CommonModule,
+		FormsModule,
+		IonicModule,
+		ReactiveFormsModule,
+		ShareModule,
+		PipesModule,
+		POSInvoiceModalPageModule,
+		RouterModule.forChild(routes),
+	],
+	declarations: [POSOrderDetailPage, POSVoucherModalPage, POSContactModalPage, ComboModalPage, BillTemplateComponent],
 })
 export class POSOrderDetailPageModule {}

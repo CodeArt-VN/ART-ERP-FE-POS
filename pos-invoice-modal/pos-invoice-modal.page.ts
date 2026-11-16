@@ -139,10 +139,10 @@ export class POSInvoiceModalPage extends PageBase {
 				this.changeSelectTaxCode(taxDefault);
 			} else if (this.currentTaxInfoId === -1) {
 				this.formGroup.controls.selectedTaxInfoId.setValue(-1);
-				this.changeSelectTaxCode({ Id: -1, CompanyName: 'Walk-in customer' });
+				this.changeSelectTaxCode({ Id: -1, CompanyName: this.translate.instant('Walk-in customer') });
 			} else if (this.currentTaxInfoId === null || this.currentTaxInfoId === undefined) {
 				this.formGroup.controls.selectedTaxInfoId.setValue(null);
-				this.changeSelectTaxCode({ Id: null, CompanyName: 'Default tax info' });
+				this.changeSelectTaxCode({ Id: null, CompanyName: this.translate.instant('Default tax info') });
 			} else {
 				this.formGroup.controls.selectedTaxInfoId.setValue(null);
 			}
@@ -156,17 +156,19 @@ export class POSInvoiceModalPage extends PageBase {
 		}
 		// Add option for default tax info (null) - only if customer has tax addresses
 		if (taxInfoList?.length > 0) {
+			const defaultLabel = this.translate.instant('Default tax info');
 			this.TaxCodeDataSource.unshift({
 				Id: null,
 				CompanyName: 'Default tax info',
-				_label: 'Default tax info',
+				_label: defaultLabel,
 			});
 		}
 		// Add option for walk-in customer (-1) - always available
+		const walkInLabel = this.translate.instant('Walk-in customer');
 		this.TaxCodeDataSource.unshift({
 			Id: -1,
 			CompanyName: 'Walk-in customer',
-			_label: 'Walk-in customer',
+			_label: walkInLabel,
 		});
 		// Set _label for all items in datasource
 		this.TaxCodeDataSource.forEach((item) => {
